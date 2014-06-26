@@ -12,12 +12,10 @@
 // template <class ValueType>
 // ValueType any_cast(any &);
 
-
-
 #include <experimental/any>
+#include <new>
 #include <cstdlib>
 #include <cassert>
-
 
 int new_called = 0;
 int total_new = 0;
