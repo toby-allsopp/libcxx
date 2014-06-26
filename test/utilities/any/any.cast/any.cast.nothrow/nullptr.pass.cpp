@@ -16,6 +16,7 @@
 // ValueType * any_cast(any *) noexcept;
 
 #include <experimental/any>
+#include <new>
 #include <cstdlib>
 #include <cassert>
 
