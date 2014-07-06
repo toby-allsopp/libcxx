@@ -41,7 +41,7 @@ option(LIBCXX_ENABLE_ASSERTIONS "Enable assertions independent of build mode." O
 option(LIBCXX_ENABLE_PEDANTIC "Compile with pedantic enabled." ON)
 option(LIBCXX_ENABLE_WERROR "Fail and stop if a warning is triggered." OFF)
 option(LIBCXX_ENABLE_CXX11 "Enable -std=c++11 and use of c++11 language features if the compiler supports it." ON)
-option(LIBCXX_ENABLE_CXX1Y "Enable -std=c++1y and use of c++1y language features if the compiler supports it." OFF)
+option(LIBCXX_ENABLE_CXX1Y "Enable -std=c++1y and use of c++1y language features if the compiler supports it." ON)
 option(LIBCXX_ENABLE_CXX1Z "Enable -std=c++1z and use of c++1z language features if the compiler supports it." OFF)
 option(LIBCXX_ENABLE_SHARED "Build libc++ as a shared library." ON)
 option(LIBCXX_INSTALL_SUPPORT_HEADERS "Install libc++ support headers." ON)
