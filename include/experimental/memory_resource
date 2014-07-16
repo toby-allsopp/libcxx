@@ -78,7 +78,6 @@ namespace pmr {
 #include <cstddef>
 
 _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
-{
 // 8.5, memory.resource
     class _LIBCPP_TYPE_VIS_ONLY memory_resource
     {
@@ -453,7 +452,7 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
             return this == dynamic_cast<monotonic_buffer_resource const *>(&__other);
         }
     };
-}                                                           // namespace pmr
+
 _LIBCPP_END_NAMESPACE_LFTS_PMR
 
 #endif /* _LIBCPP_STD_VER > 11 */
