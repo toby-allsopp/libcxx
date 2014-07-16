@@ -7,6 +7,22 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include <experimental/string_view>
+// <experimental/memory_resource>
 
-int main () {}
+// Check that memory_resource is not constructible
+
+#include <experimental/memory_resource>
+#include <type_traits>
+#include <cassert>
+
+#if _LIBCPP_STD_VER > 11
+
+namespace ex = std::experimental::pmr;
+
+int main()
+{
+    ex::memory_resource m;
+}
+#else /* _LIBCPP_STD_VER <= 11 */
+#error
+#endif /* _LIBCPP_STD_VER > 11 */
