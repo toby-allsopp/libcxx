@@ -91,8 +91,8 @@ namespace pmr
     template <class _Alloc> class __resource_adapter_imp;
 
     template <class _Alloc>
-    using resource_adapter 
-        = __resource_adapter_imp<allocator_traits<_Alloc>::rebind_alloc<char>>;
+    using resource_adapter
+        = __resource_adapter_imp<typename allocator_traits<_Alloc>::template rebind_alloc<char>>;
 
     memory_resource * new_delete_resource() _NOEXCEPT;
     memory_resource * null_memory_resource() _NOEXCEPT;
