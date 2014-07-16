@@ -84,7 +84,7 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
 // 8.5, memory.resource
     class _LIBCPP_TYPE_VIS_ONLY memory_resource
     {
-        static constexpr size_t __max_align = std::alignment_of<max_align_t>::value;
+        static constexpr size_t __max_align = alignment_of<max_align_t>::value;
 
     // 8.5.2, memory.resource.public
     public:
@@ -198,7 +198,7 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
         {
             return static_cast<_ValueType*>(
                 __res_->allocate(__n * sizeof(_ValueType)
-                                , std::alignment_of<_ValueType>::value)
+                                , alignment_of<_ValueType>::value)
               );
         }
 
@@ -207,7 +207,7 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
         {
             __res_->deallocate(
                 __p, __n * sizeof(_ValueType)
-              , std::alignment_of<_ValueType>::value
+              , alignment_of<_ValueType>::value
               );
         }
 
@@ -398,6 +398,7 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
             return &__other == static_cast<memory_resource const *>(this);
         }
     };
+
 
     class __null_memory_resource_imp : public memory_resource
     {
