@@ -385,12 +385,12 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
     protected:
         virtual void* do_allocate(size_t __size, size_t __align)
         {
-            return ::operator new(__size + (__size % __align));
+            return ::operator new(__size + (__align - (__size % __align)));
         }
 
         virtual void do_deallocate(void * __p, size_t __size, size_t __align)
         {
-            ::operator delete(__p, __size + (__size % __align));
+            ::operator delete(__p, __size + (__align - (__size % __align)));
         }
 
         virtual bool do_is_equal(memory_resource const & __other) const _NOEXCEPT
@@ -422,7 +422,6 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
             return &__other == static_cast<memory_resource const *>(this);
         }
     };
-
 
     inline _LIBCPP_INLINE_VISIBILITY
     memory_resource * new_delete_resource() _NOEXCEPT
