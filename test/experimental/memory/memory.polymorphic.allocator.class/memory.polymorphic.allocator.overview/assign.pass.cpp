@@ -9,12 +9,13 @@
 
 // <experimental/memory_resource>
 
-// virtual bool is_equal(memory_resource const &) const noexcept
+// template <class T> class polymorphic_allocator
+
+// polymorphic_allocator operator=(polymorphic_allocator const &) = delete
 
 #include <experimental/memory_resource>
 #include <type_traits>
 #include <cassert>
-#include "../../dummy_resource.hpp"
 
 #if _LIBCPP_STD_VER > 11
 
@@ -22,23 +23,9 @@ namespace ex = std::experimental::pmr;
 
 int main()
 {
-    dummy_resource d;
-    ex::memory_resource const & mr1 = d;
-    ex::memory_resource const & mr2 = d;
-    {
-        static_assert(
-            std::is_same<decltype(mr1.is_equal(mr2)), bool>::value
-          , "Must be bool"
-          );
-        static_assert(
-            noexcept(mr1.is_equal(mr2))
-          , "Must be noexcept"
-          );
-    }
-    {
-        assert(!mr1.is_equal(mr2));
-        assert(is_equal_count == 1);
-    }
+    typedef ex::polymorphic_allocator<void> T;
+    static_assert(std::is_copy_assignable<T>::value, "");
+    static_assert(std::is_move_assignable<T>::value, "");
 }
 #else /* _LIBCPP_STD_VER <= 11 */
 int main() {}

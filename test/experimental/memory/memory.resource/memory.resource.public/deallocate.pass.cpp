@@ -14,7 +14,7 @@
 #include <experimental/memory_resource>
 #include <type_traits>
 #include <cassert>
-#include "dummy_resource.hpp"
+#include "../../dummy_resource.hpp"
 
 #if _LIBCPP_STD_VER > 11
 

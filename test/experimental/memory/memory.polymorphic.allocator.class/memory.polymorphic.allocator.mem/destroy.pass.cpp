@@ -9,35 +9,43 @@
 
 // <experimental/memory_resource>
 
-// virtual bool is_equal(memory_resource const &) const noexcept
+// template <class T> class polymorphic_allocator
+
+// template <class U>
+// void polymorphic_allocator<T>::destroy(U * ptr);
 
 #include <experimental/memory_resource>
 #include <type_traits>
 #include <cassert>
-#include "../../dummy_resource.hpp"
 
 #if _LIBCPP_STD_VER > 11
 
 namespace ex = std::experimental::pmr;
 
+int count = 0; 
+
+struct destroyable
+{
+    destroyable() { ++count; }
+    ~destroyable() { --count; }
+};
+
 int main()
 {
-    dummy_resource d;
-    ex::memory_resource const & mr1 = d;
-    ex::memory_resource const & mr2 = d;
+    typedef ex::polymorphic_allocator<float> A;
     {
+        A a;
         static_assert(
-            std::is_same<decltype(mr1.is_equal(mr2)), bool>::value
-          , "Must be bool"
-          );
-        static_assert(
-            noexcept(mr1.is_equal(mr2))
-          , "Must be noexcept"
+            std::is_same<decltype(a.destroy((destroyable*)nullptr)), void>::value
+          , ""
           );
     }
     {
-        assert(!mr1.is_equal(mr2));
-        assert(is_equal_count == 1);
+        destroyable * ptr = new destroyable();
+        assert(count == 1);
+        A a;
+        a.destroy(ptr);
+        assert(count == 0);
     }
 }
 #else /* _LIBCPP_STD_VER <= 11 */

@@ -78,6 +78,16 @@ namespace pmr {
 #include <cstddef>
 
 _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
+
+// forward
+
+    class _LIBCPP_TYPE_VIS_ONLY memory_resource;
+
+    memory_resource * new_delete_resource() _NOEXCEPT;
+    memory_resource * null_memory_resource() _NOEXCEPT;
+    memory_resource * set_default_resource(memory_resource *) _NOEXCEPT;
+    memory_resource * get_default_resource() _NOEXCEPT;
+
 // 8.5, memory.resource
     class _LIBCPP_TYPE_VIS_ONLY memory_resource
     {
@@ -96,7 +106,7 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
         _LIBCPP_INLINE_VISIBILITY
         void deallocate(void * __p, size_t __bytes, size_t __align = __max_align)
         {
-            do_deallocate(__p, __bytes, __max_align);
+            do_deallocate(__p, __bytes, __align);
         }
 
         _LIBCPP_INLINE_VISIBILITY
@@ -141,19 +151,43 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
         typedef _ValueType value_type;
 
         // 8.6.2, memory.polymorphic.allocator.ctor
-        polymorphic_allocator() _NOEXCEPT;
-        polymorphic_allocator(memory_resource * __r);
+        _LIBCPP_INLINE_VISIBILITY
+        polymorphic_allocator() _NOEXCEPT
+          : __res_(_VSTD_LFTS_PMR::get_default_resource())
+        {}
+
+        _LIBCPP_INLINE_VISIBILITY
+        polymorphic_allocator(memory_resource * __r)
+          : __res_(__r)
+        {}
 
         polymorphic_allocator(polymorphic_allocator const &) = default;
 
         template <class _Tp>
-        polymorphic_allocator(polymorphic_allocator<_Tp> const &) _NOEXCEPT;
+        polymorphic_allocator(polymorphic_allocator<_Tp> const & __other) _NOEXCEPT
+          : __res_(__other.resource())
+        {}
 
         polymorphic_allocator & operator=(polymorphic_allocator const &) = default;
 
         // 8.6.3, memory.polymorphic.allocator.mem
-        _ValueType* allocate(size_t __n);
-        void deallocate(_ValueType * __p, size_t __n);
+        _LIBCPP_INLINE_VISIBILITY
+        _ValueType* allocate(size_t __n)
+        {
+            return static_cast<_ValueType*>(
+                __res_->allocate(__n * sizeof(_ValueType)
+                                , std::alignment_of<_ValueType>::value)
+              );
+        }
+
+        _LIBCPP_INLINE_VISIBILITY
+        void deallocate(_ValueType * __p, size_t __n)
+        {
+            __res_->deallocate(
+                __p, __n * sizeof(_ValueType)
+              , std::alignment_of<_ValueType>::value
+              );
+        }
 
         template <class _Tp, class ..._Ts>
         void construct(_Tp* __p, _Ts &&... __args);
@@ -175,11 +209,17 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
         void construct(pair<_T1, _T2> * __p, pair<_U1, _U2> && __pr);
 
         template <class _Tp>
-        void destroy(_Tp * __p);
+        _LIBCPP_INLINE_VISIBILITY
+        void destroy(_Tp * __p)
+        { __p->~_Tp(); }
 
-        polymorphic_allocator select_on_container_copy_construction() const;
+        _LIBCPP_INLINE_VISIBILITY
+        polymorphic_allocator select_on_container_copy_construction() const
+        { return polymorphic_allocator(); }
 
-        memory_resource * resource() const;
+        _LIBCPP_INLINE_VISIBILITY
+        memory_resource * resource() const 
+        { return __res_; }
     };
 
     // 8.6.4, memory.polymorphic.allocator.eq
