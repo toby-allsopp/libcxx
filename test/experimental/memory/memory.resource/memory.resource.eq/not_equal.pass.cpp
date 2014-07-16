@@ -12,6 +12,7 @@
 // bool operator!=(memory_resource const &, memory_resource const &) noexcept;
 
 #include <experimental/memory_resource>
+#include <type_traits>
 #include <cassert>
 
 #if _LIBCPP_STD_VER > 11
