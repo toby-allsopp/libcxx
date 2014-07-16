@@ -15,6 +15,87 @@
 
 #if _LIBCPP_STD_VER > 11
 
+#include <experimental/utility>
+#include <type_traits>
+#include <__functional_base>
+
+_LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
+
+class _LIBCPP_TYPE_VIS_ONLY memory_resource;
+
+memory_resource * set_default_resource(memory_resource *) _NOEXCEPT;
+memory_resource * get_default_resource() _NOEXCEPT;
+
+_LIBCPP_END_NAMESPACE_LFTS_PMR
+
+
+_LIBCPP_BEGIN_NAMESPACE_LFTS
+
+template <
+    class _Tp, class _Alloc
+  , bool = uses_allocator<_Tp, _Alloc>::value
+  , bool = __has_allocator_type<_Tp>::value
+  >
+struct __lfts_uses_allocator : public false_type {};
+
+template <class _Tp, class _Alloc>
+struct __lfts_uses_allocator<_Tp, _Alloc, false, false> : public false_type {};
+
+template <class _Tp, class _Alloc, bool HasAlloc>
+struct __lfts_uses_allocator<_Tp, _Alloc, true, HasAlloc> : public true_type {};
+
+template <class _Tp, class _Alloc>
+struct __lfts_uses_allocator<_Tp, _Alloc, false, true>
+  : public integral_constant<bool
+    , is_convertible<_Alloc, typename _Tp::allocator_type>::value
+      || is_same<erased_type, typename _Tp::allocator_type>::value
+    >
+{};
+
+template <bool _UsesAlloc, class _Tp, class _Alloc, class ..._Args>
+struct __lfts_uses_alloc_ctor_imp
+{
+    static const int __value = 0;
+};
+
+template <class _Tp, class _Alloc, class ..._Args>
+struct __lfts_uses_alloc_ctor_imp<true, _Tp, _Alloc, _Args...>
+{
+    static const bool __ic_first
+        = is_constructible<_Tp, allocator_arg_t, _Alloc, _Args...>::value;
+    static const bool __ic_second
+        = is_constructible<_Tp, _Args..., _Alloc>::value;
+
+    static_assert(
+        __ic_first || __ic_second
+      , "Request for uses allocator construction is ill-formed"
+      );
+    static const int __value = __ic_first ? 1 : 2;
+};
+
+template <class _Tp, class _Alloc, class ..._Args>
+struct __lfts_uses_alloc_ctor
+  : integral_constant<int,
+        __lfts_uses_alloc_ctor_imp<
+            __lfts_uses_allocator<_Tp, _Alloc>::value
+          , _Tp, _Alloc, _Args...
+        >::__value
+    >
+{};
+
+template <class _Tp, class _Alloc, class ..._Args>
+typename enable_if<!is_pointer<_Alloc>::value>::type
+__lfts_user_alloc_construct(
+    _Tp * __store, const _Alloc & __a, _Args &&... __args)
+{
+    _VSTD::__user_alloc_construct_impl(
+        typename __lfts_uses_alloc_ctor<_Tp, _Alloc, _Args...>::type()
+       , __store, __a, _VSTD::forward<_Args>(__args)...
+       );
+}
+
+_LIBCPP_END_NAMESPACE_LFTS
+
 #endif /* _LIBCPP_STD_VER > 11 */
 
 #endif /* _LIBCPP_EXPERIMENTAL__MEMORY */
