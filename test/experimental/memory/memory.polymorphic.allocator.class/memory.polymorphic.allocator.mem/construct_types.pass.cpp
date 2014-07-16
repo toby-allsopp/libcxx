@@ -11,8 +11,8 @@
 
 // template <class T> class polymorphic_allocator
 
-// memory_resource *
-// polymorphic_allocator<T>::resource() const
+// template <class U, class ...Args>
+// void polymorphic_allocator<T>::construct(U *, Args &&...)
 
 #include <experimental/memory_resource>
 #include <type_traits>
