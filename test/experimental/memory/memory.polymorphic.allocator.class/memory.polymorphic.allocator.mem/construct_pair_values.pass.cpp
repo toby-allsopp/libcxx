@@ -11,9 +11,8 @@
 
 // template <class T> class polymorphic_allocator
 
-// template <class U1, class U2, class ...Args1, class ...Args2>
-// void polymorphic_allocator<T>::construct(pair<U1, U2>*, piecewise_construct_t
-//                                          tuple<Args1...>, tuple<Args2...>)
+// template <class P1, class P2, class U1, class U2>
+// void polymorphic_allocator<T>::construct(pair<P1, P2>*, U1 &&, U2 &&)
 
 #include <experimental/memory_resource>
 #include <type_traits>
@@ -33,31 +32,14 @@ void not_uses_alloc_types_test()
     {
         typedef reg_not_uses_alloc T;
         typedef std::pair<T, T> P;
-        typedef std::tuple<int> Tup;
+        typedef int Tup;
         Tup tup(42);
         typedef ex::polymorphic_allocator<void> A;
         P * ptr = (P*)std::malloc(sizeof(P));
         A a;
-        a.construct(ptr, std::piecewise_construct, tup, tup);
+        a.construct(ptr, tup, tup);
         assert(T::value_count == 2);
         assert(T::alloc_count == 0);
-        assert(ptr->first.x == 42);
-        assert(ptr->second.x == 42);
-        std::free(ptr);
-        T::reset();
-    }
-    // pair<T, T> as T(allocator_arg_t, std::allocator<T>, int)
-    {
-        typedef reg_not_uses_alloc T;
-        typedef std::pair<T, T> P;
-        typedef std::tuple<std::allocator_arg_t, std::allocator<T>, int> Tup;
-        Tup tup(std::allocator_arg, std::allocator<T>(), 42);
-        typedef ex::polymorphic_allocator<void> A;
-        P * ptr = (P*)std::malloc(sizeof(P));
-        A a;
-        a.construct(ptr, std::piecewise_construct, tup, tup);
-        assert(T::value_count == 0);
-        assert(T::alloc_count == 2);
         assert(ptr->first.x == 42);
         assert(ptr->second.x == 42);
         std::free(ptr);
@@ -67,31 +49,14 @@ void not_uses_alloc_types_test()
     {
         typedef erased_not_uses_alloc T;
         typedef std::pair<T, T> P;
-        typedef std::tuple<int> Tup;
+        typedef int Tup;
         Tup tup(42);
         typedef ex::polymorphic_allocator<void> A;
         P * ptr = (P*)std::malloc(sizeof(P));
         A a;
-        a.construct(ptr, std::piecewise_construct, tup, tup);
+        a.construct(ptr, tup, tup);
         assert(T::value_count == 2);
         assert(T::alloc_count == 0);
-        assert(ptr->first.x == 42);
-        assert(ptr->second.x == 42);
-        std::free(ptr);
-        T::reset();
-    }
-    // pair<T, T> as T(allocator_arg_t, memory_resource*, int)
-    {
-        typedef erased_not_uses_alloc T;
-        typedef std::pair<T, T> P;
-        typedef std::tuple<std::allocator_arg_t, ex::memory_resource*, int> Tup;
-        Tup tup(std::allocator_arg, nullptr, 42);
-        typedef ex::polymorphic_allocator<void> A;
-        P * ptr = (P*)std::malloc(sizeof(P));
-        A a;
-        a.construct(ptr, std::piecewise_construct, tup, tup);
-        assert(T::value_count == 0);
-        assert(T::alloc_count == 2);
         assert(ptr->first.x == 42);
         assert(ptr->second.x == 42);
         std::free(ptr);
@@ -105,31 +70,14 @@ void uses_non_erased_alloc_test()
     {
         typedef reg_uses_alloc_1 T;
         typedef std::pair<T, T> P;
-        typedef std::tuple<int> Tup;
+        typedef int Tup;
         Tup tup(42);
         typedef ex::polymorphic_allocator<void> A;
         P * ptr = (P*)std::malloc(sizeof(P));
         A a;
-        a.construct(ptr, std::piecewise_construct, tup, tup);
+        a.construct(ptr, tup, tup);
         assert(T::value_count == 2);
         assert(T::alloc_count == 0);
-        assert(ptr->first.x == 42);
-        assert(ptr->second.x == 42);
-        std::free(ptr);
-        T::reset();
-    }
-    // pair<T, T> as T(allocator_arg_t, std::allocator<T>, int)
-    {
-        typedef reg_uses_alloc_1 T;
-        typedef std::pair<T, T> P;
-        typedef std::tuple<std::allocator_arg_t, std::allocator<T>, int> Tup;
-        Tup tup(std::allocator_arg, std::allocator<T>(), 42);
-        typedef ex::polymorphic_allocator<void> A;
-        P * ptr = (P*)std::malloc(sizeof(P));
-        A a;
-        a.construct(ptr, std::piecewise_construct, tup, tup);
-        assert(T::value_count == 0);
-        assert(T::alloc_count == 2);
         assert(ptr->first.x == 42);
         assert(ptr->second.x == 42);
         std::free(ptr);
@@ -139,31 +87,14 @@ void uses_non_erased_alloc_test()
     {
         typedef reg_uses_alloc_2 T;
         typedef std::pair<T, T> P;
-        typedef std::tuple<int> Tup;
+        typedef int Tup;
         Tup tup(42);
         typedef ex::polymorphic_allocator<void> A;
         P * ptr = (P*)std::malloc(sizeof(P));
         A a;
-        a.construct(ptr, std::piecewise_construct, tup, tup);
+        a.construct(ptr, tup, tup);
         assert(T::value_count == 2);
         assert(T::alloc_count == 0);
-        assert(ptr->first.x == 42);
-        assert(ptr->second.x == 42);
-        std::free(ptr);
-        T::reset();
-    }
-    // pair<T, T> as T(int, std::allocator<T>())
-    {
-        typedef reg_uses_alloc_2 T;
-        typedef std::pair<T, T> P;
-        typedef std::tuple<int, std::allocator<T>> Tup;
-        Tup tup(42, std::allocator<T>());
-        typedef ex::polymorphic_allocator<void> A;
-        P * ptr = (P*)std::malloc(sizeof(P));
-        A a;
-        a.construct(ptr, std::piecewise_construct, tup, tup);
-        assert(T::value_count == 0);
-        assert(T::alloc_count == 2);
         assert(ptr->first.x == 42);
         assert(ptr->second.x == 42);
         std::free(ptr);
@@ -173,31 +104,14 @@ void uses_non_erased_alloc_test()
     {
         typedef reg_uses_alloc_3 T;
         typedef std::pair<T, T> P;
-        typedef std::tuple<int> Tup;
+        typedef int Tup;
         Tup tup(42);
         typedef ex::polymorphic_allocator<void> A;
         P * ptr = (P*)std::malloc(sizeof(P));
         A a;
-        a.construct(ptr, std::piecewise_construct, tup, tup);
+        a.construct(ptr, tup, tup);
         assert(T::value_count == 2);
         assert(T::alloc_count == 0);
-        assert(ptr->first.x == 42);
-        assert(ptr->second.x == 42);
-        std::free(ptr);
-        T::reset();
-    }
-    // pair<T, T> as T(allocator_arg_t, std::allocator<T>, int)
-    {
-        typedef reg_uses_alloc_3 T;
-        typedef std::pair<T, T> P;
-        typedef std::tuple<std::allocator_arg_t, std::allocator<T>, int> Tup;
-        Tup tup(std::allocator_arg, std::allocator<T>(), 42);
-        typedef ex::polymorphic_allocator<void> A;
-        P * ptr = (P*)std::malloc(sizeof(P));
-        A a;
-        a.construct(ptr, std::piecewise_construct, tup, tup);
-        assert(T::value_count == 0);
-        assert(T::alloc_count == 2);
         assert(ptr->first.x == 42);
         assert(ptr->second.x == 42);
         std::free(ptr);
@@ -211,12 +125,12 @@ void uses_erased_alloc_test()
     {
         typedef erased_uses_alloc_1 T;
         typedef std::pair<T, T> P;
-        typedef std::tuple<int> Tup;
+        typedef int Tup;
         Tup tup(42);
         typedef ex::polymorphic_allocator<void> A;
         P * ptr = (P*)std::malloc(sizeof(P));
         A a;
-        a.construct(ptr, std::piecewise_construct, tup, tup);
+        a.construct(ptr, tup, tup);
         assert(T::value_count == 0);
         assert(T::alloc_count == 2);
         assert(ptr->first.x == 42);
@@ -228,12 +142,12 @@ void uses_erased_alloc_test()
     {
         typedef erased_uses_alloc_2 T;
         typedef std::pair<T, T> P;
-        typedef std::tuple<int> Tup;
+        typedef int Tup;
         Tup tup(42);
         typedef ex::polymorphic_allocator<void> A;
         P * ptr = (P*)std::malloc(sizeof(P));
         A a;
-        a.construct(ptr, std::piecewise_construct, tup, tup);
+        a.construct(ptr, tup, tup);
         assert(T::value_count == 0);
         assert(T::alloc_count == 2);
         assert(ptr->first.x == 42);
@@ -245,12 +159,12 @@ void uses_erased_alloc_test()
     {
         typedef erased_uses_alloc_3 T;
         typedef std::pair<T, T> P;
-        typedef std::tuple<int> Tup;
+        typedef int Tup;
         Tup tup(42);
         typedef ex::polymorphic_allocator<void> A;
         P * ptr = (P*)std::malloc(sizeof(P));
         A a;
-        a.construct(ptr, std::piecewise_construct, tup, tup);
+        a.construct(ptr, tup, tup);
         assert(T::value_count == 0);
         assert(T::alloc_count == 2);
         assert(ptr->first.x == 42);
