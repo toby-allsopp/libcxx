@@ -221,11 +221,11 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
         {
           ::new ((void*)__p) pair<_T1, _T2>(piecewise_construct
             , __transform_tuple(
-                __lfts_uses_alloc_ctor<_T1, memory_resource*, _Args1...>()
+                typename __lfts_uses_alloc_ctor<_T1, memory_resource*, _Args1...>::type()
               , _VSTD::move(__x)
               )
             , __transform_tuple(
-                __lfts_uses_alloc_ctor<_T2, memory_resource*, _Args2...>()
+                typename __lfts_uses_alloc_ctor<_T2, memory_resource*, _Args2...>::type()
               , _VSTD::move(__y)
               )
             );
