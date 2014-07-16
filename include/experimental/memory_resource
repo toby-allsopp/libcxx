@@ -142,12 +142,14 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
         memory_resource * __res_;
 
         template <class _Tuple>
+        _LIBCPP_INLINE_VISIBILITY
         _Tuple && __transform_tuple_imp(integral_constant<int, 0>, _Tuple && __t) const
         {
             return _VSTD::forward<_Tuple>(__t);
         }
 
         template <class ..._Args>
+        _LIBCPP_INLINE_VISIBILITY
         tuple<allocator_arg_t, memory_resource*, _Args...>
         __transform_tuple_imp(integral_constant<int, 1>, tuple<_Args...> && __t) const
         {
@@ -158,6 +160,7 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
         }
 
         template <class ..._Args>
+        _LIBCPP_INLINE_VISIBILITY
         tuple<_Args..., memory_resource*>
         __transform_tuple_imp(integral_constant<int, 2>, tuple<_Args...> && __t) const
         {
@@ -174,13 +177,14 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
         {}
 
         _LIBCPP_INLINE_VISIBILITY
-        polymorphic_allocator(memory_resource * __r)
+        polymorphic_allocator(memory_resource * __r) _NOEXCEPT
           : __res_(__r)
         {}
 
         polymorphic_allocator(polymorphic_allocator const &) = default;
 
         template <class _Tp>
+        _LIBCPP_INLINE_VISIBILITY
         polymorphic_allocator(polymorphic_allocator<_Tp> const & __other) _NOEXCEPT
           : __res_(__other.resource())
         {}
@@ -198,7 +202,7 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
         }
 
         _LIBCPP_INLINE_VISIBILITY
-        void deallocate(_ValueType * __p, size_t __n)
+        void deallocate(_ValueType * __p, size_t __n) _NOEXCEPT
         {
             __res_->deallocate(
                 __p, __n * sizeof(_ValueType)
@@ -267,15 +271,15 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
 
         template <class _Tp>
         _LIBCPP_INLINE_VISIBILITY
-        void destroy(_Tp * __p)
+        void destroy(_Tp * __p) _NOEXCEPT
         { __p->~_Tp(); }
 
         _LIBCPP_INLINE_VISIBILITY
-        polymorphic_allocator select_on_container_copy_construction() const
+        polymorphic_allocator select_on_container_copy_construction() const _NOEXCEPT
         { return polymorphic_allocator(); }
 
         _LIBCPP_INLINE_VISIBILITY
-        memory_resource * resource() const 
+        memory_resource * resource() const _NOEXCEPT
         { return __res_; }
     };
 
