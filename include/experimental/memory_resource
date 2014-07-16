@@ -70,6 +70,7 @@ namespace pmr {
 
 #if _LIBCPP_STD_VER > 11
 
+#include <atomic>
 #include <experimental/__memory>
 #include <memory>
 #include <new>
@@ -132,7 +133,7 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
         return !(__lhs == __rhs);
     }
 
-    
+
 // 8.6, memory.polymorphic.allocator.class
 
     // 8.6.1, memory.polymorphic.allocator.overview
@@ -347,15 +348,17 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
 
     // 8.7.3, memory.resource.adaptor.mem
     protected:
-
         virtual void * do_allocate(size_t __bytes, size_t __align)
         {
-            return _Traits::allocate(__alloc_, __bytes);
+            return _Traits::allocate(__alloc_, __bytes + (__bytes % __align));
         }
 
         virtual void do_deallocate(void * __p, size_t __bytes, size_t __align)
         {
-            _Traits::deallocate(__alloc_, static_cast<_Pointer>(__p), __bytes);
+            _Traits::deallocate(
+                __alloc_, static_cast<_Pointer>(__p)
+              , __bytes + (__bytes % __align)
+              );
         }
 
         virtual bool do_is_equal(memory_resource const & __other) const _NOEXCEPT
@@ -371,6 +374,31 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
         = __resource_adaptor_imp<typename allocator_traits<_Alloc>::template rebind_alloc<char>>;
 
 
+    class __new_delete_memory_resource_imp : public memory_resource
+    {
+    public:
+        __new_delete_memory_resource_imp() = default;
+        __new_delete_memory_resource_imp(__new_delete_memory_resource_imp const &) = default;
+        __new_delete_memory_resource_imp(__new_delete_memory_resource_imp &&) = default;
+        __new_delete_memory_resource_imp & operator=(__new_delete_memory_resource_imp const &) = default;
+
+    protected:
+        virtual void* do_allocate(size_t __size, size_t __align)
+        {
+            return ::operator new(__size + (__size % __align));
+        }
+
+        virtual void do_deallocate(void * __p, size_t __size, size_t __align)
+        {
+            ::operator delete(__p, __size + (__size % __align));
+        }
+
+        virtual bool do_is_equal(memory_resource const & __other) const _NOEXCEPT
+        {
+            return &__other == static_cast<memory_resource const *>(this);
+        }
+    };
+
     class __null_memory_resource_imp : public memory_resource
     {
     public:
@@ -380,9 +408,14 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
         __null_memory_resource_imp & operator=(__null_memory_resource_imp const &) = default; 
 
     protected:
-        virtual void* do_allocate(size_t, size_t) { throw bad_alloc(); }
+        virtual void* do_allocate(size_t, size_t)
+        {
+            throw bad_alloc();
+        }
 
-        virtual void do_deallocate(void *, size_t, size_t) {}
+        virtual void do_deallocate(void *, size_t, size_t)
+        {
+        }
 
         virtual bool do_is_equal(memory_resource const & __other) const _NOEXCEPT
         {
@@ -394,9 +427,8 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
     inline _LIBCPP_INLINE_VISIBILITY
     memory_resource * new_delete_resource() _NOEXCEPT
     {
-        typedef resource_adaptor<allocator<void>> _Resource;
-        static _Resource __res;
-        return static_cast<memory_resource *>(&__res);
+        static __new_delete_memory_resource_imp __res;
+        return &__res;
     }
 
     inline _LIBCPP_INLINE_VISIBILITY
@@ -407,34 +439,27 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
     }
 
     inline _LIBCPP_INLINE_VISIBILITY
-    memory_resource * __default_memory_resource(
-        bool __set = false, memory_resource * __p = nullptr) _NOEXCEPT
+    std::atomic<memory_resource*> * __default_memory_resource() _NOEXCEPT
     {
-        static memory_resource * __res = _VSTD_LFTS_PMR::new_delete_resource();
-        if (__set && __p) {
-            __res = __p;
-        }
-        else if (__set) {
-            __res = _VSTD_LFTS_PMR::new_delete_resource();
-        }
-        return __res;
+        static atomic<memory_resource*> __res{ new_delete_resource() };
+        return &__res;
     }
 
     inline _LIBCPP_INLINE_VISIBILITY
     memory_resource * set_default_resource(memory_resource * __r) _NOEXCEPT
     {
-        memory_resource * __old = _VSTD_LFTS_PMR::__default_memory_resource();
-        _VSTD_LFTS_PMR::__default_memory_resource(true, __r);
-        return __old;
+        memory_resource * __new = __r  ? __r : new_delete_resource();
+        return _VSTD::atomic_exchange(__default_memory_resource(), __new);
     }
 
     inline _LIBCPP_INLINE_VISIBILITY
     memory_resource * get_default_resource() _NOEXCEPT
     {
-        return _VSTD_LFTS_PMR::__default_memory_resource();
+        return _VSTD::atomic_load(__default_memory_resource());
     }
 
-    struct _LIBCPP_TYPE_VIS_ONLY pool_options {
+    struct _LIBCPP_TYPE_VIS_ONLY pool_options
+    {
         size_t max_blocks_per_chunk = 0;
         size_t largest_required_pool_block = 0;
     };
