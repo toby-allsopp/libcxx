@@ -1,0 +1,20 @@
+// -*- C++ -*-
+//===----------------------------------------------------------------------===//
+//
+//                     The LLVM Compiler Infrastructure
+//
+// This file is dual licensed under the MIT and the University of Illinois Open
+// Source Licenses. See LICENSE.TXT for details.
+//
+//===----------------------------------------------------------------------===//
+
+#ifndef _LIBCPP_EXPERIMENTAL__MEMORY
+#define _LIBCPP_EXPERIMENTAL__MEMORY
+
+#include <experimental/__config>
+
+#if _LIBCPP_STD_VER > 11
+
+#endif /* _LIBCPP_STD_VER > 11 */
+
+#endif /* _LIBCPP_EXPERIMENTAL__MEMORY */
