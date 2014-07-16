@@ -71,15 +71,21 @@ namespace pmr {
 #if _LIBCPP_STD_VER > 11
 
 #include <memory>
+#include <new>
 #include <type_traits>
+#include <tuple>
+#include <utility>
 #include <cstddef>
 
 _LIBCPP_BEGIN_NAMESPACE_LFTS
 namespace pmr
 {
+// 8.5, memory.resource
     class _LIBCPP_TYPE_VIS_ONLY memory_resource
     {
         static constexpr size_t __max_align = std::alignment_of<max_align_t>::value;
+
+    // 8.5.2, memory.resource.public
     public:
         virtual ~memory_resource() {}
 
@@ -101,13 +107,14 @@ namespace pmr
             return do_is_equal(__other);
         }
 
+    // 8.5.3, memory.resource.priv
     protected:
         virtual void* do_allocate(size_t __bytes, size_t __align) = 0;
         virtual void do_deallocate(void * __p, size_t __bytes, size_t __align) = 0;
         virtual bool do_is_equal(memory_resource const & __other) const _NOEXCEPT = 0;
     };
 
-    constexpr size_t memory_resource::__max_align;
+    // 8.5.4, memory.resource.eq
 
     inline _LIBCPP_INLINE_VISIBILITY
     bool operator==(
@@ -125,27 +132,328 @@ namespace pmr
         return !(__lhs == __rhs);
     }
 
-    template <class _Tp> class _LIBCPP_TYPE_VIS_ONLY polymorphic_allocator;
+// 8.6, memory.polymorphic.allocator.class
+
+    // 8.6.1, memory.polymorphic.allocator.overview
+    template <class _ValueType>
+    class _LIBCPP_TYPE_VIS_ONLY polymorphic_allocator
+    {
+        memory_resource * __res_;
+    public:
+        typedef _ValueType value_type;
+
+        // 8.6.2, memory.polymorphic.allocator.ctor
+        polymorphic_allocator() _NOEXCEPT;
+        polymorphic_allocator(memory_resource * __r);
+
+        polymorphic_allocator(polymorphic_allocator const &) = default;
+
+        template <class _Tp>
+        polymorphic_allocator(polymorphic_allocator<_Tp> const &) _NOEXCEPT;
+
+        polymorphic_allocator & operator=(polymorphic_allocator const &) = default;
+
+        // 8.6.3, memory.polymorphic.allocator.mem
+        _ValueType* allocate(size_t __n);
+        void deallocate(_ValueType * __p, size_t __n);
+
+        template <class _Tp, class ..._Ts>
+        void construct(_Tp* __p, _Ts &&... __args);
+
+        template <class _T1, class _T2, class ..._Args1, class ..._Args2>
+        void construct(pair<_T1, _T2>* __p, piecewise_construct_t
+            , tuple<_Args1...> __x, tuple<_Args2...> __y);
+
+        template <class _T1, class _T2>
+        void construct(pair<_T1, _T2>* __p);
+
+        template <class _T1, class _T2, class _Up, class _Vp>
+        void construct(pair<_T1, _T2> * __p, _Up && __u, _Vp && __v);
+
+        template <class _T1, class _T2, class _U1, class _U2>
+        void construct(pair<_T1, _T2> * __p, pair<_U1, _U2> const & __pr);
+
+        template <class _T1, class _T2, class _U1, class _U2>
+        void construct(pair<_T1, _T2> * __p, pair<_U1, _U2> && __pr);
+
+        template <class _Tp>
+        void destroy(_Tp * __p);
+
+        polymorphic_allocator select_on_container_copy_construction() const;
+
+        memory_resource * resource() const;
+    };
+
+    // 8.6.4, memory.polymorphic.allocator.eq
 
     template <class _Tp, class _Up>
-    bool operator==(polymorphic_allocator<_Tp> const &, polymorphic_allocator<_Up> const &) _NOEXCEPT;
+    inline _LIBCPP_INLINE_VISIBILITY
+    bool operator==(
+        polymorphic_allocator<_Tp> const & __lhs
+      , polymorphic_allocator<_Up> const & __rhs) _NOEXCEPT
+    {
+        return *__lhs.resource() == *__rhs.resource();
+    }
 
     template <class _Tp, class _Up>
-    bool operator!=(polymorphic_allocator<_Tp> const &, polymorphic_allocator<_Up> const &) _NOEXCEPT;
+    inline _LIBCPP_INLINE_VISIBILITY
+    bool operator!=(
+        polymorphic_allocator<_Tp> const & __lhs
+      , polymorphic_allocator<_Up> const & __rhs) _NOEXCEPT
+    {
+        return !(__lhs == __rhs);
+    }
 
-    template <class _Alloc> class __resource_adapter_imp;
+// 8.7, memory.resource.adaptor
+
+    // 8.7.1, memory.resource.adaptor.overview
+    template <class _Alloc> 
+    class _LIBCPP_TYPE_VIS_ONLY __resource_adaptor_imp
+      : public memory_resource
+    {
+        _Alloc __alloc_;
+        typedef allocator_traits<_Alloc> _Traits;
+        typedef typename _Traits::value_type _ValueType;
+        typedef typename _Traits::pointer _Pointer;
+
+        static_assert(
+            std::is_same<_ValueType, char>::value
+          , "value_type must be char"
+          );
+
+    public:
+        typedef _Alloc allocator_type;
+
+        __resource_adaptor_imp() = default;
+        __resource_adaptor_imp(__resource_adaptor_imp const &) = default;
+        __resource_adaptor_imp(__resource_adaptor_imp &&) = default;
+
+    // 8.7.2, memory.resource.adaptor.ctor
+
+        _LIBCPP_INLINE_VISIBILITY
+        explicit __resource_adaptor_imp(_Alloc const & __a)
+          : __alloc_(__a)
+        {}
+
+        _LIBCPP_INLINE_VISIBILITY
+        explicit __resource_adaptor_imp(_Alloc && __a)
+          : __alloc_(_VSTD::move(__a))
+        {}
+
+        __resource_adaptor_imp & operator=(__resource_adaptor_imp const &) = default;
+
+        _LIBCPP_INLINE_VISIBILITY
+        allocator_type get_allocator() const
+        { return __alloc_; }
+
+    // 8.7.3, memory.resource.adaptor.mem
+    protected:
+
+        virtual void * do_allocate(size_t __bytes, size_t __align)
+        {
+            return _Traits::allocate(__alloc_, __bytes);
+        }
+
+        virtual void do_deallocate(void * __p, size_t __bytes, size_t __align)
+        {
+            _Traits::deallocate(__alloc_, static_cast<_Pointer>(__p), __bytes);
+        }
+
+        virtual bool do_is_equal(memory_resource const & __other) const _NOEXCEPT
+        {
+            __resource_adaptor_imp const * __p 
+              = dynamic_cast<__resource_adaptor_imp const *>(&__other);
+            return __p  ? __alloc_ == __p->__alloc_ : false;
+        }
+    };
 
     template <class _Alloc>
-    using resource_adapter
-        = __resource_adapter_imp<typename allocator_traits<_Alloc>::template rebind_alloc<char>>;
+    using resource_adaptor
+        = __resource_adaptor_imp<typename allocator_traits<_Alloc>::template rebind_alloc<char>>;
 
-    memory_resource * new_delete_resource() _NOEXCEPT;
-    memory_resource * null_memory_resource() _NOEXCEPT;
 
-    struct _LIBCPP_TYPE_VIS_ONLY pool_options;
-    class _LIBCPP_TYPE_VIS_ONLY synchronized_pool_resource;
-    class _LIBCPP_TYPE_VIS_ONLY unsynchronized_pool_resource;
-    class _LIBCPP_TYPE_VIS_ONLY monotonic_buffer_resource;
+    class __null_memory_resource_imp : public memory_resource
+    {
+    public:
+        __null_memory_resource_imp() = default;
+        __null_memory_resource_imp(__null_memory_resource_imp const &) = default;
+        __null_memory_resource_imp(__null_memory_resource_imp &&) = default;
+        __null_memory_resource_imp & operator=(__null_memory_resource_imp const &) = default; 
+
+    protected:
+        virtual void* do_allocate(size_t, size_t) { throw bad_alloc(); }
+
+        virtual void do_deallocate(void *, size_t, size_t) {}
+
+        virtual bool do_is_equal(memory_resource const & __other) const _NOEXCEPT
+        {
+            return &__other == static_cast<memory_resource const *>(this);
+        }
+    };
+
+
+    inline _LIBCPP_INLINE_VISIBILITY
+    memory_resource * new_delete_resource() _NOEXCEPT
+    {
+        typedef resource_adaptor<allocator<void>> _Resource;
+        static _Resource __res;
+        return static_cast<memory_resource *>(&__res);
+    }
+
+    inline _LIBCPP_INLINE_VISIBILITY
+    memory_resource * null_memory_resource() _NOEXCEPT
+    {
+        static __null_memory_resource_imp __res;
+        return &__res;
+    }
+
+    inline _LIBCPP_INLINE_VISIBILITY
+    memory_resource * __default_memory_resource(
+        bool __set = false, memory_resource * __p = nullptr) _NOEXCEPT
+    {
+        static memory_resource * __res = _VSTD_LFTS::pmr::new_delete_resource();
+        if (__set && __p) {
+            __res = __p;
+        }
+        else if (__set) {
+            __res = _VSTD_LFTS::pmr::new_delete_resource();
+        }
+        return __res;
+    }
+
+    inline _LIBCPP_INLINE_VISIBILITY
+    memory_resource * set_default_resource(memory_resource * __r) _NOEXCEPT
+    {
+        memory_resource * __old = _VSTD_LFTS::pmr::__default_memory_resource();
+        _VSTD_LFTS::pmr::__default_memory_resource(true, __r);
+        return __old;
+    }
+
+    inline _LIBCPP_INLINE_VISIBILITY
+    memory_resource * get_default_resource() _NOEXCEPT
+    {
+        return _VSTD_LFTS::pmr::__default_memory_resource();
+    }
+
+    struct _LIBCPP_TYPE_VIS_ONLY pool_options {
+        size_t max_blocks_per_chunk = 0;
+        size_t largest_required_pool_block = 0;
+    };
+
+    class _LIBCPP_TYPE_VIS_ONLY synchronized_pool_resource 
+      : public memory_resource
+    {
+    public:
+        synchronized_pool_resource(
+            pool_options const & __opts, memory_resource * __ustream);
+
+        synchronized_pool_resource()
+          : synchronized_pool_resource(pool_options(), get_default_resource())
+        {}
+
+        explicit synchronized_pool_resource(memory_resource * __ustream)
+          : synchronized_pool_resource(pool_options(), __ustream)
+        {}
+
+        explicit synchronized_pool_resource(pool_options const & __opts)
+          : synchronized_pool_resource(__opts, get_default_resource())
+        {}
+
+        synchronized_pool_resource(synchronized_pool_resource const &) = delete;
+
+        virtual ~synchronized_pool_resource() {}
+
+        synchronized_pool_resource & operator=(
+            synchronized_pool_resource const &) = delete;
+
+        void release();
+        memory_resource * upstream_resource() const;
+        pool_options options() const;
+
+    protected:
+        virtual void * do_allocate(size_t __bytes, size_t __align);
+        virtual void do_deallocate(void * __p, size_t __bytes, size_t __align);
+        virtual bool do_is_equal(memory_resource const & __other) const _NOEXCEPT;
+    };
+
+
+    class _LIBCPP_TYPE_VIS_ONLY unsynchronized_pool_resource
+      : public memory_resource
+    {
+    public:
+        unsynchronized_pool_resource(
+            pool_options const & __opts, memory_resource * __ustream);
+
+        unsynchronized_pool_resource()
+          : unsynchronized_pool_resource(pool_options(), get_default_resource())
+        {}
+
+        explicit unsynchronized_pool_resource(memory_resource * __ustream)
+          : unsynchronized_pool_resource(pool_options(), __ustream)
+        {}
+
+        explicit unsynchronized_pool_resource(pool_options const & __opts)
+          : unsynchronized_pool_resource(__opts, get_default_resource())
+        {}
+
+        unsynchronized_pool_resource(unsynchronized_pool_resource const &) = delete;
+
+        virtual ~unsynchronized_pool_resource() {}
+
+        unsynchronized_pool_resource & operator=(
+            unsynchronized_pool_resource const &) = delete;
+
+        void release();
+        memory_resource * upstream_resource() const;
+        pool_options options() const;
+
+    protected:
+        virtual void * do_allocate(size_t __bytes, size_t __align);
+        virtual void do_deallocate(void * __p, size_t __bytes, size_t __align);
+        virtual bool do_is_equal(memory_resource const & __other) const _NOEXCEPT;
+    };
+
+
+    class _LIBCPP_TYPE_VIS_ONLY monotonic_buffer_resource
+      : public memory_resource
+    {
+    public:
+        explicit monotonic_buffer_resource(memory_resource * __ustream);
+        monotonic_buffer_resource(size_t __init_size, memory_resource * __ustream);
+        monotonic_buffer_resource(void * __buf, size_t __buf_size, memory_resource * __ustream);
+
+        monotonic_buffer_resource()
+          : monotonic_buffer_resource(_VSTD_LFTS::pmr::get_default_resource())
+        {}
+
+        explicit monotonic_buffer_resource(size_t __init_size)
+          : monotonic_buffer_resource(__init_size, _VSTD_LFTS::pmr::get_default_resource())
+        {}
+
+        monotonic_buffer_resource(void * __buf, size_t __buf_size)
+          : monotonic_buffer_resource(__buf, __buf_size, _VSTD_LFTS::pmr::get_default_resource())
+        {}
+
+        monotonic_buffer_resource(monotonic_buffer_resource const &) = delete;
+
+        virtual ~monotonic_buffer_resource();
+
+        monotonic_buffer_resource & operator=(
+            monotonic_buffer_resource const &) = delete;
+
+        void release();
+        memory_resource * upstream_resource() const;
+
+    protected:
+        virtual void * do_allocate(size_t __bytes, size_t __align);
+
+        virtual void do_deallocate(void *, size_t, size_t) {}
+
+        virtual bool do_is_equal(memory_resource const & __other) const _NOEXCEPT
+        {
+            return this == dynamic_cast<monotonic_buffer_resource const *>(&__other);
+        }
+    };
 }                                                           // namespace pmr
 _LIBCPP_END_NAMESPACE_LFTS
 
