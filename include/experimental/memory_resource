@@ -441,7 +441,7 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
     inline _LIBCPP_INLINE_VISIBILITY
     std::atomic<memory_resource*> * __default_memory_resource() _NOEXCEPT
     {
-        static atomic<memory_resource*> __res{ new_delete_resource() };
+        static atomic<memory_resource*> __res( new_delete_resource() );
         return &__res;
     }
 
