@@ -77,8 +77,7 @@ namespace pmr {
 #include <utility>
 #include <cstddef>
 
-_LIBCPP_BEGIN_NAMESPACE_LFTS
-namespace pmr
+_LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
 {
 // 8.5, memory.resource
     class _LIBCPP_TYPE_VIS_ONLY memory_resource
@@ -311,12 +310,12 @@ namespace pmr
     memory_resource * __default_memory_resource(
         bool __set = false, memory_resource * __p = nullptr) _NOEXCEPT
     {
-        static memory_resource * __res = _VSTD_LFTS::pmr::new_delete_resource();
+        static memory_resource * __res = _VSTD_LFTS_PMR::new_delete_resource();
         if (__set && __p) {
             __res = __p;
         }
         else if (__set) {
-            __res = _VSTD_LFTS::pmr::new_delete_resource();
+            __res = _VSTD_LFTS_PMR::new_delete_resource();
         }
         return __res;
     }
@@ -324,15 +323,15 @@ namespace pmr
     inline _LIBCPP_INLINE_VISIBILITY
     memory_resource * set_default_resource(memory_resource * __r) _NOEXCEPT
     {
-        memory_resource * __old = _VSTD_LFTS::pmr::__default_memory_resource();
-        _VSTD_LFTS::pmr::__default_memory_resource(true, __r);
+        memory_resource * __old = _VSTD_LFTS_PMR::__default_memory_resource();
+        _VSTD_LFTS_PMR::__default_memory_resource(true, __r);
         return __old;
     }
 
     inline _LIBCPP_INLINE_VISIBILITY
     memory_resource * get_default_resource() _NOEXCEPT
     {
-        return _VSTD_LFTS::pmr::__default_memory_resource();
+        return _VSTD_LFTS_PMR::__default_memory_resource();
     }
 
     struct _LIBCPP_TYPE_VIS_ONLY pool_options {
@@ -423,15 +422,15 @@ namespace pmr
         monotonic_buffer_resource(void * __buf, size_t __buf_size, memory_resource * __ustream);
 
         monotonic_buffer_resource()
-          : monotonic_buffer_resource(_VSTD_LFTS::pmr::get_default_resource())
+          : monotonic_buffer_resource(_VSTD_LFTS_PMR::get_default_resource())
         {}
 
         explicit monotonic_buffer_resource(size_t __init_size)
-          : monotonic_buffer_resource(__init_size, _VSTD_LFTS::pmr::get_default_resource())
+          : monotonic_buffer_resource(__init_size, _VSTD_LFTS_PMR::get_default_resource())
         {}
 
         monotonic_buffer_resource(void * __buf, size_t __buf_size)
-          : monotonic_buffer_resource(__buf, __buf_size, _VSTD_LFTS::pmr::get_default_resource())
+          : monotonic_buffer_resource(__buf, __buf_size, _VSTD_LFTS_PMR::get_default_resource())
         {}
 
         monotonic_buffer_resource(monotonic_buffer_resource const &) = delete;
@@ -455,7 +454,7 @@ namespace pmr
         }
     };
 }                                                           // namespace pmr
-_LIBCPP_END_NAMESPACE_LFTS
+_LIBCPP_END_NAMESPACE_LFTS_PMR
 
 #endif /* _LIBCPP_STD_VER > 11 */
 
