@@ -143,7 +143,7 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
 
         template <class _Tuple>
         _LIBCPP_INLINE_VISIBILITY
-        _Tuple && __transform_tuple_imp(integral_constant<int, 0>, _Tuple && __t) const
+        _Tuple && __transform_tuple(integral_constant<int, 0>, _Tuple && __t) const
         {
             return _VSTD::forward<_Tuple>(__t);
         }
@@ -151,7 +151,7 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
         template <class ..._Args>
         _LIBCPP_INLINE_VISIBILITY
         tuple<allocator_arg_t, memory_resource*, _Args...>
-        __transform_tuple_imp(integral_constant<int, 1>, tuple<_Args...> && __t) const
+        __transform_tuple(integral_constant<int, 1>, tuple<_Args...> && __t) const
         {
             return _VSTD::tuple_cat(
                 _VSTD::make_tuple(allocator_arg, resource())
@@ -162,9 +162,9 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
         template <class ..._Args>
         _LIBCPP_INLINE_VISIBILITY
         tuple<_Args..., memory_resource*>
-        __transform_tuple_imp(integral_constant<int, 2>, tuple<_Args...> && __t) const
+        __transform_tuple(integral_constant<int, 2>, tuple<_Args...> && __t) const
         {
-            return _VSTD::tuple_cat(_VSTD::move(__t), resource());
+            return _VSTD::tuple_cat(_VSTD::move(__t), _VSTD::make_tuple(resource()));
         }
 
     public:
