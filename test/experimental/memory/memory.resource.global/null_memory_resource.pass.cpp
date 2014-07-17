@@ -9,7 +9,7 @@
 
 // <experimental/memory_resource>
 
-// memory_resource * new_delete_resource()
+// memory_resource * null_memory_resource()
 
 #include <experimental/memory_resource>
 #include <type_traits>
@@ -61,21 +61,22 @@ protected:
     }
 };
 
+
 void test_return()
 {
     {
         static_assert(
-            std::is_same<decltype(ex::new_delete_resource()), ex::memory_resource*>::value
+            std::is_same<decltype(ex::null_memory_resource()), ex::memory_resource*>::value
           , ""
           );
     }
     // assert not null
     {
-        assert(ex::new_delete_resource());
+        assert(ex::null_memory_resource());
     }
     // assert same return value
     {
-        assert(ex::new_delete_resource() == ex::new_delete_resource());
+        assert(ex::null_memory_resource() == ex::null_memory_resource());
     }
 }
 
@@ -83,8 +84,8 @@ void test_equality()
 {
     // Same object
     {
-        ex::memory_resource & r1 = *ex::new_delete_resource();
-        ex::memory_resource & r2 = *ex::new_delete_resource();
+        ex::memory_resource & r1 = *ex::null_memory_resource();
+        ex::memory_resource & r2 = *ex::null_memory_resource();
         assert(r1 == r2);
         assert(r2 == r1);
         assert(!(r1 != r2));
@@ -92,7 +93,7 @@ void test_equality()
     }
     // Different types
     {
-        ex::memory_resource & r1 = *ex::new_delete_resource();
+        ex::memory_resource & r1 = *ex::null_memory_resource();
         assert_on_compare c;
         ex::memory_resource & r2 = c;
         assert(r1 != r2);
@@ -101,9 +102,9 @@ void test_equality()
     // Same type different objects (NOTE: the actual type is not user visible)
     // But the equality comparison requires this.
     {
-        ex::memory_resource & r1 = *ex::new_delete_resource();
+        ex::memory_resource & r1 = *ex::null_memory_resource();
 
-        ex::__new_delete_memory_resource_imp imp;
+        ex::__null_memory_resource_imp imp;
         ex::memory_resource & r2 = imp;
 
         assert(r1 != r2);
@@ -113,26 +114,32 @@ void test_equality()
     }
 }
 
-void test_allocate_deallocate()
+void test_allocate()
 {
-    ex::memory_resource & r1 = *ex::new_delete_resource();
-    void *ret = r1.allocate(1);
-    assert(ret);
-    assert(new_called == 1);
-    assert(alive == 1);
+    try {
+        ex::null_memory_resource()->allocate(1);
+        assert(false);
+    } catch (std::bad_alloc const &) {
+       // do nothing
+    } catch (...) {
+        assert(false);
+    }
+    assert(new_called == 0);
+}
 
-    r1.deallocate(ret, 1);
-    assert(new_called == 1);
-    assert(alive == 0);
-    assert(delete_called == 1);
+void test_deallocate()
+{
+    ex::null_memory_resource()->deallocate(nullptr, 0);
+    assert(new_called == 0);
+    assert(delete_called == 0);
 }
 
 int main()
 {
-    static_assert(noexcept(ex::new_delete_resource()), "Must be noexcept");
     test_return();
     test_equality();
-    test_allocate_deallocate();
+    test_allocate();
+    test_deallocate();
 }
 #else /* _LIBCPP_STD_VER <= 11 */
 int main() {}
