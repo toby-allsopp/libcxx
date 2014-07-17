@@ -44,15 +44,24 @@ void test_get()
 
 void test_set()
 {
-    ex::memory_resource * res_ptr = (ex::memory_resource*)42;
+    {
+        static_assert(noexcept(ex::set_default_resource(nullptr)), "");
+        static_assert(
+            std::is_same<decltype(ex::get_default_resource()), ex::memory_resource*>::value
+          , ""
+          );
+    }
+    {
+        ex::memory_resource * res_ptr = (ex::memory_resource*)42;
 
-    ex::memory_resource * old_ptr = ex::set_default_resource(res_ptr);
-    assert(old_ptr == ex::new_delete_resource());
-    assert(res_ptr == ex::get_default_resource());
+        ex::memory_resource * old_ptr = ex::set_default_resource(res_ptr);
+        assert(old_ptr == ex::new_delete_resource());
+        assert(res_ptr == ex::get_default_resource());
 
-    old_ptr = ex::set_default_resource(nullptr);
-    assert(old_ptr == res_ptr);
-    assert(ex::get_default_resource() == ex::new_delete_resource());
+        old_ptr = ex::set_default_resource(nullptr);
+        assert(old_ptr == res_ptr);
+        assert(ex::get_default_resource() == ex::new_delete_resource());
+    }
 }
 
 int main()
