@@ -19,6 +19,7 @@
 #include <type_traits>
 #include <memory>
 #include <cassert>
+#include "allocators.h"
 
 #if _LIBCPP_STD_VER > 11
 
@@ -26,37 +27,48 @@ namespace ex = std::experimental::pmr;
 
 int main()
 {
-   typedef ex::resource_adaptor<std::allocator<void>> R;
-   typedef R::allocator_type A;
-   {
+    typedef A1<char> AllocT;
+    typedef ex::resource_adaptor<AllocT> R;
+    {
+        // Assumption required for testing
         static_assert(
-            std::is_constructible<R, A const &>::value
+            std::is_same<R::allocator_type, AllocT>::value
           , ""
           );
+    }
+    {
         static_assert(
-            std::is_constructible<R, A &&>::value
-          , ""
-          );
+            std::is_constructible<R, AllocT const &>::value
+        , ""
+        );
         static_assert(
-            !std::is_convertible<A const &, R>::value
-          , ""
-          );
+            std::is_constructible<R, AllocT &&>::value
+        , ""
+        );
         static_assert(
-            !std::is_convertible<A &&, R>::value
-          , ""
-          );
-   }
-   {
-        A const a;
-        R r(a);
+            !std::is_convertible<AllocT const &, R>::value
+        , ""
+        );
+        static_assert(
+            !std::is_convertible<AllocT &&, R>::value
+        , ""
+        );
+    }
+    {
+        AllocT const a(42);
+        R const r(a);
+        assert(AllocT::copy_called);
+        assert(AllocT::move_called == false);
         assert(r.get_allocator() == a);
-   }
-   {
-        A const a_orig;
-        A a(a_orig);
-        R r(std::move(a));
-        assert(r.get_allocator() == a_orig);
-   }
+    }
+    AllocT::copy_called = false;
+    {
+        AllocT a;
+        R const r(std::move(a));
+        assert(AllocT::copy_called == false);
+        assert(AllocT::move_called);
+        assert(r.get_allocator() == a);
+    }
 }
 #else /* _LIBCPP_STD_VER <= 11 */
 int main() {}

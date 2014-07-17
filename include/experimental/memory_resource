@@ -63,7 +63,6 @@ namespace pmr {
 } // namespace experimental
 } // namespace std
 
-
  */
 
 #include <experimental/__config>
@@ -78,6 +77,10 @@ namespace pmr {
 #include <tuple>
 #include <utility>
 #include <cstddef>
+
+#if !defined(_LIBCPP_HAS_NO_PRAGMA_SYSTEM_HEADER)
+#pragma GCC system_header
+#endif
 
 _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
 
@@ -110,9 +113,14 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
 
     // 8.5.3, memory.resource.priv
     protected:
-        virtual void* do_allocate(size_t __bytes, size_t __align) = 0;
-        virtual void do_deallocate(void * __p, size_t __bytes, size_t __align) = 0;
-        virtual bool do_is_equal(memory_resource const & __other) const _NOEXCEPT = 0;
+        virtual void* do_allocate(
+            size_t __bytes, size_t __align) = 0;
+
+        virtual void do_deallocate(
+            void * __p, size_t __bytes, size_t __align) = 0;
+
+        virtual bool do_is_equal(
+            memory_resource const & __other) const _NOEXCEPT = 0;
     };
 
     // 8.5.4, memory.resource.eq
@@ -132,7 +140,6 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
     {
         return !(__lhs == __rhs);
     }
-
 
 // 8.6, memory.polymorphic.allocator.class
 
@@ -165,7 +172,9 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
         tuple<_Args..., memory_resource*>
         __transform_tuple(integral_constant<int, 2>, tuple<_Args...> && __t) const
         {
-            return _VSTD::tuple_cat(_VSTD::move(__t), _VSTD::make_tuple(resource()));
+            return _VSTD::tuple_cat(
+                _VSTD::move(__t), _VSTD::make_tuple(resource())
+              );
         }
 
     public:
@@ -186,11 +195,13 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
 
         template <class _Tp>
         _LIBCPP_INLINE_VISIBILITY
-        polymorphic_allocator(polymorphic_allocator<_Tp> const & __other) _NOEXCEPT
+        polymorphic_allocator(
+            polymorphic_allocator<_Tp> const & __other) _NOEXCEPT
           : __res_(__other.resource())
         {}
 
-        polymorphic_allocator & operator=(polymorphic_allocator const &) = default;
+        polymorphic_allocator & 
+        operator=(polymorphic_allocator const &) = default;
 
         // 8.6.3, memory.polymorphic.allocator.mem
         _LIBCPP_INLINE_VISIBILITY
@@ -221,16 +232,21 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
         }
 
         template <class _T1, class _T2, class ..._Args1, class ..._Args2>
+        _LIBCPP_INLINE_VISIBILITY
         void construct(pair<_T1, _T2>* __p, piecewise_construct_t
             , tuple<_Args1...> __x, tuple<_Args2...> __y)
         {
           ::new ((void*)__p) pair<_T1, _T2>(piecewise_construct
             , __transform_tuple(
-                typename __lfts_uses_alloc_ctor<_T1, memory_resource*, _Args1...>::type()
+                typename __lfts_uses_alloc_ctor<
+                    _T1, memory_resource*, _Args1...
+                >::type()
               , _VSTD::move(__x)
               )
             , __transform_tuple(
-                typename __lfts_uses_alloc_ctor<_T2, memory_resource*, _Args2...>::type()
+                typename __lfts_uses_alloc_ctor<
+                    _T2, memory_resource*, _Args2...
+                >::type()
               , _VSTD::move(__y)
               )
             );
@@ -276,7 +292,8 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
         { __p->~_Tp(); }
 
         _LIBCPP_INLINE_VISIBILITY
-        polymorphic_allocator select_on_container_copy_construction() const _NOEXCEPT
+        polymorphic_allocator
+        select_on_container_copy_construction() const _NOEXCEPT
         { return polymorphic_allocator(); }
 
         _LIBCPP_INLINE_VISIBILITY
@@ -317,7 +334,7 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
         typedef typename _Traits::pointer _Pointer;
 
         static_assert(
-            std::is_same<_ValueType, char>::value
+            is_same<_ValueType, char>::value
           , "value_type must be char"
           );
 
@@ -328,7 +345,7 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
         __resource_adaptor_imp(__resource_adaptor_imp const &) = default;
         __resource_adaptor_imp(__resource_adaptor_imp &&) = default;
 
-    // 8.7.2, memory.resource.adaptor.ctor
+        // 8.7.2, memory.resource.adaptor.ctor
 
         _LIBCPP_INLINE_VISIBILITY
         explicit __resource_adaptor_imp(_Alloc const & __a)
@@ -340,7 +357,8 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
           : __alloc_(_VSTD::move(__a))
         {}
 
-        __resource_adaptor_imp & operator=(__resource_adaptor_imp const &) = default;
+        __resource_adaptor_imp & 
+        operator=(__resource_adaptor_imp const &) = default;
 
         _LIBCPP_INLINE_VISIBILITY
         allocator_type get_allocator() const
@@ -350,38 +368,37 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
     protected:
         virtual void * do_allocate(size_t __bytes, size_t __align)
         {
-            return _Traits::allocate(__alloc_, __bytes + (__bytes % __align));
+            return _Traits::allocate(
+                __alloc_, __bytes + (__align - (__bytes % __align))
+              );
         }
 
         virtual void do_deallocate(void * __p, size_t __bytes, size_t __align)
         {
             _Traits::deallocate(
                 __alloc_, static_cast<_Pointer>(__p)
-              , __bytes + (__bytes % __align)
+              , __bytes + (__align - (__bytes % __align))
               );
         }
 
         virtual bool do_is_equal(memory_resource const & __other) const _NOEXCEPT
         {
-            __resource_adaptor_imp const * __p 
+            __resource_adaptor_imp const * __p
               = dynamic_cast<__resource_adaptor_imp const *>(&__other);
             return __p  ? __alloc_ == __p->__alloc_ : false;
         }
     };
 
+
     template <class _Alloc>
     using resource_adaptor
-        = __resource_adaptor_imp<typename allocator_traits<_Alloc>::template rebind_alloc<char>>;
+        = __resource_adaptor_imp<
+            typename allocator_traits<_Alloc>::template rebind_alloc<char>
+        >;
 
 
     class __new_delete_memory_resource_imp : public memory_resource
     {
-    public:
-        __new_delete_memory_resource_imp() = default;
-        __new_delete_memory_resource_imp(__new_delete_memory_resource_imp const &) = default;
-        __new_delete_memory_resource_imp(__new_delete_memory_resource_imp &&) = default;
-        __new_delete_memory_resource_imp & operator=(__new_delete_memory_resource_imp const &) = default; 
-
     protected:
         virtual void* do_allocate(size_t __size, size_t __align)
         {
@@ -395,26 +412,21 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
 
         virtual bool do_is_equal(memory_resource const & __other) const _NOEXCEPT
         {
-            return &__other == static_cast<memory_resource const *>(this);
+            return this ==
+                dynamic_cast<__new_delete_memory_resource_imp const *>(&__other);
         }
     };
 
 
     class __null_memory_resource_imp : public memory_resource
     {
-    public:
-        __null_memory_resource_imp() = default;
-        __null_memory_resource_imp(__null_memory_resource_imp const &) = default;
-        __null_memory_resource_imp(__null_memory_resource_imp &&) = default;
-        __null_memory_resource_imp & operator=(__null_memory_resource_imp const &) = default; 
-
     protected:
         virtual void* do_allocate(size_t, size_t) 
         {
-            throw bad_alloc(); 
+            throw bad_alloc();
         }
 
-        virtual void do_deallocate(void *, size_t, size_t) 
+        virtual void do_deallocate(void *, size_t, size_t)
         {
         }
 
@@ -543,19 +555,23 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
     {
     public:
         explicit monotonic_buffer_resource(memory_resource * __ustream);
-        monotonic_buffer_resource(size_t __init_size, memory_resource * __ustream);
-        monotonic_buffer_resource(void * __buf, size_t __buf_size, memory_resource * __ustream);
+
+        monotonic_buffer_resource(
+            size_t __init_size, memory_resource * __ustream);
+
+        monotonic_buffer_resource(
+            void * __buf, size_t __buf_size, memory_resource * __ustream);
 
         monotonic_buffer_resource()
-          : monotonic_buffer_resource(_VSTD_LFTS_PMR::get_default_resource())
+          : monotonic_buffer_resource(get_default_resource())
         {}
 
         explicit monotonic_buffer_resource(size_t __init_size)
-          : monotonic_buffer_resource(__init_size, _VSTD_LFTS_PMR::get_default_resource())
+          : monotonic_buffer_resource(__init_size, get_default_resource())
         {}
 
         monotonic_buffer_resource(void * __buf, size_t __buf_size)
-          : monotonic_buffer_resource(__buf, __buf_size, _VSTD_LFTS_PMR::get_default_resource())
+          : monotonic_buffer_resource(__buf, __buf_size, get_default_resource())
         {}
 
         monotonic_buffer_resource(monotonic_buffer_resource const &) = delete;
@@ -571,11 +587,14 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
     protected:
         virtual void * do_allocate(size_t __bytes, size_t __align);
 
-        virtual void do_deallocate(void *, size_t, size_t) {}
+        virtual void do_deallocate(void *, size_t, size_t)
+        {
+        }
 
         virtual bool do_is_equal(memory_resource const & __other) const _NOEXCEPT
         {
-            return this == dynamic_cast<monotonic_buffer_resource const *>(&__other);
+            return this ==
+                dynamic_cast<monotonic_buffer_resource const *>(&__other);
         }
     };
 
