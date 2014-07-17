@@ -14,10 +14,7 @@
 
 #include <experimental/memory_resource>
 #include <type_traits>
-#include <memory>
-#include <new>
 #include <cassert>
-#include <cstdlib>
 
 #if _LIBCPP_STD_VER > 11
 
