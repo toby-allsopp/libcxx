@@ -479,7 +479,8 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
     template <size_t _Size>
     struct __memory_resource_pool
     {
-
+		void *free_list_head;
+		void *chunk_list_head;
     };
 
     class _LIBCPP_TYPE_VIS_ONLY synchronized_pool_resource
