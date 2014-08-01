@@ -476,74 +476,74 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
         size_t largest_required_pool_block = 0;
     };
 
-	template <size_t _Size>
-	struct __memory_resource_chunk
-	{
-		void *__original_ptr__;
-		struct __memory_resource_chunk *__next_free_chunk__;
-		struct __memory_resource_chunk *__next_chunk__;
-		uint8_t __num_free__;
-	}
+    template <size_t _Size>
+    struct __memory_resource_chunk
+    {
+        void *__original_ptr__;
+        struct __memory_resource_chunk *__next_free_chunk__;
+        struct __memory_resource_chunk *__next_chunk__;
+        uint8_t __num_free__;
+    }
 
     template <size_t _Size>
     struct __memory_resource_pool
     {
-		size_t blocks_per_chunk() {
-			return pool_options.max_blocks_per_chunk < 256 ?
-				pool_options.max_blocks_per_chunk : 256;
-		}
-		void *free_list_head;
-		void *chunk_list_head;
-		void *get_block(memory_resource *upstream) {
-			if (this->free_list_head == NULL) {
-				size_t blocks = this->blocks_per_chunk();
-				size_t alignment = blocks * _Size;
+        size_t blocks_per_chunk() {
+            return pool_options.max_blocks_per_chunk < 256 ?
+                pool_options.max_blocks_per_chunk : 256;
+        }
+        void *free_list_head;
+        void *chunk_list_head;
+        void *get_block(memory_resource *upstream) {
+            if (this->free_list_head == NULL) {
+                size_t blocks = this->blocks_per_chunk();
+                size_t alignment = blocks * _Size;
 
-				void *unaligned = upstream->do_allocate(2 * alignment, 0);
-				void *aligned = unaligned / alignment;
-				aligned += unaligned % alignment > 0 ? alignment : 0;
+                void *unaligned = upstream->do_allocate(2 * alignment, 0);
+                void *aligned = unaligned / alignment;
+                aligned += unaligned % alignment > 0 ? alignment : 0;
 
-				struct __memory_resource_chunk *chunk = aligned;
-				chunk->__original_ptr__ = unaligned;
-				chunk->__num_free__ = (alignment - sizeof(__memory_resource_chunk)) / _Size;
-				// TODO: optimize this by pushing us to the tail
-				chunk->__next_free_chunk = this->free_list_head;
-				chunk->__next_chunk = this->chunk_list_head;
-				this->free_list_head = aligned;
-				this->chunk_list_head = aligned;
-			}
-			struct __memory_resource_chunk *chunk = this->free_list_head;
-			size_t chunk_struct_size = sizeof(__memory_resource_chunk);
-			size_t chunk_header_size = chunk_struct_size / _Size;
-			chunk_header_size += chunk_struct_size % _Size > 0 ? 1 : 0;
-			uint8_t *block = (uint8_t *)chunk + _Size * (chunk->__next_free__ + chunk_header_size);
-			if (--chunk->__num_free__ == 0) {
-				this->free_list_head = chunk->__next_free_chunk__;
-			}
-			chunk->__next_free__ = *block;
-			return block;
-		}
-		void return_block(void *block_raw) {
-			uint8_t *block = (uint8_t *)block_raw;
-			size_t blocks = this->blocks_per_chunk();
-			size_t alignment = blocks * _Size;
-			void *aligned = block / alignment;
+                struct __memory_resource_chunk *chunk = aligned;
+                chunk->__original_ptr__ = unaligned;
+                chunk->__num_free__ = (alignment - sizeof(__memory_resource_chunk)) / _Size;
+                // TODO: optimize this by pushing us to the tail
+                chunk->__next_free_chunk = this->free_list_head;
+                chunk->__next_chunk = this->chunk_list_head;
+                this->free_list_head = aligned;
+                this->chunk_list_head = aligned;
+            }
+            struct __memory_resource_chunk *chunk = this->free_list_head;
+            size_t chunk_struct_size = sizeof(__memory_resource_chunk);
+            size_t chunk_header_size = chunk_struct_size / _Size;
+            chunk_header_size += chunk_struct_size % _Size > 0 ? 1 : 0;
+            uint8_t *block = (uint8_t *)chunk + _Size * (chunk->__next_free__ + chunk_header_size);
+            if (--chunk->__num_free__ == 0) {
+                this->free_list_head = chunk->__next_free_chunk__;
+            }
+            chunk->__next_free__ = *block;
+            return block;
+        }
+        void return_block(void *block_raw) {
+            uint8_t *block = (uint8_t *)block_raw;
+            size_t blocks = this->blocks_per_chunk();
+            size_t alignment = blocks * _Size;
+            void *aligned = block / alignment;
 
-			struct __memory_resource_chunk *chunk = aligned;
-			if (++chunk->__num_free__ == 1) {
-				chunk->__next_free_chunk__ = this->free_list_head;
-				this->free_list_head = chunk;
-			}
+            struct __memory_resource_chunk *chunk = aligned;
+            if (++chunk->__num_free__ == 1) {
+                chunk->__next_free_chunk__ = this->free_list_head;
+                this->free_list_head = chunk;
+            }
 
-			uint8_t max_free = (alignment - sizeof(__memory_resource_chunk)) / _Size;
-			if (++chunk->__num_free__ == max_free) {
-				// Dealloc chunk?
-			}
+            uint8_t max_free = (alignment - sizeof(__memory_resource_chunk)) / _Size;
+            if (++chunk->__num_free__ == max_free) {
+                // Dealloc chunk?
+            }
 
-			uint8_t block_index = block % alignment;
-			*block = chunk->__next_free__;
-			chunk->__next_free__ = block_index;
-		}
+            uint8_t block_index = block % alignment;
+            *block = chunk->__next_free__;
+            chunk->__next_free__ = block_index;
+        }
     };
 
     class _LIBCPP_TYPE_VIS_ONLY synchronized_pool_resource
