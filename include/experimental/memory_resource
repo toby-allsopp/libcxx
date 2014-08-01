@@ -476,7 +476,13 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
         size_t largest_required_pool_block = 0;
     };
 
-    class _LIBCPP_TYPE_VIS_ONLY synchronized_pool_resource 
+    template <size_t _Size>
+    struct __memory_resource_pool
+    {
+
+    };
+
+    class _LIBCPP_TYPE_VIS_ONLY synchronized_pool_resource
       : public memory_resource
     {
     public:
