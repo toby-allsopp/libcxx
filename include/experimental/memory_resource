@@ -70,6 +70,7 @@ namespace pmr {
 #if _LIBCPP_STD_VER > 11
 
 #include <atomic>
+#include <algorithm>
 #include <mutex>
 #include <experimental/__memory>
 #include <memory>
@@ -731,14 +732,11 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
         {
             const size_t __a = __alignment_for(__block_size_);
             const size_t __s = 
-                __aligned_allocation_size(__block_size_, __a) * __chunk_size_;
+                _VSTD_LFTS_PMR::__aligned_allocation_size(__block_size_, __a)
+                * __chunk_size_;
             void * __p = __alloc_.__allocate(__s);
             __add_chunk_to_free_list(__p, __s, __a);
-            if (__chunk_size_ < __max_chunk_size_) {
-                __chunk_size_ *= 2;
-                __chunk_size_ = __chunk_size_ > __max_chunk_size_
-                    ? __max_chunk_size_ : __chunk_size_;
-            }
+            __increment_chunk_size();
         }
 
         void __add_chunk_to_free_list(void * __p, size_t __s, size_t __a)
@@ -749,6 +747,11 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
                 __ret->__next_ = __free_head_;
                 __free_head_ = __ret;
             }
+        }
+
+        void __increment_chunk_size()
+        {
+            __chunk_size_ = _VSTD::min(__chunk_size_ << 1, __max_chunk_size_);
         }
 
     private:
@@ -813,7 +816,15 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
             , __num_pools_(__index_of(__opts_.largest_required_pool_block))
             , __res_(__res)
         {}
-        
+
+        void * __allocate(size_t __s, size_t __a);
+        void __deallocate(void * __p, size_t __s, size_t __a);
+        void __release();
+
+        pool_options __options() const;
+        memory_resource * __resource() const;
+
+    private:
         pool_options __opts_;
         size_t __num_pools_;
         memory_resource * __res_;
@@ -828,7 +839,9 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
     {
     public:
         synchronized_pool_resource(
-            pool_options const & __opts, memory_resource * __ustream);
+            pool_options const & __opts, memory_resource * __ustream)
+            : __base_(__opts, __ustream)
+        {}
 
         synchronized_pool_resource()
           : synchronized_pool_resource(pool_options(), get_default_resource())
@@ -849,20 +862,40 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
         synchronized_pool_resource & operator=(
             synchronized_pool_resource const &) = delete;
 
-        
-        void release();
-        
+
+        void release()
+        {
+            __base_.__release();
+        }
+
         _LIBCPP_ALWAYS_INLINE
-        memory_resource * upstream_resource() const;
-        
+        memory_resource * upstream_resource() const
+        {
+            return __base_.__resource();
+        }
+
         _LIBCPP_ALWAYS_INLINE
-        pool_options options() const;
+        pool_options options() const
+        {
+            return __base_.__options();
+        }
 
     protected:
-        virtual void * do_allocate(size_t __bytes, size_t __align);
-        virtual void do_deallocate(void * __p, size_t __bytes, size_t __align);
-        virtual bool do_is_equal(memory_resource const & __other) const _NOEXCEPT;
-        
+        virtual void * do_allocate(size_t __bytes, size_t __align)
+        {
+            return __base_.__allocate(__bytes, __align);
+        }
+
+        virtual void do_deallocate(void * __p, size_t __bytes, size_t __align)
+        {
+            __base_.__deallocate(__p, __bytes, __align);
+        }
+
+        virtual bool do_is_equal(memory_resource const & __other) const _NOEXCEPT
+        {
+            return *__base_.__resource() == __other;
+        }
+
     private:
         typedef __pool_resource_base<__synchronized_memory_pool> _Base;
         _Base __base_;
@@ -874,7 +907,9 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
     {
     public:
         unsynchronized_pool_resource(
-            pool_options const & __opts, memory_resource * __ustream);
+            pool_options const & __opts, memory_resource * __ustream)
+            : __base_(__opts, __ustream)
+        {}
 
         unsynchronized_pool_resource()
           : unsynchronized_pool_resource(pool_options(), get_default_resource())
@@ -895,16 +930,43 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
         unsynchronized_pool_resource & operator=(
             unsynchronized_pool_resource const &) = delete;
 
-        void release();
-        memory_resource * upstream_resource() const;
-        pool_options options() const;
+        void release()
+        {
+            __base_.__release();
+        }
+
+        _LIBCPP_ALWAYS_INLINE
+        memory_resource * upstream_resource() const
+        {
+            return __base_.__resource();
+        }
+
+        _LIBCPP_ALWAYS_INLINE
+        pool_options options() const
+        {
+            return __base_.__options();
+        }
 
     protected:
-        virtual void * do_allocate(size_t __bytes, size_t __align);
-        virtual void do_deallocate(void * __p, size_t __bytes, size_t __align);
-        virtual bool do_is_equal(memory_resource const & __other) const _NOEXCEPT;
-    };
+        virtual void * do_allocate(size_t __bytes, size_t __align)
+        {
+            return __base_.__allocate(__bytes, __align);
+        }
 
+        virtual void do_deallocate(void * __p, size_t __bytes, size_t __align)
+        {
+            __base_.__deallocate(__p, __bytes, __align);
+        }
+
+        virtual bool do_is_equal(memory_resource const & __other) const _NOEXCEPT
+        {
+            return *__base_.__resource() == __other;
+        }
+
+    private:
+        typedef __pool_resource_base<__memory_pool> _Base;
+        _Base __base_;
+    };
 
     class _LIBCPP_TYPE_VIS_ONLY monotonic_buffer_resource
       : public memory_resource
