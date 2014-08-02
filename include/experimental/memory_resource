@@ -483,6 +483,7 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
         struct __memory_resource_chunk *__next_free_chunk__;
         struct __memory_resource_chunk *__next_chunk__;
         uint8_t __num_free__;
+        uint8_t __next_free__;
     }
 
     template <size_t _Size>
