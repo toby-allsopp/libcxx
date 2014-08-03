@@ -103,18 +103,26 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
         return __n;
 #endif
     }
-    
+
     inline _LIBCPP_ALWAYS_INLINE _LIBCPP_CONSTEXPR
     bool __is_pow_2(size_t __s) _NOEXCEPT
     {
         return __s && !(__s & (__s - 1));
     }
-    
+
     inline _LIBCPP_INLINE_VISIBILITY
     size_t __next_pow_2(size_t __s) _NOEXCEPT
     {
         const size_t __i = 32 - _VSTD_LFTS_PMR::__count_leading_zeros(__s);
         return __s == 0 || __s == (1U<<__i) ? __s : (1U<<__i+1);
+    }
+    
+    inline _LIBCPP_INLINE_VISIBILITY
+    size_t __round_up_pow_2(size_t __s) _NOEXCEPT
+    {
+        return _VSTD_LFTS_PMR::__is_pow_2(__s) 
+            ? __s
+            : _VSTD_LFTS_PMR::__next_pow_2(__s);
     }
 
     inline _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR
@@ -572,42 +580,65 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
         };
 
     public:
+        static const size_t __chunk_node_size = sizeof(__chunk_node);
+        static const size_t __header_size = sizeof(__chunk_node*) + sizeof(size_t);
+
+    public:
         explicit __monotonic_chunk_allocator(memory_resource * __a = nullptr)
             : __head_(nullptr), __alloc_(__a)
         {}
+
         __monotonic_chunk_allocator(__monotonic_chunk_allocator const &) = delete;
-        __monotonic_chunk_allocator(__monotonic_chunk_allocator &&) = delete;
-        __monotonic_chunk_allocator & operator=(__monotonic_chunk_allocator const &) = delete;
 
         ~__monotonic_chunk_allocator() { __release(); }
+
+        __monotonic_chunk_allocator & operator=(__monotonic_chunk_allocator const &) = delete;
 
         void * __allocate(size_t __s)
         {
             if (! __s) return nullptr;
 
             const size_t __alloc_size = sizeof(__chunk_node) + __s;
-            __chunk_node * const __n = static_cast<__chunk_node*>(
-                __alloc_->allocate(__alloc_size)
-            );
-            __n->__size_ = __alloc_size;
-            __n->__next_ = std::atomic_exchange(&__head_, __n);
-            return static_cast<void*>(&__n->__memory_);
+            return __append_chunk(__alloc_->allocate(__alloc_size), __alloc_size);
         }
 
         void __deallocate(void *) _NOEXCEPT {}
 
         void __release() _NOEXCEPT
         {
-            __chunk_node * __h = __head_;
-            while (__h) {
-                __chunk_node * __block = __h;
-                __h = __block->__next_;
+            while (__head_) {
+                __chunk_node * __block = __head_;
+                __head_ = __block->__next_;
                 __alloc_->deallocate(__block, __block->__size_);
             }
         }
 
+        memory_resource * __resource() const _NOEXCEPT
+        {
+            return __alloc_;
+        }
+
+        void * __append_chunk(void * __p, size_t __s)
+        {
+            __chunk_node * __n = static_cast<__chunk_node*>(__p);
+            __n->__size_ = __s;
+            __n->__next_ = __head_;
+            __head_ = __n;
+            return static_cast<void*>(&__n->__memory_);
+        }
+
+        void * __last_chunk() const
+        {
+            return __head_ ? static_cast<void*>(&__head_->__memory_) : nullptr;
+        }
+
+        size_t __last_chunk_size() const
+        {
+            return __head_ ? __head_->__size_ - __header_size : 0;
+        }
+
     private:
-        atomic<__chunk_node*> __head_;
+        __chunk_node * __head_;
         memory_resource * __alloc_; 
     };
 
@@ -971,14 +1002,37 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
     class _LIBCPP_TYPE_VIS_ONLY monotonic_buffer_resource
       : public memory_resource
     {
+        static const size_t __min_buf_size = 512;
+        static const size_t __max_buf_size = 1UL << 30;
     public:
-        explicit monotonic_buffer_resource(memory_resource * __ustream);
+        explicit monotonic_buffer_resource(memory_resource * __res)
+            : __buf_(nullptr)
+            , __left_(0)
+            , __next_buf_size_(__min_buf_size)
+            , __alloc_(__res)
+        {}
 
-        monotonic_buffer_resource(
-            size_t __init_size, memory_resource * __ustream);
+        monotonic_buffer_resource(size_t __init_size, memory_resource * __res)
+            : __buf_(nullptr)
+            , __left_(0)
+            , __next_buf_size_(__init_size < __min_buf_size
+                            ? __min_buf_size
+                            : __round_up_pow_2(__init_size))
+            , __alloc_(__res)
+        {}
 
-        monotonic_buffer_resource(
-            void * __buf, size_t __buf_size, memory_resource * __ustream);
+        monotonic_buffer_resource(void * __buf, size_t __buf_size
+                                , memory_resource * __ustream)
+          : monotonic_buffer_resource(__buf_size, __ustream)
+        {
+            if (__buf_size <= __monotonic_chunk_allocator::__chunk_node_size) {
+                __ustream->deallocate(__buf, __buf_size);
+            } else {
+                __alloc_.__append_chunk(__buf, __buf_size);
+                __buf_ = __alloc_.__last_chunk();
+                __left_ = __alloc_.__last_chunk_size();
+            }
+        }
 
         monotonic_buffer_resource()
           : monotonic_buffer_resource(get_default_resource())
@@ -994,16 +1048,29 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
 
         monotonic_buffer_resource(monotonic_buffer_resource const &) = delete;
 
-        virtual ~monotonic_buffer_resource();
+        virtual ~monotonic_buffer_resource() {}
 
         monotonic_buffer_resource & operator=(
             monotonic_buffer_resource const &) = delete;
 
-        void release();
-        memory_resource * upstream_resource() const;
+        void release()
+        {
+            __alloc_.__release();
+        }
+
+        memory_resource * upstream_resource() const _NOEXCEPT
+        {
+            return __alloc_.__resource();
+        }
 
     protected:
-        virtual void * do_allocate(size_t __bytes, size_t __align);
+        virtual void * do_allocate(size_t __bytes, size_t __align)
+        {
+            void * __r = __take_from_buf(__bytes, __align);
+            if (__r) { return __r; }
+            __alloc_from_upstream(__bytes, __align);
+            return __take_from_buf(__bytes, __align);
+        }
 
         virtual void do_deallocate(void *, size_t, size_t)
         {
@@ -1014,6 +1081,41 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
             return this ==
                 dynamic_cast<monotonic_buffer_resource const *>(&__other);
         }
+
+    private:
+        void * __take_from_buf(size_t __s, size_t __a)
+        {
+            void * __next = _VSTD::align(__a, __s, __buf_, __left_);
+            if (__next) {
+                void * __r = __buf_;
+                __buf_ = __next;
+                return __r;
+            }
+        }
+
+        void __alloc_from_upstream(size_t __s, size_t __a)
+        {
+            size_t const __req_size = _VSTD_LFTS_PMR::__aligned_allocation_size(__s, __a);
+            __increment_buf_size(__req_size);
+            void * __buf_ = __alloc_.__allocate(__next_buf_size_);
+            __left_ = __alloc_.__last_chunk_size();
+        }
+
+        void __increment_buf_size(size_t __s)
+        {
+            size_t const __possible_next = _VSTD::max(
+                __next_buf_size_ << 1
+              , __round_up_pow_2(__s)
+              );
+            __next_buf_size_ = __possible_next > __max_buf_size
+                             ? __max_buf_size : __possible_next;
+        }
+
+    private:
+        void * __buf_;
+        size_t __left_;
+        size_t __next_buf_size_;
+        __monotonic_chunk_allocator __alloc_;
     };
 
 _LIBCPP_END_NAMESPACE_LFTS_PMR
