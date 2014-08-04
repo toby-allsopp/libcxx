@@ -573,15 +573,21 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
         struct __chunk_node
         {
             __chunk_node * __next_;
+            __chunk_node ** __prev_next_addr_;
             size_t __size_;
             max_align_t __memory_;
         };
 
-    public:
-        static const size_t __chunk_node_size = sizeof(__chunk_node);
-        static const size_t __header_size = sizeof(__chunk_node*) + sizeof(size_t);
+        static __chunk_node * __memory_to_chunk(void * __p)
+        {
+            return static_cast<__chunk_node*>(static_cast<void*>(
+                static_cast<char*>(__p) - offsetof(__chunk_node, __memory_)
+            ));
+        }
 
     public:
+        static const size_t __chunk_node_size = sizeof(__chunk_node);
+
         explicit __chunk_allocator()
             : __head_(nullptr)
         {}
@@ -592,13 +598,22 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
 
         void * __allocate(memory_resource * __res, size_t __s)
         {
-            if (! __s) return nullptr;
-
+            if (! __s) {
+                return nullptr;
+            }
             const size_t __alloc_size = sizeof(__chunk_node) + __s;
-            return __append_chunk(__res->allocate(__alloc_size), __alloc_size);
+            return __make_chunk(__res->allocate(__alloc_size), __alloc_size);
         }
 
-        void __deallocate(memory_resource * __res, void *) _NOEXCEPT {}
+        void __deallocate(memory_resource * __res, void * __p) _NOEXCEPT 
+        {
+            if (! __p) {
+                return;
+            }
+            __chunk_node * __n = __memory_to_chunk(__p);
+            __remove_chunk(__n);
+            __res->deallocate(__n, __n->__size_);
+        }
 
         void __release(memory_resource * __res) _NOEXCEPT
         {
@@ -609,19 +624,36 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
             }
         }
 
-        void * __append_chunk(void * __p, size_t __s)
+        void __remove_chunk(__chunk_node * __n) _NOEXCEPT
+        {
+            *(__n->__prev_next_addr_) = __n->__next_;
+            if (__n->__next_) {
+                __n->__prev_next_addr_ = __n->__prev_next_addr_;
+            }
+        }
+
+        void __push_chunk(__chunk_node * __n) _NOEXCEPT
+        {
+            __n->__next_ = __head_;
+            __n->__prev_next_addr_ = &__head_;
+            if (__head_) {
+                __head_->__prev_next_addr_ = &__n->__next_;
+            }
+            __head_ = __n;
+        }
+
+        void * __make_chunk(void * __p, size_t __s) _NOEXCEPT
         {
             __chunk_node * __n = static_cast<__chunk_node*>(__p);
             __n->__size_ = __s;
-            __n->__next_ = __head_;
-            __head_ = __n;
+            __push_chunk(__n);
             return static_cast<void*>(&__n->__memory_);
         }
 
     private:
         __chunk_node * __head_;
-        memory_resource * __alloc_; 
     };
+
 
 #ifdef _LIBCPP_CLEVER_MEMORY_POOL
     template <size_t _Size>
@@ -1107,7 +1139,7 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
             if (__buf_size <= __chunk_allocator::__chunk_node_size) {
                 __res_->deallocate(__buf, __buf_size);
             } else {
-                __buf_ = __alloc_.__append_chunk(__buf, __buf_size);
+                __buf_ = __alloc_.__make_chunk(__buf, __buf_size);
                 __left_ = __buf_size - (static_cast<char*>(__buf_) - static_cast<char*>(__buf));
             }
         }
