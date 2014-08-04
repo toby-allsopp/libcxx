@@ -753,27 +753,27 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
             );
 
         _LIBCPP_INLINE_VISIBILITY
-        static size_t __index_of(size_t __pow)
+        static size_t __index_of(size_t __pow) _NOEXCEPT
         {
             // 36 is used instead of 32 so that indexes start at 8.
             return 36 - _VSTD_LFTS::__count_leading_zeros(__pow);
         }
 
         _LIBCPP_INLINE_VISIBILITY
-        bool __undersized(size_t __s) const
+        bool __undersized(size_t __s) const _NOEXCEPT
         {
             return __s < pool_options::__impl_smallest_required_pool_block;
         }
 
         _LIBCPP_INLINE_VISIBILITY
-        bool __oversized(size_t __s) const 
+        bool __oversized(size_t __s) const _NOEXCEPT
         {
             return __s > __opts_.largest_required_pool_block;
         }
 
         /// Precondition: __s <= largest_required_pool_block
         _LIBCPP_INLINE_VISIBILITY
-        size_t __index_for(size_t __s) const
+        size_t __index_for(size_t __s) const _NOEXCEPT
         {
             return __undersized(__s) ? 0 : __index_of(__round_up_pow_2(__s));
         }
@@ -812,7 +812,7 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
             }
         }
 
-        void __deallocate(void * __p, size_t __s, size_t __a)
+        void __deallocate(void * __p, size_t __s, size_t __a) _NOEXCEPT
         {
             size_t const __alloc_size = __aligned_allocation_size(__s, __a);
             if (__oversized(__alloc_size)) {
@@ -822,7 +822,7 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
             }
         }
 
-        void __release()
+        void __release() _NOEXCEPT
         {
             for (int __i = 0; __i < __num_pools_; ++__i) {
                 __pool_buf_[__i].__release(__res_);
@@ -831,13 +831,13 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
         }
 
         _LIBCPP_INLINE_VISIBILITY
-        pool_options __options() const
+        pool_options __options() const _NOEXCEPT
         {
             return __opts_;
         }
 
         _LIBCPP_INLINE_VISIBILITY
-        memory_resource * __resource() const
+        memory_resource * __resource() const _NOEXCEPT
         {
             return __res_;
         }
@@ -878,7 +878,7 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
         synchronized_pool_resource & operator=(
             synchronized_pool_resource const &) = delete;
 
-
+        _LIBCPP_INLINE_VISIBILITY
         void release()
         {
             __base_.__release();
