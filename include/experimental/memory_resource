@@ -68,7 +68,6 @@ namespace pmr {
 #include <experimental/__config>
 
 #include <atomic>
-#include <algorithm>
 #include <mutex>
 #include <experimental/__memory>
 #include <memory>
@@ -83,80 +82,6 @@ namespace pmr {
 #endif
 
 _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
-
-
-    inline _LIBCPP_INLINE_VISIBILITY 
-    uint32_t __count_leading_zeros(uint32_t __x) _NOEXCEPT
-    {
-#if defined(_LIBCPP_GNU_VER)
-        return __x ? __builtin_clz(__x) : 32;
-#else
-        if (__x == 0) return 32;
-        uint32_t __n = 0;
-        if (__x <= 0x0000FFFF) {__n +=16; __x <<16;}
-        if (__x <= 0x00FFFFFF) {__n += 8; __x << 8;}
-        if (__x <= 0x0FFFFFFF) {__n += 4; __x << 4;}
-        if (__x <= 0x3FFFFFFF) {__n += 2; __x << 2;}
-        if (__x <= 0x7FFFFFFF) {__n += 1;}
-        return __n;
-#endif
-    }
-
-    inline _LIBCPP_ALWAYS_INLINE _LIBCPP_CONSTEXPR
-    bool __is_pow_2(size_t __s) _NOEXCEPT
-    {
-        return __s && !(__s & (__s - 1));
-    }
-
-    inline _LIBCPP_INLINE_VISIBILITY
-    size_t __next_pow_2(size_t __s) _NOEXCEPT
-    {
-        const size_t __i = 32 - _VSTD_LFTS_PMR::__count_leading_zeros(__s);
-        return __s == 0 || __s == (1U<<__i) ? __s : (1U<<__i+1);
-    }
-    
-    inline _LIBCPP_INLINE_VISIBILITY
-    size_t __round_up_pow_2(size_t __s) _NOEXCEPT
-    {
-        return _VSTD_LFTS_PMR::__is_pow_2(__s) 
-            ? __s
-            : _VSTD_LFTS_PMR::__next_pow_2(__s);
-    }
-
-    inline _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR
-    size_t __max_alignment() _NOEXCEPT
-    {
-        return alignment_of<max_align_t>::value;
-    }
-
-    // The alignment is 2 ^ (index of lowest set bit)
-    inline _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR
-    size_t __alignment_for(size_t __s) _NOEXCEPT
-    {
-        return static_cast<int>(__s | __max_alignment())
-            & ~(static_cast<int>(__s | __max_alignment()) - 1);
-    }
-
-    // Round __s up to next multiple of __a.
-    inline _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR
-    size_t __aligned_allocation_size(size_t __s, size_t __a) _NOEXCEPT
-    {
-        return (__s + __a - 1) & ~(__a - 1);
-    }
-
-    inline _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR
-    size_t __auto_aligned_allocation_size(size_t __s) _NOEXCEPT
-    {
-        return __aligned_allocation_size(__s, __alignment_for(__s));
-    }
-
-    inline _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR
-    size_t __aligned_block_size(size_t __buf_size, size_t __block_size) _NOEXCEPT
-    {
-        return _VSTD_LFTS_PMR::__aligned_allocation_size(
-                    __buf_size + __block_size, __max_alignment()
-                );
-    }
 
 // 8.5, memory.resource
     class _LIBCPP_TYPE_VIS_ONLY memory_resource
@@ -847,7 +772,9 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
 
         void __increment_max_blocks_per_chunk()
         {
-            __chunk_size_ = _VSTD::min(__chunk_size_ << 1, __max_block_per_chunk_);
+            if ((__chunk_size_ << 1) < __max_block_per_chunk_) {
+                __chunk_size_ <<= 1;
+            }
         }
 
     private:
@@ -923,7 +850,7 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
         _LIBCPP_ALWAYS_INLINE
         static size_t __index_of(size_t __pow)
         {
-            return 36 - _VSTD_LFTS_PMR::__count_leading_zeros(__pow);
+            return 36 - _VSTD_LFTS::__count_leading_zeros(__pow);
         }
 
         _LIBCPP_ALWAYS_INLINE
@@ -1251,7 +1178,7 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
 
         void __alloc_from_upstream(size_t __s, size_t __a)
         {
-            size_t const __req_size = _VSTD_LFTS_PMR::__aligned_allocation_size(__s, __a);
+            size_t const __req_size = _VSTD_LFTS::__aligned_allocation_size(__s, __a);
             __increment_buf_size(__req_size);
             __buf_ = __alloc_.__allocate(__res_, __next_buf_size_);
             __left_ = __next_buf_size_;
@@ -1260,11 +1187,13 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
         _LIBCPP_ALWAYS_INLINE
         void __increment_buf_size(size_t __s)
         {
-            size_t const __possible_next = _VSTD::max(
-                __next_buf_size_ << 1
-              , __round_up_pow_2(__s)
-              );
-            __next_buf_size_ = _VSTD::max(__next_buf_size_, __possible_next);
+            size_t __possible_next = __round_up_pow_2(__s);
+            if (__possible_next < (__next_buf_size_ << 1)) {
+                __possible_next = __next_buf_size_ << 1;
+            }
+            if (__possible_next > __next_buf_size_) {
+                __next_buf_size_ == __possible_next;
+            }
         }
 
     private:
