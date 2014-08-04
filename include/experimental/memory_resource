@@ -90,7 +90,7 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
 
     // 8.5.2, memory.resource.public
     public:
-        virtual ~memory_resource() {}
+        virtual ~memory_resource();
 
         _LIBCPP_INLINE_VISIBILITY
         void* allocate(size_t __bytes, size_t __align = __max_align)
@@ -368,7 +368,7 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
         virtual void * do_allocate(size_t __bytes, size_t __align)
         {
             return _Traits::allocate(
-                __alloc_, __bytes + (__align - (__bytes % __align))
+                __alloc_, __aligned_allocation_size(__bytes, __align)
               );
         }
 
@@ -376,7 +376,7 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
         {
             _Traits::deallocate(
                 __alloc_, static_cast<_Pointer>(__p)
-              , __bytes + (__align - (__bytes % __align))
+              , __aligned_allocation_size(__bytes, __align)
               );
         }
 
@@ -388,6 +388,7 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
         }
     };
 
+    _LIBCPP_EXTERN_TEMPLATE(class _LIBCPP_TYPE_VIS __resource_adaptor_imp<allocator<char>>)
 
     template <class _Alloc>
     using resource_adaptor
@@ -396,65 +397,36 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
         >;
 
 
-    class __new_delete_memory_resource_imp : public memory_resource
+    class _LIBCPP_TYPE_VIS_ONLY __new_delete_memory_resource_imp 
+        : public memory_resource
     {
+    public:
+        virtual ~__new_delete_memory_resource_imp();
     protected:
-        virtual void* do_allocate(size_t __size, size_t __align)
-        {
-            return ::operator new(__size + (__align - (__size % __align)));
-        }
-
-        virtual void do_deallocate(void * __p, size_t __size, size_t __align)
-        {
-            ::operator delete(__p);
-        }
-
-        virtual bool do_is_equal(memory_resource const & __other) const _NOEXCEPT
-        {
-            return this ==
-                dynamic_cast<__new_delete_memory_resource_imp const *>(&__other);
-        }
+        virtual void* do_allocate(size_t __size, size_t __align);
+        virtual void do_deallocate(void * __p, size_t __size, size_t __align);
+        virtual bool do_is_equal(memory_resource const & __other) const _NOEXCEPT;
     };
 
-
-    class __null_memory_resource_imp : public memory_resource
+    class _LIBCPP_TYPE_VIS_ONLY __null_memory_resource_imp
+        : public memory_resource
     {
+    public:
+        virtual ~__null_memory_resource_imp();
     protected:
-        virtual void* do_allocate(size_t, size_t)
-        {
-            throw bad_alloc();
-        }
-
-        virtual void do_deallocate(void *, size_t, size_t)
-        {
-        }
-
-        virtual bool do_is_equal(memory_resource const & __other) const _NOEXCEPT
-        {
-            return &__other == static_cast<memory_resource const *>(this);
-        }
+        virtual void* do_allocate(size_t, size_t);
+        virtual void do_deallocate(void *, size_t, size_t);
+        virtual bool do_is_equal(memory_resource const & __other) const _NOEXCEPT;
     };
 
-    inline _LIBCPP_INLINE_VISIBILITY
-    memory_resource * new_delete_resource() _NOEXCEPT
-    {
-        static __new_delete_memory_resource_imp __res;
-        return &__res;
-    }
+    _LIBCPP_FUNC_VIS
+    memory_resource * new_delete_resource() _NOEXCEPT;
 
-    inline _LIBCPP_INLINE_VISIBILITY
-    memory_resource * null_memory_resource() _NOEXCEPT
-    {
-        static __null_memory_resource_imp __res;
-        return &__res;
-    }
+    _LIBCPP_FUNC_VIS
+    memory_resource * null_memory_resource() _NOEXCEPT;
 
-    inline _LIBCPP_INLINE_VISIBILITY
-    std::atomic<memory_resource*> * __default_memory_resource() _NOEXCEPT
-    {
-        static atomic<memory_resource*> __res( new_delete_resource() );
-        return &__res;
-    }
+    _LIBCPP_FUNC_VIS
+    atomic<memory_resource*> * __default_memory_resource() _NOEXCEPT;
 
     inline _LIBCPP_INLINE_VISIBILITY
     memory_resource * set_default_resource(memory_resource * __r) _NOEXCEPT
@@ -508,23 +480,8 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
         size_t __size_;
         max_align_t __memory_;
 
-        static void __push(__double_linked_chunk_node ** __head_ptr, __double_linked_chunk_node * __n)
-        {
-            __n->__next_ = *__head_ptr;
-            __n->__prev_next_addr_ = __head_ptr;
-            if (*__head_ptr) {
-                (*__head_ptr)->__prev_next_addr_ = &__n->__next_;
-            }
-            *__head_ptr = __n;
-        }
-
-        static void __remove(__double_linked_chunk_node **, __double_linked_chunk_node * __n)
-        {
-            *(__n->__prev_next_addr_) = __n->__next_;
-            if (__n->__next_) {
-                __n->__prev_next_addr_ = __n->__prev_next_addr_;
-            }
-        }
+        static void __push(__double_linked_chunk_node ** __head_ptr, __double_linked_chunk_node * __n);
+        static void __remove(__double_linked_chunk_node **, __double_linked_chunk_node * __n);
     };
 
     struct __single_linked_chunk_node
@@ -533,24 +490,8 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
         size_t __size_;
         max_align_t __memory_;
 
-        static void __push(__single_linked_chunk_node ** __head_ptr, __single_linked_chunk_node * __n)
-        {
-            __n->__next_ = *__head_ptr;
-            *__head_ptr = __n;
-        }
-
-        static void __remove(__single_linked_chunk_node ** __head_ptr, __single_linked_chunk_node * __n)
-        {
-            __single_linked_chunk_node * __h = *__head_ptr;
-            __single_linked_chunk_node ** __prev_next_addr = __head_ptr;
-            while (__h && __h != __n) {
-                __prev_next_addr = & __h->__next_;
-                __h = __h->__next_;
-            }
-            if (__h) {
-                *__prev_next_addr = __h->__next_;
-            }
-        }
+        static void __push(__single_linked_chunk_node ** __head_ptr, __single_linked_chunk_node * __n);
+        static void __remove(__single_linked_chunk_node ** __head_ptr, __single_linked_chunk_node * __n);
     };
 
     template <class _ChunkNode>
@@ -593,7 +534,7 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
             if (! __p) {
                 return;
             }
-            _ChunkNode * __n = __memory_to_chunk(__p);
+            _ChunkNode * const __n = __memory_to_chunk(__p);
             _ChunkNode::__remove(&__head_, __n);
             __res->deallocate(__n, __n->__size_);
         }
@@ -601,7 +542,7 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
         void __release(memory_resource * __res) _NOEXCEPT
         {
             while (__head_) {
-                _ChunkNode * __block = __head_;
+                _ChunkNode * const __block = __head_;
                 __head_ = __block->__next_;
                 __res->deallocate(__block, __block->__size_);
             }
@@ -609,7 +550,7 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
 
         void * __make_chunk(void * __p, size_t __s) _NOEXCEPT
         {
-            _ChunkNode * __n = static_cast<_ChunkNode*>(__p);
+            _ChunkNode * const __n = static_cast<_ChunkNode*>(__p);
             __n->__size_ = __s;
             _ChunkNode::__push(&__head_, __n);
             return static_cast<void*>(&__n->__memory_);
@@ -621,6 +562,9 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
 
     typedef __basic_chunk_allocator<__double_linked_chunk_node> __chunk_allocator;
     typedef __basic_chunk_allocator<__single_linked_chunk_node> __single_linked_chunk_allocator;
+
+    _LIBCPP_EXTERN_TEMPLATE(class _LIBCPP_TYPE_VIS __basic_chunk_allocator<__double_linked_chunk_node>)
+    _LIBCPP_EXTERN_TEMPLATE(class _LIBCPP_TYPE_VIS __basic_chunk_allocator<__single_linked_chunk_node>)
 
 
 #ifdef _LIBCPP_CLEVER_MEMORY_POOL
@@ -634,7 +578,7 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
         uint8_t __next_free_;
     }
 
-    struct __memory_pool
+    struct __clever_memory_pool
     {
         size_t blocks_per_chunk() {
             return pool_options.max_blocks_per_chunk < 256 ?
@@ -693,7 +637,7 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
             chunk->__next_free__ = block_index;
         }
     };
-#else /* _LIBCPP_SIMPLE_MEMORY_POOL */
+#endif
 
     class _LIBCPP_TYPE_VIS_ONLY __memory_pool
     {
@@ -720,33 +664,11 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
 
         __memory_pool(__memory_pool const &) = delete;
 
-        ~__memory_pool() { }
+        void * __allocate(memory_resource * __res);
+        void __deallocate(memory_resource *, void * __p);
+        void __release(memory_resource * __res);
 
-        void * __allocate(memory_resource * __res)
-        {
-            if (!__free_head_) {
-                __alloc_new_chunk(__res);
-            }
-            __block_node * __n = __free_head_;
-            __free_head_ = __free_head_->__next_;
-            return static_cast<void*>(__n);
-        }
-
-        void __deallocate(memory_resource *, void * __p)
-        {
-            if (! __p) {
-                return;
-            }
-            __block_node * __n = static_cast<__block_node*>(__p);
-            __n->__next_ = __free_head_;
-            __free_head_ = __n;
-        }
-
-        void __release(memory_resource * __res)
-        {
-            __alloc_.__release(__res);
-        }
-
+        _LIBCPP_INLINE_VISIBILITY
         void __init_pool_options(size_t __block_size, size_t __max_blocks)
         {
             __block_size_ = __block_size;
@@ -754,32 +676,9 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
         }
 
     private:
-        void __alloc_new_chunk(memory_resource * __res)
-        {
-            const size_t __a = __alignment_for(__block_size_);
-            const size_t __s = 
-                __aligned_allocation_size(__block_size_, __a) * __chunk_size_;
-            void * __p = __alloc_.__allocate(__res, __s);
-            __add_chunk_to_free_list(__p, __s, __a);
-            __increment_max_blocks_per_chunk();
-        }
-
-        void __add_chunk_to_free_list(void * __p, size_t __s, size_t __a)
-        {
-            while (_VSTD::align(__a, __block_size_, __p, __s)) {
-                __block_node * __ret = static_cast<__block_node*>(__p);
-                __p = static_cast<char*>(__p) + __block_size_;
-                __ret->__next_ = __free_head_;
-                __free_head_ = __ret;
-            }
-        }
-
-        void __increment_max_blocks_per_chunk()
-        {
-            if ((__chunk_size_ << 1) < __max_block_per_chunk_) {
-                __chunk_size_ <<= 1;
-            }
-        }
+        void __alloc_new_chunk(memory_resource * __res);
+        void __add_chunk_to_free_list(void * __p, size_t __s, size_t __a);
+        void __increment_max_blocks_per_chunk();
 
     private:
         size_t __block_size_;
@@ -788,8 +687,6 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
         __block_node * __free_head_;
         __single_linked_chunk_allocator __alloc_;
     };
-
-#endif /* _LIBCPP_CLEVER_MEMORY_POOL */
 
     class _LIBCPP_TYPE_VIS_ONLY __synchronized_memory_pool
     {
@@ -805,24 +702,28 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
         __synchronized_memory_pool(__synchronized_memory_pool const &) = delete;
         __synchronized_memory_pool & operator=(__synchronized_memory_pool const &) = delete;
 
+        _LIBCPP_INLINE_VISIBILITY
         void * __allocate(memory_resource * __res)
         {
             lock_guard<mutex> __guard(__lock_);
             return __pool_.__allocate(__res);
         }
 
+        _LIBCPP_INLINE_VISIBILITY
         void __deallocate(memory_resource * __res, void * __p) 
         {
             lock_guard<mutex> __guard(__lock_);
             __pool_.__deallocate(__res, __p);
         }
 
+        _LIBCPP_INLINE_VISIBILITY
         void __release(memory_resource * __res)
         {
             lock_guard<mutex> __guard(__lock_);
             __pool_.__release(__res);
         }
 
+        _LIBCPP_INLINE_VISIBILITY
         void __init_pool_options(size_t __block_size, size_t __max_block_per_chunk)
         {
             __pool_.__init_pool_options(__block_size, __max_block_per_chunk);
@@ -851,26 +752,27 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
             ,"Expected largest pool size to be 4096"
             );
 
-        _LIBCPP_ALWAYS_INLINE
+        _LIBCPP_INLINE_VISIBILITY
         static size_t __index_of(size_t __pow)
         {
+            // 36 is used instead of 32 so that indexes start at 8.
             return 36 - _VSTD_LFTS::__count_leading_zeros(__pow);
         }
 
-        _LIBCPP_ALWAYS_INLINE
+        _LIBCPP_INLINE_VISIBILITY
         bool __undersized(size_t __s) const
         {
             return __s < pool_options::__impl_smallest_required_pool_block;
         }
 
-        _LIBCPP_ALWAYS_INLINE
+        _LIBCPP_INLINE_VISIBILITY
         bool __oversized(size_t __s) const 
         {
             return __s > __opts_.largest_required_pool_block;
         }
 
         /// Precondition: __s <= largest_required_pool_block
-        _LIBCPP_ALWAYS_INLINE
+        _LIBCPP_INLINE_VISIBILITY
         size_t __index_for(size_t __s) const
         {
             return __undersized(__s) ? 0 : __index_of(__round_up_pow_2(__s));
@@ -920,7 +822,7 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
             }
         }
 
-        _LIBCPP_ALWAYS_INLINE
+        _LIBCPP_INLINE_VISIBILITY
         void __release()
         {
             for (int __i = 0; __i < __num_pools_; ++__i) {
@@ -929,13 +831,13 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
             __oversized_alloc_.__release(__res_);
         }
 
-        _LIBCPP_ALWAYS_INLINE
+        _LIBCPP_INLINE_VISIBILITY
         pool_options __options() const
         {
             return __opts_;
         }
 
-        _LIBCPP_ALWAYS_INLINE
+        _LIBCPP_INLINE_VISIBILITY
         memory_resource * __resource() const
         {
             return __res_;
@@ -972,7 +874,7 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
 
         synchronized_pool_resource(synchronized_pool_resource const &) = delete;
 
-        virtual ~synchronized_pool_resource() {}
+        virtual ~synchronized_pool_resource();
 
         synchronized_pool_resource & operator=(
             synchronized_pool_resource const &) = delete;
@@ -983,33 +885,22 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
             __base_.__release();
         }
 
-        _LIBCPP_ALWAYS_INLINE
+        _LIBCPP_INLINE_VISIBILITY
         memory_resource * upstream_resource() const
         {
             return __base_.__resource();
         }
 
-        _LIBCPP_ALWAYS_INLINE
+        _LIBCPP_INLINE_VISIBILITY
         pool_options options() const
         {
             return __base_.__options();
         }
 
     protected:
-        virtual void * do_allocate(size_t __bytes, size_t __align)
-        {
-            return __base_.__allocate(__bytes, __align);
-        }
-
-        virtual void do_deallocate(void * __p, size_t __bytes, size_t __align)
-        {
-            __base_.__deallocate(__p, __bytes, __align);
-        }
-
-        virtual bool do_is_equal(memory_resource const & __other) const _NOEXCEPT
-        {
-            return *__base_.__resource() == __other;
-        }
+        virtual void * do_allocate(size_t __bytes, size_t __align);
+        virtual void do_deallocate(void * __p, size_t __bytes, size_t __align);
+        virtual bool do_is_equal(memory_resource const & __other) const _NOEXCEPT;
 
     private:
         typedef __pool_resource_base<__synchronized_memory_pool> _Base;
@@ -1040,43 +931,33 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
 
         unsynchronized_pool_resource(unsynchronized_pool_resource const &) = delete;
 
-        virtual ~unsynchronized_pool_resource() {}
+        virtual ~unsynchronized_pool_resource();
 
         unsynchronized_pool_resource & operator=(
             unsynchronized_pool_resource const &) = delete;
 
+        _LIBCPP_INLINE_VISIBILITY
         void release()
         {
             __base_.__release();
         }
 
-        _LIBCPP_ALWAYS_INLINE
+        _LIBCPP_INLINE_VISIBILITY
         memory_resource * upstream_resource() const
         {
             return __base_.__resource();
         }
 
-        _LIBCPP_ALWAYS_INLINE
+        _LIBCPP_INLINE_VISIBILITY
         pool_options options() const
         {
             return __base_.__options();
         }
 
     protected:
-        virtual void * do_allocate(size_t __bytes, size_t __align)
-        {
-            return __base_.__allocate(__bytes, __align);
-        }
-
-        virtual void do_deallocate(void * __p, size_t __bytes, size_t __align)
-        {
-            __base_.__deallocate(__p, __bytes, __align);
-        }
-
-        virtual bool do_is_equal(memory_resource const & __other) const _NOEXCEPT
-        {
-            return *__base_.__resource() == __other;
-        }
+        virtual void * do_allocate(size_t __bytes, size_t __align);
+        virtual void do_deallocate(void * __p, size_t __bytes, size_t __align);
+        virtual bool do_is_equal(memory_resource const & __other) const _NOEXCEPT;
 
     private:
         typedef __pool_resource_base<__memory_pool> _Base;
@@ -1093,7 +974,6 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
             , __left_(0)
             , __next_buf_size_(__min_buf_size)
             , __res_(__res)
-            , __alloc_()
         {}
 
         monotonic_buffer_resource(size_t __init_size, memory_resource * __res)
@@ -1103,7 +983,6 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
                             ? __min_buf_size
                             : __round_up_pow_2(__init_size))
             , __res_(__res)
-            , __alloc_()
         {}
 
         monotonic_buffer_resource(void * __buf, size_t __buf_size
@@ -1132,73 +1011,32 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
 
         monotonic_buffer_resource(monotonic_buffer_resource const &) = delete;
 
-        virtual ~monotonic_buffer_resource()
-        {
-            __alloc_.__release(__res_); 
-        }
+        virtual ~monotonic_buffer_resource();
 
         monotonic_buffer_resource & operator=(
             monotonic_buffer_resource const &) = delete;
 
+        _LIBCPP_INLINE_VISIBILITY
         void release()
         {
             __alloc_.__release(__res_);
         }
 
+        _LIBCPP_INLINE_VISIBILITY
         memory_resource * upstream_resource() const _NOEXCEPT
         {
             return __res_;
         }
 
     protected:
-        virtual void * do_allocate(size_t __bytes, size_t __align)
-        {
-            void * __r = __take_from_buf(__bytes, __align);
-            if (__r) { return __r; }
-            __alloc_from_upstream(__bytes, __align);
-            return __take_from_buf(__bytes, __align);
-        }
-
-        virtual void do_deallocate(void *, size_t, size_t)
-        {
-        }
-
-        virtual bool do_is_equal(memory_resource const & __other) const _NOEXCEPT
-        {
-            return this ==
-                dynamic_cast<monotonic_buffer_resource const *>(&__other);
-        }
+        virtual void * do_allocate(size_t __bytes, size_t __align);
+        virtual void do_deallocate(void *, size_t, size_t);
+        virtual bool do_is_equal(memory_resource const & __other) const _NOEXCEPT;
 
     private:
-        void * __take_from_buf(size_t __s, size_t __a)
-        {
-            void * __next = _VSTD::align(__a, __s, __buf_, __left_);
-            if (__next) {
-                void * __r = __buf_;
-                __buf_ = __next;
-                return __r;
-            }
-        }
-
-        void __alloc_from_upstream(size_t __s, size_t __a)
-        {
-            size_t const __req_size = _VSTD_LFTS::__aligned_allocation_size(__s, __a);
-            __increment_buf_size(__req_size);
-            __buf_ = __alloc_.__allocate(__res_, __next_buf_size_);
-            __left_ = __next_buf_size_;
-        }
-
-        _LIBCPP_ALWAYS_INLINE
-        void __increment_buf_size(size_t __s)
-        {
-            size_t __possible_next = __round_up_pow_2(__s);
-            if (__possible_next < (__next_buf_size_ << 1)) {
-                __possible_next = __next_buf_size_ << 1;
-            }
-            if (__possible_next > __next_buf_size_) {
-                __next_buf_size_ == __possible_next;
-            }
-        }
+        void * __take_from_buf(size_t __s, size_t __a);
+        void __alloc_from_upstream(size_t __s, size_t __a);
+        void __increment_buf_size(size_t __s);
 
     private:
         void * __buf_;
