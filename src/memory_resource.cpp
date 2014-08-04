@@ -11,9 +11,12 @@
 
 _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
 
+template class polymorphic_allocator<char>;
 template class __resource_adaptor_imp<allocator<char>>;
 template class __basic_chunk_allocator<__double_linked_chunk_node>;
 template class __basic_chunk_allocator<__single_linked_chunk_node>;
+template class __pool_resource_base<__memory_pool>;
+template class __pool_resource_base<__synchronized_memory_pool>;
 
 ////////////////////////////////////////////////////////////////////////////////
 memory_resource::~memory_resource()
@@ -245,7 +248,7 @@ void * monotonic_buffer_resource::__take_from_buf(size_t __s, size_t __a)
 
 void monotonic_buffer_resource::__alloc_from_upstream(size_t __s, size_t __a)
 {
-    size_t const __req_size = _VSTD_LFTS::__aligned_allocation_size(__s, __a);
+    size_t const __req_size = __aligned_allocation_size(__s, __a);
     __increment_buf_size(__req_size);
     __buf_ = __alloc_.__allocate(__res_, __next_buf_size_);
     __left_ = __next_buf_size_;

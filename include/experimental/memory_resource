@@ -325,6 +325,8 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
         return !(__lhs == __rhs);
     }
 
+    _LIBCPP_EXTERN_TEMPLATE2(class _LIBCPP_TYPE_VIS_ONLY polymorphic_allocator<char>)
+
 // 8.7, memory.resource.adaptor
 
     // 8.7.1, memory.resource.adaptor.overview
@@ -856,6 +858,9 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
         _PoolType __pool_buf_[__max_num_pools];
         __chunk_allocator __oversized_alloc_;
     };
+    
+    _LIBCPP_EXTERN_TEMPLATE2(class _LIBCPP_TYPE_VIS_ONLY __pool_resource_base<__memory_pool>)
+    _LIBCPP_EXTERN_TEMPLATE2(class _LIBCPP_TYPE_VIS_ONLY __pool_resource_base<__synchronized_memory_pool>)
 
     class _LIBCPP_TYPE_VIS_ONLY synchronized_pool_resource
       : public memory_resource
