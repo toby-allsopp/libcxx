@@ -401,7 +401,7 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
         : public memory_resource
     {
     public:
-        virtual ~__new_delete_memory_resource_imp();
+        ~__new_delete_memory_resource_imp();
     protected:
         virtual void* do_allocate(size_t __size, size_t __align);
         virtual void do_deallocate(void * __p, size_t __size, size_t __align);
@@ -412,7 +412,7 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
         : public memory_resource
     {
     public:
-        virtual ~__null_memory_resource_imp();
+        ~__null_memory_resource_imp();
     protected:
         virtual void* do_allocate(size_t, size_t);
         virtual void do_deallocate(void *, size_t, size_t);
@@ -822,7 +822,6 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
             }
         }
 
-        _LIBCPP_INLINE_VISIBILITY
         void __release()
         {
             for (int __i = 0; __i < __num_pools_; ++__i) {
