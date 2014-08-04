@@ -43,6 +43,7 @@ void test(unsigned N)
     std::make_heap(ia, ia+N, std::greater<int>());
     assert(std::is_heap(ia, ia+N, std::greater<int>()));
     }
+    }
 
 //  Ascending
     {
