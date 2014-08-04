@@ -393,7 +393,7 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
         }
     };
 
-    _LIBCPP_EXTERN_TEMPLATE(class _LIBCPP_TYPE_VIS __resource_adaptor_imp<allocator<char>>)
+    _LIBCPP_EXTERN_TEMPLATE2(class _LIBCPP_TYPE_VIS __resource_adaptor_imp<allocator<char>>)
 
     template <class _Alloc>
     using resource_adaptor
@@ -570,8 +570,8 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
     typedef __basic_chunk_allocator<__double_linked_chunk_node> __chunk_allocator;
     typedef __basic_chunk_allocator<__single_linked_chunk_node> __single_linked_chunk_allocator;
 
-    _LIBCPP_EXTERN_TEMPLATE(class _LIBCPP_TYPE_VIS __basic_chunk_allocator<__double_linked_chunk_node>)
-    _LIBCPP_EXTERN_TEMPLATE(class _LIBCPP_TYPE_VIS __basic_chunk_allocator<__single_linked_chunk_node>)
+    _LIBCPP_EXTERN_TEMPLATE2(class _LIBCPP_TYPE_VIS __basic_chunk_allocator<__double_linked_chunk_node>)
+    _LIBCPP_EXTERN_TEMPLATE2(class _LIBCPP_TYPE_VIS __basic_chunk_allocator<__single_linked_chunk_node>)
 
 
 #ifdef _LIBCPP_CLEVER_MEMORY_POOL
@@ -762,8 +762,8 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
         _LIBCPP_INLINE_VISIBILITY
         static size_t __index_of(size_t __pow) _NOEXCEPT
         {
-            // 36 is used instead of 32 so that indexes start at 8.
-            return 36 - _VSTD_LFTS::__count_leading_zeros(__pow);
+            //use +4 so indexes start at zero
+            return ((CHAR_BIT * sizeof(size_t)) + 4) - __clz(__pow);
         }
 
         _LIBCPP_INLINE_VISIBILITY

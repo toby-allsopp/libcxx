@@ -14,6 +14,7 @@
 #include <experimental/__config>
 
 #include <experimental/utility>
+#include <algorithm>
 #include <cstddef>
 #include <type_traits>
 #include <__functional_base>
@@ -31,68 +32,68 @@ _LIBCPP_END_NAMESPACE_LFTS_PMR
 
 _LIBCPP_BEGIN_NAMESPACE_LFTS
 
-inline _LIBCPP_INLINE_VISIBILITY 
-    uint32_t __count_leading_zeros(uint32_t __x) _NOEXCEPT
-    {
-#if defined(_GNUC_VER)
-        return __x ? __builtin_clz(__x) : 32;
-#else
-        if (__x == 0) return 32;
-        uint32_t __n = 0;
-        if (__x <= 0x0000FFFF) {__n +=16; __x << 16;}
-        if (__x <= 0x00FFFFFF) {__n += 8; __x << 8;}
-        if (__x <= 0x0FFFFFFF) {__n += 4; __x << 4;}
-        if (__x <= 0x3FFFFFFF) {__n += 2; __x << 2;}
-        if (__x <= 0x7FFFFFFF) {__n += 1;}
-        return __n;
-#endif
-    }
+inline _LIBCPP_INLINE_VISIBILITY
+unsigned __msb_only(unsigned __x) _NOEXCEPT
+{
+    return ((unsigned)-1 << __clz(__x)) + 1;
+}
 
-    inline _LIBCPP_ALWAYS_INLINE _LIBCPP_CONSTEXPR
-    bool __is_pow_2(size_t __s) _NOEXCEPT
-    {
-        return __s && !(__s & (__s - 1));
-    }
+inline _LIBCPP_INLINE_VISIBILITY
+unsigned long __msb_only(unsigned long __x) _NOEXCEPT
+{
+    return ((unsigned long)-1 << __clz(__x)) + 1;
+}
 
-    inline _LIBCPP_INLINE_VISIBILITY
-    size_t __next_pow_2(size_t __s) _NOEXCEPT
-    {
-        const size_t __i = 32 - _VSTD_LFTS::__count_leading_zeros(__s);
-        return __s == 0 || __s == (1U<<__i) ? __s : (1U<<(__i+1));
-    }
+inline _LIBCPP_INLINE_VISIBILITY
+unsigned long long __msb_only(unsigned long long __x) _NOEXCEPT
+{
+    return ((unsigned long long)-1 << __clz(__x)) + 1;
+}
 
-    inline _LIBCPP_INLINE_VISIBILITY
-    size_t __round_up_pow_2(size_t __s) _NOEXCEPT
-    {
-        return __is_pow_2(__s) ? __s : __next_pow_2(__s);
-    }
+inline _LIBCPP_ALWAYS_INLINE _LIBCPP_CONSTEXPR
+bool __is_pow_2(size_t __s) _NOEXCEPT
+{
+    return __s && !(__s & (__s - 1));
+}
 
-    inline _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR
-    size_t __max_alignment() _NOEXCEPT
-    {
-        return alignment_of<max_align_t>::value;
-    }
+inline _LIBCPP_INLINE_VISIBILITY
+size_t __next_pow_2(size_t __s) _NOEXCEPT
+{
+    return __s == 0 ? 1 : __msb_only(__s) << 1;
+}
 
-    // The alignment is 2 ^ (index of lowest set bit)
-    inline _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR
-    size_t __alignment_for(size_t __s) _NOEXCEPT
-    {
-        return static_cast<int>(__s | __max_alignment())
-            & ~(static_cast<int>(__s | __max_alignment()) - 1);
-    }
+inline _LIBCPP_INLINE_VISIBILITY
+size_t __round_up_pow_2(size_t __s) _NOEXCEPT
+{
+    return __is_pow_2(__s) ? __s : __next_pow_2(__s);
+}
 
-    // Round __s up to next multiple of __a.
-    inline _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR
-    size_t __aligned_allocation_size(size_t __s, size_t __a) _NOEXCEPT
-    {
-        return (__s + __a - 1) & ~(__a - 1);
-    }
+inline _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR
+size_t __max_alignment() _NOEXCEPT
+{
+    return alignment_of<max_align_t>::value;
+}
 
-    inline _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR
-    size_t __auto_aligned_allocation_size(size_t __s) _NOEXCEPT
-    {
-        return __aligned_allocation_size(__s, __alignment_for(__s));
-    }
+// The alignment is 2 ^ (index of lowest set bit)
+inline _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR
+size_t __alignment_for(size_t __s) _NOEXCEPT
+{
+    return static_cast<int>(__s | __max_alignment())
+        & ~(static_cast<int>(__s | __max_alignment()) - 1);
+}
+
+// Round __s up to next multiple of __a.
+inline _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR
+size_t __aligned_allocation_size(size_t __s, size_t __a) _NOEXCEPT
+{
+    return (__s + __a - 1) & ~(__a - 1);
+}
+
+inline _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR
+size_t __auto_aligned_allocation_size(size_t __s) _NOEXCEPT
+{
+    return __aligned_allocation_size(__s, __alignment_for(__s));
+}
 
 template <
     class _Tp, class _Alloc

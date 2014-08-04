@@ -9,7 +9,6 @@
 
 #include "experimental/memory_resource"
 
-
 _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
 
 template class __resource_adaptor_imp<allocator<char>>;
@@ -172,8 +171,6 @@ void __memory_pool::__increment_max_blocks_per_chunk()
         __chunk_size_ <<= 1;
     }
 }
-
-////////////////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////////////////
 synchronized_pool_resource::~synchronized_pool_resource() {}
