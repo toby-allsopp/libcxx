@@ -20,8 +20,6 @@
 #include <cassert>
 #include "allocators.h"
 
-#if _LIBCPP_STD_VER > 11
-
 using std::size_t;
 namespace ex = std::experimental::pmr;
 
@@ -121,6 +119,4 @@ int main()
         assert(!(m1 == m2));
     }
 }
-#else /* _LIBCPP_STD_VER <= 11 */
-int main() {}
-#endif /* _LIBCPP_STD_VER > 11 */
+

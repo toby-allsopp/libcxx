@@ -17,8 +17,6 @@
 #include <type_traits>
 #include <cassert>
 
-#if _LIBCPP_STD_VER > 11
-
 namespace ex = std::experimental::pmr;
 
 int main()
@@ -27,6 +25,4 @@ int main()
     static_assert(std::is_copy_assignable<T>::value, "");
     static_assert(std::is_move_assignable<T>::value, "");
 }
-#else /* _LIBCPP_STD_VER <= 11 */
-int main() {}
-#endif /* _LIBCPP_STD_VER > 11 */
+

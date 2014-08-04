@@ -12,8 +12,6 @@
 
 #include <experimental/memory_resource>
 
-#if _LIBCPP_STD_VER > 11
-
 int alloc_count = 0;
 int dealloc_count = 0;
 int is_equal_count = 0;
@@ -34,5 +32,4 @@ protected:
     }
 };
 
-#endif /* _LIBCPP_STD_VER > 11 */
 #endif /* DUMMY_RESOURCE_HPP */

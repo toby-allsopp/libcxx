@@ -22,8 +22,6 @@
 #include <cstdlib>
 #include "uses_alloc_types.hpp"
 
-#if _LIBCPP_STD_VER > 11
-
 namespace ex = std::experimental::pmr;
 
 int constructed = 0;
@@ -50,6 +48,4 @@ int main()
         std::free(ptr);
     }
 }
-#else /* _LIBCPP_STD_VER <= 11 */
-int main() {}
-#endif /* _LIBCPP_STD_VER > 11 */
+

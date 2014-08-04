@@ -17,7 +17,6 @@
 #include <type_traits>
 #include <cassert>
 
-#if _LIBCPP_STD_VER > 11
 
 namespace ex = std::experimental::pmr;
 
@@ -118,6 +117,4 @@ int main()
         assert(alive_count == 1);
     }
 }
-#else /* _LIBCPP_STD_VER <= 11 */
-int main() {}
-#endif /* _LIBCPP_STD_VER > 11 */
+

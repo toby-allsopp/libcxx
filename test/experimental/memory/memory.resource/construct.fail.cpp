@@ -15,14 +15,10 @@
 #include <type_traits>
 #include <cassert>
 
-#if _LIBCPP_STD_VER > 11
-
 namespace ex = std::experimental::pmr;
 
 int main()
 {
     ex::memory_resource m;
 }
-#else /* _LIBCPP_STD_VER <= 11 */
-#error
-#endif /* _LIBCPP_STD_VER > 11 */
+

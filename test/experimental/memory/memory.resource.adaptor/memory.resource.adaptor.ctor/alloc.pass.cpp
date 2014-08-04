@@ -21,8 +21,6 @@
 #include <cassert>
 #include "allocators.h"
 
-#if _LIBCPP_STD_VER > 11
-
 namespace ex = std::experimental::pmr;
 
 int main()
@@ -70,6 +68,4 @@ int main()
         assert(r.get_allocator() == a);
     }
 }
-#else /* _LIBCPP_STD_VER <= 11 */
-int main() {}
-#endif /* _LIBCPP_STD_VER > 11 */
+

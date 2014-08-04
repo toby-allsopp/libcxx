@@ -14,8 +14,6 @@
 #include <experimental/memory_resource>
 #include <cassert>
 
-#if _LIBCPP_STD_VER > 11
-
 namespace ex = std::experimental::pmr;
 
 int main()
@@ -31,6 +29,4 @@ int main()
         assert(p.largest_required_pool_block == 2);
     }
 }
-#else /* _LIBCPP_STD_VER <= 11 */
-int main() {}
-#endif /* _LIBCPP_STD_VER > 11 */
+

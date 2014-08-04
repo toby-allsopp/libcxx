@@ -18,8 +18,6 @@
 #include <cassert>
 #include <cstdlib>
 
-#if _LIBCPP_STD_VER > 11
-
 namespace ex = std::experimental::pmr;
 
 int alive = 0;
@@ -134,6 +132,4 @@ int main()
     test_equality();
     test_allocate_deallocate();
 }
-#else /* _LIBCPP_STD_VER <= 11 */
-int main() {}
-#endif /* _LIBCPP_STD_VER > 11 */
+

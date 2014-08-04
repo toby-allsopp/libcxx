@@ -471,9 +471,13 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
 
     struct _LIBCPP_TYPE_VIS_ONLY pool_options
     {
+#if _LIBCPP_STD_VER <= 11
+        size_t max_blocks_per_chunk;
+        size_t largest_required_pool_block;
+#else
         size_t max_blocks_per_chunk = 0;
         size_t largest_required_pool_block = 0;
-
+#endif
         // Implementation limits
         static const size_t __impl_max_blocks_per_chunk = 32;
         static const size_t __impl_smallest_required_pool_block = 8;
@@ -484,18 +488,17 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
     inline _LIBCPP_INLINE_VISIBILITY
     pool_options __adjust_pool_options(pool_options __opts) _NOEXCEPT
     {
-        __opts.max_blocks_per_chunk = __opts.max_blocks_per_chunk
-                && __opts.max_blocks_per_chunk < pool_options::__impl_max_blocks_per_chunk
-                ? __opts.max_blocks_per_chunk : pool_options::__impl_max_blocks_per_chunk;
-
-        __opts.largest_required_pool_block = __opts.largest_required_pool_block
-            && __opts.largest_required_pool_block < pool_options::__impl_largest_required_pool_block
-            ? ( __opts.largest_required_pool_block < pool_options::__impl_smallest_required_pool_block
-                ? pool_options::__impl_smallest_required_pool_block
-                : __opts.largest_required_pool_block)
-            : pool_options::__impl_largest_required_pool_block;
-
-        return __opts;
+        return pool_options{
+            __opts.max_blocks_per_chunk
+                    && __opts.max_blocks_per_chunk < pool_options::__impl_max_blocks_per_chunk
+                    ? __opts.max_blocks_per_chunk : pool_options::__impl_max_blocks_per_chunk
+            , __opts.largest_required_pool_block
+                && __opts.largest_required_pool_block < pool_options::__impl_largest_required_pool_block
+                ? ( __opts.largest_required_pool_block < pool_options::__impl_smallest_required_pool_block
+                    ? pool_options::__impl_smallest_required_pool_block
+                    : __opts.largest_required_pool_block)
+                : pool_options::__impl_largest_required_pool_block
+        };
     }
 
     struct __double_linked_chunk_node

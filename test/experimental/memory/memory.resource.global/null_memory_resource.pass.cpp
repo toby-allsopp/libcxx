@@ -18,7 +18,6 @@
 #include <cassert>
 #include <cstdlib>
 
-#if _LIBCPP_STD_VER > 11
 
 namespace ex = std::experimental::pmr;
 
@@ -141,6 +140,4 @@ int main()
     test_allocate();
     test_deallocate();
 }
-#else /* _LIBCPP_STD_VER <= 11 */
-int main() {}
-#endif /* _LIBCPP_STD_VER > 11 */
+

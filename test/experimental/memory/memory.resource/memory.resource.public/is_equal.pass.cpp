@@ -16,8 +16,6 @@
 #include <cassert>
 #include "../../dummy_resource.hpp"
 
-#if _LIBCPP_STD_VER > 11
-
 namespace ex = std::experimental::pmr;
 
 int main()
@@ -40,6 +38,4 @@ int main()
         assert(is_equal_count == 1);
     }
 }
-#else /* _LIBCPP_STD_VER <= 11 */
-int main() {}
-#endif /* _LIBCPP_STD_VER > 11 */
+
