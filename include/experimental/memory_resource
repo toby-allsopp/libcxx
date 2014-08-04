@@ -67,8 +67,6 @@ namespace pmr {
 
 #include <experimental/__config>
 
-#if _LIBCPP_STD_VER > 11
-
 #include <atomic>
 #include <algorithm>
 #include <mutex>
@@ -144,6 +142,12 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
     size_t __aligned_allocation_size(size_t __s, size_t __a) _NOEXCEPT
     {
         return (__s + __a - 1) & ~(__a - 1);
+    }
+
+    inline _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR
+    size_t __auto_aligned_allocation_size(size_t __s) _NOEXCEPT
+    {
+        return __aligned_allocation_size(__s, __alignment_for(__s));
     }
 
     inline _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR
@@ -916,23 +920,29 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
             ,"Expected largest pool size to be 4096"
             );
 
+        _LIBCPP_ALWAYS_INLINE
         static size_t __index_of(size_t __pow)
         {
             return 36 - _VSTD_LFTS_PMR::__count_leading_zeros(__pow);
         }
 
+        _LIBCPP_ALWAYS_INLINE
+        bool __undersized(size_t __s) const
+        {
+            return __s < pool_options::__impl_smallest_required_pool_block;
+        }
+
+        _LIBCPP_ALWAYS_INLINE
         bool __oversized(size_t __s) const 
         {
             return __s > __opts_.largest_required_pool_block;
         }
 
+        /// Precondition: __s <= largest_required_pool_block
+        _LIBCPP_ALWAYS_INLINE
         size_t __index_for(size_t __s) const
         {
-            size_t const __i = _VSTD::max(__round_up_pow_2(__s), pool_options::__impl_smallest_required_pool_block);
-            if (__oversized(__i)) {
-                return -1;
-            }
-            return __index_of(__i);
+            return __undersized(__s) ? 0 : __index_of(__round_up_pow_2(__s));
         }
 
     public:
@@ -942,7 +952,12 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
             , __num_pools_(__index_of(__opts_.largest_required_pool_block))
             , __res_(__res)
         {
-            __init();
+            for (int __i = 0; __i < __num_pools_; ++__i) {
+                __pool_buf_[__i].__init_pool_options(
+                    pool_options::__impl_smallest_required_pool_block << __i
+                  , __opts_.max_blocks_per_chunk
+                  );
+            }
         }
 
         __pool_resource_base(__pool_resource_base const &) = delete;
@@ -974,6 +989,7 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
             }
         }
 
+        _LIBCPP_ALWAYS_INLINE
         void __release()
         {
             for (int __i = 0; __i < __num_pools_; ++__i) {
@@ -982,24 +998,16 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
             __oversized_alloc_.__release(__res_);
         }
 
-        pool_options __options() const 
+        _LIBCPP_ALWAYS_INLINE
+        pool_options __options() const
         {
             return __opts_;
         }
 
+        _LIBCPP_ALWAYS_INLINE
         memory_resource * __resource() const
         {
             return __res_;
-        }
-    private:
-        void __init()
-        {
-            for (int __i = 0; __i < __num_pools_; ++__i) {
-                __pool_buf_[__i].__init_pool_options(
-                    pool_options::__impl_smallest_required_pool_block << __i
-                  , __opts_.max_blocks_per_chunk
-                  );
-            }
         }
 
     private:
@@ -1193,7 +1201,10 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
 
         monotonic_buffer_resource(monotonic_buffer_resource const &) = delete;
 
-        virtual ~monotonic_buffer_resource() { __alloc_.__release(__res_); }
+        virtual ~monotonic_buffer_resource()
+        {
+            __alloc_.__release(__res_); 
+        }
 
         monotonic_buffer_resource & operator=(
             monotonic_buffer_resource const &) = delete;
@@ -1242,10 +1253,11 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
         {
             size_t const __req_size = _VSTD_LFTS_PMR::__aligned_allocation_size(__s, __a);
             __increment_buf_size(__req_size);
-            void * __buf_ = __alloc_.__allocate(__res_, __next_buf_size_);
+            __buf_ = __alloc_.__allocate(__res_, __next_buf_size_);
             __left_ = __next_buf_size_;
         }
 
+        _LIBCPP_ALWAYS_INLINE
         void __increment_buf_size(size_t __s)
         {
             size_t const __possible_next = _VSTD::max(
@@ -1264,7 +1276,5 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
     };
 
 _LIBCPP_END_NAMESPACE_LFTS_PMR
-
-#endif /* _LIBCPP_STD_VER > 11 */
 
 #endif /* _LIBCPP_EXPERIMENTAL_MEMORY_RESOURCE */
