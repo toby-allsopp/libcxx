@@ -22,8 +22,6 @@
 #include <cstdlib>
 #include "uses_alloc_types.hpp"
 
-#if _LIBCPP_STD_VER > 11
-
 namespace ex = std::experimental::pmr;
 
 void not_uses_alloc_types_test()
@@ -180,6 +178,4 @@ int main()
     uses_non_erased_alloc_test();
     uses_erased_alloc_test();
 }
-#else /* _LIBCPP_STD_VER <= 11 */
-int main() {}
-#endif /* _LIBCPP_STD_VER > 11 */
+

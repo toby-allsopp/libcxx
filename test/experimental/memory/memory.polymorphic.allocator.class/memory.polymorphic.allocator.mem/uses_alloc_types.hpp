@@ -15,8 +15,6 @@
 # include <memory>
 # include <cassert>
 
-#if _LIBCPP_STD_VER > 11
-
 ////////////////////////////////////////////////////////////////////////////////
 class reg_not_uses_alloc
 {
@@ -246,7 +244,5 @@ static_assert(
     std::experimental::__lfts_uses_allocator<erased_uses_alloc_3, void>::value
   , ""
   );
-
-#endif /* _LIBCPP_STD_VER > 11 */
 
 #endif /* USES_ALLOC_TYPES_HPP */

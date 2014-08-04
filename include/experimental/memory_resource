@@ -406,7 +406,7 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
 
         virtual void do_deallocate(void * __p, size_t __size, size_t __align)
         {
-            ::operator delete(__p, __size + (__align - (__size % __align)));
+            ::operator delete(__p);
         }
 
         virtual bool do_is_equal(memory_resource const & __other) const _NOEXCEPT
@@ -484,17 +484,18 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
     inline _LIBCPP_INLINE_VISIBILITY
     pool_options __adjust_pool_options(pool_options __opts) _NOEXCEPT
     {
-        return pool_options{
-            __opts.max_blocks_per_chunk
+        __opts.max_blocks_per_chunk = __opts.max_blocks_per_chunk
                 && __opts.max_blocks_per_chunk < pool_options::__impl_max_blocks_per_chunk
-                ? __opts.max_blocks_per_chunk : pool_options::__impl_max_blocks_per_chunk
-          , __opts.largest_required_pool_block
-                && __opts.largest_required_pool_block < pool_options::__impl_largest_required_pool_block
-                ? ( __opts.largest_required_pool_block < pool_options::__impl_smallest_required_pool_block
-                    ? pool_options::__impl_smallest_required_pool_block
-                    : __opts.largest_required_pool_block)
-                : pool_options::__impl_largest_required_pool_block
-        };
+                ? __opts.max_blocks_per_chunk : pool_options::__impl_max_blocks_per_chunk;
+
+        __opts.largest_required_pool_block = __opts.largest_required_pool_block
+            && __opts.largest_required_pool_block < pool_options::__impl_largest_required_pool_block
+            ? ( __opts.largest_required_pool_block < pool_options::__impl_smallest_required_pool_block
+                ? pool_options::__impl_smallest_required_pool_block
+                : __opts.largest_required_pool_block)
+            : pool_options::__impl_largest_required_pool_block;
+
+        return __opts;
     }
 
     struct __double_linked_chunk_node

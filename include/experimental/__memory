@@ -34,12 +34,12 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS
 inline _LIBCPP_INLINE_VISIBILITY 
     uint32_t __count_leading_zeros(uint32_t __x) _NOEXCEPT
     {
-#if defined(_LIBCPP_GNU_VER)
+#if defined(_GNUC_VER)
         return __x ? __builtin_clz(__x) : 32;
 #else
         if (__x == 0) return 32;
         uint32_t __n = 0;
-        if (__x <= 0x0000FFFF) {__n +=16; __x <<16;}
+        if (__x <= 0x0000FFFF) {__n +=16; __x << 16;}
         if (__x <= 0x00FFFFFF) {__n += 8; __x << 8;}
         if (__x <= 0x0FFFFFFF) {__n += 4; __x << 4;}
         if (__x <= 0x3FFFFFFF) {__n += 2; __x << 2;}
@@ -58,7 +58,7 @@ inline _LIBCPP_INLINE_VISIBILITY
     size_t __next_pow_2(size_t __s) _NOEXCEPT
     {
         const size_t __i = 32 - _VSTD_LFTS::__count_leading_zeros(__s);
-        return __s == 0 || __s == (1U<<__i) ? __s : (1U<<__i+1);
+        return __s == 0 || __s == (1U<<__i) ? __s : (1U<<(__i+1));
     }
 
     inline _LIBCPP_INLINE_VISIBILITY

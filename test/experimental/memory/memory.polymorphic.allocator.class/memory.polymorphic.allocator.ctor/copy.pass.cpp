@@ -18,8 +18,6 @@
 #include <type_traits>
 #include <cassert>
 
-#if _LIBCPP_STD_VER > 11
-
 namespace ex = std::experimental::pmr;
 
 int main()
@@ -47,6 +45,4 @@ int main()
         assert(a2.resource() == (ex::memory_resource*)42);
     }
 }
-#else /* _LIBCPP_STD_VER <= 11 */
-int main() {}
-#endif /* _LIBCPP_STD_VER > 11 */
+
