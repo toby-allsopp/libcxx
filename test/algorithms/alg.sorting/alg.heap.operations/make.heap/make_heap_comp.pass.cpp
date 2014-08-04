@@ -35,6 +35,7 @@ struct indirect_less
 void test(unsigned N)
 {
     int* ia = new int [N];
+    {
     for (int i = 0; i < N; ++i)
         ia[i] = i;
     {
@@ -43,6 +44,27 @@ void test(unsigned N)
     assert(std::is_heap(ia, ia+N, std::greater<int>()));
     }
 
+//  Ascending
+    {
+    binary_counting_predicate<std::greater<int>, int, int> pred ((std::greater<int>()));
+    for (int i = 0; i < N; ++i)
+        ia[i] = i;
+    std::make_heap(ia, ia+N, std::ref(pred));
+    assert(pred.count() <= 3*N);
+    assert(std::is_heap(ia, ia+N, pred));
+    }
+
+//  Descending
+    {
+    binary_counting_predicate<std::greater<int>, int, int> pred ((std::greater<int>()));
+    for (int i = 0; i < N; ++i)
+        ia[N-1-i] = i;
+    std::make_heap(ia, ia+N, std::ref(pred));
+    assert(pred.count() <= 3*N);
+    assert(std::is_heap(ia, ia+N, pred));
+    }
+
+//  Random
     {
     binary_counting_predicate<std::greater<int>, int, int> pred ((std::greater<int>()));
     std::random_shuffle(ia, ia+N);
