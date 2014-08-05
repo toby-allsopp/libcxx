@@ -67,7 +67,7 @@ inline _LIBCPP_INLINE_VISIBILITY
 bool
 __is_power2(size_t __bc)
 {
-    return __bc > 2 && !(__bc & (__bc - 1));
+    return __bc && !(__bc & (__bc - 1));
 }
 
 inline _LIBCPP_INLINE_VISIBILITY
@@ -81,7 +81,7 @@ inline _LIBCPP_INLINE_VISIBILITY
 size_t
 __next_pow2(size_t __n)
 {
-    return size_t(1) << (std::numeric_limits<size_t>::digits - __clz(__n-1));
+    return __n < 2 ? __n + 1 : size_t(1) << (std::numeric_limits<size_t>::digits - __clz(__n-1));
 }
 
 template <class _Tp, class _Hash, class _Equal, class _Alloc> class __hash_table;
@@ -1619,7 +1619,7 @@ __hash_table<_Tp, _Hash, _Equal, _Alloc>::__node_insert_unique(__node_pointer __
     {
         if (size()+1 > __bc * max_load_factor() || __bc == 0)
         {
-            rehash(_VSTD::max<size_type>(2 * __bc + !__is_power2(__bc),
+            rehash(_VSTD::max<size_type>(2 * __bc + (__bc <= 2 || !__is_power2(__bc)),
                            size_type(ceil(float(size() + 1) / max_load_factor()))));
             __bc = bucket_count();
             __chash = __constrain_hash(__nd->__hash_, __bc);
@@ -1662,7 +1662,7 @@ __hash_table<_Tp, _Hash, _Equal, _Alloc>::__node_insert_multi(__node_pointer __c
     size_type __bc = bucket_count();
     if (size()+1 > __bc * max_load_factor() || __bc == 0)
     {
-        rehash(_VSTD::max<size_type>(2 * __bc + !__is_power2(__bc),
+        rehash(_VSTD::max<size_type>(2 * __bc + (__bc <= 2 || !__is_power2(__bc)),
                        size_type(ceil(float(size() + 1) / max_load_factor()))));
         __bc = bucket_count();
     }
@@ -1732,7 +1732,7 @@ __hash_table<_Tp, _Hash, _Equal, _Alloc>::__node_insert_multi(
         size_type __bc = bucket_count();
         if (size()+1 > __bc * max_load_factor() || __bc == 0)
         {
-            rehash(_VSTD::max<size_type>(2 * __bc + !__is_power2(__bc),
+            rehash(_VSTD::max<size_type>(2 * __bc + (__bc <= 2 || !__is_power2(__bc)),
                            size_type(ceil(float(size() + 1) / max_load_factor()))));
             __bc = bucket_count();
         }
@@ -1780,7 +1780,7 @@ __hash_table<_Tp, _Hash, _Equal, _Alloc>::__insert_unique(const value_type& __x)
         __node_holder __h = __construct_node(__x, __hash);
         if (size()+1 > __bc * max_load_factor() || __bc == 0)
         {
-            rehash(_VSTD::max<size_type>(2 * __bc + !__is_power2(__bc),
+            rehash(_VSTD::max<size_type>(2 * __bc + (__bc <= 2 || !__is_power2(__bc)),
                            size_type(ceil(float(size() + 1) / max_load_factor()))));
             __bc = bucket_count();
             __chash = __constrain_hash(__hash, __bc);
