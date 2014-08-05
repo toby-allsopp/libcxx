@@ -16,7 +16,9 @@
 
 #include <experimental/memory_resource>
 #include <type_traits>
+#include <new>
 #include <cassert>
+#include <cstdlib>
 
 namespace ex = std::experimental::pmr;
 
@@ -30,7 +32,7 @@ struct destroyable
 
 int main()
 {
-    typedef ex::polymorphic_allocator<float> A;
+    typedef ex::polymorphic_allocator<double> A;
     {
         A a;
         static_assert(
@@ -39,11 +41,12 @@ int main()
           );
     }
     {
-        destroyable * ptr = new destroyable();
+        destroyable * ptr = ::new (std::malloc(sizeof(destroyable))) destroyable();
         assert(count == 1);
         A a;
         a.destroy(ptr);
         assert(count == 0);
+        std::free(ptr);
     }
 }
 

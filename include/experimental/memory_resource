@@ -66,7 +66,6 @@ namespace pmr {
  */
 
 #include <experimental/__config>
-#include <atomic>
 #include <mutex>
 #include <experimental/__memory>
 #include <memory>
@@ -79,7 +78,9 @@ namespace pmr {
 #ifdef _LIBCPP_DEBUG
 #   include <__debug>
 #else
+#ifndef _LIBCPP_ASSERT
 #   define _LIBCPP_ASSERT(x, m) ((void)0)
+#endif
 #endif
 
 #if !defined(_LIBCPP_HAS_NO_PRAGMA_SYSTEM_HEADER)
@@ -326,8 +327,6 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
         return !(__lhs == __rhs);
     }
 
-    _LIBCPP_EXTERN_TEMPLATE2(class _LIBCPP_TYPE_VIS polymorphic_allocator<char>)
-
 // 8.7, memory.resource.adaptor
 
     // 8.7.1, memory.resource.adaptor.overview
@@ -396,8 +395,6 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
         }
     };
 
-    _LIBCPP_EXTERN_TEMPLATE2(class _LIBCPP_TYPE_VIS __resource_adaptor_imp<allocator<char>>)
-
     template <class _Alloc>
     using resource_adaptor
         = __resource_adaptor_imp<
@@ -410,21 +407,12 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
     _LIBCPP_FUNC_VIS
     memory_resource * null_memory_resource() _NOEXCEPT;
 
+
     _LIBCPP_FUNC_VIS
-    atomic<memory_resource*> * __default_memory_resource() _NOEXCEPT;
+    memory_resource * get_default_resource() _NOEXCEPT;
 
-    inline _LIBCPP_INLINE_VISIBILITY
-    memory_resource * set_default_resource(memory_resource * __r) _NOEXCEPT
-    {
-        memory_resource * __new = __r  ? __r : new_delete_resource();
-        return _VSTD::atomic_exchange(__default_memory_resource(), __new);
-    }
-
-    inline _LIBCPP_INLINE_VISIBILITY
-    memory_resource * get_default_resource() _NOEXCEPT
-    {
-        return _VSTD::atomic_load(__default_memory_resource());
-    }
+    _LIBCPP_FUNC_VIS
+    memory_resource * set_default_resource(memory_resource * __new_res) _NOEXCEPT;
 
     struct _LIBCPP_TYPE_VIS_ONLY pool_options
     {
@@ -541,7 +529,7 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
             const size_t __alloc_size =
                 __max_aligned_allocation_size(sizeof(_ChunkNode) + __s);
             // Syncronization point //
-            return __make_chunk(__res->allocate(__alloc_size), __alloc_size);
+            return __insert_new_chunk(__res->allocate(__alloc_size), __alloc_size);
             /////////////////////////
         }
 
@@ -567,7 +555,7 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
         }
 
     private:
-        void * __make_chunk(void * __p, size_t __s) _NOEXCEPT
+        void * __insert_new_chunk(void * __p, size_t __s) _NOEXCEPT
         {
             _ChunkNode * const __n = static_cast<_ChunkNode*>(__p);
             __n->__size_ = __s;
@@ -583,10 +571,6 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
 
     typedef __basic_chunk_allocator<__double_linked_chunk_node> __chunk_allocator;
     typedef __basic_chunk_allocator<__single_linked_chunk_node> __single_linked_chunk_allocator;
-
-    _LIBCPP_EXTERN_TEMPLATE2(class _LIBCPP_TYPE_VIS __basic_chunk_allocator<__double_linked_chunk_node>)
-    _LIBCPP_EXTERN_TEMPLATE2(class _LIBCPP_TYPE_VIS __basic_chunk_allocator<__single_linked_chunk_node>)
-
 
 #ifdef _LIBCPP_CLEVER_MEMORY_POOL
     template <size_t _Size>
@@ -785,8 +769,12 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
             );
 
         _LIBCPP_INLINE_VISIBILITY
-        static size_t __index_of(size_t __pow) _NOEXCEPT
+        size_t __index_of(size_t __pow) const _NOEXCEPT
         {
+            _LIBCPP_ASSERT(__pow, "Cannot be zero");
+            _LIBCPP_ASSERT(!__undersized(__pow), "pow not in index range");
+            _LIBCPP_ASSERT(!__oversized(__pow), "pow not in index range");
+            _LIBCPP_ASSERT(__is_power2(__pow), "Must be power of two");
             // use -4 so index for 2^4=8 is at 0.
             return ((CHAR_BIT * sizeof(size_t)) - __clz(__pow)) - 4;
         }
@@ -800,6 +788,7 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
         _LIBCPP_INLINE_VISIBILITY
         bool __oversized(size_t __s) const _NOEXCEPT
         {
+            _LIBCPP_ASSERT(__opts_.largest_required_pool_block >= 8, "largest block too small");
             return __s > __opts_.largest_required_pool_block;
         }
 
@@ -807,6 +796,7 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
         _LIBCPP_INLINE_VISIBILITY
         size_t __index_for(size_t __s) const _NOEXCEPT
         {
+            _LIBCPP_ASSERT(!__oversized(__s), "cannot be oversized");
             return __undersized(__s) ? 0 : __index_of(__round_up_pow_2(__s));
         }
 
@@ -817,8 +807,6 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
             , __num_pools_(__index_of(__opts_.largest_required_pool_block) + 1)
             , __res_(__res)
         {
-            _LIBCPP_ASSERT(__opts_.largest_required_pool_block != 0, "test1");
-            _LIBCPP_ASSERT(__opts_.max_blocks_per_chunk != 0, "test2");
             for (int __i = 0; __i < __num_pools_; ++__i) {
                 __pool_buf_[__i].__init_pool_options(
                     pool_options::__impl_smallest_block << __i
@@ -881,9 +869,6 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
         _PoolType __pool_buf_[__max_num_pools];
         __chunk_allocator __oversized_alloc_;
     };
-
-    _LIBCPP_EXTERN_TEMPLATE2(class _LIBCPP_TYPE_VIS __pool_resource_base<__memory_pool>)
-    _LIBCPP_EXTERN_TEMPLATE2(class _LIBCPP_TYPE_VIS __pool_resource_base<__synchronized_memory_pool>)
 
 
     class _LIBCPP_TYPE_VIS_ONLY synchronized_pool_resource
@@ -1081,6 +1066,15 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
         memory_resource * __res_;
         __single_linked_chunk_allocator __alloc_;
     };
+
+#if 0
+    _LIBCPP_EXTERN_TEMPLATE2(class _LIBCPP_TYPE_VIS polymorphic_allocator<char>)
+    _LIBCPP_EXTERN_TEMPLATE2(class _LIBCPP_TYPE_VIS __basic_chunk_allocator<__double_linked_chunk_node>)
+    _LIBCPP_EXTERN_TEMPLATE2(class _LIBCPP_TYPE_VIS __basic_chunk_allocator<__single_linked_chunk_node>)
+    _LIBCPP_EXTERN_TEMPLATE2(class _LIBCPP_TYPE_VIS __pool_resource_base<__memory_pool>)
+    _LIBCPP_EXTERN_TEMPLATE2(class _LIBCPP_TYPE_VIS __pool_resource_base<__synchronized_memory_pool>)
+    _LIBCPP_EXTERN_TEMPLATE2(class _LIBCPP_TYPE_VIS __resource_adaptor_imp<allocator<char>>)
+#endif
 
 _LIBCPP_END_NAMESPACE_LFTS_PMR
 

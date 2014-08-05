@@ -10,16 +10,23 @@
 #include "experimental/memory_resource"
 #include "cstdlib"
 
+#if __has_feature(cxx_atomic)
+#include "atomic"
+#else
+#include "mutex"
+#endif
+
 _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
 
 ////////////////////////////////////////////////////////////////////////////////
-
+#if 0
 template class polymorphic_allocator<char>;
 template class __resource_adaptor_imp<allocator<char>>;
 template class __basic_chunk_allocator<__double_linked_chunk_node>;
 template class __basic_chunk_allocator<__single_linked_chunk_node>;
 template class __pool_resource_base<__memory_pool>;
 template class __pool_resource_base<__synchronized_memory_pool>;
+#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 memory_resource::~memory_resource()
@@ -109,10 +116,44 @@ memory_resource * null_memory_resource() _NOEXCEPT
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-atomic<memory_resource*> * __default_memory_resource() _NOEXCEPT
+_LIBCPP_HIDDEN
+static memory_resource *
+__default_memory_resource(bool set = false, memory_resource * new_res = nullptr) _NOEXCEPT
 {
+#if __has_feature(cxx_atomic)
     static atomic<memory_resource*> __res( new_delete_resource() );
-    return &__res;
+    if (set) {
+        new_res = new_res ? new_res : new_delete_resource();
+        return _VSTD::atomic_exchange(&__res, new_res);
+    }
+    else {
+        return _VSTD::atomic_load(&__res);
+    }
+#else
+    static memory_resource * res( new_delete_resource() );
+    static mutex res_lock;
+    if (set) {
+        new_res = new_res ? new_res : new_delete_resource();
+        lock_guard<mutex> guard(res_lock);
+        memory_resource * old_res = res;
+        res = new_res;
+        return old_res;
+    } else {
+        lock_guard<mutex> guard(res_lock);
+        return res;
+    }
+#endif
+}
+
+
+memory_resource * get_default_resource() _NOEXCEPT
+{
+    return __default_memory_resource();
+}
+
+memory_resource * set_default_resource(memory_resource * __new_res) _NOEXCEPT
+{
+    return __default_memory_resource(true, __new_res);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

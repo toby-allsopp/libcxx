@@ -21,6 +21,15 @@
 #include <__hash_table> /* __is_power2, __next_pow2 */
 
 
+#ifdef _LIBCPP_DEBUG
+#   include <__debug>
+#else
+#ifndef _LIBCPP_ASSERT
+#   define _LIBCPP_ASSERT(x, m) ((void)0)
+#endif
+#endif
+
+
 _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
 
 class _LIBCPP_TYPE_VIS_ONLY memory_resource;
@@ -35,18 +44,21 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS
 inline _LIBCPP_INLINE_VISIBILITY
 unsigned __msb_only(unsigned __x) _NOEXCEPT
 {
+    _LIBCPP_ASSERT(__x, "__x cannot be zero");
     return ((unsigned)-1 << __clz(__x)) + 1;
 }
 
 inline _LIBCPP_INLINE_VISIBILITY
 unsigned long __msb_only(unsigned long __x) _NOEXCEPT
 {
+    _LIBCPP_ASSERT(__x, "__x cannot be zero");
     return ((unsigned long)-1 << __clz(__x)) + 1;
 }
 
 inline _LIBCPP_INLINE_VISIBILITY
 unsigned long long __msb_only(unsigned long long __x) _NOEXCEPT
 {
+    _LIBCPP_ASSERT(__x, "__x cannot be zero");
     return ((unsigned long long)-1 << __clz(__x)) + 1;
 }
 

@@ -45,12 +45,13 @@ void check_alignment()
             R1 r(a);
             ex::memory_resource & m1 = r;
 
-            void * ret = m1.allocate(s, align_req);
+            void * const ret = m1.allocate(s, align_req);
             assert(((std::size_t)ret % align_req) == 0);
             void * ret_cp = ret;
             std::size_t space = 10000000;
             assert(ret == std::align(align_req, s, ret_cp, space));
             // reset
+            m1.deallocate(ret, s, align_req);
             align_req *= 2;
         }
     }
@@ -75,6 +76,7 @@ void check_align_called()
             Alloc1 const a;
             R1 r(a);
             ex::memory_resource & m1 = r;
+            
 
             std::size_t ret = (std::size_t)m1.allocate(s, align_req);
 
