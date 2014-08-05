@@ -326,7 +326,7 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
         return !(__lhs == __rhs);
     }
 
-    _LIBCPP_EXTERN_TEMPLATE2(class _LIBCPP_TYPE_VIS_ONLY polymorphic_allocator<char>)
+    _LIBCPP_EXTERN_TEMPLATE2(class _LIBCPP_TYPE_VIS polymorphic_allocator<char>)
 
 // 8.7, memory.resource.adaptor
 
@@ -438,18 +438,37 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
     };
 
     inline _LIBCPP_INLINE_VISIBILITY
+    size_t __adjust_max_blocks_per_chunk(size_t __mbpc) _NOEXCEPT
+    {
+        if (__mbpc == 0 || __mbpc > pool_options::__impl_max_blocks_per_chunk) {
+            return pool_options::__impl_max_blocks_per_chunk;
+        } else {
+            return __mbpc;
+        }
+    }
+
+    inline _LIBCPP_INLINE_VISIBILITY
+    size_t __adjust_largest_required_pool_block(size_t __lpb) _NOEXCEPT
+    {
+        if (__lpb == 0 || __lpb > pool_options::__impl_largest_block) {
+            return pool_options::__impl_largest_block;
+        }
+        else if (__lpb < pool_options::__impl_smallest_block) {
+            return pool_options::__impl_smallest_block;
+        }
+        else {
+            return __lpb;
+        }
+    }
+
+    inline _LIBCPP_INLINE_VISIBILITY
     pool_options __adjust_pool_options(pool_options __opts) _NOEXCEPT
     {
-        __opts.max_blocks_per_chunk = __opts.max_blocks_per_chunk
-                && __opts.max_blocks_per_chunk < pool_options::__impl_max_blocks_per_chunk
-                ? __opts.max_blocks_per_chunk : pool_options::__impl_max_blocks_per_chunk;
+        __opts.max_blocks_per_chunk =
+            __adjust_max_blocks_per_chunk(__opts.max_blocks_per_chunk);
 
-        __opts.largest_required_pool_block = __opts.largest_required_pool_block
-            && __opts.largest_required_pool_block < pool_options::__impl_largest_block
-            ? ( __opts.largest_required_pool_block < pool_options::__impl_smallest_block
-                ? pool_options::__impl_smallest_block
-                : __opts.largest_required_pool_block)
-            : pool_options::__impl_largest_block;
+        __opts.largest_required_pool_block =
+            __adjust_largest_required_pool_block(__opts.largest_required_pool_block);
 
         return __opts;
     }
@@ -768,8 +787,8 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
         _LIBCPP_INLINE_VISIBILITY
         static size_t __index_of(size_t __pow) _NOEXCEPT
         {
-            // use +4 so index for 2^4=8 is at 0.
-            return ((CHAR_BIT * sizeof(size_t)) + 4) - __clz(__pow);
+            // use -4 so index for 2^4=8 is at 0.
+            return ((CHAR_BIT * sizeof(size_t)) - __clz(__pow)) - 4;
         }
 
         _LIBCPP_INLINE_VISIBILITY
@@ -795,9 +814,11 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
 
         __pool_resource_base(pool_options __opts, memory_resource * __res)
             : __opts_(__adjust_pool_options(__opts))
-            , __num_pools_(__index_of(__opts_.largest_required_pool_block))
+            , __num_pools_(__index_of(__opts_.largest_required_pool_block) + 1)
             , __res_(__res)
         {
+            _LIBCPP_ASSERT(__opts_.largest_required_pool_block != 0, "test1");
+            _LIBCPP_ASSERT(__opts_.max_blocks_per_chunk != 0, "test2");
             for (int __i = 0; __i < __num_pools_; ++__i) {
                 __pool_buf_[__i].__init_pool_options(
                     pool_options::__impl_smallest_block << __i
@@ -843,13 +864,11 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
             __oversized_alloc_.__release(__res_);
         }
 
-        _LIBCPP_INLINE_VISIBILITY
         pool_options __options() const _NOEXCEPT
         {
             return __opts_;
         }
 
-        _LIBCPP_INLINE_VISIBILITY
         memory_resource * __resource() const _NOEXCEPT
         {
             return __res_;
@@ -863,8 +882,8 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
         __chunk_allocator __oversized_alloc_;
     };
 
-    _LIBCPP_EXTERN_TEMPLATE2(class _LIBCPP_TYPE_VIS_ONLY __pool_resource_base<__memory_pool>)
-    _LIBCPP_EXTERN_TEMPLATE2(class _LIBCPP_TYPE_VIS_ONLY __pool_resource_base<__synchronized_memory_pool>)
+    _LIBCPP_EXTERN_TEMPLATE2(class _LIBCPP_TYPE_VIS __pool_resource_base<__memory_pool>)
+    _LIBCPP_EXTERN_TEMPLATE2(class _LIBCPP_TYPE_VIS __pool_resource_base<__synchronized_memory_pool>)
 
 
     class _LIBCPP_TYPE_VIS_ONLY synchronized_pool_resource
@@ -984,6 +1003,13 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
       : public memory_resource
     {
         static const size_t __min_buf_size = 512;
+
+        static size_t __adjust_buf_size(size_t __init_size) _NOEXCEPT
+        {
+            return __init_size < __min_buf_size
+                ? __min_buf_size : __round_up_pow_2(__init_size);
+        }
+
     public:
         explicit monotonic_buffer_resource(memory_resource * __res)
             : __buf_(nullptr)
@@ -995,19 +1021,17 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
         monotonic_buffer_resource(size_t __init_size, memory_resource * __res)
             : __buf_(nullptr)
             , __left_(0)
-            , __next_buf_size_(__init_size < __min_buf_size
-                            ? __min_buf_size
-                            : __round_up_pow_2(__init_size))
+            , __next_buf_size_(__adjust_buf_size(__init_size))
             , __res_(__res)
         {}
 
         monotonic_buffer_resource(void * __buf, size_t __buf_size
                                 , memory_resource * __res)
-          : monotonic_buffer_resource(__buf_size, __res)
-        {
-            __buf_ = __buf;
-            __left_ = __buf_size;
-        }
+          : __buf_(__buf)
+          , __left_(__buf_size)
+          , __next_buf_size_(__min_buf_size)
+          , __res_(__res)
+        {}
 
         monotonic_buffer_resource()
           : monotonic_buffer_resource(get_default_resource())
@@ -1023,7 +1047,7 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
 
         monotonic_buffer_resource(monotonic_buffer_resource const &) = delete;
 
-        ~monotonic_buffer_resource();
+        virtual ~monotonic_buffer_resource();
 
         monotonic_buffer_resource & operator=(
             monotonic_buffer_resource const &) = delete;
@@ -1046,9 +1070,9 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
         virtual bool do_is_equal(memory_resource const & __other) const _NOEXCEPT;
 
     private:
-        void * __take_from_buf(size_t __s, size_t __a);
+        void * __take_from_buf(size_t __s, size_t __a) _NOEXCEPT;
         void __alloc_from_upstream(size_t __s, size_t __a);
-        void __increment_buf_size(size_t __s);
+        void __increment_buf_size(size_t __s) _NOEXCEPT;
 
     private:
         void * __buf_;

@@ -13,6 +13,7 @@
 _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
 
 ////////////////////////////////////////////////////////////////////////////////
+
 template class polymorphic_allocator<char>;
 template class __resource_adaptor_imp<allocator<char>>;
 template class __basic_chunk_allocator<__double_linked_chunk_node>;
@@ -201,6 +202,7 @@ void __memory_pool::__add_chunk_to_free_list(void * __p, size_t __s, size_t __a)
     while (_VSTD::align(__a, __block_size_, __p, __s)) {
         __block_node * __ret = static_cast<__block_node*>(__p);
         __p = static_cast<char*>(__p) + __block_size_;
+        __s -= __block_size_;
         __ret->__next_ = __free_head_;
         __free_head_ = __ret;
     }
@@ -235,7 +237,9 @@ bool synchronized_pool_resource::do_is_equal(
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-unsynchronized_pool_resource::~unsynchronized_pool_resource() {}
+unsynchronized_pool_resource::~unsynchronized_pool_resource()
+{
+}
 
 void * unsynchronized_pool_resource::do_allocate(size_t __bytes, size_t __align)
 {
@@ -279,7 +283,7 @@ bool monotonic_buffer_resource::do_is_equal(
         dynamic_cast<monotonic_buffer_resource const *>(&__other);
 }
 
-void * monotonic_buffer_resource::__take_from_buf(size_t __s, size_t __a)
+void * monotonic_buffer_resource::__take_from_buf(size_t __s, size_t __a) _NOEXCEPT
 {
     void * __p = _VSTD::align(__a, __s, __buf_, __left_);
     if (__p) {
@@ -298,7 +302,7 @@ void monotonic_buffer_resource::__alloc_from_upstream(size_t __s, size_t __a)
     __left_ = __next_buf_size_;
 }
 
-void monotonic_buffer_resource::__increment_buf_size(size_t __s)
+void monotonic_buffer_resource::__increment_buf_size(size_t __s) _NOEXCEPT
 {
     size_t const __possible_next =
         _VSTD::max(__round_up_pow_2(__s), __next_buf_size_ << 1);

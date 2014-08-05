@@ -20,9 +20,16 @@ namespace ex = std::experimental::pmr;
 
 int main()
 {
-    dummy_resource d;
+    typedef dummy_resource D;
+    dummy_resource d(1);
     ex::memory_resource const & mr1 = d;
     ex::memory_resource const & mr2 = d;
+
+    dummy_resource d2(2);
+    ex::memory_resource const & mr3 = d2;
+
+    dummy_resource d3(1);
+    ex::memory_resource const & mr4 = d3;
     {
         static_assert(
             std::is_same<decltype(mr1.is_equal(mr2)), bool>::value
@@ -34,8 +41,27 @@ int main()
           );
     }
     {
-        assert(!mr1.is_equal(mr2));
-        assert(is_equal_count == 1);
+        assert(mr1.is_equal(mr2));
+        assert(D::is_equal_count == 1);
+
+        assert(mr2.is_equal(mr1));
+        assert(D::is_equal_count == 2);
+    }
+    D::clear();
+    {
+        assert(!mr1.is_equal(mr3));
+        assert(D::is_equal_count == 1);
+
+        assert(!mr3.is_equal(mr1));
+        assert(D::is_equal_count == 2);
+    }
+    D::clear();
+    {
+        assert(mr1.is_equal(mr4));
+        assert(D::is_equal_count == 1);
+
+        assert(mr4.is_equal(mr1));
+        assert(D::is_equal_count == 2);
     }
 }
 

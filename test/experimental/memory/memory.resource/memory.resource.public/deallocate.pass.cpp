@@ -20,7 +20,7 @@ namespace ex = std::experimental::pmr;
 
 int main()
 {
-
+    typedef dummy_resource D;
     dummy_resource d;
     ex::memory_resource & mr1 = d;
     {
@@ -30,8 +30,14 @@ int main()
           );
     }
     {
-        mr1.deallocate(nullptr, 0, 0);
-        assert(dealloc_count == 1);
+        int s = 42;
+        int a = 3;
+        void * p = std::malloc(s);
+        mr1.deallocate(p, s, a);
+        assert(D::dealloc_count == 1);
+        assert(D::last_pointer == p);
+        assert(D::last_size == s);
+        assert(D::last_align == a);
     }
 }
 
