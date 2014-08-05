@@ -506,15 +506,6 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
         }
 
     public:
-        static const size_t __chunk_node_size = sizeof(_ChunkNode);
-        static const size_t __chunk_node_align = alignment_of<_ChunkNode>::value;
-
-        static size_t __offset_of_memory()
-        {
-            return offsetof(_ChunkNode, __memory_);
-        }
-
-    public:
         explicit __basic_chunk_allocator()
             : __head_(nullptr)
         {}
@@ -528,7 +519,7 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
             if (! __s) {
                 return nullptr;
             }
-            const size_t __alloc_size = 
+            const size_t __alloc_size =
                 __max_aligned_allocation_size(sizeof(_ChunkNode) + __s);
             // Syncronization point //
             return __make_chunk(__res->allocate(__alloc_size), __alloc_size);
@@ -556,6 +547,7 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
             }
         }
 
+    private:
         void * __make_chunk(void * __p, size_t __s) _NOEXCEPT
         {
             _ChunkNode * const __n = static_cast<_ChunkNode*>(__p);
@@ -1013,13 +1005,8 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
                                 , memory_resource * __res)
           : monotonic_buffer_resource(__buf_size, __res)
         {
-            if (__buf_size <= __chunk_allocator::__chunk_node_size) {
-                __res_->deallocate(__buf, __buf_size);
-            } else {
-                __buf_ = __alloc_.__make_chunk(__buf, __buf_size);
-                __left_ = __buf_size
-                        - __single_linked_chunk_allocator::__offset_of_memory();
-            }
+            __buf_ = __buf;
+            __left_ = __buf_size;
         }
 
         monotonic_buffer_resource()
