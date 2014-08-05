@@ -17,7 +17,8 @@
 #include <algorithm>
 #include <cstddef>
 #include <type_traits>
-#include <__functional_base>
+#include <__functional_base> /* __clz */
+#include <__hash_table> /* __is_power2, __next_pow2 */
 
 
 _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
@@ -28,7 +29,6 @@ memory_resource * set_default_resource(memory_resource *) _NOEXCEPT;
 memory_resource * get_default_resource() _NOEXCEPT;
 
 _LIBCPP_END_NAMESPACE_LFTS_PMR
-
 
 _LIBCPP_BEGIN_NAMESPACE_LFTS
 
@@ -50,22 +50,10 @@ unsigned long long __msb_only(unsigned long long __x) _NOEXCEPT
     return ((unsigned long long)-1 << __clz(__x)) + 1;
 }
 
-inline _LIBCPP_ALWAYS_INLINE _LIBCPP_CONSTEXPR
-bool __is_pow_2(size_t __s) _NOEXCEPT
-{
-    return __s && !(__s & (__s - 1));
-}
-
-inline _LIBCPP_INLINE_VISIBILITY
-size_t __next_pow_2(size_t __s) _NOEXCEPT
-{
-    return __s == 0 ? 1 : __msb_only(__s) << 1;
-}
-
 inline _LIBCPP_INLINE_VISIBILITY
 size_t __round_up_pow_2(size_t __s) _NOEXCEPT
 {
-    return __is_pow_2(__s) ? __s : __next_pow_2(__s);
+    return __is_power2(__s) ? __s : __next_pow2(__s);
 }
 
 inline _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR
@@ -76,10 +64,10 @@ size_t __max_alignment() _NOEXCEPT
 
 // The alignment is 2 ^ (index of lowest set bit)
 inline _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR
-size_t __alignment_for(size_t __s) _NOEXCEPT
+size_t __fundamental_alignment(size_t __s) _NOEXCEPT
 {
-    return static_cast<int>(__s | __max_alignment())
-        & ~(static_cast<int>(__s | __max_alignment()) - 1);
+    return (__s | __max_alignment())
+        & ~((__s | __max_alignment()) - 1);
 }
 
 // Round __s up to next multiple of __a.
@@ -90,9 +78,29 @@ size_t __aligned_allocation_size(size_t __s, size_t __a) _NOEXCEPT
 }
 
 inline _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR
-size_t __auto_aligned_allocation_size(size_t __s) _NOEXCEPT
+size_t __max_aligned_allocation_size(size_t __s) _NOEXCEPT
 {
-    return __aligned_allocation_size(__s, __alignment_for(__s));
+    return __aligned_allocation_size(__s, __max_alignment());
+}
+
+inline _LIBCPP_INLINE_VISIBILITY
+size_t __alignment_offset(void * __p, size_t __a) _NOEXCEPT
+{
+    return (__a - reinterpret_cast<size_t>(__p)) & (__a - 1);
+}
+
+inline _LIBCPP_INLINE_VISIBILITY
+void * __align_pointer(void * __p, size_t __a) _NOEXCEPT
+{
+    return static_cast<void*>(
+        static_cast<char*>(__p) + __alignment_offset(__p, __a)
+      );
+}
+
+inline _LIBCPP_INLINE_VISIBILITY
+bool __is_max_aligned(void * __p) _NOEXCEPT
+{
+    return reinterpret_cast<size_t>(__p) % __max_alignment() == 0;
 }
 
 template <

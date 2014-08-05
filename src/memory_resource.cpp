@@ -8,9 +8,11 @@
 //===----------------------------------------------------------------------===//
 
 #include "experimental/memory_resource"
+#include "cstdlib"
 
 _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
 
+////////////////////////////////////////////////////////////////////////////////
 template class polymorphic_allocator<char>;
 template class __resource_adaptor_imp<allocator<char>>;
 template class __basic_chunk_allocator<__double_linked_chunk_node>;
@@ -24,6 +26,17 @@ memory_resource::~memory_resource()
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+class _LIBCPP_TYPE_VIS_ONLY __new_delete_memory_resource_imp
+    : public memory_resource
+{
+public:
+    ~__new_delete_memory_resource_imp();
+protected:
+    virtual void* do_allocate(size_t __size, size_t __align);
+    virtual void do_deallocate(void * __p, size_t __size, size_t __align);
+    virtual bool do_is_equal(memory_resource const & __other) const _NOEXCEPT;
+};
+
 __new_delete_memory_resource_imp::~__new_delete_memory_resource_imp()
 {
 }
@@ -46,37 +59,55 @@ bool __new_delete_memory_resource_imp::do_is_equal(
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-__null_memory_resource_imp::~__null_memory_resource_imp()
-{
-}
-
-void* __null_memory_resource_imp::do_allocate(size_t, size_t)
-{
-    throw bad_alloc();
-}
-
-void __null_memory_resource_imp::do_deallocate(void *, size_t, size_t)
-{
-}
-
-bool __null_memory_resource_imp::do_is_equal(memory_resource const & __other) const _NOEXCEPT
-{
-    return &__other == static_cast<memory_resource const *>(this);
-}
-
-////////////////////////////////////////////////////////////////////////////////
 memory_resource * new_delete_resource() _NOEXCEPT
 {
     static __new_delete_memory_resource_imp __res;
     return &__res;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+ class _LIBCPP_TYPE_VIS_ONLY __null_memory_resource_imp
+    : public memory_resource
+{
+public:
+    ~__null_memory_resource_imp();
+protected:
+    virtual void* do_allocate(size_t, size_t);
+    virtual void do_deallocate(void *, size_t, size_t);
+    virtual bool do_is_equal(memory_resource const & __other) const _NOEXCEPT;
+};
+
+__null_memory_resource_imp::~__null_memory_resource_imp()
+{
+}
+
+void* __null_memory_resource_imp::do_allocate(size_t, size_t)
+{
+#ifndef _LIBCPP_NO_EXCEPTIONS
+    throw bad_alloc();
+#else
+    abort();
+#endif
+}
+
+void __null_memory_resource_imp::do_deallocate(void *, size_t, size_t)
+{
+}
+
+bool __null_memory_resource_imp::do_is_equal(
+    memory_resource const & __other) const _NOEXCEPT
+{
+    return &__other == static_cast<memory_resource const *>(this);
+}
+
+////////////////////////////////////////////////////////////////////////////////
 memory_resource * null_memory_resource() _NOEXCEPT
 {
     static __null_memory_resource_imp __res;
     return &__res;
 }
 
+////////////////////////////////////////////////////////////////////////////////
 atomic<memory_resource*> * __default_memory_resource() _NOEXCEPT
 {
     static atomic<memory_resource*> __res( new_delete_resource() );
@@ -84,7 +115,8 @@ atomic<memory_resource*> * __default_memory_resource() _NOEXCEPT
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void __double_linked_chunk_node::__push(__double_linked_chunk_node ** __head_ptr, __double_linked_chunk_node * __n)
+void __double_linked_chunk_node::__push(
+    __double_linked_chunk_node ** __head_ptr, __double_linked_chunk_node * __n)
 {
     __n->__next_ = *__head_ptr;
     __n->__prev_next_addr_ = __head_ptr;
@@ -94,22 +126,25 @@ void __double_linked_chunk_node::__push(__double_linked_chunk_node ** __head_ptr
     *__head_ptr = __n;
 }
 
-void __double_linked_chunk_node::__remove(__double_linked_chunk_node **, __double_linked_chunk_node * __n)
+void __double_linked_chunk_node::__remove(
+    __double_linked_chunk_node **, __double_linked_chunk_node * __n)
 {
     *(__n->__prev_next_addr_) = __n->__next_;
     if (__n->__next_) {
-        __n->__prev_next_addr_ = __n->__prev_next_addr_;
+        __n->__next_->__prev_next_addr_ = __n->__prev_next_addr_;
     }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void __single_linked_chunk_node::__push(__single_linked_chunk_node ** __head_ptr, __single_linked_chunk_node * __n)
+void __single_linked_chunk_node::__push(
+    __single_linked_chunk_node ** __head_ptr, __single_linked_chunk_node * __n)
 {
     __n->__next_ = *__head_ptr;
     *__head_ptr = __n;
 }
 
-void __single_linked_chunk_node::__remove(__single_linked_chunk_node ** __head_ptr, __single_linked_chunk_node * __n)
+void __single_linked_chunk_node::__remove(
+    __single_linked_chunk_node ** __head_ptr, __single_linked_chunk_node * __n)
 {
     __single_linked_chunk_node * __h = *__head_ptr;
     __single_linked_chunk_node ** __prev_next_addr = __head_ptr;
@@ -150,7 +185,10 @@ void __memory_pool::__release(memory_resource * __res)
 
 void __memory_pool::__alloc_new_chunk(memory_resource * __res)
 {
-    const size_t __a = __alignment_for(__block_size_);
+    // TODO Alignment should always be either 8 or 16.
+    // Since 8 is the smallest block size supported and 16 is the maximum 
+    // alignment. Test this.
+    const size_t __a = __fundamental_alignment(__block_size_);
     const size_t __s = 
         __aligned_allocation_size(__block_size_, __a) * __chunk_size_;
     void * __p = __alloc_.__allocate(__res, __s);
@@ -170,6 +208,7 @@ void __memory_pool::__add_chunk_to_free_list(void * __p, size_t __s, size_t __a)
 
 void __memory_pool::__increment_max_blocks_per_chunk()
 {
+    // TODO fix overflow
     if ((__chunk_size_ << 1) < __max_block_per_chunk_) {
         __chunk_size_ <<= 1;
     }
@@ -183,12 +222,14 @@ void * synchronized_pool_resource::do_allocate(size_t __bytes, size_t __align)
     return __base_.__allocate(__bytes, __align);
 }
 
-void synchronized_pool_resource::do_deallocate(void * __p, size_t __bytes, size_t __align)
+void synchronized_pool_resource::do_deallocate(
+    void * __p, size_t __bytes, size_t __align)
 {
     __base_.__deallocate(__p, __bytes, __align);
 }
 
-bool synchronized_pool_resource::do_is_equal(memory_resource const & __other) const _NOEXCEPT
+bool synchronized_pool_resource::do_is_equal(
+    memory_resource const & __other) const _NOEXCEPT
 {
     return *__base_.__resource() == __other;
 }
@@ -201,12 +242,14 @@ void * unsynchronized_pool_resource::do_allocate(size_t __bytes, size_t __align)
     return __base_.__allocate(__bytes, __align);
 }
 
-void unsynchronized_pool_resource::do_deallocate(void * __p, size_t __bytes, size_t __align)
+void unsynchronized_pool_resource::do_deallocate(
+    void * __p, size_t __bytes, size_t __align)
 {
     __base_.__deallocate(__p, __bytes, __align);
 }
 
-bool unsynchronized_pool_resource::do_is_equal(memory_resource const & __other) const _NOEXCEPT
+bool unsynchronized_pool_resource::do_is_equal(
+    memory_resource const & __other) const _NOEXCEPT
 {
     return *__base_.__resource() == __other;
 }
@@ -229,7 +272,8 @@ void monotonic_buffer_resource::do_deallocate(void *, size_t, size_t)
 {
 }
 
-bool monotonic_buffer_resource::do_is_equal(memory_resource const & __other) const _NOEXCEPT
+bool monotonic_buffer_resource::do_is_equal(
+    memory_resource const & __other) const _NOEXCEPT
 {
     return this ==
         dynamic_cast<monotonic_buffer_resource const *>(&__other);
@@ -256,13 +300,9 @@ void monotonic_buffer_resource::__alloc_from_upstream(size_t __s, size_t __a)
 
 void monotonic_buffer_resource::__increment_buf_size(size_t __s)
 {
-    size_t __possible_next = __round_up_pow_2(__s);
-    if (__possible_next < (__next_buf_size_ << 1)) {
-        __possible_next = __next_buf_size_ << 1;
-    }
-    if (__possible_next > __next_buf_size_) {
-        __next_buf_size_ = __possible_next;
-    }
+    size_t const __possible_next =
+        _VSTD::max(__round_up_pow_2(__s), __next_buf_size_ << 1);
+    __next_buf_size_ = _VSTD::max(__possible_next, __next_buf_size_);
 }
 
 _LIBCPP_END_NAMESPACE_LFTS_PMR
