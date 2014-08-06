@@ -98,6 +98,7 @@ size_t __max_aligned_allocation_size(size_t __s) _NOEXCEPT
 inline _LIBCPP_INLINE_VISIBILITY
 size_t __alignment_offset(void * __p, size_t __a) _NOEXCEPT
 {
+    static_assert(sizeof(size_t) == sizeof(void*), "must be same");
     return (__a - reinterpret_cast<size_t>(__p)) & (__a - 1);
 }
 

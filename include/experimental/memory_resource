@@ -66,6 +66,7 @@ namespace pmr {
  */
 
 #include <experimental/__config>
+#include <limits>
 #include <mutex>
 #include <experimental/__memory>
 #include <memory>
@@ -92,7 +93,7 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
 // 8.5, memory.resource
     class _LIBCPP_TYPE_VIS_ONLY memory_resource
     {
-        static const _LIBCPP_CONSTEXPR size_t __max_align =
+        static const  size_t __max_align =
             alignment_of<max_align_t>::value;
 
     // 8.5.2, memory.resource.public
@@ -102,12 +103,22 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
         _LIBCPP_INLINE_VISIBILITY
         void* allocate(size_t __bytes, size_t __align = __max_align)
         {
-            return do_allocate(__bytes, __align);
+            _LIBCPP_ASSERT(__align != 0, "can't be zero");
+            _LIBCPP_ASSERT(__is_power2(__align), "alignment must be power of two");
+            void * const __ret = do_allocate(__bytes, __align);
+            _LIBCPP_ASSERT(
+                __alignment_offset(__ret, __max_align < __align ? __max_align : __align) == 0
+              , "Incorrect alignment");
+            return __ret;
         }
 
         _LIBCPP_INLINE_VISIBILITY
         void deallocate(void * __p, size_t __bytes, size_t __align = __max_align)
         {
+            _LIBCPP_ASSERT(__is_power2(__align), "alignment must be power of two");
+            _LIBCPP_ASSERT(
+                __alignment_offset(__p, __max_align < __align ? __max_align : __align) == 0
+              , "Incorrect alignment");
             do_deallocate(__p, __bytes, __align);
         }
 
@@ -407,7 +418,6 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
     _LIBCPP_FUNC_VIS
     memory_resource * null_memory_resource() _NOEXCEPT;
 
-
     _LIBCPP_FUNC_VIS
     memory_resource * get_default_resource() _NOEXCEPT;
 
@@ -523,25 +533,17 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
 
         void * __allocate(memory_resource * __res, size_t __s)
         {
-            if (! __s) {
-                return nullptr;
-            }
+            if (! __s) { return nullptr; }
             const size_t __alloc_size =
                 __max_aligned_allocation_size(sizeof(_ChunkNode) + __s);
-            // Syncronization point //
             return __insert_new_chunk(__res->allocate(__alloc_size), __alloc_size);
-            /////////////////////////
         }
 
         void __deallocate(memory_resource * __res, void * __p) _NOEXCEPT 
         {
-            if (! __p) {
-                return;
-            }
+            if (! __p) { return; }
             _ChunkNode * const __n = __memory_to_chunk(__p);
-            // Syncronization point //
             _ChunkNode::__remove(&__head_, __n);
-            //////////////////////////
             __res->deallocate(__n, __n->__size_);
         }
 
@@ -559,9 +561,7 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
         {
             _ChunkNode * const __n = static_cast<_ChunkNode*>(__p);
             __n->__size_ = __s;
-            // Syncronization point //
             _ChunkNode::__push(&__head_, __n);
-            /////////////////////////////////
             return static_cast<void*>(&__n->__memory_);
         }
 
@@ -664,42 +664,24 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
           );
     public:
         __memory_pool()
-            : __block_size_(0)
-            , __chunk_size_(1)
-            , __max_block_per_chunk_(0)
-            , __free_head_(nullptr)
-        {}
-
-        __memory_pool(size_t __bsize, size_t __max_cs)
-            : __block_size_(__bsize)
-            , __chunk_size_(1)
-            , __max_block_per_chunk_(__max_cs)
+            : __chunk_size_(1)
             , __free_head_(nullptr)
         {}
 
         __memory_pool(__memory_pool const &) = delete;
         __memory_pool & operator=(__memory_pool const &) = delete;
 
-        void * __allocate(memory_resource * __res);
+        void * __allocate(memory_resource * __res, size_t __bs, size_t __mcs);
         void __deallocate(memory_resource *, void * __p);
         void __release(memory_resource * __res);
 
-        _LIBCPP_INLINE_VISIBILITY
-        void __init_pool_options(size_t __block_size, size_t __max_blocks)
-        {
-            __block_size_ = __block_size;
-            __max_block_per_chunk_ = __max_blocks;
-        }
+    private:
+        void __alloc_new_chunk(memory_resource * __res, size_t __block_size);
+        void __add_chunk_to_free_list(void * __p, size_t __block_size, size_t __s, size_t __a);
+        void __increment_blocks_per_chunk(size_t __max_blocks_per_chunk);
 
     private:
-        void __alloc_new_chunk(memory_resource * __res);
-        void __add_chunk_to_free_list(void * __p, size_t __s, size_t __a);
-        void __increment_max_blocks_per_chunk();
-
-    private:
-        size_t __block_size_;
         size_t __chunk_size_;
-        size_t __max_block_per_chunk_;
         __block_node * __free_head_;
         __single_linked_chunk_allocator __alloc_;
     };
@@ -710,19 +692,14 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
         __synchronized_memory_pool()
             : __pool_()
         {}
-
-        __synchronized_memory_pool(size_t __bsize, size_t __max_cs)
-            : __pool_(__bsize, __max_cs)
-        {}
-
         __synchronized_memory_pool(__synchronized_memory_pool const &) = delete;
         __synchronized_memory_pool & operator=(__synchronized_memory_pool const &) = delete;
 
         _LIBCPP_INLINE_VISIBILITY
-        void * __allocate(memory_resource * __res)
+        void * __allocate(memory_resource * __res, size_t __bs, size_t __mbc)
         {
             lock_guard<mutex> __guard(__lock_);
-            return __pool_.__allocate(__res);
+            return __pool_.__allocate(__res, __bs, __mbc);
         }
 
         _LIBCPP_INLINE_VISIBILITY
@@ -737,12 +714,6 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
         {
             lock_guard<mutex> __guard(__lock_);
             __pool_.__release(__res);
-        }
-
-        _LIBCPP_INLINE_VISIBILITY
-        void __init_pool_options(size_t __block_size, size_t __max_block_per_chunk)
-        {
-            __pool_.__init_pool_options(__block_size, __max_block_per_chunk);
         }
 
     private:
@@ -776,7 +747,7 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
             _LIBCPP_ASSERT(!__oversized(__pow), "pow not in index range");
             _LIBCPP_ASSERT(__is_power2(__pow), "Must be power of two");
             // use -4 so index for 2^4=8 is at 0.
-            return ((CHAR_BIT * sizeof(size_t)) - __clz(__pow)) - 4;
+            return (numeric_limits<size_t>::digits - __clz(__pow)) - 4;
         }
 
         _LIBCPP_INLINE_VISIBILITY
@@ -793,6 +764,7 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
         }
 
         // Precondition: __s <= largest_required_pool_block
+        // Otherwise __round_up_pow_2 can wrap.
         _LIBCPP_INLINE_VISIBILITY
         size_t __index_for(size_t __s) const _NOEXCEPT
         {
@@ -801,40 +773,33 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
         }
 
     public:
-
         __pool_resource_base(pool_options __opts, memory_resource * __res)
             : __opts_(__adjust_pool_options(__opts))
             , __num_pools_(__index_of(__opts_.largest_required_pool_block) + 1)
             , __res_(__res)
-        {
-            for (int __i = 0; __i < __num_pools_; ++__i) {
-                __pool_buf_[__i].__init_pool_options(
-                    pool_options::__impl_smallest_block << __i
-                  , __opts_.max_blocks_per_chunk
-                  );
-            }
-        }
+        {}
 
         __pool_resource_base(__pool_resource_base const &) = delete;
 
-        ~__pool_resource_base()
-        {
-            __release();
-        }
+        ~__pool_resource_base() { __release(); }
 
         __pool_resource_base & operator=(__pool_resource_base const &) = delete;
 
-        void * __allocate(size_t __s, size_t __a)
+        void * __do_allocate(size_t __s, size_t __a)
         {
             size_t const __alloc_size = __aligned_allocation_size(__s, __a);
             if (__oversized(__alloc_size)) {
                 return __oversized_alloc_.__allocate(__res_, __alloc_size);
             } else {
-                return __pool_buf_[__index_for(__alloc_size)].__allocate(__res_);
+                size_t const __i = __index_for(__alloc_size);
+                return __pool_buf_[__i].__allocate(
+                    __res_, pool_options::__impl_smallest_block << __i
+                  , __opts_.max_blocks_per_chunk
+                  );
             }
         }
 
-        void __deallocate(void * __p, size_t __s, size_t __a) _NOEXCEPT
+        void __do_deallocate(void * __p, size_t __s, size_t __a) _NOEXCEPT
         {
             size_t const __alloc_size = __aligned_allocation_size(__s, __a);
             if (__oversized(__alloc_size)) {
@@ -852,15 +817,8 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
             __oversized_alloc_.__release(__res_);
         }
 
-        pool_options __options() const _NOEXCEPT
-        {
-            return __opts_;
-        }
-
-        memory_resource * __resource() const _NOEXCEPT
-        {
-            return __res_;
-        }
+        pool_options __options() const _NOEXCEPT { return __opts_; }
+        memory_resource * __resource() const _NOEXCEPT { return __res_; }
 
     private:
         pool_options __opts_;
@@ -958,21 +916,15 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
 
         _LIBCPP_INLINE_VISIBILITY
         void release()
-        {
-            __base_.__release();
-        }
+        { __base_.__release(); }
 
         _LIBCPP_INLINE_VISIBILITY
-        memory_resource * upstream_resource() const
-        {
-            return __base_.__resource();
-        }
+        memory_resource * upstream_resource() const 
+        { return __base_.__resource(); }
 
         _LIBCPP_INLINE_VISIBILITY
-        pool_options options() const
-        {
-            return __base_.__options();
-        }
+        pool_options options() const 
+        { return __base_.__options(); }
 
     protected:
         virtual void * do_allocate(size_t __bytes, size_t __align);
@@ -1039,15 +991,11 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
 
         _LIBCPP_INLINE_VISIBILITY
         void release()
-        {
-            __alloc_.__release(__res_);
-        }
+        { __alloc_.__release(__res_); }
 
         _LIBCPP_INLINE_VISIBILITY
         memory_resource * upstream_resource() const _NOEXCEPT
-        {
-            return __res_;
-        }
+        { return __res_; }
 
     protected:
         virtual void * do_allocate(size_t __bytes, size_t __align);

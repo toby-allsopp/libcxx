@@ -67,7 +67,7 @@ inline _LIBCPP_INLINE_VISIBILITY
 bool
 __is_power2(size_t __bc)
 {
-    return __bc && !(__bc & (__bc - 1));
+    return __bc == 1 || __bc == 2 || (__bc && !(__bc & (__bc - 1)));
 }
 
 inline _LIBCPP_INLINE_VISIBILITY

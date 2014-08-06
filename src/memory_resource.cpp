@@ -34,7 +34,7 @@ memory_resource::~memory_resource()
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-class _LIBCPP_TYPE_VIS_ONLY __new_delete_memory_resource_imp
+class _LIBCPP_HIDDEN __new_delete_memory_resource_imp
     : public memory_resource
 {
 public:
@@ -74,7 +74,7 @@ memory_resource * new_delete_resource() _NOEXCEPT
 }
 
 ////////////////////////////////////////////////////////////////////////////////
- class _LIBCPP_TYPE_VIS_ONLY __null_memory_resource_imp
+ class _LIBCPP_HIDDEN __null_memory_resource_imp
     : public memory_resource
 {
 public:
@@ -145,7 +145,6 @@ __default_memory_resource(bool set = false, memory_resource * new_res = nullptr)
 #endif
 }
 
-
 memory_resource * get_default_resource() _NOEXCEPT
 {
     return __default_memory_resource();
@@ -200,17 +199,22 @@ void __single_linked_chunk_node::__remove(
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-void * __memory_pool::__allocate(memory_resource * __res)
+void * __memory_pool::__allocate(
+    memory_resource * __res
+  , size_t __block_size
+  , size_t __max_block_per_chunk)
 {
     if (!__free_head_) {
-        __alloc_new_chunk(__res);
+        __alloc_new_chunk(__res, __block_size);
+        __increment_blocks_per_chunk(__max_block_per_chunk);
     }
     __block_node * __n = __free_head_;
     __free_head_ = __free_head_->__next_;
     return static_cast<void*>(__n);
 }
 
-void __memory_pool::__deallocate(memory_resource *, void * __p)
+void __memory_pool::__deallocate(
+    memory_resource *, void * __p)
 {
     if (! __p) {
         return;
@@ -225,35 +229,43 @@ void __memory_pool::__release(memory_resource * __res)
     __alloc_.__release(__res);
 }
 
-void __memory_pool::__alloc_new_chunk(memory_resource * __res)
+void __memory_pool::__alloc_new_chunk(
+    memory_resource * __res
+  , size_t __block_size)
 {
     // TODO Alignment should always be either 8 or 16.
     // Since 8 is the smallest block size supported and 16 is the maximum 
     // alignment. Test this.
-    const size_t __a = __fundamental_alignment(__block_size_);
+    const size_t __a = __fundamental_alignment(__block_size);
     const size_t __s = 
-        __aligned_allocation_size(__block_size_, __a) * __chunk_size_;
+        __aligned_allocation_size(__block_size, __a) * __chunk_size_;
     void * __p = __alloc_.__allocate(__res, __s);
-    __add_chunk_to_free_list(__p, __s, __a);
-    __increment_max_blocks_per_chunk();
+    __add_chunk_to_free_list(__p, __block_size, __s, __a);
 }
 
-void __memory_pool::__add_chunk_to_free_list(void * __p, size_t __s, size_t __a)
+void __memory_pool::__add_chunk_to_free_list(
+    void * __p, size_t __block_size
+  , size_t __s, size_t __a)
 {
-    while (_VSTD::align(__a, __block_size_, __p, __s)) {
+    size_t __debug_left = __chunk_size_;
+    while (_VSTD::align(__a, __block_size, __p, __s)) {
         __block_node * __ret = static_cast<__block_node*>(__p);
-        __p = static_cast<char*>(__p) + __block_size_;
-        __s -= __block_size_;
+        __p = static_cast<char*>(__p) + __block_size;
+        __s -= __block_size;
         __ret->__next_ = __free_head_;
         __free_head_ = __ret;
+        --__debug_left;
     }
+    _LIBCPP_ASSERT(__debug_left == 0, "aligned blocks did not match expected");
 }
 
-void __memory_pool::__increment_max_blocks_per_chunk()
+void __memory_pool::__increment_blocks_per_chunk(size_t __max_block_per_chunk)
 {
-    // TODO fix overflow
-    if ((__chunk_size_ << 1) < __max_block_per_chunk_) {
-        __chunk_size_ <<= 1;
+    size_t const __pos_next = __chunk_size_ << 1;
+    if (!__pos_next || __pos_next >= __max_block_per_chunk) {
+        __chunk_size_ = __max_block_per_chunk;
+    } else {
+        __chunk_size_ = __pos_next;
     }
 }
 
@@ -262,41 +274,44 @@ synchronized_pool_resource::~synchronized_pool_resource() {}
 
 void * synchronized_pool_resource::do_allocate(size_t __bytes, size_t __align)
 {
-    return __base_.__allocate(__bytes, __align);
+    return __base_.__do_allocate(__bytes, __align);
 }
 
 void synchronized_pool_resource::do_deallocate(
     void * __p, size_t __bytes, size_t __align)
 {
-    __base_.__deallocate(__p, __bytes, __align);
+    __base_.__do_deallocate(__p, __bytes, __align);
 }
 
 bool synchronized_pool_resource::do_is_equal(
     memory_resource const & __other) const _NOEXCEPT
 {
-    return *__base_.__resource() == __other;
+    return this
+        == dynamic_cast<synchronized_pool_resource const *>(&__other);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 unsynchronized_pool_resource::~unsynchronized_pool_resource()
 {
+    // release() called in base's destructor.
 }
 
 void * unsynchronized_pool_resource::do_allocate(size_t __bytes, size_t __align)
 {
-    return __base_.__allocate(__bytes, __align);
+    return __base_.__do_allocate(__bytes, __align);
 }
 
 void unsynchronized_pool_resource::do_deallocate(
     void * __p, size_t __bytes, size_t __align)
 {
-    __base_.__deallocate(__p, __bytes, __align);
+    __base_.__do_deallocate(__p, __bytes, __align);
 }
 
 bool unsynchronized_pool_resource::do_is_equal(
     memory_resource const & __other) const _NOEXCEPT
 {
-    return *__base_.__resource() == __other;
+    return this
+        == dynamic_cast<unsynchronized_pool_resource const *>(&__other);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
