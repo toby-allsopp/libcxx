@@ -124,10 +124,12 @@ __default_memory_resource(bool set = false, memory_resource * new_res = nullptr)
     static atomic<memory_resource*> __res( new_delete_resource() );
     if (set) {
         new_res = new_res ? new_res : new_delete_resource();
-        return _VSTD::atomic_exchange(&__res, new_res);
+        return _VSTD::atomic_exchange_explicit(
+            &__res, new_res, memory_order::memory_order_relaxed);
     }
     else {
-        return _VSTD::atomic_load(&__res);
+        return _VSTD::atomic_load_explicit(
+            &__res, memory_order::memory_order_relaxed);
     }
 #else
     static memory_resource * res( new_delete_resource() );
@@ -269,42 +271,44 @@ void __memory_pool::__increment_blocks_per_chunk(size_t __max_block_per_chunk)
     }
 }
 
-////////////////////////////////////////////////////////////////////////////////
-synchronized_pool_resource::~synchronized_pool_resource() {}
-
-void * synchronized_pool_resource::do_allocate(size_t __bytes, size_t __align)
-{
-    return __base_.__do_allocate(__bytes, __align);
-}
-
-void synchronized_pool_resource::do_deallocate(
-    void * __p, size_t __bytes, size_t __align)
-{
-    __base_.__do_deallocate(__p, __bytes, __align);
-}
-
-bool synchronized_pool_resource::do_is_equal(
-    memory_resource const & __other) const _NOEXCEPT
-{
-    return this
-        == dynamic_cast<synchronized_pool_resource const *>(&__other);
-}
 
 ////////////////////////////////////////////////////////////////////////////////
 unsynchronized_pool_resource::~unsynchronized_pool_resource()
 {
-    // release() called in base's destructor.
+    release();
 }
 
-void * unsynchronized_pool_resource::do_allocate(size_t __bytes, size_t __align)
+void unsynchronized_pool_resource::release()
 {
-    return __base_.__do_allocate(__bytes, __align);
+    for (size_t __i = 0; __i < __num_pools_; ++__i) {
+        __pool_buf_[__i].__release(__res_);
+    }
+    __oversized_alloc_.__release(__res_);
+}
+
+void * unsynchronized_pool_resource::do_allocate(size_t __s, size_t __a)
+{
+    size_t const __alloc_size = __aligned_allocation_size(__s, __a);
+    if (__oversized(__alloc_size)) {
+        return __oversized_alloc_.__allocate(__res_, __alloc_size);
+    } else {
+        size_t const __i = __index_for(__alloc_size);
+        return __pool_buf_[__i].__allocate(
+            __res_, pool_options::__impl_smallest_block << __i
+          , __opts_.max_blocks_per_chunk
+          );
+    }
 }
 
 void unsynchronized_pool_resource::do_deallocate(
-    void * __p, size_t __bytes, size_t __align)
+    void * __p, size_t __s, size_t __a)
 {
-    __base_.__do_deallocate(__p, __bytes, __align);
+    size_t const __alloc_size = __aligned_allocation_size(__s, __a);
+    if (__oversized(__alloc_size)) {
+        return __oversized_alloc_.__deallocate(__res_, __p);
+    } else {
+        __pool_buf_[__index_for(__alloc_size)].__deallocate(__res_, __p);
+    }
 }
 
 bool unsynchronized_pool_resource::do_is_equal(
@@ -312,6 +316,61 @@ bool unsynchronized_pool_resource::do_is_equal(
 {
     return this
         == dynamic_cast<unsynchronized_pool_resource const *>(&__other);
+}
+
+size_t unsynchronized_pool_resource::__index_of(size_t __pow) const _NOEXCEPT
+{
+    _LIBCPP_ASSERT(__pow, "Cannot be zero");
+    _LIBCPP_ASSERT(!__undersized(__pow), "pow not in index range");
+    _LIBCPP_ASSERT(!__oversized(__pow), "pow not in index range");
+    _LIBCPP_ASSERT(__is_power2(__pow), "Must be power of two");
+    // use -4 so index for 2^4=8 is at 0.
+    return (numeric_limits<size_t>::digits - __clz(__pow)) - 4;
+}
+
+// Precondition: __s <= largest_required_pool_block
+// Otherwise __round_up_pow_2 can wrap.
+size_t unsynchronized_pool_resource::__index_for(size_t __s) const _NOEXCEPT
+{
+    _LIBCPP_ASSERT(!__oversized(__s), "cannot be oversized");
+    return __undersized(__s) ? 0 : __index_of(__round_up_pow_2(__s));
+}
+
+bool unsynchronized_pool_resource::__undersized(size_t __s) const _NOEXCEPT
+{
+    return __s < pool_options::__impl_smallest_block;
+}
+
+bool unsynchronized_pool_resource::__oversized(size_t __s) const _NOEXCEPT
+{
+    _LIBCPP_ASSERT(__opts_.largest_required_pool_block >= 8, "largest block too small");
+    return __s > __opts_.largest_required_pool_block;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+synchronized_pool_resource::~synchronized_pool_resource()
+{
+    // __base_'s destructor invokes release()
+}
+
+void * synchronized_pool_resource::do_allocate(size_t __bytes, size_t __align)
+{
+    _Guard __g(__lock_);
+    return __base_.allocate(__bytes, __align);
+}
+
+void synchronized_pool_resource::do_deallocate(
+    void * __p, size_t __bytes, size_t __align)
+{
+    _Guard __g(__lock_);
+    __base_.deallocate(__p, __bytes, __align);
+}
+
+bool synchronized_pool_resource::do_is_equal(
+    memory_resource const & __other) const _NOEXCEPT
+{
+    return this
+        == dynamic_cast<synchronized_pool_resource const *>(&__other);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

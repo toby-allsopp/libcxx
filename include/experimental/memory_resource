@@ -686,45 +686,10 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
         __single_linked_chunk_allocator __alloc_;
     };
 
-    class _LIBCPP_TYPE_VIS_ONLY __synchronized_memory_pool
+    class _LIBCPP_TYPE_VIS_ONLY unsynchronized_pool_resource
+      : public memory_resource
     {
-    public:
-        __synchronized_memory_pool()
-            : __pool_()
-        {}
-        __synchronized_memory_pool(__synchronized_memory_pool const &) = delete;
-        __synchronized_memory_pool & operator=(__synchronized_memory_pool const &) = delete;
-
-        _LIBCPP_INLINE_VISIBILITY
-        void * __allocate(memory_resource * __res, size_t __bs, size_t __mbc)
-        {
-            lock_guard<mutex> __guard(__lock_);
-            return __pool_.__allocate(__res, __bs, __mbc);
-        }
-
-        _LIBCPP_INLINE_VISIBILITY
-        void __deallocate(memory_resource * __res, void * __p) 
-        {
-            lock_guard<mutex> __guard(__lock_);
-            __pool_.__deallocate(__res, __p);
-        }
-
-        _LIBCPP_INLINE_VISIBILITY
-        void __release(memory_resource * __res)
-        {
-            lock_guard<mutex> __guard(__lock_);
-            __pool_.__release(__res);
-        }
-
     private:
-        mutex __lock_;
-        __memory_pool __pool_;
-    };
-
-
-    template <class _PoolType>
-    class _LIBCPP_TYPE_VIS_ONLY __pool_resource_base
-    {
         // Enough for pools with sizes:
         // 8, 16, 32, 64, 128, 256, 512, 1024, 2056, 4096
         // Assumes min/max pool size is known.
@@ -736,95 +701,61 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
           );
         static_assert(
             pool_options::__impl_largest_block == 4096
-            ,"Expected largest pool size to be 4096"
-            );
-
-        _LIBCPP_INLINE_VISIBILITY
-        size_t __index_of(size_t __pow) const _NOEXCEPT
-        {
-            _LIBCPP_ASSERT(__pow, "Cannot be zero");
-            _LIBCPP_ASSERT(!__undersized(__pow), "pow not in index range");
-            _LIBCPP_ASSERT(!__oversized(__pow), "pow not in index range");
-            _LIBCPP_ASSERT(__is_power2(__pow), "Must be power of two");
-            // use -4 so index for 2^4=8 is at 0.
-            return (numeric_limits<size_t>::digits - __clz(__pow)) - 4;
-        }
-
-        _LIBCPP_INLINE_VISIBILITY
-        bool __undersized(size_t __s) const _NOEXCEPT
-        {
-            return __s < pool_options::__impl_smallest_block;
-        }
-
-        _LIBCPP_INLINE_VISIBILITY
-        bool __oversized(size_t __s) const _NOEXCEPT
-        {
-            _LIBCPP_ASSERT(__opts_.largest_required_pool_block >= 8, "largest block too small");
-            return __s > __opts_.largest_required_pool_block;
-        }
-
-        // Precondition: __s <= largest_required_pool_block
-        // Otherwise __round_up_pow_2 can wrap.
-        _LIBCPP_INLINE_VISIBILITY
-        size_t __index_for(size_t __s) const _NOEXCEPT
-        {
-            _LIBCPP_ASSERT(!__oversized(__s), "cannot be oversized");
-            return __undersized(__s) ? 0 : __index_of(__round_up_pow_2(__s));
-        }
-
+          , "Expected largest pool size to be 4096"
+          );
     public:
-        __pool_resource_base(pool_options __opts, memory_resource * __res)
+        unsynchronized_pool_resource(
+            pool_options const & __opts, memory_resource * __res)
             : __opts_(__adjust_pool_options(__opts))
             , __num_pools_(__index_of(__opts_.largest_required_pool_block) + 1)
             , __res_(__res)
         {}
 
-        __pool_resource_base(__pool_resource_base const &) = delete;
+        unsynchronized_pool_resource()
+          : unsynchronized_pool_resource(pool_options(), get_default_resource())
+        {}
 
-        ~__pool_resource_base() { __release(); }
+        explicit unsynchronized_pool_resource(memory_resource * __ustream)
+          : unsynchronized_pool_resource(pool_options(), __ustream)
+        {}
 
-        __pool_resource_base & operator=(__pool_resource_base const &) = delete;
+        explicit unsynchronized_pool_resource(pool_options const & __opts)
+          : unsynchronized_pool_resource(__opts, get_default_resource())
+        {}
 
-        void * __do_allocate(size_t __s, size_t __a)
-        {
-            size_t const __alloc_size = __aligned_allocation_size(__s, __a);
-            if (__oversized(__alloc_size)) {
-                return __oversized_alloc_.__allocate(__res_, __alloc_size);
-            } else {
-                size_t const __i = __index_for(__alloc_size);
-                return __pool_buf_[__i].__allocate(
-                    __res_, pool_options::__impl_smallest_block << __i
-                  , __opts_.max_blocks_per_chunk
-                  );
-            }
-        }
+        unsynchronized_pool_resource(unsynchronized_pool_resource const &) = delete;
 
-        void __do_deallocate(void * __p, size_t __s, size_t __a) _NOEXCEPT
-        {
-            size_t const __alloc_size = __aligned_allocation_size(__s, __a);
-            if (__oversized(__alloc_size)) {
-                return __oversized_alloc_.__deallocate(__res_, __p);
-            } else {
-                __pool_buf_[__index_for(__alloc_size)].__deallocate(__res_, __p);
-            }
-        }
+        virtual ~unsynchronized_pool_resource();
 
-        void __release() _NOEXCEPT
-        {
-            for (int __i = 0; __i < __num_pools_; ++__i) {
-                __pool_buf_[__i].__release(__res_);
-            }
-            __oversized_alloc_.__release(__res_);
-        }
+        unsynchronized_pool_resource & operator=(
+            unsynchronized_pool_resource const &) = delete;
 
-        pool_options __options() const _NOEXCEPT { return __opts_; }
-        memory_resource * __resource() const _NOEXCEPT { return __res_; }
+        void release();
 
+        _LIBCPP_INLINE_VISIBILITY
+        memory_resource * upstream_resource() const
+        { return __res_; }
+
+        _LIBCPP_INLINE_VISIBILITY
+        pool_options options() const
+        { return __opts_; }
+
+    protected:
+        virtual void * do_allocate(size_t __bytes, size_t __align);
+        virtual void do_deallocate(void * __p, size_t __bytes, size_t __align);
+        virtual bool do_is_equal(memory_resource const & __other) const _NOEXCEPT;
+
+    private:
+        size_t __index_of(size_t __pow) const _NOEXCEPT;
+        size_t __index_for(size_t __s) const _NOEXCEPT;
+
+        bool __undersized(size_t __s) const _NOEXCEPT;
+        bool __oversized(size_t __s) const _NOEXCEPT;
     private:
         pool_options __opts_;
         size_t __num_pools_;
         memory_resource * __res_;
-        _PoolType __pool_buf_[__max_num_pools];
+        __memory_pool __pool_buf_[__max_num_pools];
         __chunk_allocator __oversized_alloc_;
     };
 
@@ -860,19 +791,20 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
         _LIBCPP_INLINE_VISIBILITY
         void release()
         {
-            __base_.__release();
+            _Guard __g(__lock_);
+            __base_.release();
         }
 
         _LIBCPP_INLINE_VISIBILITY
         memory_resource * upstream_resource() const
         {
-            return __base_.__resource();
+            return __base_.upstream_resource();
         }
 
         _LIBCPP_INLINE_VISIBILITY
         pool_options options() const
         {
-            return __base_.__options();
+            return __base_.options();
         }
 
     protected:
@@ -881,59 +813,11 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
         virtual bool do_is_equal(memory_resource const & __other) const _NOEXCEPT;
 
     private:
-        typedef __pool_resource_base<__synchronized_memory_pool> _Base;
+        typedef unsynchronized_pool_resource _Base;
         _Base __base_;
-    };
 
-
-    class _LIBCPP_TYPE_VIS_ONLY unsynchronized_pool_resource
-      : public memory_resource
-    {
-    public:
-        unsynchronized_pool_resource(
-            pool_options const & __opts, memory_resource * __ustream)
-            : __base_(__opts, __ustream)
-        {}
-
-        unsynchronized_pool_resource()
-          : unsynchronized_pool_resource(pool_options(), get_default_resource())
-        {}
-
-        explicit unsynchronized_pool_resource(memory_resource * __ustream)
-          : unsynchronized_pool_resource(pool_options(), __ustream)
-        {}
-
-        explicit unsynchronized_pool_resource(pool_options const & __opts)
-          : unsynchronized_pool_resource(__opts, get_default_resource())
-        {}
-
-        unsynchronized_pool_resource(unsynchronized_pool_resource const &) = delete;
-
-        virtual ~unsynchronized_pool_resource();
-
-        unsynchronized_pool_resource & operator=(
-            unsynchronized_pool_resource const &) = delete;
-
-        _LIBCPP_INLINE_VISIBILITY
-        void release()
-        { __base_.__release(); }
-
-        _LIBCPP_INLINE_VISIBILITY
-        memory_resource * upstream_resource() const 
-        { return __base_.__resource(); }
-
-        _LIBCPP_INLINE_VISIBILITY
-        pool_options options() const 
-        { return __base_.__options(); }
-
-    protected:
-        virtual void * do_allocate(size_t __bytes, size_t __align);
-        virtual void do_deallocate(void * __p, size_t __bytes, size_t __align);
-        virtual bool do_is_equal(memory_resource const & __other) const _NOEXCEPT;
-
-    private:
-        typedef __pool_resource_base<__memory_pool> _Base;
-        _Base __base_;
+        typedef lock_guard<mutex> _Guard;
+        mutex __lock_;
     };
 
     class _LIBCPP_TYPE_VIS_ONLY monotonic_buffer_resource
