@@ -66,13 +66,12 @@ namespace pmr {
  */
 
 #include <experimental/__config>
-#include <limits>
-#include <mutex>
 #include <experimental/__memory>
 #include <memory>
+#include <mutex>
 #include <new>
-#include <type_traits>
 #include <tuple>
+#include <type_traits>
 #include <utility>
 #include <cstddef>
 
@@ -341,7 +340,7 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
 // 8.7, memory.resource.adaptor
 
     // 8.7.1, memory.resource.adaptor.overview
-    template <class _Alloc> 
+    template <class _Alloc>
     class _LIBCPP_TYPE_VIS_ONLY __resource_adaptor_imp
       : public memory_resource
     {
@@ -352,7 +351,7 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
 
         static_assert(
             is_same<_ValueType, char>::value
-          , "value_type must be char"
+          , "value type must be char"
           );
 
     public:
@@ -723,15 +722,11 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
 
         _LIBCPP_INLINE_VISIBILITY
         memory_resource * upstream_resource() const
-        {
-            return __base_.upstream_resource();
-        }
+        { return __base_.upstream_resource(); }
 
         _LIBCPP_INLINE_VISIBILITY
         pool_options options() const
-        {
-            return __base_.options();
-        }
+        { return __base_.options(); }
 
     protected:
         virtual void * do_allocate(size_t __bytes, size_t __align);
@@ -740,9 +735,9 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
 
     private:
         typedef unsynchronized_pool_resource _Base;
-        _Base __base_;
-
         typedef lock_guard<mutex> _Guard;
+
+        _Base __base_;
         mutex __lock_;
     };
 

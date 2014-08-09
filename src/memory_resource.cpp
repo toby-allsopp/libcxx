@@ -8,6 +8,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "experimental/memory_resource"
+#include "limits"
 #include "cstdlib"
 
 #if __has_feature(cxx_atomic)
