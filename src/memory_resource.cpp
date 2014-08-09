@@ -19,16 +19,6 @@
 _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
 
 ////////////////////////////////////////////////////////////////////////////////
-#if 0
-template class polymorphic_allocator<char>;
-template class __resource_adaptor_imp<allocator<char>>;
-template class __basic_chunk_allocator<__double_linked_chunk_node>;
-template class __basic_chunk_allocator<__single_linked_chunk_node>;
-template class __pool_resource_base<__memory_pool>;
-template class __pool_resource_base<__synchronized_memory_pool>;
-#endif
-
-////////////////////////////////////////////////////////////////////////////////
 memory_resource::~memory_resource()
 {
 }
