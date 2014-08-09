@@ -1950,6 +1950,7 @@ __hash_table<_Tp, _Hash, _Equal, _Alloc>::rehash(size_type __n)
         __n = _VSTD::max<size_type>
               (
                   __n,
+                  __bc >= 2 &&
                   __is_power2(__bc) ? __next_pow2(size_t(ceil(float(size()) / max_load_factor()))) :
                                       __next_prime(size_t(ceil(float(size()) / max_load_factor())))
               );
