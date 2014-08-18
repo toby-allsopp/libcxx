@@ -530,6 +530,7 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
 
         __basic_chunk_allocator & operator=(__basic_chunk_allocator const &) = delete;
 
+        _LIBCPP_INLINE_VISIBILITY
         void * __allocate(memory_resource * __res, size_t __s)
         {
             if (! __s) { return nullptr; }
@@ -538,6 +539,7 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
             return __insert_new_chunk(__res->allocate(__alloc_size), __alloc_size);
         }
 
+        _LIBCPP_INLINE_VISIBILITY
         void __deallocate(memory_resource * __res, void * __p) _NOEXCEPT 
         {
             if (! __p) { return; }
@@ -546,6 +548,7 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
             __res->deallocate(__n, __n->__size_);
         }
 
+        _LIBCPP_INLINE_VISIBILITY
         void __release(memory_resource * __res) _NOEXCEPT
         {
             while (__head_) {
