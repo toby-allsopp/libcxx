@@ -16,6 +16,9 @@
 // iter_type put(iter_type s, bool intl, ios_base& f, char_type fill,
 //               long double units) const;
 
+// NOTE: GLIBC locale data specifies that the negative sign goes before
+// the currency name. However if a currency symbol is used the negative goes after.
+
 #include <locale>
 #include <ios>
 #include <streambuf>
@@ -215,7 +218,11 @@ int main()
         output_iterator<char*> iter = f.put(output_iterator<char*>(str),
                                             true, ios, '*', v);
         std::string ex(str, iter.base());
+#   if !defined(__GLIBC__)
         assert(ex == "CNY -0.01");
+#   else
+        assert(ex == "-CNY 0.01");
+#   endif
     }
     {   // positive, showbase
         long double v = 123456789;
@@ -233,7 +240,11 @@ int main()
         output_iterator<char*> iter = f.put(output_iterator<char*>(str),
                                             true, ios, '*', v);
         std::string ex(str, iter.base());
+#   if !defined(__GLIBC__)
         assert(ex == "CNY -1,234,567.89");
+#   else
+        assert(ex == "-CNY 1,234,567.89");
+#   endif
     }
     {   // negative, showbase, left
         long double v = -123456789;
@@ -244,7 +255,11 @@ int main()
         output_iterator<char*> iter = f.put(output_iterator<char*>(str),
                                             true, ios, ' ', v);
         std::string ex(str, iter.base());
+#   if !defined(__GLIBC__)
         assert(ex == "CNY -1,234,567.89   ");
+#   else
+        assert(ex == "-CNY 1,234,567.89   ");
+#   endif
         assert(ios.width() == 0);
     }
     {   // negative, showbase, internal
@@ -256,7 +271,11 @@ int main()
         output_iterator<char*> iter = f.put(output_iterator<char*>(str),
                                             true, ios, ' ', v);
         std::string ex(str, iter.base());
+#   if !defined(__GLIBC__)
         assert(ex == "CNY -   1,234,567.89");
+#   else
+        assert(ex == "-CNY    1,234,567.89");
+#   endif
         assert(ios.width() == 0);
     }
     {   // negative, showbase, right
@@ -268,7 +287,11 @@ int main()
         output_iterator<char*> iter = f.put(output_iterator<char*>(str),
                                             true, ios, ' ', v);
         std::string ex(str, iter.base());
+#   if !defined(__GLIBC__)
         assert(ex == "   CNY -1,234,567.89");
+#   else
+        assert(ex == "   -CNY 1,234,567.89");
+#   endif
         assert(ios.width() == 0);
     }
 }
@@ -433,7 +456,11 @@ int main()
         output_iterator<wchar_t*> iter = f.put(output_iterator<wchar_t*>(str),
                                             true, ios, '*', v);
         std::wstring ex(str, iter.base());
+#   if !defined(__GLIBC__)
         assert(ex == L"CNY -0.01");
+#   else
+        assert(ex == L"-CNY 0.01");
+#   endif
     }
     {   // positive, showbase
         long double v = 123456789;
@@ -451,7 +478,11 @@ int main()
         output_iterator<wchar_t*> iter = f.put(output_iterator<wchar_t*>(str),
                                             true, ios, '*', v);
         std::wstring ex(str, iter.base());
+#   if !defined(__GLIBC__)
         assert(ex == L"CNY -1,234,567.89");
+#   else
+        assert(ex == L"-CNY 1,234,567.89");
+#   endif
     }
     {   // negative, showbase, left
         long double v = -123456789;
@@ -462,7 +493,11 @@ int main()
         output_iterator<wchar_t*> iter = f.put(output_iterator<wchar_t*>(str),
                                             true, ios, ' ', v);
         std::wstring ex(str, iter.base());
+#   if !defined(__GLIBC__)
         assert(ex == L"CNY -1,234,567.89   ");
+#   else
+        assert(ex == L"-CNY 1,234,567.89   ");
+#   endif
         assert(ios.width() == 0);
     }
     {   // negative, showbase, internal
@@ -474,7 +509,11 @@ int main()
         output_iterator<wchar_t*> iter = f.put(output_iterator<wchar_t*>(str),
                                             true, ios, ' ', v);
         std::wstring ex(str, iter.base());
+#   if !defined(__GLIBC__)
         assert(ex == L"CNY -   1,234,567.89");
+#   else
+        assert(ex == L"-CNY    1,234,567.89");
+#   endif
         assert(ios.width() == 0);
     }
     {   // negative, showbase, right
@@ -486,7 +525,11 @@ int main()
         output_iterator<wchar_t*> iter = f.put(output_iterator<wchar_t*>(str),
                                             true, ios, ' ', v);
         std::wstring ex(str, iter.base());
+#   if !defined(__GLIBC__)
         assert(ex == L"   CNY -1,234,567.89");
+#   else
+        assert(ex == L"   -CNY 1,234,567.89");
+#   endif
         assert(ios.width() == 0);
     }
 }
