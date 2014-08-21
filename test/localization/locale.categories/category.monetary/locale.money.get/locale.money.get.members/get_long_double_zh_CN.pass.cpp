@@ -16,6 +16,9 @@
 // iter_type get(iter_type b, iter_type e, bool intl, ios_base& iob,
 //               ios_base::iostate& err, long double& v) const;
 
+// NOTE: GLIBC locale data specifies that the negative sign goes before
+// the currency name. However if a currency symbol is used the negative goes after.
+
 #include <locale>
 #include <ios>
 #include <streambuf>
@@ -305,7 +308,11 @@ int main()
             noshowbase(ios);
         }
         {   // negative one, showbase
+#       if !defined(__GLIBC__)
             std::string v = "CNY -0.01";
+#       else
+            std::string v = "-CNY 0.01";
+#       endif
             typedef input_iterator<const char*> I;
             long double ex;
             std::ios_base::iostate err = std::ios_base::goodbit;
@@ -316,7 +323,11 @@ int main()
             assert(ex == -1);
         }
         {   // negative one, showbase
+#       if !defined(__GLIBC__)
             std::string v = "CNY -0.01";
+#       else
+            std::string v = "-CNY 0.01";
+#       endif
             showbase(ios);
             typedef input_iterator<const char*> I;
             long double ex;
@@ -353,7 +364,11 @@ int main()
             noshowbase(ios);
         }
         {   // negative, showbase
+#       if !defined(__GLIBC__)
             std::string v = "CNY -1,234,567.89";
+#       else
+            std::string v = "-CNY 1,234,567.89";
+#       endif
             showbase(ios);
             typedef input_iterator<const char*> I;
             long double ex;
@@ -637,7 +652,11 @@ int main()
             noshowbase(ios);
         }
         {   // negative one, showbase
+#       if !defined(__GLIBC__)
             std::wstring v = L"CNY -0.01";
+#       else
+            std::wstring v = L"-CNY 0.01";
+#       endif
             typedef input_iterator<const wchar_t*> I;
             long double ex;
             std::ios_base::iostate err = std::ios_base::goodbit;
@@ -648,7 +667,11 @@ int main()
             assert(ex == -1);
         }
         {   // negative one, showbase
+#       if !defined(__GLIBC__)
             std::wstring v = L"CNY -0.01";
+#       else
+            std::wstring v = L"-CNY 0.01";
+#       endif
             showbase(ios);
             typedef input_iterator<const wchar_t*> I;
             long double ex;
@@ -685,7 +708,11 @@ int main()
             noshowbase(ios);
         }
         {   // negative, showbase
+#       if !defined(__GLIBC__)
             std::wstring v = L"CNY -1,234,567.89";
+#       else
+            std::wstring v = L"-CNY 1,234,567.89";
+#       endif
             showbase(ios);
             typedef input_iterator<const wchar_t*> I;
             long double ex;
