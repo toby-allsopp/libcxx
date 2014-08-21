@@ -28,6 +28,14 @@
 
 int main()
 {
+    // Ensure that the default locale is known. Othewise the second test could fail.
+    putenv(const_cast<char*>("LANG=" LOCALE_en_US_UTF_8));
+    // GLIBC collates en_US differently
+#if !defined(__GLIBC__)
+    int const expect = 1;
+#else
+    int const expect = -1;
+#endif
     {
         std::locale l(LOCALE_en_US_UTF_8);
         {
@@ -35,14 +43,14 @@ int main()
             std::string s2("aaaaaaA");
             std::string s3("BaaaaaA");
             assert(f.compare(s2.data(), s2.data() + s2.size(),
-                             s3.data(), s3.data() + s3.size()) == 1);
+                             s3.data(), s3.data() + s3.size()) == expect);
         }
         {
             const std::collate<wchar_t>& f = std::use_facet<std::collate<wchar_t> >(l);
             std::wstring s2(L"aaaaaaA");
             std::wstring s3(L"BaaaaaA");
             assert(f.compare(s2.data(), s2.data() + s2.size(),
-                             s3.data(), s3.data() + s3.size()) == 1);
+                             s3.data(), s3.data() + s3.size()) == expect);
         }
     }
     {
@@ -52,14 +60,14 @@ int main()
             std::string s2("aaaaaaA");
             std::string s3("BaaaaaA");
             assert(f.compare(s2.data(), s2.data() + s2.size(),
-                             s3.data(), s3.data() + s3.size()) == 1);
+                             s3.data(), s3.data() + s3.size()) == expect);
         }
         {
             const std::collate<wchar_t>& f = std::use_facet<std::collate<wchar_t> >(l);
             std::wstring s2(L"aaaaaaA");
             std::wstring s3(L"BaaaaaA");
             assert(f.compare(s2.data(), s2.data() + s2.size(),
-                             s3.data(), s3.data() + s3.size()) == 1);
+                             s3.data(), s3.data() + s3.size()) == expect);
         }
     }
     {
