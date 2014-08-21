@@ -10719,6 +10719,29 @@ void test5()
     std::locale lc = std::locale::classic();
     std::locale lg(lc, new my_numpunct);
     const my_facet f(1);
+
+#if !defined(__GLIBC__)
+    std::string const lnan1 = "nan";
+    std::string const lnan2 = "nan**********************";
+    std::string const lnan3 = "**********************nan";
+    std::string const lnan4 = "**********************nan";
+
+    std::string const unan1 = "NAN";
+    std::string const unan2 = "NAN**********************";
+    std::string const unan3 = "**********************NAN";
+    std::string const unan4 = "**********************NAN";
+#else
+    std::string const lnan1 = "+nan";
+    std::string const lnan2 = "+nan*********************";
+    std::string const lnan3 = "*********************+nan";
+    std::string const lnan4 = "+*********************nan";
+
+    std::string const unan1 = "+NAN";
+    std::string const unan2 = "+NAN*********************";
+    std::string const unan3 = "*********************+NAN";
+    std::string const unan4 = "+*********************NAN";
+#endif
+
     {
         long double v = std::nan("");
         std::ios ios(0);
@@ -10883,7 +10906,7 @@ void test5()
                                 {
                                     iter = f.put(output_iterator<char*>(str), ios, '*', v);
                                     std::string ex(str, iter.base());
-                                    assert(ex == "nan");
+                                    assert(ex == lnan1);
                                     assert(ios.width() == 0);
                                 }
                                 ios.width(25);
@@ -10891,7 +10914,7 @@ void test5()
                                 {
                                     iter = f.put(output_iterator<char*>(str), ios, '*', v);
                                     std::string ex(str, iter.base());
-                                    assert(ex == "nan**********************");
+                                    assert(ex == lnan2);
                                     assert(ios.width() == 0);
                                 }
                                 ios.width(25);
@@ -10899,7 +10922,7 @@ void test5()
                                 {
                                     iter = f.put(output_iterator<char*>(str), ios, '*', v);
                                     std::string ex(str, iter.base());
-                                    assert(ex == "**********************nan");
+                                    assert(ex == lnan3);
                                     assert(ios.width() == 0);
                                 }
                                 ios.width(25);
@@ -10907,7 +10930,7 @@ void test5()
                                 {
                                     iter = f.put(output_iterator<char*>(str), ios, '*', v);
                                     std::string ex(str, iter.base());
-                                    assert(ex == "**********************nan");
+                                    assert(ex == lnan4);
                                     assert(ios.width() == 0);
                                 }
                             }
@@ -10917,7 +10940,7 @@ void test5()
                                 {
                                     iter = f.put(output_iterator<char*>(str), ios, '*', v);
                                     std::string ex(str, iter.base());
-                                    assert(ex == "nan");
+                                    assert(ex == lnan1);
                                     assert(ios.width() == 0);
                                 }
                                 ios.width(25);
@@ -10925,7 +10948,7 @@ void test5()
                                 {
                                     iter = f.put(output_iterator<char*>(str), ios, '*', v);
                                     std::string ex(str, iter.base());
-                                    assert(ex == "nan**********************");
+                                    assert(ex == lnan2);
                                     assert(ios.width() == 0);
                                 }
                                 ios.width(25);
@@ -10933,7 +10956,7 @@ void test5()
                                 {
                                     iter = f.put(output_iterator<char*>(str), ios, '*', v);
                                     std::string ex(str, iter.base());
-                                    assert(ex == "**********************nan");
+                                    assert(ex == lnan3);
                                     assert(ios.width() == 0);
                                 }
                                 ios.width(25);
@@ -10941,7 +10964,7 @@ void test5()
                                 {
                                     iter = f.put(output_iterator<char*>(str), ios, '*', v);
                                     std::string ex(str, iter.base());
-                                    assert(ex == "**********************nan");
+                                    assert(ex == lnan4);
                                     assert(ios.width() == 0);
                                 }
                             }
@@ -10954,7 +10977,7 @@ void test5()
                                 {
                                     iter = f.put(output_iterator<char*>(str), ios, '*', v);
                                     std::string ex(str, iter.base());
-                                    assert(ex == "nan");
+                                    assert(ex == lnan1);
                                     assert(ios.width() == 0);
                                 }
                                 ios.width(25);
@@ -10962,7 +10985,7 @@ void test5()
                                 {
                                     iter = f.put(output_iterator<char*>(str), ios, '*', v);
                                     std::string ex(str, iter.base());
-                                    assert(ex == "nan**********************");
+                                    assert(ex == lnan2);
                                     assert(ios.width() == 0);
                                 }
                                 ios.width(25);
@@ -10970,7 +10993,7 @@ void test5()
                                 {
                                     iter = f.put(output_iterator<char*>(str), ios, '*', v);
                                     std::string ex(str, iter.base());
-                                    assert(ex == "**********************nan");
+                                    assert(ex == lnan3);
                                     assert(ios.width() == 0);
                                 }
                                 ios.width(25);
@@ -10978,7 +11001,7 @@ void test5()
                                 {
                                     iter = f.put(output_iterator<char*>(str), ios, '*', v);
                                     std::string ex(str, iter.base());
-                                    assert(ex == "**********************nan");
+                                    assert(ex == lnan4);
                                     assert(ios.width() == 0);
                                 }
                             }
@@ -10988,7 +11011,7 @@ void test5()
                                 {
                                     iter = f.put(output_iterator<char*>(str), ios, '*', v);
                                     std::string ex(str, iter.base());
-                                    assert(ex == "nan");
+                                    assert(ex == lnan1);
                                     assert(ios.width() == 0);
                                 }
                                 ios.width(25);
@@ -10996,7 +11019,7 @@ void test5()
                                 {
                                     iter = f.put(output_iterator<char*>(str), ios, '*', v);
                                     std::string ex(str, iter.base());
-                                    assert(ex == "nan**********************");
+                                    assert(ex == lnan2);
                                     assert(ios.width() == 0);
                                 }
                                 ios.width(25);
@@ -11004,7 +11027,7 @@ void test5()
                                 {
                                     iter = f.put(output_iterator<char*>(str), ios, '*', v);
                                     std::string ex(str, iter.base());
-                                    assert(ex == "**********************nan");
+                                    assert(ex == lnan3);
                                     assert(ios.width() == 0);
                                 }
                                 ios.width(25);
@@ -11012,7 +11035,7 @@ void test5()
                                 {
                                     iter = f.put(output_iterator<char*>(str), ios, '*', v);
                                     std::string ex(str, iter.base());
-                                    assert(ex == "**********************nan");
+                                    assert(ex == lnan4);
                                     assert(ios.width() == 0);
                                 }
                             }
@@ -11176,7 +11199,7 @@ void test5()
                                 {
                                     iter = f.put(output_iterator<char*>(str), ios, '*', v);
                                     std::string ex(str, iter.base());
-                                    assert(ex == "NAN");
+                                    assert(ex == unan1);
                                     assert(ios.width() == 0);
                                 }
                                 ios.width(25);
@@ -11184,7 +11207,7 @@ void test5()
                                 {
                                     iter = f.put(output_iterator<char*>(str), ios, '*', v);
                                     std::string ex(str, iter.base());
-                                    assert(ex == "NAN**********************");
+                                    assert(ex == unan2);
                                     assert(ios.width() == 0);
                                 }
                                 ios.width(25);
@@ -11192,7 +11215,7 @@ void test5()
                                 {
                                     iter = f.put(output_iterator<char*>(str), ios, '*', v);
                                     std::string ex(str, iter.base());
-                                    assert(ex == "**********************NAN");
+                                    assert(ex == unan3);
                                     assert(ios.width() == 0);
                                 }
                                 ios.width(25);
@@ -11200,7 +11223,7 @@ void test5()
                                 {
                                     iter = f.put(output_iterator<char*>(str), ios, '*', v);
                                     std::string ex(str, iter.base());
-                                    assert(ex == "**********************NAN");
+                                    assert(ex == unan4);
                                     assert(ios.width() == 0);
                                 }
                             }
@@ -11210,7 +11233,7 @@ void test5()
                                 {
                                     iter = f.put(output_iterator<char*>(str), ios, '*', v);
                                     std::string ex(str, iter.base());
-                                    assert(ex == "NAN");
+                                    assert(ex == unan1);
                                     assert(ios.width() == 0);
                                 }
                                 ios.width(25);
@@ -11218,7 +11241,7 @@ void test5()
                                 {
                                     iter = f.put(output_iterator<char*>(str), ios, '*', v);
                                     std::string ex(str, iter.base());
-                                    assert(ex == "NAN**********************");
+                                    assert(ex == unan2);
                                     assert(ios.width() == 0);
                                 }
                                 ios.width(25);
@@ -11226,7 +11249,7 @@ void test5()
                                 {
                                     iter = f.put(output_iterator<char*>(str), ios, '*', v);
                                     std::string ex(str, iter.base());
-                                    assert(ex == "**********************NAN");
+                                    assert(ex == unan3);
                                     assert(ios.width() == 0);
                                 }
                                 ios.width(25);
@@ -11234,7 +11257,7 @@ void test5()
                                 {
                                     iter = f.put(output_iterator<char*>(str), ios, '*', v);
                                     std::string ex(str, iter.base());
-                                    assert(ex == "**********************NAN");
+                                    assert(ex == unan4);
                                     assert(ios.width() == 0);
                                 }
                             }
@@ -11247,7 +11270,7 @@ void test5()
                                 {
                                     iter = f.put(output_iterator<char*>(str), ios, '*', v);
                                     std::string ex(str, iter.base());
-                                    assert(ex == "NAN");
+                                    assert(ex == unan1);
                                     assert(ios.width() == 0);
                                 }
                                 ios.width(25);
@@ -11255,7 +11278,7 @@ void test5()
                                 {
                                     iter = f.put(output_iterator<char*>(str), ios, '*', v);
                                     std::string ex(str, iter.base());
-                                    assert(ex == "NAN**********************");
+                                    assert(ex == unan2);
                                     assert(ios.width() == 0);
                                 }
                                 ios.width(25);
@@ -11263,7 +11286,7 @@ void test5()
                                 {
                                     iter = f.put(output_iterator<char*>(str), ios, '*', v);
                                     std::string ex(str, iter.base());
-                                    assert(ex == "**********************NAN");
+                                    assert(ex == unan3);
                                     assert(ios.width() == 0);
                                 }
                                 ios.width(25);
@@ -11271,7 +11294,7 @@ void test5()
                                 {
                                     iter = f.put(output_iterator<char*>(str), ios, '*', v);
                                     std::string ex(str, iter.base());
-                                    assert(ex == "**********************NAN");
+                                    assert(ex == unan4);
                                     assert(ios.width() == 0);
                                 }
                             }
@@ -11281,7 +11304,7 @@ void test5()
                                 {
                                     iter = f.put(output_iterator<char*>(str), ios, '*', v);
                                     std::string ex(str, iter.base());
-                                    assert(ex == "NAN");
+                                    assert(ex == unan1);
                                     assert(ios.width() == 0);
                                 }
                                 ios.width(25);
@@ -11289,7 +11312,7 @@ void test5()
                                 {
                                     iter = f.put(output_iterator<char*>(str), ios, '*', v);
                                     std::string ex(str, iter.base());
-                                    assert(ex == "NAN**********************");
+                                    assert(ex == unan2);
                                     assert(ios.width() == 0);
                                 }
                                 ios.width(25);
@@ -11297,7 +11320,7 @@ void test5()
                                 {
                                     iter = f.put(output_iterator<char*>(str), ios, '*', v);
                                     std::string ex(str, iter.base());
-                                    assert(ex == "**********************NAN");
+                                    assert(ex == unan3);
                                     assert(ios.width() == 0);
                                 }
                                 ios.width(25);
@@ -11305,7 +11328,7 @@ void test5()
                                 {
                                     iter = f.put(output_iterator<char*>(str), ios, '*', v);
                                     std::string ex(str, iter.base());
-                                    assert(ex == "**********************NAN");
+                                    assert(ex == unan4);
                                     assert(ios.width() == 0);
                                 }
                             }
