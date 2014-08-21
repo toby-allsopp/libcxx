@@ -54,12 +54,22 @@ int main()
         {
             typedef char C;
             const std::numpunct<C>& np = std::use_facet<std::numpunct<C> >(l);
+        // GLIBC uses ' ' as the thousands_sep. That seems to be inline with
+        // http://docs.oracle.com/cd/E19455-01/806-0169/overview-9/index.html
+#       if !defined(__GLIBC__)
             assert(np.thousands_sep() == ',');
+#       else
+            assert(np.thousands_sep() == ' ');
+#       endif
         }
         {
             typedef wchar_t C;
             const std::numpunct<C>& np = std::use_facet<std::numpunct<C> >(l);
+#       if !defined(__GLIBC__)
             assert(np.thousands_sep() == L',');
+#       else
+            assert(np.thousands_sep() == L' ');
+#       endif
         }
     }
 }

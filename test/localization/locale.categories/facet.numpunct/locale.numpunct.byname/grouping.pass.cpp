@@ -54,12 +54,21 @@ int main()
         {
             typedef char C;
             const std::numpunct<C>& np = std::use_facet<std::numpunct<C> >(l);
+        // GLIBC uses groupings of three.
+#       if !defined(__GLIBC__)
             assert(np.grouping() == "\x7F");
+#       else
+            assert(np.grouping() == "\3");
+#       endif
         }
         {
             typedef wchar_t C;
             const std::numpunct<C>& np = std::use_facet<std::numpunct<C> >(l);
+#       if !defined(__GLIBC__)
             assert(np.grouping() == "\x7F");
+#       else
+            assert(np.grouping() == "\3");
+#       endif
         }
     }
 }
