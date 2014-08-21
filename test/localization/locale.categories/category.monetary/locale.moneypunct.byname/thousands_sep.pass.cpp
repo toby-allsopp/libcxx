@@ -117,19 +117,19 @@ int main()
 
     {
         Fnf f(LOCALE_ru_RU_UTF_8, 1);
-        assert(f.thousands_sep() == ',');
+        assert(f.thousands_sep() == ' ');
     }
     {
         Fnt f(LOCALE_ru_RU_UTF_8, 1);
-        assert(f.thousands_sep() == ',');
+        assert(f.thousands_sep() == ' ');
     }
     {
         Fwf f(LOCALE_ru_RU_UTF_8, 1);
-        assert(f.thousands_sep() == L',');
+        assert(f.thousands_sep() == L' ');
     }
     {
         Fwt f(LOCALE_ru_RU_UTF_8, 1);
-        assert(f.thousands_sep() == L',');
+        assert(f.thousands_sep() == L' ');
     }
 
     {
