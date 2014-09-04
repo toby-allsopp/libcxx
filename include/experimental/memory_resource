@@ -606,8 +606,8 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
         void __increment_blocks_per_chunk(size_t __max_blocks_per_chunk);
 
     private:
-        size_t __chunk_size_;
-        __block_node * __free_head_;
+        atomic<size_t> __chunk_size_;
+        atomic<__block_node *> __free_head_;
         __single_linked_chunk_allocator __alloc_;
     };
 
