@@ -197,17 +197,22 @@ void * __memory_pool::__allocate(
   , size_t __block_size
   , size_t __max_block_per_chunk)
 {
-    if (!__free_head_) {
+    if (!__free_head_.head) {
         __alloc_new_chunk(__res, __block_size);
         __increment_blocks_per_chunk(__max_block_per_chunk);
     }
 
     while (true) {
-        __block_node * __n = nullptr;
-        __block_node * __old_head_ = __free_head_;
-        __n = __old_head_;
+        __block_node *__n
+        struct __counted_head __old_head = __free_head_;
+        struct __counted_head __next_head = __old_head;
+
+        __next_head.count++;
+        __next_head.head = __old_head_.head->__next_;
+        __n = __old_head.head;
+
         if (__free_head_.compare_exhange_weak(__old_head,
-                                              __free_head_->__next_,
+                                              __next_head,
                                               memory_order_release,
                                               memory_order_relaxed)) {
             return static_cast<void*>(__n);
@@ -224,10 +229,13 @@ void __memory_pool::__deallocate(
 
     __block_node * __n = static_cast<__block_node*>(__p);
     while (true) {
-        __block_node * __old_head_ = __free_head_;
-        __n->__next_ = __old_head_;
-        if (__free_head_.compare_exchange_weak(__old_head_,
-                                               __n,
+        struct __counted_head __old_head = __free_head_;
+        struct __counted_head __next_head = __old_head_;
+
+        __next_head.head = __n;
+
+        if (__free_head_.compare_exchange_weak(__old_head,
+                                               __next_head,
                                                memory_order_release,
                                                memory_order_relaxed)) {
             return;
