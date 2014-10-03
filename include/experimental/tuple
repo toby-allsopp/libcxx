@@ -57,12 +57,7 @@ template <class _Tp>
 _LIBCPP_CONSTEXPR size_t tuple_size_v = tuple_size<_Tp>::value;
 #endif
 
-#if __has_feature(cxx_decltype_auto) || \
-    (!defined(__clang__) && defined(_GNUC_VER) && _GNUC_VER >= 409)
-#define _LIBCPP_AUTO_RETURN(_Tp) -> decltype(auto) { return _Tp; }
-#else
 #define _LIBCPP_AUTO_RETURN(_Tp) -> decltype(_Tp) { return _Tp; }
-#endif
 
 template <class _Fn, class _Tuple, size_t ..._Id>
 inline _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX11
