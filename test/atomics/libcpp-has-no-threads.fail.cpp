@@ -7,14 +7,17 @@
 //
 //===----------------------------------------------------------------------===//
 
-// test <setjmp.h>
+// <atomic>
 
-#include <setjmp.h>
-#include <type_traits>
+// Test that including <atomic> fails to compile when _LIBCPP_HAS_NO_THREADS
+// is defined.
+
+#ifndef _LIBCPP_HAS_NO_THREADS
+#define _LIBCPP_HAS_NO_THREADS
+#endif
+
+#include <atomic>
 
 int main()
 {
-    jmp_buf jb;
-    static_assert((std::is_same<decltype(longjmp(jb, 0)), void>::value),
-                  "std::is_same<decltype(longjmp(jb, 0)), void>::value");
 }

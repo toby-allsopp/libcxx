@@ -6,15 +6,13 @@
 // Source Licenses. See LICENSE.TXT for details.
 //
 //===----------------------------------------------------------------------===//
+// XFAIL: libcpp-has-no-threads
 
-// test <setjmp.h>
-
-#include <setjmp.h>
-#include <type_traits>
+#ifdef _LIBCPP_HAS_NO_THREADS
+#error This should be XFAIL'd for the purpose of detecting that the LIT feature\
+ 'libcpp-has-no-threads' is available iff _LIBCPP_HAS_NO_THREADS is defined
+#endif
 
 int main()
 {
-    jmp_buf jb;
-    static_assert((std::is_same<decltype(longjmp(jb, 0)), void>::value),
-                  "std::is_same<decltype(longjmp(jb, 0)), void>::value");
 }
