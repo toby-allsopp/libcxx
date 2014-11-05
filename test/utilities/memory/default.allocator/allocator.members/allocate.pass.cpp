@@ -39,8 +39,8 @@ int A_constructed = 0;
 struct A
 {
     int data;
-    A() : data() {++A_constructed;}
-    A(const A&) : data() {++A_constructed;}
+    A() {++A_constructed;}
+    A(const A&) {++A_constructed;}
     ~A() {--A_constructed;}
 };
 
