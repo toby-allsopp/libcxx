@@ -16,7 +16,6 @@
 
 #include <tuple>
 #include <cassert>
-#include <type_traits>
 
 #include "../MoveOnly.h"
 
@@ -30,8 +29,6 @@ struct A
 };
 
 #endif
-
-struct NoDefault { NoDefault() = delete; };
 
 int main()
 {
@@ -65,14 +62,6 @@ int main()
         assert(std::get<0>(t) == 0);
         assert(std::get<1>(t) == MoveOnly());
         assert(std::get<2>(t) == MoveOnly());
-    }
-    {
-        // Make sure the _Up... constructor SFINAEs out when the types that
-        // are not explicitly initialized are not all default constructible.
-        // Otherwise, std::is_constructible would return true but instantiating
-        // the constructor would fail.
-        static_assert(!std::is_constructible<std::tuple<MoveOnly, NoDefault>, MoveOnly>(), "");
-        static_assert(!std::is_constructible<std::tuple<MoveOnly, MoveOnly, NoDefault>, MoveOnly, MoveOnly>(), "");
     }
 #if _LIBCPP_STD_VER > 11
     {
