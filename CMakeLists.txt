@@ -85,15 +85,6 @@ get_target_triple(LIBCXX_TARGET_TRIPLE
 set(LIBCXX_TARGET_TRIPLE ${LIBCXX_TARGET_TRIPLE} CACHE STRING "Target triple.")
 
 
-# Configure compiler.
-include(config-ix)
-# Configure ABI library
-include(HandleLibCXXABI)
-
-#===============================================================================
-# Setup Compiler Flags
-#===============================================================================
-
 # Declare libc++ configuration variables.
 # They are intended for use as follows:
 # LIBCXX_CXX_FLAGS: General flags for both the compiler and linker.
@@ -102,6 +93,15 @@ include(HandleLibCXXABI)
 set(LIBCXX_CXX_FLAGS "")
 set(LIBCXX_COMPILE_FLAGS "")
 set(LIBCXX_LINK_FLAGS "")
+
+# Configure compiler.
+include(config-ix)
+# Configure ABI library
+include(HandleLibCXXABI)
+
+#===============================================================================
+# Setup Compiler Flags
+#===============================================================================
 
 # Get required flags.
 # On all systems the system c++ standard library headers need to be excluded.
@@ -229,6 +229,8 @@ if (LIBCXX_BUILT_STANDALONE)
     elseif (LLVM_USE_SANITIZER STREQUAL "Undefined")
       list(APPEND LIBCXX_CXX_FLAGS
           "-fsanitize=undefined -fno-sanitize=vptr,function -fno-sanitize-recover")
+    elseif (LLVM_USE_SANITIZER STREQUAL "Thread")
+      list(APPEND LIBCXX_CXX_FLAGS "-fsanitize=thread")
     else()
       message(WARNING "Unsupported value of LLVM_USE_SANITIZER: ${LLVM_USE_SANITIZER}")
     endif()
