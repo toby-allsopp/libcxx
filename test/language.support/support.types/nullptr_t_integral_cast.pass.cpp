@@ -6,19 +6,19 @@
 // Source Licenses. See LICENSE.TXT for details.
 //
 //===----------------------------------------------------------------------===//
-//
-// XFAIL: apple-darwin
 
-// test quick_exit and at_quick_exit
+// NOTE: nullptr_t emulation cannot handle a reinterpret_cast to an
+// integral type
+// XFAIL: c++98, c++03
 
-#include <cstdlib>
+// typedef decltype(nullptr) nullptr_t;
 
-void f() {}
+
+#include <cstddef>
+#include <cassert>
 
 int main()
 {
-#ifdef _LIBCPP_HAS_QUICK_EXIT
-    std::at_quick_exit(f);
-    std::quick_exit(0);
-#endif
+    std::ptrdiff_t i = reinterpret_cast<std::ptrdiff_t>(nullptr);
+    assert(i == 0);
 }
