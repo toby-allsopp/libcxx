@@ -6,19 +6,12 @@
 // Source Licenses. See LICENSE.TXT for details.
 //
 //===----------------------------------------------------------------------===//
-//
-// XFAIL: apple-darwin
 
-// test quick_exit and at_quick_exit
+// typedef decltype(nullptr) nullptr_t;
 
-#include <cstdlib>
-
-void f() {}
+#include <cstddef>
 
 int main()
 {
-#ifdef _LIBCPP_HAS_QUICK_EXIT
-    std::at_quick_exit(f);
-    std::quick_exit(0);
-#endif
+    std::ptrdiff_t i = static_cast<std::ptrdiff_t>(nullptr);
 }
