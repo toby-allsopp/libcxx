@@ -7,22 +7,11 @@
 //
 //===----------------------------------------------------------------------===//
 
-// <strstream>
+// typedef decltype(nullptr) nullptr_t;
 
-// class strstreambuf
-
-// char* str();
-
-#include <strstream>
-#include <cassert>
+#include <cstddef>
 
 int main()
 {
-    {
-        std::strstreambuf sb;
-        assert(sb.sputc('a') == 'a');
-        assert(sb.sputc(0) == 0);
-        assert(sb.str() == std::string("a"));
-        sb.freeze(false);
-    }
+    std::ptrdiff_t i = static_cast<std::ptrdiff_t>(nullptr);
 }

@@ -7,22 +7,18 @@
 //
 //===----------------------------------------------------------------------===//
 
-// <strstream>
+// NOTE: nullptr_t emulation cannot handle a reinterpret_cast to an
+// integral type
+// XFAIL: c++98, c++03
 
-// class strstreambuf
+// typedef decltype(nullptr) nullptr_t;
 
-// char* str();
 
-#include <strstream>
+#include <cstddef>
 #include <cassert>
 
 int main()
 {
-    {
-        std::strstreambuf sb;
-        assert(sb.sputc('a') == 'a');
-        assert(sb.sputc(0) == 0);
-        assert(sb.str() == std::string("a"));
-        sb.freeze(false);
-    }
+    std::ptrdiff_t i = reinterpret_cast<std::ptrdiff_t>(nullptr);
+    assert(i == 0);
 }

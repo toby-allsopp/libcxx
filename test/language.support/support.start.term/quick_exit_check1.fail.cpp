@@ -6,23 +6,20 @@
 // Source Licenses. See LICENSE.TXT for details.
 //
 //===----------------------------------------------------------------------===//
+//
 
-// <strstream>
+// test that referencing at_quick_exit when _LIBCPP_HAS_QUICK_EXIT is not defined
+// results in a compile error.
 
-// class strstreambuf
+#include <cstdlib>
 
-// char* str();
-
-#include <strstream>
-#include <cassert>
+void f() {}
 
 int main()
 {
-    {
-        std::strstreambuf sb;
-        assert(sb.sputc('a') == 'a');
-        assert(sb.sputc(0) == 0);
-        assert(sb.str() == std::string("a"));
-        sb.freeze(false);
-    }
+#ifndef _LIBCPP_HAS_QUICK_EXIT
+    std::at_quick_exit(f);
+#else
+#error
+#endif
 }

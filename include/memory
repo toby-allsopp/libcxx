@@ -1450,7 +1450,7 @@ struct _LIBCPP_TYPE_VIS_ONLY allocator_traits
     template <class _Tp, class... _Args>
         _LIBCPP_INLINE_VISIBILITY
         static void construct(allocator_type& __a, _Tp* __p, _Args&&... __args)
-            {__construct(__has_construct<allocator_type, pointer, _Args...>(),
+            {__construct(__has_construct<allocator_type, _Tp*, _Args...>(),
                          __a, __p, _VSTD::forward<_Args>(__args)...);}
 #else  // _LIBCPP_HAS_NO_VARIADICS
     template <class _Tp>
@@ -3660,7 +3660,7 @@ template <class _Tp, class _Dp, class _Alloc>
 const void*
 __shared_ptr_pointer<_Tp, _Dp, _Alloc>::__get_deleter(const type_info& __t) const _NOEXCEPT
 {
-    return __t == typeid(_Dp) ? &__data_.first().second() : 0;
+    return __t == typeid(_Dp) ? _VSTD::addressof(__data_.first().second()) : 0;
 }
 
 #endif  // _LIBCPP_NO_RTTI
