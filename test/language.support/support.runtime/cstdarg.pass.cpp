@@ -17,11 +17,7 @@
 
 #if __cplusplus >= 201103L
 #  ifndef va_copy
-#    error va_copy not defined when c++ >= 11
-#  endif
-#else
-#  ifdef va_copy
-#    error va_copy not defined when c++ < 11
+#    error va_copy is not defined when c++ >= 11
 #  endif
 #endif
 
