@@ -6,30 +6,20 @@
 // Source Licenses. See LICENSE.TXT for details.
 //
 //===----------------------------------------------------------------------===//
+//
 
-// test <cstdarg>
+// test that referencing quick_exit when _LIBCPP_HAS_QUICK_EXIT is not defined
+// results in a compile error.
 
-#include <cstdarg>
+#include <cstdlib>
 
-#ifndef va_arg
-#error va_arg not defined
-#endif
-
-#if __cplusplus >= 201103L
-#  ifndef va_copy
-#    error va_copy is not defined when c++ >= 11
-#  endif
-#endif
-
-#ifndef va_end
-#error va_end not defined
-#endif
-
-#ifndef va_start
-#error va_start not defined
-#endif
+void f() {}
 
 int main()
 {
-    std::va_list va;
+#ifndef _LIBCPP_HAS_QUICK_EXIT
+    std::quick_exit(0);
+#else
+#error
+#endif
 }
