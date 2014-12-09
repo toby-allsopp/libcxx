@@ -9,8 +9,8 @@
 
 // <optional>
 
-// template <class T> constexpr bool operator<(const optional<T>& x, const T& v);
-// template <class T> constexpr bool operator<(const T& v, const optional<T>& x);
+// template <class T> constexpr bool operator<=(const optional<T>& x, const T& v);
+// template <class T> constexpr bool operator<=(const T& v, const optional<T>& x);
 
 #include <experimental/optional>
 
@@ -37,25 +37,25 @@ int main()
     {
     typedef X T;
     typedef optional<T> O;
-    
+
     constexpr T val(2);
-    constexpr O o1;     // disengaged
-    constexpr O o2{1};  // engaged
+    constexpr O o1;       // disengaged
+    constexpr O o2{1};    // engaged
     constexpr O o3{val};  // engaged
 
-    static_assert (   o1 < T(1) , "" );
-    static_assert ( !(o2 < T(1)), "" );
-    static_assert ( !(o3 < T(1)), "" );
-    static_assert (   o2 < T(2) , "" );
-    static_assert (   o2 < T(val), "" );
-    static_assert (   o3 < T(3) , "" );
+    static_assert (  (o1 <= T(1)), "" );
+    static_assert (  (o2 <= T(1)), "" );  // equal
+    static_assert ( !(o3 <= T(1)), "" );
+    static_assert (  (o2 <=  val), "" );
+    static_assert (  (o3 <=  val), "" );  // equal
+    static_assert (  (o3 <= T(3)), "" );
 
-    static_assert (  !(T(1) < o1), "" );
-    static_assert (  !(T(1) < o2), "" );
-    static_assert (    T(1) < o3 , "" );
-    static_assert (  !(T(2) < o2), "" );
-    static_assert (!(T(val) < o2), "" );
-    static_assert (  !(T(3) < o3), "" );
+    static_assert (  !(T(1) <= o1), "" );
+    static_assert (   (T(1) <= o2), "" ); // equal
+    static_assert (   (T(1) <= o3), "" );
+    static_assert (  !(val  <= o2), "" );
+    static_assert (   (val  <= o3), "" ); // equal
+    static_assert (  !(T(3) <= o3), "" );
     }
 #endif
 }
