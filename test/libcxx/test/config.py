@@ -314,7 +314,7 @@ class Configuration(object):
         self.compile_flags += shlex.split(compile_flags_str)
 
     def configure_link_flags(self):
-        #self.link_flags += ['-nodefaultlibs']
+        self.link_flags += ['-nodefaultlibs']
         libcxx_library = self.get_lit_conf('libcxx_library')
         # Configure libc++ library paths.
         if libcxx_library is not None:
