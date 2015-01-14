@@ -147,7 +147,7 @@ class LibcxxTestFormat(lit.formats.FileBasedTest):
                        for name, value in self.exec_env.items())
         cmd.append(exec_path)
         if lit_config.useValgrind:
-            cmd = lit_config.valgrindArgs + cmd
+            cmd = lit_config.valgrindArgs + cmd + ['--benchmark_filter=all']
         out, err, rc = lit.util.executeCommand(cmd, cwd=in_dir)
         return self._make_report(cmd, out, err, rc)
 

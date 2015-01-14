@@ -26,6 +26,7 @@ class Configuration(object):
         self.use_system_lib = False
         self.use_clang_verify = False
         self.use_ccache = False
+        self.enable_benchmarks = False
         self.long_tests = None
 
         if platform.system() not in ('Darwin', 'FreeBSD', 'Linux'):
@@ -64,6 +65,7 @@ class Configuration(object):
         self.configure_compile_flags()
         self.configure_link_flags()
         self.configure_sanitizer()
+        self.configure_benchmarks()
         self.configure_features()
         # Print the final compile and link flags.
         self.lit_config.note('Using compile flags: %s' % self.compile_flags)
@@ -410,6 +412,15 @@ class Configuration(object):
             else:
                 self.lit_config.fatal('unsupported value for '
                                       'libcxx_use_san: {0}'.format(san))
+
+    def configure_benchmarks(self):
+        self.enable_benchmarks = self.get_lit_bool('enable_benchmarks', False)
+        if not self.enable_benchmarks:
+            return
+        external_dir = os.path.join(self.obj_root, 'external')
+        self.compile_flags += ['-I' + external_dir + '/include']
+        self.link_flags += [external_dir + '/lib/libbenchmark.a']
+        
 
     def configure_triple(self):
         # Get or infer the target triple.

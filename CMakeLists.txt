@@ -61,6 +61,7 @@ if (LIBCXX_BUILT_STANDALONE)
   set(LLVM_USE_SANITIZER "" CACHE STRING
       "Define the sanitizer used to build the library and tests")
 endif()
+option(LIBCXX_ENABLE_BENCHMARKS "Enable the benchmark tests." ON)
 
 set(CXXABIS none libcxxabi libcxxrt libstdc++ libsupc++)
 if (NOT LIBCXX_CXX_ABI)
@@ -290,6 +291,7 @@ add_subdirectory(include)
 # Add source code. This also contains all of the logic for deciding linker flags
 # soname, etc...
 add_subdirectory(lib)
+add_subdirectory(external)
 
 #===============================================================================
 # Setup Tests
