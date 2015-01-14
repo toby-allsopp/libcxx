@@ -268,28 +268,14 @@ class Configuration(object):
         self.config.available_features.add(std)
         # Configure include paths
         self.compile_flags += ['-nostdinc++']
-        self.compile_flags += ['-I' + self.src_root + '/test/support']
-        libcxx_headers = self.get_lit_conf('libcxx_headers',
-                                           self.src_root + '/include')
-        if not os.path.isdir(libcxx_headers):
-            self.lit_config.fatal("libcxx_headers='%s' is not a directory."
-                                  % libcxx_headers)
-        self.compile_flags += ['-I' + libcxx_headers]
+        self.configure_compile_flags_header_includes()
         if sys.platform.startswith('linux'):
             self.compile_flags += ['-D__STDC_FORMAT_MACROS',
                                    '-D__STDC_LIMIT_MACROS',
                                    '-D__STDC_CONSTANT_MACROS']
         # Configure feature flags.
-        enable_exceptions = self.get_lit_bool('enable_exceptions', True)
-        if enable_exceptions:
-            self.config.available_features.add('exceptions')
-        else:
-            self.compile_flags += ['-fno-exceptions']
-        enable_rtti = self.get_lit_bool('enable_rtti', True)
-        if enable_rtti:
-            self.config.available_features.add('rtti')
-        else:
-            self.compile_flags += ['-fno-rtti', '-D_LIBCPP_NO_RTTI']
+        self.configure_compile_flags_exceptions()
+        self.configure_compile_flags_rtti()
         enable_32bit = self.get_lit_bool('enable_32bit', False)
         if enable_32bit:
             self.compile_flags += ['-m32']
@@ -298,12 +284,9 @@ class Configuration(object):
         enable_monotonic_clock = self.get_lit_bool('enable_monotonic_clock',
                                                    True)
         if not enable_threads:
-            self.compile_flags += ['-D_LIBCPP_HAS_NO_THREADS']
-            self.config.available_features.add('libcpp-has-no-threads')
+            self.configure_compile_flags_no_threads()
             if not enable_monotonic_clock:
-                self.compile_flags += ['-D_LIBCPP_HAS_NO_MONOTONIC_CLOCK']
-                self.config.available_features.add(
-                    'libcpp-has-no-monotonic-clock')
+                self.configure_compile_flags_no_monotonic_clock() 
         elif not enable_monotonic_clock:
             self.lit_config.fatal('enable_monotonic_clock cannot be false when'
                                   ' enable_threads is true.')
@@ -312,6 +295,37 @@ class Configuration(object):
         # Configure extra compile flags.
         compile_flags_str = self.get_lit_conf('compile_flags', '')
         self.compile_flags += shlex.split(compile_flags_str)
+
+    def configure_compile_flags_header_includes(self):
+        self.compile_flags += ['-I' + self.src_root + '/test/support']
+        libcxx_headers = self.get_lit_conf('libcxx_headers',
+                                           self.src_root + '/include')
+        if not os.path.isdir(libcxx_headers):
+            self.lit_config.fatal("libcxx_headers='%s' is not a directory."
+                                  % libcxx_headers)
+        self.compile_flags += ['-I' + libcxx_headers]
+
+    def configure_compile_flags_exceptions(self):
+        enable_exceptions = self.get_lit_bool('enable_exceptions', True)
+        if enable_exceptions:
+            self.config.available_features.add('exceptions')
+        else:
+            self.compile_flags += ['-fno-exceptions']
+
+    def configure_compile_flags_rtti(self):
+        enable_rtti = self.get_lit_bool('enable_rtti', True)
+        if enable_rtti:
+            self.config.available_features.add('rtti')
+        else:
+            self.compile_flags += ['-fno-rtti', '-D_LIBCPP_NO_RTTI']
+
+    def configure_compile_flags_no_threads(self):
+        self.compile_flags += ['-D_LIBCPP_HAS_NO_THREADS']
+        self.config.available_features.add('libcpp-has-no-threads')
+
+    def configure_compile_flags_no_monotonic_clock(self):
+        self.compile_flags += ['-D_LIBCPP_HAS_NO_MONOTONIC_CLOCK']
+        self.config.available_features.add('libcpp-has-no-monotonic-clock')
 
     def configure_link_flags(self):
         self.link_flags += ['-nodefaultlibs']
@@ -337,11 +351,23 @@ class Configuration(object):
         if abi_library_path:
             self.link_flags += ['-L' + abi_library_path,
                                 '-Wl,-rpath,' + abi_library_path]
+
         # Configure libraries
+        self.configure_link_flags_cxx_library()
+        self.configure_link_flags_abi_library()
+        self.configure_extra_library_flags()
+
+        link_flags_str = self.get_lit_conf('link_flags', '')
+        self.link_flags += shlex.split(link_flags_str)
+
+    def configure_link_flags_cxx_library(self):
+        libcxx_library = self.get_lit_conf('libcxx_library')
         if libcxx_library:
             self.link_flags += [libcxx_library]
         else:
             self.link_flags += ['-lc++']
+
+    def configure_link_flags_abi_library(self):
         cxx_abi = self.get_lit_conf('cxx_abi', 'libcxxabi')
         if cxx_abi == 'libstdc++':
             self.link_flags += ['-lstdc++']
@@ -356,19 +382,27 @@ class Configuration(object):
         else:
             self.lit_config.fatal(
                 'C++ ABI setting %s unsupported for tests' % cxx_abi)
-        # Configure extra libraries.
+
+    def configure_extra_library_flags(self):
+        enable_threads = self.get_lit_bool('enable_threads', True)
+        llvm_unwinder = self.get_lit_conf('llvm_unwinder', False)
         if sys.platform == 'darwin':
             self.link_flags += ['-lSystem']
         elif sys.platform.startswith('linux'):
-            self.link_flags += ['-lgcc_eh', '-lc', '-lm', '-lpthread',
-                                '-lrt', '-lgcc_s']
+            if not llvm_unwinder:
+                self.link_flags += ['-lgcc_eh']
+            self.link_flags += ['-lc', '-lm']
+            if enable_threads:
+                self.link_flags += ['-lpthread']
+            self.link_flags += ['-lrt']
+            if llvm_unwinder:
+                self.link_flags += ['-lunwind', '-ldl']
+            else:
+                self.link_flags += ['-lgcc_s']
         elif sys.platform.startswith('freebsd'):
             self.link_flags += ['-lc', '-lm', '-pthread', '-lgcc_s']
         else:
             self.lit_config.fatal("unrecognized system: %r" % sys.platform)
-
-        link_flags_str = self.get_lit_conf('link_flags', '')
-        self.link_flags += shlex.split(link_flags_str)
 
     def configure_sanitizer(self):
         san = self.get_lit_conf('use_sanitizer', '').strip()
@@ -409,7 +443,7 @@ class Configuration(object):
                 self.config.available_features.add('tsan')
             else:
                 self.lit_config.fatal('unsupported value for '
-                                      'libcxx_use_san: {0}'.format(san))
+                                      'use_sanitizer: {0}'.format(san))
 
     def configure_triple(self):
         # Get or infer the target triple.
