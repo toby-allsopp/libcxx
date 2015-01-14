@@ -5447,10 +5447,15 @@ struct _FancyPointerCaster
   typedef typename _FromPtrTraits::element_type _Element;
   
   _LIBCPP_INLINE_VISIBILITY
-  _To operator()(_Element & __e) const
+  static _To __from_element(_Element & __e)
   {
-    
     return static_cast<_To>(_FromPtrTraits::pointer_to(__e));
+  }
+  
+  _LIBCPP_INLINE_VISIBILITY
+  static _To __from_pointer(_From & __f)
+  {
+    return static_cast<_To>(__f);
   }
 };
 
@@ -5461,11 +5466,18 @@ struct _FancyPointerCaster<_From*, _To>
   typedef typename _FromPtrTraits::element_type _Element;
   
   _LIBCPP_INLINE_VISIBILITY
-  _To operator()(_Element & __e) const
+  static _To __from_element(_Element & __e)
   {
     return reinterpret_cast<_To>(_FromPtrTraits::pointer_to(__e));      
   }
+  
+  _LIBCPP_INLINE_VISIBILITY
+  static _To __from_pointer(_From * __f)
+  {
+    return reinterpret_cast<_To>(__f);
+  }
 };
+
 
 
 _LIBCPP_END_NAMESPACE_STD

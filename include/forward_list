@@ -390,14 +390,25 @@ protected:
     _LIBCPP_INLINE_VISIBILITY
     __node_pointer        __before_begin() _NOEXCEPT
     {
-        _FancyPointerCaster<__begin_node_pointer, __node_pointer> __caster;
-        return __caster(__before_begin_.first());
+      typedef _FancyPointerCaster<__begin_node_pointer, __node_pointer> _Caster;
+      return _Caster::__from_element(__before_begin_.first());
     }
     _LIBCPP_INLINE_VISIBILITY
     __node_const_pointer  __before_begin() const _NOEXCEPT
-    {    
-      _FancyPointerCaster<__begin_node_pointer, __node_const_pointer> __caster;
-      return __caster(const_cast<__begin_node&>(__before_begin_.first()));
+    {
+      typedef _FancyPointerCaster<__begin_node_pointer, __node_const_pointer> _Caster;
+      return _Caster::__from_element(const_cast<__begin_node&>(__before_begin_.first()));
+    }                                
+    _LIBCPP_INLINE_VISIBILITY
+    __begin_node_pointer __before_begin_pointer() _NOEXCEPT
+    {
+      return pointer_traits<__begin_node_pointer>::pointer_to(__before_begin_.first());
+    }
+    
+    _LIBCPP_INLINE_VISIBILITY
+    __begin_node_pointer __before_begin_pointer() const _NOEXCEPT
+    {
+      return pointer_traits<__begin_node_pointer>::pointer_to(const_cast<__begin_node&>(__before_begin_.first()));
     }
 
     _LIBCPP_INLINE_VISIBILITY
@@ -500,7 +511,7 @@ __forward_list_base<_Tp, _Alloc>::__forward_list_base(__forward_list_base&& __x)
         _NOEXCEPT_(is_nothrow_move_constructible<__node_allocator>::value)
     : __before_begin_(_VSTD::move(__x.__before_begin_))
 {
-    __x.__before_begin()->__next_ = nullptr;
+    __x.__before_begin_pointer()->__next_ = nullptr;
 }
 
 template <class _Tp, class _Alloc>
@@ -511,8 +522,8 @@ __forward_list_base<_Tp, _Alloc>::__forward_list_base(__forward_list_base&& __x,
 {
     if (__alloc() == __x.__alloc())
     {
-        __before_begin()->__next_ = __x.__before_begin()->__next_;
-        __x.__before_begin()->__next_ = nullptr;
+        __before_begin_pointer()->__next_ = __x.__before_begin_pointer()->__next_;
+        __x.__before_begin_pointer()->__next_ = nullptr;
     }
 }
 
@@ -533,9 +544,7 @@ __forward_list_base<_Tp, _Alloc>::swap(__forward_list_base& __x)
 {
     __swap_alloc(__alloc(), __x.__alloc());
     using _VSTD::swap;
-    auto __first = __before_begin()->__next_;
-    auto __second = __x.__before_begin()->__next_;
-    swap(__first, __second);
+    swap(__before_begin_pointer()->__next_, __x.__before_begin_pointer()->__next_);
 }
 
 template <class _Tp, class _Alloc>
@@ -543,14 +552,14 @@ void
 __forward_list_base<_Tp, _Alloc>::clear() _NOEXCEPT
 {
     __node_allocator& __a = __alloc();
-    for (__node_pointer __p = __before_begin()->__next_; __p != nullptr;)
+    for (__node_pointer __p = __before_begin_pointer()->__next_; __p != nullptr;)
     {
         __node_pointer __next = __p->__next_;
         __node_traits::destroy(__a, _VSTD::addressof(__p->__value_));
         __node_traits::deallocate(__a, __p, 1);
         __p = __next;
     }
-    __before_begin()->__next_ = nullptr;
+    __before_begin_pointer()->__next_ = nullptr;
 }
 
 template <class _Tp, class _Alloc = allocator<_Tp> >
@@ -558,10 +567,11 @@ class _LIBCPP_TYPE_VIS_ONLY forward_list
     : private __forward_list_base<_Tp, _Alloc>
 {
     typedef __forward_list_base<_Tp, _Alloc> base;
-    typedef typename base::__node_allocator  __node_allocator;
-    typedef typename base::__node            __node;
-    typedef typename base::__node_traits     __node_traits;
-    typedef typename base::__node_pointer    __node_pointer;
+    typedef typename base::__node_allocator     __node_allocator;
+    typedef typename base::__node               __node;
+    typedef typename base::__node_traits        __node_traits;
+    typedef typename base::__node_pointer       __node_pointer;
+    typedef typename base::__begin_node_pointer __begin_node_pointer;
 
 public:
     typedef _Tp    value_type;
@@ -644,10 +654,10 @@ public:
 
     _LIBCPP_INLINE_VISIBILITY
     iterator       begin() _NOEXCEPT
-        {return       iterator(base::__before_begin()->__next_);}
+        {return       iterator(base::__before_begin_pointer()->__next_);}
     _LIBCPP_INLINE_VISIBILITY
     const_iterator begin() const _NOEXCEPT
-        {return const_iterator(base::__before_begin()->__next_);}
+        {return const_iterator(base::__before_begin_pointer()->__next_);}
     _LIBCPP_INLINE_VISIBILITY
     iterator       end() _NOEXCEPT
         {return       iterator(nullptr);}
@@ -657,7 +667,7 @@ public:
 
     _LIBCPP_INLINE_VISIBILITY
     const_iterator cbegin() const _NOEXCEPT
-        {return const_iterator(base::__before_begin()->__next_);}
+        {return const_iterator(base::__before_begin_pointer()->__next_);}
     _LIBCPP_INLINE_VISIBILITY
     const_iterator cend() const _NOEXCEPT
         {return const_iterator(nullptr);}
@@ -674,15 +684,15 @@ public:
 
     _LIBCPP_INLINE_VISIBILITY
     bool empty() const _NOEXCEPT
-        {return base::__before_begin()->__next_ == nullptr;}
+        {return base::__before_begin_pointer()->__next_ == nullptr;}
     _LIBCPP_INLINE_VISIBILITY
     size_type max_size() const _NOEXCEPT
         {return numeric_limits<size_type>::max();}
 
     _LIBCPP_INLINE_VISIBILITY
-    reference       front()       {return base::__before_begin()->__next_->__value_;}
+    reference       front()       {return base::__before_begin_pointer()->__next_->__value_;}
     _LIBCPP_INLINE_VISIBILITY
-    const_reference front() const {return base::__before_begin()->__next_->__value_;}
+    const_reference front() const {return base::__before_begin_pointer()->__next_->__value_;}
 
 #ifndef _LIBCPP_HAS_NO_RVALUE_REFERENCES
 #ifndef _LIBCPP_HAS_NO_VARIADICS
@@ -940,8 +950,8 @@ forward_list<_Tp, _Alloc>::__move_assign(forward_list& __x, true_type)
 {
     clear();
     base::__move_assign_alloc(__x);
-    base::__before_begin()->__next_ = __x.__before_begin()->__next_;
-    __x.__before_begin()->__next_ = nullptr;
+    base::__before_begin_pointer()->__next_ = __x.__before_begin_pointer()->__next_;
+    __x.__before_begin_pointer()->__next_ = nullptr;
 }
 
 template <class _Tp, class _Alloc>
@@ -1045,8 +1055,8 @@ forward_list<_Tp, _Alloc>::emplace_front(_Args&&... __args)
     unique_ptr<__node, _Dp> __h(__node_traits::allocate(__a, 1), _Dp(__a, 1));
     __node_traits::construct(__a, _VSTD::addressof(__h->__value_),
                                   _VSTD::forward<_Args>(__args)...);
-    __h->__next_ = base::__before_begin()->__next_;
-    base::__before_begin()->__next_ = __h.release();
+    __h->__next_ = base::__before_begin_pointer()->__next_;
+    base::__before_begin_pointer()->__next_ = __h.release();
 }
 
 #endif  // _LIBCPP_HAS_NO_VARIADICS
@@ -1059,8 +1069,8 @@ forward_list<_Tp, _Alloc>::push_front(value_type&& __v)
     typedef __allocator_destructor<__node_allocator> _Dp;
     unique_ptr<__node, _Dp> __h(__node_traits::allocate(__a, 1), _Dp(__a, 1));
     __node_traits::construct(__a, _VSTD::addressof(__h->__value_), _VSTD::move(__v));
-    __h->__next_ = base::__before_begin()->__next_;
-    base::__before_begin()->__next_ = __h.release();
+    __h->__next_ = base::__before_begin_pointer()->__next_;
+    base::__before_begin_pointer()->__next_ = __h.release();
 }
 
 #endif  // _LIBCPP_HAS_NO_RVALUE_REFERENCES
@@ -1073,8 +1083,8 @@ forward_list<_Tp, _Alloc>::push_front(const value_type& __v)
     typedef __allocator_destructor<__node_allocator> _Dp;
     unique_ptr<__node, _Dp> __h(__node_traits::allocate(__a, 1), _Dp(__a, 1));
     __node_traits::construct(__a, _VSTD::addressof(__h->__value_), __v);
-    __h->__next_ = base::__before_begin()->__next_;
-    base::__before_begin()->__next_ = __h.release();
+    __h->__next_ = base::__before_begin_pointer()->__next_;
+    base::__before_begin_pointer()->__next_ = __h.release();
 }
 
 template <class _Tp, class _Alloc>
@@ -1082,8 +1092,8 @@ void
 forward_list<_Tp, _Alloc>::pop_front()
 {
     __node_allocator& __a = base::__alloc();
-    __node_pointer __p = base::__before_begin()->__next_;
-    base::__before_begin()->__next_ = __p->__next_;
+    __node_pointer __p = base::__before_begin_pointer()->__next_;
+    base::__before_begin_pointer()->__next_ = __p->__next_;
     __node_traits::destroy(__a, _VSTD::addressof(__p->__value_));
     __node_traits::deallocate(__a, __p, 1);
 }
@@ -1194,6 +1204,7 @@ typename enable_if
 forward_list<_Tp, _Alloc>::insert_after(const_iterator __p,
                                         _InputIterator __f, _InputIterator __l)
 {
+    typedef _FancyPointerCaster<__node_pointer, __begin_node_pointer> _Caster;
     __node_pointer __r = __p.__ptr_;
     if (__f != __l)
     {
@@ -1227,8 +1238,8 @@ forward_list<_Tp, _Alloc>::insert_after(const_iterator __p,
             throw;
         }
 #endif  // _LIBCPP_NO_EXCEPTIONS
-        __last->__next_ = __r->__next_;
-        __r->__next_ = __first;
+        __last->__next_ = _Caster::__from_pointer(__r)->__next_;
+        _Caster::__from_pointer(__r)->__next_ = __first;
         __r = __last;
     }
     return iterator(__r);
@@ -1350,8 +1361,8 @@ forward_list<_Tp, _Alloc>::splice_after(const_iterator __p,
                 ++__lm1;
             __lm1.__ptr_->__next_ = __p.__ptr_->__next_;
         }
-        __p.__ptr_->__next_ = __x.__before_begin()->__next_;
-        __x.__before_begin()->__next_ = nullptr;
+        __p.__ptr_->__next_ = __x.__before_begin_pointer()->__next_;
+        __x.__before_begin_pointer()->__next_ = nullptr;
     }
 }
 
@@ -1492,10 +1503,10 @@ forward_list<_Tp, _Alloc>::merge(forward_list& __x, _Compare __comp)
 {
     if (this != &__x)
     {
-        base::__before_begin()->__next_ = __merge(base::__before_begin()->__next_,
-                                                    __x.__before_begin()->__next_,
+        base::__before_begin_pointer()->__next_ = __merge(base::__before_begin_pointer()->__next_,
+                                                    __x.__before_begin_pointer()->__next_,
                                                     __comp);
-        __x.__before_begin()->__next_ = nullptr;
+        __x.__before_begin_pointer()->__next_ = nullptr;
     }
 }
 
@@ -1550,7 +1561,7 @@ inline _LIBCPP_INLINE_VISIBILITY
 void
 forward_list<_Tp, _Alloc>::sort(_Compare __comp)
 {
-    base::__before_begin()->__next_ = __sort(base::__before_begin()->__next_,
+    base::__before_begin_pointer()->__next_ = __sort(base::__before_begin_pointer()->__next_,
                                        _VSTD::distance(begin(), end()), __comp);
 }
 
@@ -1588,7 +1599,7 @@ template <class _Tp, class _Alloc>
 void
 forward_list<_Tp, _Alloc>::reverse() _NOEXCEPT
 {
-    __node_pointer __p = base::__before_begin()->__next_;
+    __node_pointer __p = base::__before_begin_pointer()->__next_;
     if (__p != nullptr)
     {
         __node_pointer __f = __p->__next_;
@@ -1600,7 +1611,7 @@ forward_list<_Tp, _Alloc>::reverse() _NOEXCEPT
             __p = __f;
             __f = __t;
         }
-        base::__before_begin()->__next_ = __p;
+        base::__before_begin_pointer()->__next_ = __p;
     }
 }
 

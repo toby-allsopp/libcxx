@@ -54,7 +54,7 @@ target_link_libraries(cxx ${libraries})
 
 # Setup flags.
 append_if(LIBCXX_COMPILE_FLAGS LIBCXX_HAS_FPIC_FLAG -fPIC)
-append_if(LIBCXX_LINK_FLAGS LIBCXX_HAS_NODEFAULTLIBS_FLAG -nodefaultlibs)
+#append_if(LIBCXX_LINK_FLAGS LIBCXX_HAS_NODEFAULTLIBS_FLAG -nodefaultlibs)
 
 if ( APPLE )
   if ( CMAKE_OSX_DEPLOYMENT_TARGET STREQUAL "10.6" )

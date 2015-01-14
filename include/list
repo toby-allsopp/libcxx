@@ -215,8 +215,8 @@ struct __list_node_base
     _LIBCPP_INLINE_VISIBILITY
     pointer __self()
     {
-      _FancyPointerCaster<__base_pointer, pointer> __caster;
-      return __caster(*this);
+      typedef _FancyPointerCaster<__base_pointer, pointer> _Caster;
+      return _Caster::__from_element(*this);
     }
 };
 
@@ -585,21 +585,21 @@ protected:
     _LIBCPP_INLINE_VISIBILITY
     iterator end() _NOEXCEPT
     {
-        _FancyPointerCaster<__node_base_pointer, __node_pointer> __caster;
+        typedef _FancyPointerCaster<__node_base_pointer, __node_pointer> _Caster;
 #if _LIBCPP_DEBUG_LEVEL >= 2
-        return iterator(__caster(__end_), this);
+        return iterator(_Caster::__from_element(__end_), this);
 #else
-        return iterator(__caster(__end_));
+        return iterator(_Caster::__from_element(__end_));
 #endif
     }
     _LIBCPP_INLINE_VISIBILITY
     const_iterator end() const _NOEXCEPT
     {
-        _FancyPointerCaster<__node_base_pointer, __node_const_pointer> __caster;
+        typedef _FancyPointerCaster<__node_base_pointer, __node_const_pointer> _Caster;
 #if _LIBCPP_DEBUG_LEVEL >= 2
-        return const_iterator(__caster(const_cast<__node_base&>(__end_)), this);
+        return const_iterator(_Caster::__from_element(const_cast<__node_base&>(__end_)), this);
 #else
-        return const_iterator(__caster(const_cast<__node_base&>(__end_)));
+        return const_iterator(_Caster::__from_element(const_cast<__node_base&>(__end_)));
 #endif
     }
 
