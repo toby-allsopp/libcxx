@@ -215,7 +215,8 @@ struct __list_node_base
     _LIBCPP_INLINE_VISIBILITY
     pointer __self()
     {
-        return static_cast<pointer>(pointer_traits<__base_pointer>::pointer_to(*this));
+      _FancyPointerCaster<__base_pointer, pointer> __caster;
+      return __caster(*this);
     }
 };
 
@@ -584,23 +585,21 @@ protected:
     _LIBCPP_INLINE_VISIBILITY
     iterator end() _NOEXCEPT
     {
+        _FancyPointerCaster<__node_base_pointer, __node_pointer> __caster;
 #if _LIBCPP_DEBUG_LEVEL >= 2
-        return iterator(static_cast<__node_pointer>(
-                pointer_traits<__node_base_pointer>::pointer_to(__end_)), this);
+        return iterator(__caster(__end_), this);
 #else
-        return iterator(static_cast<__node_pointer>(
-                      pointer_traits<__node_base_pointer>::pointer_to(__end_)));
+        return iterator(__caster(__end_));
 #endif
     }
     _LIBCPP_INLINE_VISIBILITY
     const_iterator end() const _NOEXCEPT
     {
+        _FancyPointerCaster<__node_base_pointer, __node_const_pointer> __caster;
 #if _LIBCPP_DEBUG_LEVEL >= 2
-        return const_iterator(static_cast<__node_const_pointer>(
-        pointer_traits<__node_base_pointer>::pointer_to(const_cast<__node_base&>(__end_))), this);
+        return const_iterator(__caster(const_cast<__node_base&>(__end_)), this);
 #else
-        return const_iterator(static_cast<__node_const_pointer>(
-        pointer_traits<__node_base_pointer>::pointer_to(const_cast<__node_base&>(__end_))));
+        return const_iterator(__caster(const_cast<__node_base&>(__end_)));
 #endif
     }
 

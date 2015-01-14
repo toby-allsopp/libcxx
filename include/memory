@@ -5438,6 +5438,36 @@ undeclare_reachable(_Tp* __p)
 
 _LIBCPP_FUNC_VIS void* align(size_t __align, size_t __sz, void*& __ptr, size_t& __space);
 
+
+
+template <class _From, class _To>
+struct _FancyPointerCaster
+{
+  typedef pointer_traits<_From> _FromPtrTraits;
+  typedef typename _FromPtrTraits::element_type _Element;
+  
+  _LIBCPP_INLINE_VISIBILITY
+  _To operator()(_Element & __e) const
+  {
+    
+    return static_cast<_To>(_FromPtrTraits::pointer_to(__e));
+  }
+};
+
+template <class _From, class _To>
+struct _FancyPointerCaster<_From*, _To>
+{
+  typedef pointer_traits<_From*> _FromPtrTraits;
+  typedef typename _FromPtrTraits::element_type _Element;
+  
+  _LIBCPP_INLINE_VISIBILITY
+  _To operator()(_Element & __e) const
+  {
+    return reinterpret_cast<_To>(_FromPtrTraits::pointer_to(__e));      
+  }
+};
+
+
 _LIBCPP_END_NAMESPACE_STD
 
 #endif  // _LIBCPP_MEMORY

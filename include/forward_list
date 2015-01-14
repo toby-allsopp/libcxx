@@ -389,12 +389,16 @@ protected:
 
     _LIBCPP_INLINE_VISIBILITY
     __node_pointer        __before_begin() _NOEXCEPT
-        {return static_cast<__node_pointer>(pointer_traits<__begin_node_pointer>::
-                                        pointer_to(__before_begin_.first()));}
+    {
+        _FancyPointerCaster<__begin_node_pointer, __node_pointer> __caster;
+        return __caster(__before_begin_.first());
+    }
     _LIBCPP_INLINE_VISIBILITY
     __node_const_pointer  __before_begin() const _NOEXCEPT
-        {return static_cast<__node_const_pointer>(pointer_traits<__begin_node_pointer>::
-                                        pointer_to(const_cast<__begin_node&>(__before_begin_.first())));}
+    {    
+      _FancyPointerCaster<__begin_node_pointer, __node_const_pointer> __caster;
+      return __caster(const_cast<__begin_node&>(__before_begin_.first()));
+    }
 
     _LIBCPP_INLINE_VISIBILITY
           __node_allocator& __alloc() _NOEXCEPT
@@ -529,7 +533,9 @@ __forward_list_base<_Tp, _Alloc>::swap(__forward_list_base& __x)
 {
     __swap_alloc(__alloc(), __x.__alloc());
     using _VSTD::swap;
-    swap(__before_begin()->__next_, __x.__before_begin()->__next_);
+    auto __first = __before_begin()->__next_;
+    auto __second = __x.__before_begin()->__next_;
+    swap(__first, __second);
 }
 
 template <class _Tp, class _Alloc>
