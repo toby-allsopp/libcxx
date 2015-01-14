@@ -393,18 +393,20 @@ protected:
       typedef _FancyPointerCaster<__begin_node_pointer, __node_pointer> _Caster;
       return _Caster::__from_element(__before_begin_.first());
     }
+
     _LIBCPP_INLINE_VISIBILITY
     __node_const_pointer  __before_begin() const _NOEXCEPT
     {
       typedef _FancyPointerCaster<__begin_node_pointer, __node_const_pointer> _Caster;
       return _Caster::__from_element(const_cast<__begin_node&>(__before_begin_.first()));
-    }                                
+    }
+
     _LIBCPP_INLINE_VISIBILITY
     __begin_node_pointer __before_begin_pointer() _NOEXCEPT
     {
       return pointer_traits<__begin_node_pointer>::pointer_to(__before_begin_.first());
     }
-    
+
     _LIBCPP_INLINE_VISIBILITY
     __begin_node_pointer __before_begin_pointer() const _NOEXCEPT
     {
