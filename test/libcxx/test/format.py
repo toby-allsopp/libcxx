@@ -6,7 +6,6 @@ import time
 
 import lit.formats  # pylint: disable=import-error
 
-
 class LibcxxTestFormat(object):
     """
     Custom test format handler for use with the test format use by libc++.
@@ -239,14 +238,15 @@ class LibcxxBenchmarkFormat(LibcxxTestFormat):
 
             cmd, out, err, rc = self._run_imp(exec_path, lit_config,
                                               source_dir, flags=['--color_print=false'])
-            _, report, _ = self._make_report(cmd, '', err, rc)
             if rc != 0:
+                _, report, _ = self._make_report(cmd, '', err, rc)
                 report = "Compiled With: %s\n%s" % (compile_cmd, report)
                 report += "Compiled test failed unexpectedly!"
                 return lit.Test.FAIL, report
-            result = lit.Test.Result(lit.Test.PASS, report)
-            benchmark_data = self.parse_benchmark_output(out)
-            result.addMetric('benchmarks',   lit.Test.toMetricValue(benchmark_data))
+            result = lit.Test.Result(lit.Test.PASS, '')
+            benchmark_data = self._parse_benchmark_output(out)
+            result.addMetric('benchmarks',
+                             lit.Test.toMetricValue(benchmark_data))
             return result
         finally:
             # Note that cleanup of exec_file happens in `_clean()`. If you
@@ -254,26 +254,25 @@ class LibcxxBenchmarkFormat(LibcxxTestFormat):
             self._clean(exec_path)
 
     ksplit_line_re = re.compile('\n[-]+\n')
-    def parse_benchmark_output(self, output):
+    kbench_line_re = re.compile('^\s*([a-zA-Z0-9_]+)\s+([0-9]+)\s+([0-9]+)\s+([0-9]+)\s*')
+
+    def _parse_benchmark_output(self, output):
         parts = LibcxxBenchmarkFormat.ksplit_line_re.split(output, maxsplit=1)
         assert len(parts) == 2
-        benchs = []
-        for b in parts[1].split('\n'):
-            b = b.strip()
-            if not b:
+        benchmark_list = []
+        for line in parts[1].split('\n'):
+            line = line.strip()
+            if not line:
                 continue
-            benchs += [self.parse_benchmark_line(b)]
-        return benchs
-
-    kbench_re = re.compile('^\s*([a-zA-Z0-9_]+)\s+([0-9]+)\s+([0-9]+)\s+([0-9]+)\s*')
-    def parse_benchmark_line(self, line):
-        if line.startswith('DEBUG: '):
-            line = line[len('DEBUG: '):]
-        match = LibcxxBenchmarkFormat.kbench_re.match(line)
-        assert match is not None
-        return {
-            'name':       match.group(1),
-            'time':       match.group(2),
-            'cpu_time':   match.group(3),
-            'iterations': match.group(4)
-        }
+            if line.startswith('DEBUG: '):
+                line = line[len('DEBUG: '):]
+            match = LibcxxBenchmarkFormat.kbench_line_re.match(line)
+            assert match is not None
+            parsed_bench = {
+                'name':       match.group(1),
+                'time':       match.group(2),
+                'cpu_time':   match.group(3),
+                'iterations': match.group(4)
+            }
+            benchmark_list.append(parsed_bench)
+        return benchmark_list

@@ -30,6 +30,8 @@ def load_site_config(lit_config, config):
     else:
         lit_config.note('using site specific configuration at %s' % site_cfg)
         ld_fn = lit_config.load_config
+        # Null out the load_config function so that lit.site.cfg doesn't
+        # recursively load a config even if it tries.
         def prevent_reload_fn(*args, **kwargs):
             pass
         lit_config.load_config = prevent_reload_fn
