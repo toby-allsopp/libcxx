@@ -10,8 +10,9 @@ import lit.util  # pylint: disable=import-error,no-name-in-module
 
 from libcxx.test.format import LibcxxTestFormat, LibcxxBenchmarkFormat
 
+
 def load_site_config(lit_config, config):
-    # Otherwise, we haven't loaded the site specific configuration (the user is
+    # We haven't loaded the site specific configuration (the user is
     # probably trying to run on a test file directly, and either the site
     # configuration hasn't been created by the build system, or we are in an
     # out-of-tree build situation).
@@ -33,6 +34,8 @@ def load_site_config(lit_config, config):
             pass
         lit_config.load_config = prevent_reload_fn
         ld_fn(config, site_cfg)
+        lit_config.load_config = ld_fn
+
 
 class Configuration(object):
     # pylint: disable=redefined-outer-name

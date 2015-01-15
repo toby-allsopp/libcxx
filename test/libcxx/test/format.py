@@ -220,15 +220,12 @@ class LibcxxTestFormat(object):
 class LibcxxBenchmarkFormat(LibcxxTestFormat):
     def __init__(self, *args, **kwargs):
         super(LibcxxBenchmarkFormat, self).__init__(*args, **kwargs)
-        self.suffixes = ['.bench.cpp']
 
     def _evaluate_test(self, test, use_verify, lit_config):
         name = test.path_in_suite[-1]
         source_path = test.getSourcePath()
         source_dir = os.path.dirname(source_path)
 
-        # Check what kind of test this is.
-        assert name.endswith('.bench.cpp')
         exec_file = tempfile.NamedTemporaryFile(suffix=".exe", delete=False)
         exec_path = exec_file.name
         exec_file.close()
@@ -256,25 +253,23 @@ class LibcxxBenchmarkFormat(LibcxxTestFormat):
             # override this, cleanup is your reponsibility.
             self._clean(exec_path)
 
+    ksplit_line_re = re.compile('\n[-]+\n')
     def parse_benchmark_output(self, output):
-        split_line_re = re.compile('\n[-]+\n')
-        parts = split_line_re.split(output, maxsplit=1)
+        parts = LibcxxBenchmarkFormat.ksplit_line_re.split(output, maxsplit=1)
         assert len(parts) == 2
-        before_lines = parts[0].split('\n')
-        bench_lines = parts[1].split('\n')
         benchs = []
-        for b in bench_lines:
+        for b in parts[1].split('\n'):
             b = b.strip()
             if not b:
                 continue
             benchs += [self.parse_benchmark_line(b)]
         return benchs
 
+    kbench_re = re.compile('^\s*([a-zA-Z0-9_]+)\s+([0-9]+)\s+([0-9]+)\s+([0-9]+)\s*')
     def parse_benchmark_line(self, line):
         if line.startswith('DEBUG: '):
             line = line[len('DEBUG: '):]
-        bench_re = re.compile('^\s*([a-zA-Z0-9_]+)\s+([0-9]+)\s+([0-9]+)\s+([0-9]+)\s*')
-        match = bench_re.match(line)
+        match = LibcxxBenchmarkFormat.kbench_re.match(line)
         assert match is not None
         return {
             'name':       match.group(1),
