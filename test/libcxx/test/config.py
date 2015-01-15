@@ -10,7 +10,6 @@ import lit.util  # pylint: disable=import-error,no-name-in-module
 
 from libcxx.test.format import LibcxxTestFormat
 
-
 class Configuration(object):
     # pylint: disable=redefined-outer-name
     def __init__(self, lit_config, config):
@@ -26,7 +25,6 @@ class Configuration(object):
         self.use_system_lib = False
         self.use_clang_verify = False
         self.use_ccache = False
-        self.enable_benchmarks = False
         self.long_tests = None
 
         if platform.system() not in ('Darwin', 'FreeBSD', 'Linux'):
@@ -52,6 +50,7 @@ class Configuration(object):
             "parameter '{}' should be true or false".format(name))
 
     def configure(self):
+        self.config.suffixes = ['.pass.cpp', '.fail.cpp', '.bench.cpp']
         self.configure_cxx()
         self.probe_cxx()
         self.configure_triple()
@@ -413,14 +412,6 @@ class Configuration(object):
                 self.lit_config.fatal('unsupported value for '
                                       'libcxx_use_san: {0}'.format(san))
 
-    def configure_benchmarks(self):
-        self.enable_benchmarks = self.get_lit_bool('enable_benchmarks', False)
-        if not self.enable_benchmarks:
-            return
-        external_dir = os.path.join(self.obj_root, 'external')
-        self.compile_flags += ['-I' + external_dir + '/include']
-        self.link_flags += [external_dir + '/lib/libbenchmark.a']
-        
 
     def configure_triple(self):
         # Get or infer the target triple.
@@ -446,6 +437,15 @@ class Configuration(object):
             self.config.target_triple = target_triple
             self.lit_config.note(
                 "inferred target_triple as: %r" % self.config.target_triple)
+
+    def configure_benchmarks(self):
+        self.enable_benchmarks = self.get_lit_bool('enable_benchmarks', False)
+        if not self.enable_benchmarks:
+            return
+        external_dir = os.path.join(self.obj_root, 'external')
+        self.compile_flags += ['-I' + external_dir + '/include']
+        self.link_flags += [external_dir + '/lib/libbenchmark.a']
+        self.config.available_features.add('benchmarks')
 
     def configure_env(self):
         if sys.platform == 'darwin' and not self.use_system_lib:

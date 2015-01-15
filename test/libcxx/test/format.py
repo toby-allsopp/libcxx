@@ -1,12 +1,13 @@
 import errno
 import os
+import re
 import tempfile
 import time
 
 import lit.formats  # pylint: disable=import-error
 
 
-class LibcxxTestFormat(lit.formats.FileBasedTest):
+class LibcxxTestFormat(object):
     """
     Custom test format handler for use with the test format use by libc++.
 
@@ -25,6 +26,21 @@ class LibcxxTestFormat(lit.formats.FileBasedTest):
         self.ld_flags = list(ld_flags)
         self.exec_env = dict(exec_env)
         self.use_ccache = use_ccache
+
+    def getTestsInDirectory(self, testSuite, path_in_suite,
+                            litConfig, localConfig):
+        source_path = testSuite.getSourcePath(path_in_suite)
+        for filename in os.listdir(source_path):
+            # Ignore dot files and excluded tests.
+            if (filename.startswith('.') or
+                filename in localConfig.excludes):
+                continue
+
+            filepath = os.path.join(source_path, filename)
+            if not os.path.isdir(filepath):
+                if any([filepath.endswith(s) for s in localConfig.suffixes]):
+                    yield lit.Test.Test(testSuite, path_in_suite + (filename,),
+                                        localConfig)
 
     def execute(self, test, lit_config):
         while True:
@@ -139,7 +155,7 @@ class LibcxxTestFormat(lit.formats.FileBasedTest):
         except OSError:
             pass
 
-    def _run(self, exec_path, lit_config, in_dir=None):
+    def _run(self, exec_path, lit_config, in_dir=None, flags=[]):
         cmd = []
         if self.exec_env:
             cmd.append('env')
@@ -148,8 +164,9 @@ class LibcxxTestFormat(lit.formats.FileBasedTest):
         cmd.append(exec_path)
         if lit_config.useValgrind:
             cmd = lit_config.valgrindArgs + cmd
+        cmd = cmd + flags
         out, err, rc = lit.util.executeCommand(cmd, cwd=in_dir)
-        return self._make_report(cmd, out, err, rc)
+        return cmd, out, err, rc
 
     def _evaluate_test(self, test, use_verify, lit_config):
         name = test.path_in_suite[-1]
@@ -157,8 +174,9 @@ class LibcxxTestFormat(lit.formats.FileBasedTest):
         source_dir = os.path.dirname(source_path)
 
         # Check what kind of test this is.
-        assert name.endswith('.pass.cpp') or name.endswith('.fail.cpp')
         expected_compile_fail = name.endswith('.fail.cpp')
+        is_pass_test  = name.endswith('.pass.cpp')
+        is_bench_test = name.endswith('.bench.cpp')
 
         # If this is a compile (failure) test, build it and check for failure.
         if expected_compile_fail:
@@ -183,14 +201,50 @@ class LibcxxTestFormat(lit.formats.FileBasedTest):
                     report += "Compilation failed unexpectedly!"
                     return lit.Test.FAIL, report
 
-                cmd, report, rc = self._run(exec_path, lit_config,
-                                            source_dir)
+                flags = []
+                if is_bench_test:
+                    flags += ['--color_print=false']
+                cmd, out, err, rc = self._run(exec_path, lit_config,
+                                              source_dir, flags=flags)
                 if rc != 0:
+                    _, report, _ = self._make_report(cmd, out, err, rc)
                     report = "Compiled With: %s\n%s" % (compile_cmd, report)
                     report += "Compiled test failed unexpectedly!"
                     return lit.Test.FAIL, report
+                result = lit.Test.Result(lit.Test.PASS, '')
+                if is_bench_test:
+                    benchmark_data = self._process_benchmark_output(out)
+                    result.addMetric('benchmarks',   lit.Test.toMetricValue(benchmark_data))
+                return result
             finally:
                 # Note that cleanup of exec_file happens in `_clean()`. If you
                 # override this, cleanup is your reponsibility.
                 self._clean(exec_path)
         return lit.Test.PASS, ""
+
+    def _process_benchmark_output(self, output):
+        split_line_re = re.compile('\n[-]+\n')
+        parts = split_line_re.split(output, maxsplit=1)
+        assert len(parts) == 2
+        before_lines = parts[0].split('\n')
+        bench_lines = parts[1].split('\n')
+        benchs = []
+        for b in bench_lines:
+            b = b.strip()
+            if not b:
+                continue
+            benchs += [self._parse_benchmark_line(b)]
+        return benchs
+
+    def _parse_benchmark_line(self, line):
+        if line.startswith('DEBUG: '):
+            line = line[len('DEBUG: '):]
+        bench_re = re.compile('^\s*([a-zA-Z0-9_]+)\s+([0-9]+)\s+([0-9]+)\s+([0-9]+)\s*')
+        match = bench_re.match(line)
+        assert match is not None
+        return {
+            'name':       match.group(1),
+            'time':       match.group(2),
+            'cpu_time':   match.group(3),
+            'iterations': match.group(4)
+        }

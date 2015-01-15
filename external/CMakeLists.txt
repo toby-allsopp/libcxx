@@ -5,5 +5,6 @@ if (LIBCXX_ENABLE_BENCHMARKS)
       BenchMark
       SVN_REPOSITORY http://github.com/google/benchmark/trunk
       CMAKE_ARGS -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_CURRENT_BINARY_DIR}
+                 -DCMAKE_BUILD_TYPE=RELEASE
   )
 endif()
