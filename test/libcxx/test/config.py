@@ -8,7 +8,31 @@ import sys
 import lit.Test  # pylint: disable=import-error,no-name-in-module
 import lit.util  # pylint: disable=import-error,no-name-in-module
 
-from libcxx.test.format import LibcxxTestFormat
+from libcxx.test.format import LibcxxTestFormat, LibcxxBenchmarkFormat
+
+def load_site_config(lit_config, config):
+    # Otherwise, we haven't loaded the site specific configuration (the user is
+    # probably trying to run on a test file directly, and either the site
+    # configuration hasn't been created by the build system, or we are in an
+    # out-of-tree build situation).
+    site_cfg = lit_config.params.get('libcxx_site_config',
+                                     os.environ.get('LIBCXX_SITE_CONFIG'))
+    if not site_cfg:
+        lit_config.warning('No site specific configuration file found!'
+                           ' Running the tests in the default configuration.')
+        # TODO: Set test_exec_root to a temporary directory where output files
+        # can be placed. This is needed for ShTest.
+    elif not os.path.isfile(site_cfg):
+        lit_config.fatal(
+            "Specified site configuration file does not exist: '%s'" %
+            site_cfg)
+    else:
+        lit_config.note('using site specific configuration at %s' % site_cfg)
+        ld_fn = lit_config.load_config
+        def prevent_reload_fn(*args, **kwargs):
+            pass
+        lit_config.load_config = prevent_reload_fn
+        ld_fn(config, site_cfg)
 
 class Configuration(object):
     # pylint: disable=redefined-outer-name
@@ -50,7 +74,6 @@ class Configuration(object):
             "parameter '{}' should be true or false".format(name))
 
     def configure(self):
-        self.config.suffixes = ['.pass.cpp', '.fail.cpp', '.bench.cpp']
         self.configure_cxx()
         self.probe_cxx()
         self.configure_triple()
@@ -64,7 +87,6 @@ class Configuration(object):
         self.configure_compile_flags()
         self.configure_link_flags()
         self.configure_sanitizer()
-        self.configure_benchmarks()
         self.configure_features()
         # Print the final compile and link flags.
         self.lit_config.note('Using compile flags: %s' % self.compile_flags)
@@ -438,15 +460,6 @@ class Configuration(object):
             self.lit_config.note(
                 "inferred target_triple as: %r" % self.config.target_triple)
 
-    def configure_benchmarks(self):
-        self.enable_benchmarks = self.get_lit_bool('enable_benchmarks', False)
-        if not self.enable_benchmarks:
-            return
-        external_dir = os.path.join(self.obj_root, 'external')
-        self.compile_flags += ['-I' + external_dir + '/include']
-        self.link_flags += [external_dir + '/lib/libbenchmark.a']
-        self.config.available_features.add('benchmarks')
-
     def configure_env(self):
         if sys.platform == 'darwin' and not self.use_system_lib:
             libcxx_library = self.get_lit_conf('libcxx_library')
@@ -455,3 +468,27 @@ class Configuration(object):
             else:
                 library_root = self.library_root
             self.env['DYLD_LIBRARY_PATH'] = library_root
+
+
+class BenchmarkConfiguration(Configuration):
+    def __init__(self, lit_config, config):
+        super(BenchmarkConfiguration, self).__init__(lit_config, config)
+
+    def get_test_format(self):
+        return LibcxxBenchmarkFormat(
+            self.cxx,
+            self.use_clang_verify,
+            cpp_flags=self.compile_flags,
+            ld_flags=self.link_flags,
+            exec_env=self.env,
+            use_ccache=self.use_ccache)
+
+    def configure(self):
+        super(BenchmarkConfiguration, self).configure()
+        self.configure_benchmarks()
+
+    def configure_benchmarks(self):
+        external_dir = os.path.join(self.obj_root, 'external')
+        self.compile_flags += ['-I' + external_dir + '/include']
+        self.link_flags += [external_dir + '/lib/libbenchmark.a']
+

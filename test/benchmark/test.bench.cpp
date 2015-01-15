@@ -1,5 +1,3 @@
-// REQUIRES: benchmarks
-
 #include "libcxx-benchmark.h"
 #include <string>
 

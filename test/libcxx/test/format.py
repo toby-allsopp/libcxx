@@ -155,7 +155,7 @@ class LibcxxTestFormat(object):
         except OSError:
             pass
 
-    def _run(self, exec_path, lit_config, in_dir=None, flags=[]):
+    def _run_imp(self, exec_path, lit_config, in_dir=None, flags=[]):
         cmd = []
         if self.exec_env:
             cmd.append('env')
@@ -168,15 +168,18 @@ class LibcxxTestFormat(object):
         out, err, rc = lit.util.executeCommand(cmd, cwd=in_dir)
         return cmd, out, err, rc
 
+    def _run(self, exec_path, lit_config, in_dir=None):
+        cmd, out, err, rc = self._run_imp(exec_path, lit_config, in_dir=in_dir)
+        return self._make_report(cmd, out, err, rc)
+
     def _evaluate_test(self, test, use_verify, lit_config):
         name = test.path_in_suite[-1]
         source_path = test.getSourcePath()
         source_dir = os.path.dirname(source_path)
 
         # Check what kind of test this is.
+        assert name.endswith('.pass.cpp') or name.endswith('.fail.cpp')
         expected_compile_fail = name.endswith('.fail.cpp')
-        is_pass_test  = name.endswith('.pass.cpp')
-        is_bench_test = name.endswith('.bench.cpp')
 
         # If this is a compile (failure) test, build it and check for failure.
         if expected_compile_fail:
@@ -201,28 +204,59 @@ class LibcxxTestFormat(object):
                     report += "Compilation failed unexpectedly!"
                     return lit.Test.FAIL, report
 
-                flags = []
-                if is_bench_test:
-                    flags += ['--color_print=false']
-                cmd, out, err, rc = self._run(exec_path, lit_config,
-                                              source_dir, flags=flags)
+                cmd, report, rc = self._run(exec_path, lit_config,
+                                            source_dir)
                 if rc != 0:
-                    _, report, _ = self._make_report(cmd, out, err, rc)
                     report = "Compiled With: %s\n%s" % (compile_cmd, report)
                     report += "Compiled test failed unexpectedly!"
                     return lit.Test.FAIL, report
-                result = lit.Test.Result(lit.Test.PASS, '')
-                if is_bench_test:
-                    benchmark_data = self._process_benchmark_output(out)
-                    result.addMetric('benchmarks',   lit.Test.toMetricValue(benchmark_data))
-                return result
             finally:
                 # Note that cleanup of exec_file happens in `_clean()`. If you
                 # override this, cleanup is your reponsibility.
                 self._clean(exec_path)
         return lit.Test.PASS, ""
 
-    def _process_benchmark_output(self, output):
+
+class LibcxxBenchmarkFormat(LibcxxTestFormat):
+    def __init__(self, *args, **kwargs):
+        super(LibcxxBenchmarkFormat, self).__init__(*args, **kwargs)
+        self.suffixes = ['.bench.cpp']
+
+    def _evaluate_test(self, test, use_verify, lit_config):
+        name = test.path_in_suite[-1]
+        source_path = test.getSourcePath()
+        source_dir = os.path.dirname(source_path)
+
+        # Check what kind of test this is.
+        assert name.endswith('.bench.cpp')
+        exec_file = tempfile.NamedTemporaryFile(suffix=".exe", delete=False)
+        exec_path = exec_file.name
+        exec_file.close()
+
+        try:
+            cmd, report, rc = self._build(exec_path, source_path)
+            compile_cmd = cmd
+            if rc != 0:
+                report += "Compilation failed unexpectedly!"
+                return lit.Test.FAIL, report
+
+            cmd, out, err, rc = self._run_imp(exec_path, lit_config,
+                                              source_dir, flags=['--color_print=false'])
+            _, report, _ = self._make_report(cmd, '', err, rc)
+            if rc != 0:
+                report = "Compiled With: %s\n%s" % (compile_cmd, report)
+                report += "Compiled test failed unexpectedly!"
+                return lit.Test.FAIL, report
+            result = lit.Test.Result(lit.Test.PASS, report)
+            benchmark_data = self.parse_benchmark_output(out)
+            result.addMetric('benchmarks',   lit.Test.toMetricValue(benchmark_data))
+            return result
+        finally:
+            # Note that cleanup of exec_file happens in `_clean()`. If you
+            # override this, cleanup is your reponsibility.
+            self._clean(exec_path)
+
+    def parse_benchmark_output(self, output):
         split_line_re = re.compile('\n[-]+\n')
         parts = split_line_re.split(output, maxsplit=1)
         assert len(parts) == 2
@@ -233,10 +267,10 @@ class LibcxxTestFormat(object):
             b = b.strip()
             if not b:
                 continue
-            benchs += [self._parse_benchmark_line(b)]
+            benchs += [self.parse_benchmark_line(b)]
         return benchs
 
-    def _parse_benchmark_line(self, line):
+    def parse_benchmark_line(self, line):
         if line.startswith('DEBUG: '):
             line = line[len('DEBUG: '):]
         bench_re = re.compile('^\s*([a-zA-Z0-9_]+)\s+([0-9]+)\s+([0-9]+)\s+([0-9]+)\s*')
