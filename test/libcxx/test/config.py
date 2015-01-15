@@ -32,6 +32,7 @@ def load_site_config(lit_config, config):
         ld_fn = lit_config.load_config
         # Null out the load_config function so that lit.site.cfg doesn't
         # recursively load a config even if it tries.
+        # TODO: This is one hell of a hack. Fix it.
         def prevent_reload_fn(*args, **kwargs):
             pass
         lit_config.load_config = prevent_reload_fn
