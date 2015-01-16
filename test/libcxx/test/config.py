@@ -511,9 +511,9 @@ class BenchmarkConfiguration(Configuration):
 
     def configure(self):
         super(BenchmarkConfiguration, self).configure()
-        self.configure_benchmarks()
+        self.configure_benchmark_flags()
 
-    def configure_benchmarks(self):
+    def configure_benchmark_flags(self):
         external_dir = os.path.join(self.obj_root, 'external')
         self.cxx.compile_flags += [
           '-I' + external_dir + '/include',
