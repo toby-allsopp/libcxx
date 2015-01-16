@@ -497,5 +497,6 @@ class BenchmarkConfiguration(Configuration):
         external_dir = os.path.join(self.obj_root, 'external')
         self.compile_flags += ['-I' + external_dir + '/include',
                                '-I' + self.src_root + '/test/benchmark/support']
-        self.link_flags += [external_dir + '/lib/libbenchmark.a']
+        lib_path = external_dir + '/lib'
+        self.link_flags += ['-L' + lib_path, '-Wl,-rpath,' + lib_path, '-lbenchmark']
 
