@@ -517,7 +517,7 @@ class BenchmarkConfiguration(Configuration):
         external_dir = os.path.join(self.obj_root, 'external')
         self.cxx.compile_flags += [
           '-I' + external_dir + '/include',
-          '-I' + self.src_root + '/test/benchmark/support'
+          '-I' + self.libcxx_src_root + '/test/benchmark/support'
         ]
         lib_path = external_dir + '/lib'
         self.cxx.link_flags += ['-L' + lib_path,
