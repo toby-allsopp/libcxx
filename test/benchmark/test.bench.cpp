@@ -3,8 +3,9 @@
 
 static void BM_test(benchmark::State& state) {
     std::string x = "hello";
-    while (state.KeepRunning())
+    while (state.KeepRunning()) {
         std::string copy(x);
+    }
 }
 BENCHMARK(BM_test);
 
