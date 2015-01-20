@@ -509,9 +509,11 @@ class Configuration(object):
 class BenchmarkConfiguration(Configuration):
     def __init__(self, lit_config, config):
         super(BenchmarkConfiguration, self).__init__(lit_config, config)
+        self.other_results = None
 
     def get_test_format(self):
         return LibcxxBenchmarkFormat(
+            self.other_results,
             self.cxx,
             self.use_clang_verify,
             exec_env=self.env)
@@ -519,6 +521,24 @@ class BenchmarkConfiguration(Configuration):
     def configure(self):
         super(BenchmarkConfiguration, self).configure()
         self.configure_benchmark_flags()
+        self.configure_other_results()
+
+    def load_benchmark_results(self, from_file):
+        import json
+        with open(from_file, 'r') as output_file:
+          output = json.load(output_file)
+        tests = output
+        self.lit_config.note('Decoded: %s\n' % tests)
+
+    def configure_other_results(self):
+        res = self.get_lit_conf('compare_to_output')
+        if not res:
+            return
+        if not os.path.isfile(res):
+            self.lit_config.fatal('Invalid output file: %s' % res)
+        self.lit_config.note('Comparing to results file: %s' % res)
+        import libcxx.test.benchmark as bench
+        self.other_results = bench.loadTestResults(res)
 
     def configure_benchmark_flags(self):
         external_dir = os.path.join(self.obj_root, 'external')

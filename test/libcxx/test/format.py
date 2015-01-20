@@ -205,10 +205,29 @@ class LibcxxTestFormat(object):
 
 
 class LibcxxBenchmarkFormat(LibcxxTestFormat):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, other_results, *args, **kwargs):
         super(LibcxxBenchmarkFormat, self).__init__(*args, **kwargs)
+        self.other_results = other_results
 
     def _evaluate_test(self, test, use_verify, lit_config):
+        res = self._benchmark_test(test, lit_config)
+        if not isinstance(res, lit.Test.Result):
+            code, output = res
+            res = lit.Test.Result(code, output)
+        if not res.code == lit.Test.PASS:
+            return res
+        full_name = test.getFullName()
+        if self.other_results:
+            self._process_results(test, res, lit_config)
+        return res
+
+    def _process_results(self, test, result, lit_config):
+        full_name = test.getFullName()
+        other_result = self.other_results[full_name]
+        this_bench = result.metrics['benchmarks'].value
+        other_bench = other_result['metrics']['benchmarks']
+
+    def _benchmark_test(self, test, lit_config):
         name = test.path_in_suite[-1]
         source_path = test.getSourcePath()
         source_dir = os.path.dirname(source_path)
