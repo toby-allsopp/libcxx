@@ -524,6 +524,7 @@ class BenchmarkConfiguration(Configuration):
         self.configure_benchmark_flags()
         self.configure_other_results()
         self.configure_allowed_difference()
+        self.print_config_info()
 
     def load_benchmark_results(self, from_file):
         import json

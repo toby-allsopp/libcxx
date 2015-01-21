@@ -258,8 +258,9 @@ class LibcxxBenchmarkFormat(LibcxxTestFormat):
                 report += "Compilation failed unexpectedly!"
                 return lit.Test.FAIL, report
 
-            cmd, out, err, rc = self._run_imp(exec_path, lit_config,
-                                              source_dir, flags=['--color_print=false'])
+            cmd, out, err, rc = self._run_imp(
+                exec_path, lit_config, source_dir,
+                flags=['--color_print=false'])
             if rc != 0:
                 _, report, _ = self._make_report(cmd, '', err, rc)
                 report = "Compiled With: %s\n%s" % (compile_cmd, report)
