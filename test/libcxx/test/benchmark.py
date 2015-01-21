@@ -3,7 +3,6 @@ import re
 import lit
 import lit.Test
 
-
 def stringToCode(str_code):
     if str_code == 'PASS':
         return lit.Test.PASS
@@ -55,18 +54,31 @@ def percentDifference(first, second):
 def benchmarkPercentDifference(first, second):
     result = {
         'name': first['name'],
-        'cpu_time': percentDifference(first['cpu_time'], second['cpu_time']),
-        'time': percentDifference(first['time'], second['time']),
-        'iterations': percentDifference(first['iterations'], second['iterations']),
-        'total_cpu_time': first['total_cpu_time'] - second['total_cpu_time'],
-        'total_time': first['total_time'] - second['total_time']
+        'iterations': percentDifference(
+            first['iterations'], second['iterations']),
+        'cpu_time': percentDifference(
+            second['cpu_time'], first['cpu_time']),
+        'time': percentDifference(
+            second['time'], first['time'])
     }
     return result
 
 
 ksplit_line_re = re.compile('\n[-]+\n')
-kbench_line_re = re.compile('^\s*([^\s]+)\s+([0-9]+)\s+([0-9]+)\s+([0-9]+)\s*')
+kbench_line_re = re.compile('^\s*([^\s]+)\s+([-0-9]+)\s+([-0-9]+)\s+([0-9]+)\s*')
 
+def computeNormalizedIterations(bench):
+    kGoalCPUTime = 500000000
+    cpu_time = bench['cpu_time']
+    total_cpu_time = bench['total_cpu_time']
+    iters = bench['iterations']
+    diff = abs(total_cpu_time - kGoalCPUTime)
+    num_iters = float(diff) / cpu_time
+    if total_cpu_time > kGoalCPUTime:
+        bench['normalized_iterations'] = iters - num_iters
+    else:
+        bench['normalized_iterations'] = iters + num_iters
+    bench['normalized_total_cpu_time'] = bench['normalized_iterations'] * cpu_time
 
 def parseBenchmarkOutput(output):
     parts = ksplit_line_re.split(output, maxsplit=1)
@@ -79,6 +91,9 @@ def parseBenchmarkOutput(output):
         if line.startswith('DEBUG: '):
             line = line[len('DEBUG: '):]
         match = kbench_line_re.match(line)
+        if match is None:
+            with open('/tmp/ERR', 'w') as f:
+                f.write(output + '\n')
         assert match is not None
         name = match.group(1)
         parsed_bench = {
@@ -117,6 +132,7 @@ def parseBenchmarkOutput(output):
             b = dict(b)
             if is_mean:
                 b['name'] = real_name
+                assert real_name not in benchmark_dict
                 benchmark_dict[real_name] = b
             elif is_stddev:
                 bench = benchmark_dict[real_name]
@@ -124,3 +140,20 @@ def parseBenchmarkOutput(output):
                 bench['cpu_time_stddev'] = b['cpu_time']
                 bench['iterations_stddev'] = b['iterations']
     return benchmark_dict
+
+
+def formatFailDiff(diff, ours, theirs):
+  return ('%s failed:\n    %s\n    %s\n    %s\n' %
+          (ours['name'],
+          formatDiffString('cpu_time', diff, ours, theirs),
+          formatDiffString('iterations', diff, ours, theirs),
+          formatDiffString('time', diff, ours, theirs)))
+
+
+def formatDiffString(key, diff, ours, theirs):
+    cmp_str = 'FASTER' if diff[key] <= 0.0 else 'SLOWER'
+    fmt_str = '{0:11} {1:8} {2} (ours={3}, theirs={4}, diff={5})'
+    label = '%s:' % key
+    percent = '%.3f%%' % abs(diff[key])
+    return fmt_str.format(label, percent, cmp_str, ours[key], theirs[key],
+                          ours[key]-theirs[key])

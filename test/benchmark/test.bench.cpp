@@ -1,5 +1,4 @@
 #include "libcxx-benchmark.h"
-#include <string>
 
 static void BM_test_empty(benchmark::State& state) {
     while (state.KeepRunning()) {}

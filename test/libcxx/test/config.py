@@ -525,6 +525,24 @@ class BenchmarkConfiguration(Configuration):
         self.configure_other_results()
         self.configure_allowed_difference()
         self.print_config_info()
+        self.check_threads_is_one()
+
+    def check_threads_is_one(self):
+        argv = sys.argv
+        if '--threads=1' in argv or '-j1' in argv:
+            return
+        index = None
+        if '--threads' in argv:
+            index = argv.index('--threads')
+        elif '-j' in argv:
+            index = argv.index('-j')
+        if index is not None:
+            assert len(argv) > index + 1
+            num = int(argv[index + 1])
+            if num == 1:
+                return
+        self.lit_config.warning('Benchmarks should only be run with one thread.'
+                                ' Run lit with --threads=1')
 
     def load_benchmark_results(self, from_file):
         import json

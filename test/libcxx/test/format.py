@@ -238,8 +238,8 @@ class LibcxxBenchmarkFormat(LibcxxTestFormat):
             matching = other_bench[k]
             diff = benchcxx.benchmarkPercentDifference(v, matching)
             diff_metrics[diff['name']] = diff
-            if diff['iterations'] > self.allowed_difference:
-                failing_bench += ['%s failed: %.3f%% slower' % (k, diff['iterations'])]
+            if diff['cpu_time'] > self.allowed_difference:
+                failing_bench += [benchcxx.formatFailDiff(diff, v, matching)]
         return diff_metrics, failing_bench
 
     def _benchmark_test(self, test, lit_config):
@@ -260,13 +260,16 @@ class LibcxxBenchmarkFormat(LibcxxTestFormat):
 
             cmd, out, err, rc = self._run_imp(
                 exec_path, lit_config, source_dir,
-                flags=['--color_print=false'])
+                flags=['--benchmark_repetitions=3'])
             if rc != 0:
                 _, report, _ = self._make_report(cmd, '', err, rc)
                 report = "Compiled With: %s\n%s" % (compile_cmd, report)
                 report += "Compiled test failed unexpectedly!"
                 return lit.Test.FAIL, report
             result = lit.Test.Result(lit.Test.PASS, '')
+            scale_warning = 'CPU scaling is enabled: Benchmark timings may be noisy.'
+            if scale_warning in out:
+                lit_config.warning(scale_warning)
             benchmark_data = benchcxx.parseBenchmarkOutput(out)
             result.addMetric('benchmarks',
                              lit.Test.toMetricValue(benchmark_data))
@@ -276,4 +279,3 @@ class LibcxxBenchmarkFormat(LibcxxTestFormat):
             # override this, cleanup is your reponsibility.
             self._clean(exec_path)
 
-    
