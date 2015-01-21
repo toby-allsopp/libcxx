@@ -260,7 +260,7 @@ class LibcxxBenchmarkFormat(LibcxxTestFormat):
 
             cmd, out, err, rc = self._run_imp(
                 exec_path, lit_config, source_dir,
-                flags=['--benchmark_repetitions=3'])
+                flags=[])
             if rc != 0:
                 _, report, _ = self._make_report(cmd, '', err, rc)
                 report = "Compiled With: %s\n%s" % (compile_cmd, report)
