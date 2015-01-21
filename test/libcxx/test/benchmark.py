@@ -87,8 +87,15 @@ def parseBenchmarkOutput(output):
             'cpu_time':   int(match.group(3)),
             'iterations': int(match.group(4)),
         }
-        parsed_bench['total_cpu_time'] = parsed_bench['cpu_time'] * parsed_bench['iterations']
-        parsed_bench['total_time'] = parsed_bench['time'] * parsed_bench['iterations']
+        # Ensure we didn't get a zero time.
+        if parsed_bench['time'] == 0:
+            parsed_bench['time'] = 1
+        if parsed_bench['cpu_time'] == 0:
+            parsed_bench['cpu_time'] = 1
+        parsed_bench['total_cpu_time'] = (parsed_bench['cpu_time'] *
+                                          parsed_bench['iterations'])
+        parsed_bench['total_time'] = (parsed_bench['time'] *
+                                      parsed_bench['iterations'])
         benchmark_list += [parsed_bench]
     benchmark_dict = {}
     has_repeats = len(benchmark_list) >= 4 and \
