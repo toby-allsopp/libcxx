@@ -239,7 +239,7 @@ class LibcxxBenchmarkFormat(LibcxxTestFormat):
             diff = benchcxx.benchmarkPercentDifference(v, matching)
             diff_metrics[diff['name']] = diff
             if diff['iterations'] > self.allowed_difference:
-                failing_bench += ['%s: %s' % (k, diff['iterations'])]
+                failing_bench += ['%s failed: %.3f%% slower' % (k, diff['iterations'])]
         return diff_metrics, failing_bench
 
     def _benchmark_test(self, test, lit_config):
