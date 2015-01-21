@@ -220,11 +220,11 @@ class LibcxxBenchmarkFormat(LibcxxTestFormat):
             return res
         full_name = test.getFullName()
         if self.other_results:
-            diff_metrics, code, output = self._process_results(test, res, lit_config)
+            diff_metrics, failing_bench = self._process_results(test, res, lit_config)
             res.addMetric('benchmark_diff', lit.Test.toMetricValue(diff_metrics))
-            if code == lit.Test.FAIL:
-                res.code = code
-                res.output = output
+            if failing_bench:
+                res.code = lit.Test.FAIL
+                res.output = '\n'.join(failing_bench)
         return res
 
     def _process_results(self, test, result, lit_config):
@@ -240,10 +240,7 @@ class LibcxxBenchmarkFormat(LibcxxTestFormat):
             diff_metrics[diff['name']] = diff
             if diff['iterations'] > self.allowed_difference:
                 failing_bench += ['%s: %s' % (k, diff['iterations'])]
-        if failing_bench:
-            return diff_metrics, lit.Test.FAIL, '\n'.join(failing_bench)
-        else:
-            return diff_metrics, lit.Test.PASS, ''
+        return diff_metrics, failing_bench
 
     def _benchmark_test(self, test, lit_config):
         name = test.path_in_suite[-1]
