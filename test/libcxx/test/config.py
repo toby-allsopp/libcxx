@@ -514,6 +514,7 @@ class BenchmarkConfiguration(Configuration):
     def get_test_format(self):
         return LibcxxBenchmarkFormat(
             self.other_results,
+            self.allowed_difference,
             self.cxx,
             self.use_clang_verify,
             exec_env=self.env)
@@ -522,6 +523,7 @@ class BenchmarkConfiguration(Configuration):
         super(BenchmarkConfiguration, self).configure()
         self.configure_benchmark_flags()
         self.configure_other_results()
+        self.configure_allowed_difference()
 
     def load_benchmark_results(self, from_file):
         import json
@@ -539,6 +541,10 @@ class BenchmarkConfiguration(Configuration):
         self.lit_config.note('Comparing to results file: %s' % res)
         import libcxx.test.benchmark as bench
         self.other_results = bench.loadTestResults(res)
+
+    def configure_allowed_difference(self):
+        allowed_diff = self.get_lit_conf('allowed_difference', '5.0')
+        self.allowed_difference = float(allowed_diff)
 
     def configure_benchmark_flags(self):
         external_dir = os.path.join(self.obj_root, 'external')

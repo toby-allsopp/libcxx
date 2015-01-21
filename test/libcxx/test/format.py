@@ -5,6 +5,7 @@ import tempfile
 import time
 
 import lit.formats  # pylint: disable=import-error
+import libcxx.test.benchmark as benchcxx
 
 class LibcxxTestFormat(object):
     """
@@ -205,9 +206,10 @@ class LibcxxTestFormat(object):
 
 
 class LibcxxBenchmarkFormat(LibcxxTestFormat):
-    def __init__(self, other_results, *args, **kwargs):
+    def __init__(self, other_results, allowed_difference, *args, **kwargs):
         super(LibcxxBenchmarkFormat, self).__init__(*args, **kwargs)
         self.other_results = other_results
+        self.allowed_difference = allowed_difference
 
     def _evaluate_test(self, test, use_verify, lit_config):
         res = self._benchmark_test(test, lit_config)
@@ -218,14 +220,30 @@ class LibcxxBenchmarkFormat(LibcxxTestFormat):
             return res
         full_name = test.getFullName()
         if self.other_results:
-            self._process_results(test, res, lit_config)
+            diff_metrics, code, output = self._process_results(test, res, lit_config)
+            res.addMetric('benchmark_diff', lit.Test.toMetricValue(diff_metrics))
+            if code == lit.Test.FAIL:
+                res.code = code
+                res.output = output
         return res
 
     def _process_results(self, test, result, lit_config):
         full_name = test.getFullName()
         other_result = self.other_results[full_name]
         this_bench = result.metrics['benchmarks'].value
-        other_bench = other_result['metrics']['benchmarks']
+        other_bench = other_result['benchmarks']
+        diff_metrics = {}
+        failing_bench = []
+        for k, v in this_bench.items():
+            matching = other_bench[k]
+            diff = benchcxx.benchmarkPercentDifference(v, matching)
+            diff_metrics[diff['name']] = diff
+            if diff['iterations'] > self.allowed_difference:
+                failing_bench += ['%s: %s' % (k, diff['iterations'])]
+        if failing_bench:
+            return diff_metrics, lit.Test.FAIL, '\n'.join(failing_bench)
+        else:
+            return diff_metrics, lit.Test.PASS, ''
 
     def _benchmark_test(self, test, lit_config):
         name = test.path_in_suite[-1]
@@ -251,7 +269,7 @@ class LibcxxBenchmarkFormat(LibcxxTestFormat):
                 report += "Compiled test failed unexpectedly!"
                 return lit.Test.FAIL, report
             result = lit.Test.Result(lit.Test.PASS, '')
-            benchmark_data = self._parse_benchmark_output(out)
+            benchmark_data = benchcxx.parseBenchmarkOutput(out)
             result.addMetric('benchmarks',
                              lit.Test.toMetricValue(benchmark_data))
             return result
@@ -260,26 +278,4 @@ class LibcxxBenchmarkFormat(LibcxxTestFormat):
             # override this, cleanup is your reponsibility.
             self._clean(exec_path)
 
-    ksplit_line_re = re.compile('\n[-]+\n')
-    kbench_line_re = re.compile('^\s*([a-zA-Z0-9_]+)\s+([0-9]+)\s+([0-9]+)\s+([0-9]+)\s*')
-
-    def _parse_benchmark_output(self, output):
-        parts = LibcxxBenchmarkFormat.ksplit_line_re.split(output, maxsplit=1)
-        assert len(parts) == 2
-        benchmark_list = []
-        for line in parts[1].split('\n'):
-            line = line.strip()
-            if not line:
-                continue
-            if line.startswith('DEBUG: '):
-                line = line[len('DEBUG: '):]
-            match = LibcxxBenchmarkFormat.kbench_line_re.match(line)
-            assert match is not None
-            parsed_bench = {
-                'name':       match.group(1),
-                'time':       match.group(2),
-                'cpu_time':   match.group(3),
-                'iterations': match.group(4)
-            }
-            benchmark_list.append(parsed_bench)
-        return benchmark_list
+    
