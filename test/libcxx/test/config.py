@@ -547,5 +547,13 @@ class BenchmarkConfiguration(Configuration):
           '-I' + self.libcxx_src_root + '/test/benchmark/support'
         ]
         lib_path = external_dir + '/lib'
-        self.cxx.link_flags += ['-L' + lib_path,
-                                '-Wl,-rpath,' + lib_path, '-lbenchmark']
+        self.cxx.link_flags = ['-L' + lib_path,
+                               '-Wl,-rpath,' + lib_path] + self.cxx.link_flags
+        self.cxx.link_flags += ['-lbenchmark']
+        if sys.platform == 'darwin':
+            dyn_path = self.env.get('DYLD_LIBRARY_PATH')
+            if dyn_path is None:
+                dyn_path = lib_path
+            else:
+                dyn_path = dyn_path + ':' + lib_path
+            self.env['DYLD_LIBRARY_PATH'] = dyn_path
