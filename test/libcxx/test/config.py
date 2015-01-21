@@ -9,7 +9,7 @@ import lit.Test  # pylint: disable=import-error,no-name-in-module
 import lit.util  # pylint: disable=import-error,no-name-in-module
 
 from libcxx.test.format import LibcxxTestFormat
-from libcxx.test.compiler import CXXCompiler
+from libcxx.compiler import CXXCompiler
 
 
 class Configuration(object):
@@ -22,6 +22,7 @@ class Configuration(object):
         self.obj_root = None
         self.cxx_library_root = None
         self.env = {}
+        self.use_target = False
         self.use_system_cxx_lib = False
         self.use_clang_verify = False
         self.long_tests = None
@@ -62,7 +63,10 @@ class Configuration(object):
         self.configure_link_flags()
         self.configure_sanitizer()
         self.configure_features()
+
+    def print_config_info(self):
         # Print the final compile and link flags.
+        self.lit_config.note('Using compiler: %s' % self.cxx.path)
         self.lit_config.note('Using flags: %s' % self.cxx.flags)
         self.lit_config.note('Using compile flags: %s' % self.cxx.compile_flags)
         self.lit_config.note('Using link flags: %s' % self.cxx.link_flags)
@@ -95,8 +99,9 @@ class Configuration(object):
                                   '(e.g., --param=cxx_under_test=clang++)')
         self.cxx = CXXCompiler(cxx)
         cxx_type = self.cxx.type
-        maj_v, min_v, _ = self.cxx.version
         if cxx_type is not None:
+            assert self.cxx.version is not None
+            maj_v, min_v, _ = self.cxx.version
             self.config.available_features.add(cxx_type)
             self.config.available_features.add('%s-%s.%s' % (
                 cxx_type, maj_v, min_v))
@@ -274,8 +279,8 @@ class Configuration(object):
         gcc_toolchain = self.get_lit_conf('gcc_toolchain')
         if gcc_toolchain:
             self.cxx.flags += ['-gcc-toolchain', gcc_toolchain]
-
-        self.cxx.flags += ['-target', self.config.target_triple]
+        if self.use_target:
+            self.cxx.flags += ['-target', self.config.target_triple]
 
     def configure_compile_flags_header_includes(self):
         self.cxx.compile_flags += ['-I' + self.libcxx_src_root + '/test/support']
@@ -409,28 +414,29 @@ class Configuration(object):
             llvm_symbolizer = lit.util.which('llvm-symbolizer',
                                              symbolizer_search_paths)
             # Setup the sanitizer compile flags
-            self.cxx.compile_flags += ['-g', '-fno-omit-frame-pointer']
+            self.cxx.flags += ['-g', '-fno-omit-frame-pointer']
             if sys.platform.startswith('linux'):
                 self.cxx.link_flags += ['-ldl']
             if san == 'Address':
-                self.cxx.compile_flags += ['-fsanitize=address']
+                self.cxx.flags += ['-fsanitize=address']
                 if llvm_symbolizer is not None:
                     self.env['ASAN_SYMBOLIZER_PATH'] = llvm_symbolizer
                 self.config.available_features.add('asan')
             elif san == 'Memory' or san == 'MemoryWithOrigins':
-                self.cxx.compile_flags += ['-fsanitize=memory']
+                self.cxx.flags += ['-fsanitize=memory']
                 if san == 'MemoryWithOrigins':
                     self.cxx.compile_flags += ['-fsanitize-memory-track-origins']
                 if llvm_symbolizer is not None:
                     self.env['MSAN_SYMBOLIZER_PATH'] = llvm_symbolizer
                 self.config.available_features.add('msan')
             elif san == 'Undefined':
-                self.cxx.compile_flags += ['-fsanitize=undefined',
-                                       '-fno-sanitize=vptr,function',
-                                       '-fno-sanitize-recover', '-O3']
+                self.cxx.flags += ['-fsanitize=undefined',
+                                   '-fno-sanitize=vptr,function',
+                                   '-fno-sanitize-recover']
+                self.cxx.compile_flags += ['-O3']
                 self.config.available_features.add('ubsan')
             elif san == 'Thread':
-                self.cxx.compile_flags += ['-fsanitize=thread']
+                self.cxx.flags += ['-fsanitize=thread']
                 self.config.available_features.add('tsan')
             else:
                 self.lit_config.fatal('unsupported value for '
@@ -439,9 +445,10 @@ class Configuration(object):
     def configure_triple(self):
         # Get or infer the target triple.
         self.config.target_triple = self.get_lit_conf('target_triple')
+        self.use_target = bool(self.config.target_triple)
         # If no target triple was given, try to infer it from the compiler
         # under test.
-        if not self.config.target_triple:
+        if not self.use_target:
             target_triple = self.cxx.getTriple()
             # Drop sub-major version components from the triple, because the
             # current XFAIL handling expects exact matches for feature checks.
