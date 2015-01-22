@@ -56,7 +56,6 @@ class Configuration(object):
         self.use_clang_verify = False
         self.long_tests = None
         self.execute_external = False
-        self.keep_failing_tests = False
 
         if platform.system() not in ('Darwin', 'FreeBSD', 'Linux'):
             self.lit_config.fatal("unrecognized system")
@@ -89,7 +88,6 @@ class Configuration(object):
         self.configure_use_system_cxx_lib()
         self.configure_use_clang_verify()
         self.configure_execute_external()
-        self.configure_keep_failing_tests()
         self.configure_ccache()
         self.configure_env()
         self.configure_compile_flags()
@@ -115,7 +113,6 @@ class Configuration(object):
             self.cxx,
             self.use_clang_verify,
             self.execute_external,
-            self.keep_failing_tests,
             exec_env=self.env)
 
     def configure_cxx(self):
@@ -191,14 +188,6 @@ class Configuration(object):
         use_lit_shell = self.get_lit_bool('use_lit_shell',
                                           use_lit_shell_default)
         self.execute_external = not use_lit_shell
-
-    def configure_keep_failing_tests(self):
-        self.keep_failing_tests = self.get_lit_bool(
-            'keep_failing_tests', False)
-        if self.keep_failing_tests:
-            self.lit_config.note(
-                'Failing test executables will stored under %s'
-                % self.config.test_exec_root)
 
     def configure_ccache(self):
         use_ccache = self.get_lit_bool('use_ccache', False)
