@@ -257,13 +257,6 @@ class Configuration(object):
             self.config.available_features.add(
                 'with_system_cxx_lib=%s' % self.config.target_triple)
 
-        # Add the platform to the available features. Always use 'linux' as
-        # opposed to 'linux2'.
-        if sys.platform.startswith('linux'):
-            self.config.available_features.add('linux')
-        elif sys.platform:
-            self.config.available_features.add(sys.platform)
-
         # Some linux distributions have different locale data than others.
         # Insert the distributions name and name-version into the available
         # features to allow tests to XFAIL on them.
