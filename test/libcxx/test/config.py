@@ -12,36 +12,6 @@ import lit.util  # pylint: disable=import-error,no-name-in-module
 from libcxx.test.format import LibcxxTestFormat, LibcxxBenchmarkFormat
 from libcxx.compiler import CXXCompiler
 
-def load_site_config(lit_config, config,
-                     config_var, env_var):
-    # We haven't loaded the site specific configuration (the user is
-    # probably trying to run on a test file directly, and either the site
-    # configuration hasn't been created by the build system, or we are in an
-    # out-of-tree build situation).
-    site_cfg = lit_config.params.get(config_var,
-                                     os.environ.get(env_var))
-    if not site_cfg:
-        lit_config.warning('No site specific configuration file found!'
-                           ' Running the tests in the default configuration.')
-        # TODO: Set test_exec_root to a temporary directory where output files
-        # can be placed. This is needed for ShTest.
-    elif not os.path.isfile(site_cfg):
-        lit_config.fatal(
-            "Specified site configuration file does not exist: '%s'" %
-            site_cfg)
-    else:
-        lit_config.note('using site specific configuration at %s' % site_cfg)
-        ld_fn = lit_config.load_config
-        # Null out the load_config function so that lit.site.cfg doesn't
-        # recursively load a config even if it tries.
-        # TODO: This is one hell of a hack. Fix it.
-        def prevent_reload_fn(*args, **kwargs):
-            pass
-        lit_config.load_config = prevent_reload_fn
-        ld_fn(config, site_cfg)
-        lit_config.load_config = ld_fn
-
-
 def loadSiteConfig(lit_config, config, param_name, env_name):
     # We haven't loaded the site specific configuration (the user is
     # probably trying to run on a test file directly, and either the site
