@@ -23,11 +23,13 @@ if(PYTHONINTERP_FOUND)
   set(LIT_ARGS "${LLVM_LIT_ARGS}")
   separate_arguments(LIT_ARGS)
 
-  set(LIBCXX_COMPILER ${CMAKE_CXX_COMPILER})
-  set(LIBCXX_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/..)
-  set(LIBCXX_BINARY_DIR ${CMAKE_BINARY_DIR})
-  set(PYTHON_EXECUTABLE ${PYTHON_EXECUTABLE})
+  set(LIBCXX_LIT_VARIANT "libcxx" CACHE STRING
+      "Configuration variant to use for LIT.")
+
+  pythonize_bool(LIBCXX_ENABLE_EXCEPTIONS)
+  pythonize_bool(LIBCXX_ENABLE_RTTI)
   pythonize_bool(LIBCXX_ENABLE_SHARED)
+  pythonize_bool(LIBCXX_BUILD_32_BITS)
   pythonize_bool(LIBCXX_ENABLE_THREADS)
   pythonize_bool(LIBCXX_ENABLE_MONOTONIC_CLOCK)
 
