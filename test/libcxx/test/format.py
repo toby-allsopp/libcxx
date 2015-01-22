@@ -12,7 +12,6 @@ import libcxx.test.benchmark as benchcxx
 import libcxx.util
 
 
->>>>>>> master
 class LibcxxTestFormat(object):
     """
     Custom test format handler for use with the test format use by libc++.
@@ -168,10 +167,7 @@ class LibcxxBenchmarkFormat(LibcxxTestFormat):
         # Check that we don't have run lines on tests that don't support them.
         if len(script) != 0:
             lit_config.fatal('Unsupported RUN line found in test %s' % name)
-        return self._evaluate_test(self, test, lit_config)
-
-    def _evaluate_test(self, test, lit_config):
-        res = self._benchmark_test(test, lit_config)
+        res = self._benchmark_test(test, tmpBase, execDir, lit_config)
         if not isinstance(res, lit.Test.Result):
             code, output = res
             res = lit.Test.Result(code, output)
@@ -179,14 +175,60 @@ class LibcxxBenchmarkFormat(LibcxxTestFormat):
             return res
         full_name = test.getFullName()
         if self.other_results:
-            diff_metrics, failing_bench = self._process_results(test, res, lit_config)
-            res.addMetric('benchmark_diff', lit.Test.toMetricValue(diff_metrics))
+            diff_metrics, failing_bench = self._compare_results(
+                test, res, lit_config)
+            res.addMetric(
+                'benchmark_diff', lit.Test.toMetricValue(diff_metrics))
             if failing_bench:
                 res.code = lit.Test.FAIL
                 res.output = '\n'.join(failing_bench)
         return res
 
-    def _process_results(self, test, result, lit_config):
+    def _benchmark_test(self, test, tmpBase, execDir, lit_config):
+        source_path = test.getSourcePath()
+        exec_path = tmpBase + '.exe'
+        object_path = tmpBase + '.o'
+        # Create the output directory if it does not already exist.
+        lit.util.mkdir_p(os.path.dirname(tmpBase))
+        try:
+            # Compile the test
+            cmd, out, err, rc = self.cxx.compileLinkTwoSteps(
+                source_path, out=exec_path, object_file=object_path,
+                cwd=execDir)
+            compile_cmd = cmd
+            if rc != 0:
+                report = libcxx.util.makeReport(cmd, out, err, rc)
+                report += "Compilation failed unexpectedly!"
+                return lit.Test.FAIL, report
+            # Run the test
+            cmd = []
+            if self.exec_env:
+                cmd += ['env']
+                cmd += ['%s=%s' % (k, v) for k, v in self.exec_env.items()]
+            if lit_config.useValgrind:
+                cmd = lit_config.valgrindArgs + cmd
+            cmd += [exec_path]
+            out, err, rc = lit.util.executeCommand(
+                cmd, cwd=os.path.dirname(source_path))
+            if rc != 0:
+                report = libcxx.util.makeReport(cmd, out, err, rc)
+                report = "Compiled With: %s\n%s" % (compile_cmd, report)
+                report += "Compiled test failed unexpectedly!"
+                return lit.Test.FAIL, report
+            scale_warning = 'CPU scaling is enabled: Benchmark timings may be noisy.'
+            if scale_warning in out:
+                lit_config.warning(scale_warning)
+            result = lit.Test.Result(lit.Test.PASS, '')
+            benchmark_data = benchcxx.parseBenchmarkOutput(out)
+            result.addMetric('benchmarks',
+                             lit.Test.toMetricValue(benchmark_data))
+            return result
+        finally:
+            # Note that cleanup of exec_file happens in `_clean()`. If you
+            # override this, cleanup is your reponsibility.
+            self._clean(exec_path)
+
+    def _compare_results(self, test, result, lit_config):
         full_name = test.getFullName()
         other_result = self.other_results[full_name]
         this_bench = result.metrics['benchmarks'].value
@@ -200,41 +242,3 @@ class LibcxxBenchmarkFormat(LibcxxTestFormat):
             if diff['cpu_time'] > self.allowed_difference:
                 failing_bench += [benchcxx.formatFailDiff(diff, v, matching)]
         return diff_metrics, failing_bench
-
-    def _benchmark_test(self, test, lit_config):
-        name = test.path_in_suite[-1]
-        source_path = test.getSourcePath()
-        source_dir = os.path.dirname(source_path)
-
-        exec_file = tempfile.NamedTemporaryFile(suffix=".exe", delete=False)
-        exec_path = exec_file.name
-        exec_file.close()
-
-        try:
-            cmd, report, rc = self._build(exec_path, source_path)
-            compile_cmd = cmd
-            if rc != 0:
-                report += "Compilation failed unexpectedly!"
-                return lit.Test.FAIL, report
-
-            cmd, out, err, rc = self._run_imp(
-                exec_path, lit_config, source_dir,
-                flags=[])
-            if rc != 0:
-                _, report, _ = self._make_report(cmd, '', err, rc)
-                report = "Compiled With: %s\n%s" % (compile_cmd, report)
-                report += "Compiled test failed unexpectedly!"
-                return lit.Test.FAIL, report
-            result = lit.Test.Result(lit.Test.PASS, '')
-            scale_warning = 'CPU scaling is enabled: Benchmark timings may be noisy.'
-            if scale_warning in out:
-                lit_config.warning(scale_warning)
-            benchmark_data = benchcxx.parseBenchmarkOutput(out)
-            result.addMetric('benchmarks',
-                             lit.Test.toMetricValue(benchmark_data))
-            return result
-        finally:
-            # Note that cleanup of exec_file happens in `_clean()`. If you
-            # override this, cleanup is your reponsibility.
-            self._clean(exec_path)
-
