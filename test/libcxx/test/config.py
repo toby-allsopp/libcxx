@@ -9,37 +9,8 @@ import sys
 import lit.Test  # pylint: disable=import-error,no-name-in-module
 import lit.util  # pylint: disable=import-error,no-name-in-module
 
-from libcxx.test.format import LibcxxTestFormat, LibcxxBenchmarkFormat
+from libcxx.test.format import LibcxxTestFormat
 from libcxx.compiler import CXXCompiler
-
-def load_site_config(lit_config, config,
-                     config_var, env_var):
-    # We haven't loaded the site specific configuration (the user is
-    # probably trying to run on a test file directly, and either the site
-    # configuration hasn't been created by the build system, or we are in an
-    # out-of-tree build situation).
-    site_cfg = lit_config.params.get(config_var,
-                                     os.environ.get(env_var))
-    if not site_cfg:
-        lit_config.warning('No site specific configuration file found!'
-                           ' Running the tests in the default configuration.')
-        # TODO: Set test_exec_root to a temporary directory where output files
-        # can be placed. This is needed for ShTest.
-    elif not os.path.isfile(site_cfg):
-        lit_config.fatal(
-            "Specified site configuration file does not exist: '%s'" %
-            site_cfg)
-    else:
-        lit_config.note('using site specific configuration at %s' % site_cfg)
-        ld_fn = lit_config.load_config
-        # Null out the load_config function so that lit.site.cfg doesn't
-        # recursively load a config even if it tries.
-        # TODO: This is one hell of a hack. Fix it.
-        def prevent_reload_fn(*args, **kwargs):
-            pass
-        lit_config.load_config = prevent_reload_fn
-        ld_fn(config, site_cfg)
-        lit_config.load_config = ld_fn
 
 
 def loadSiteConfig(lit_config, config, param_name, env_name):
@@ -85,6 +56,7 @@ class Configuration(object):
         self.use_clang_verify = False
         self.long_tests = None
         self.execute_external = False
+        self.keep_failing_tests = False
 
         if platform.system() not in ('Darwin', 'FreeBSD', 'Linux'):
             self.lit_config.fatal("unrecognized system")
@@ -117,6 +89,7 @@ class Configuration(object):
         self.configure_use_system_cxx_lib()
         self.configure_use_clang_verify()
         self.configure_execute_external()
+        self.configure_keep_failing_tests()
         self.configure_ccache()
         self.configure_env()
         self.configure_compile_flags()
@@ -142,6 +115,7 @@ class Configuration(object):
             self.cxx,
             self.use_clang_verify,
             self.execute_external,
+            self.keep_failing_tests,
             exec_env=self.env)
 
     def configure_cxx(self):
@@ -218,6 +192,14 @@ class Configuration(object):
                                           use_lit_shell_default)
         self.execute_external = not use_lit_shell
 
+    def configure_keep_failing_tests(self):
+        self.keep_failing_tests = self.get_lit_bool(
+            'keep_failing_tests', False)
+        if self.keep_failing_tests:
+            self.lit_config.note(
+                'Failing test executables will stored under %s'
+                % self.config.test_exec_root)
+
     def configure_ccache(self):
         use_ccache = self.get_lit_bool('use_ccache', False)
         if use_ccache:
@@ -285,6 +267,13 @@ class Configuration(object):
         if self.use_system_cxx_lib:
             self.config.available_features.add(
                 'with_system_cxx_lib=%s' % self.config.target_triple)
+
+        # Add the platform to the available features. Always use 'linux' as
+        # opposed to 'linux2'.
+        if sys.platform.startswith('linux'):
+            self.config.available_features.add('linux')
+        elif sys.platform:
+            self.config.available_features.add(sys.platform)
 
         # Some linux distributions have different locale data than others.
         # Insert the distributions name and name-version into the available
@@ -594,64 +583,3 @@ class Configuration(object):
             else:
                 cxx_library_root = self.cxx_library_root
             self.env['DYLD_LIBRARY_PATH'] = cxx_library_root
-
-
-class BenchmarkConfiguration(Configuration):
-    def __init__(self, lit_config, config):
-        super(BenchmarkConfiguration, self).__init__(lit_config, config)
-        self.other_results = None
-
-    def get_test_format(self):
-        return LibcxxBenchmarkFormat(
-            self.other_results,
-            self.allowed_difference,
-            self.cxx,
-            self.use_clang_verify,
-            self.execute_external,
-            exec_env=self.env)
-
-    def configure(self):
-        super(BenchmarkConfiguration, self).configure()
-        self.configure_benchmark_flags()
-        self.configure_other_results()
-        self.configure_allowed_difference()
-        self.print_config_info()
-
-    def load_benchmark_results(self, from_file):
-        import json
-        with open(from_file, 'r') as output_file:
-          output = json.load(output_file)
-        tests = output
-        self.lit_config.note('Decoded: %s\n' % tests)
-
-    def configure_other_results(self):
-        res = self.get_lit_conf('compare_to_output')
-        if not res:
-            return
-        if not os.path.isfile(res):
-            self.lit_config.fatal('Invalid output file: %s' % res)
-        self.lit_config.note('Comparing to results file: %s' % res)
-        import libcxx.test.benchmark as bench
-        self.other_results = bench.loadTestResults(res)
-
-    def configure_allowed_difference(self):
-        allowed_diff = self.get_lit_conf('allowed_difference', '5.0')
-        self.allowed_difference = float(allowed_diff)
-
-    def configure_benchmark_flags(self):
-        external_dir = os.path.join(self.obj_root, 'external')
-        self.cxx.compile_flags += [
-          '-I' + external_dir + '/include',
-          '-I' + self.libcxx_src_root + '/test/benchmark/support'
-        ]
-        lib_path = external_dir + '/lib'
-        self.cxx.link_flags = ['-L' + lib_path,
-                               '-Wl,-rpath,' + lib_path] + self.cxx.link_flags
-        self.cxx.link_flags += ['-lbenchmark']
-        if sys.platform == 'darwin':
-            dyn_path = self.env.get('DYLD_LIBRARY_PATH')
-            if dyn_path is None:
-                dyn_path = lib_path
-            else:
-                dyn_path = dyn_path + ':' + lib_path
-            self.env['DYLD_LIBRARY_PATH'] = dyn_path
