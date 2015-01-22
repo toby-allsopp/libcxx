@@ -570,6 +570,7 @@ class BenchmarkConfiguration(Configuration):
     def __init__(self, lit_config, config):
         super(BenchmarkConfiguration, self).__init__(lit_config, config)
         self.other_results = None
+        self.allowed_difference = None
 
     def get_test_format(self):
         return LibcxxBenchmarkFormat(
