@@ -7,21 +7,14 @@
 //
 //===----------------------------------------------------------------------===//
 
-// <stack>
+// Tests workaround for  https://gcc.gnu.org/bugzilla/show_bug.cgi?id=64816.
 
-// ~stack() // implied noexcept;
+#include <string>
 
-#include <stack>
-#include <cassert>
+void f(const std::string &s) { s.begin(); }
 
-#include "MoveOnly.h"
+#include <vector>
 
-int main()
-{
-#if __has_feature(cxx_noexcept)
-    {
-        typedef std::stack<MoveOnly> C;
-        static_assert(std::is_nothrow_destructible<C>::value, "");
-    }
-#endif
-}
+void AppendTo(const std::vector<char> &v) { v.begin(); }
+
+int main() {}
