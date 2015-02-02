@@ -201,18 +201,9 @@ void * __memory_pool::__allocate(
         __alloc_new_chunk(__res, __block_size);
         __increment_blocks_per_chunk(__max_block_per_chunk);
     }
-
-    while (true) {
-        __block_node * __n = nullptr;
-        __block_node * __old_head_ = __free_head_;
-        __n = __old_head_;
-        if (__free_head_.compare_exhange_weak(__old_head,
-                                              __free_head_->__next_,
-                                              memory_order_release,
-                                              memory_order_relaxed)) {
-            return static_cast<void*>(__n);
-        }
-    }
+    __block_node * __n = __free_head_;
+    __free_head_ = __free_head_->__next_;
+    return static_cast<void*>(__n);
 }
 
 void __memory_pool::__deallocate(
@@ -221,18 +212,9 @@ void __memory_pool::__deallocate(
     if (! __p) {
         return;
     }
-
     __block_node * __n = static_cast<__block_node*>(__p);
-    while (true) {
-        __block_node * __old_head_ = __free_head_;
-        __n->__next_ = __old_head_;
-        if (__free_head_.compare_exchange_weak(__old_head_,
-                                               __n,
-                                               memory_order_release,
-                                               memory_order_relaxed)) {
-            return;
-        }
-    }
+    __n->__next_ = __free_head_;
+    __free_head_ = __n;
 }
 
 void __memory_pool::__release(memory_resource * __res)
@@ -263,17 +245,8 @@ void __memory_pool::__add_chunk_to_free_list(
         __block_node * __ret = static_cast<__block_node*>(__p);
         __p = static_cast<char*>(__p) + __block_size;
         __s -= __block_size;
-
-        while (true) {
-            __block_node * __old_head_ = __free_head_;
-            __ret->__next_ = __old_head_;
-            if (__free_head_.compare_exchange_weak(__old_head_,
-                                                   __ret,
-                                                   memory_order_release,
-                                                   memory_order_relaxed)) {
-                break;
-            }
-        }
+        __ret->__next_ = __free_head_;
+        __free_head_ = __ret;
         --__debug_left;
     }
     _LIBCPP_ASSERT(__debug_left == 0, "aligned blocks did not match expected");
@@ -281,19 +254,11 @@ void __memory_pool::__add_chunk_to_free_list(
 
 void __memory_pool::__increment_blocks_per_chunk(size_t __max_block_per_chunk)
 {
-    while (true) {
-        size_t const __old_chunk_size = __chunk_size;
-        size_t __pos_next = __chunk_size_ << 1;
-        if (!__pos_next || __pos_next >= __max_block_per_chunk) {
-            __pos_next = __max_block_per_chunk;
-        }
-
-        if (__chunk_size_.compare_exchange_weak(__old_chunk_size,
-                                                __pos_next,
-                                              memory_order_release,
-                                              memory_order_relaxed)) {
-            return;
-        }
+    size_t const __pos_next = __chunk_size_ << 1;
+    if (!__pos_next || __pos_next >= __max_block_per_chunk) {
+        __chunk_size_ = __max_block_per_chunk;
+    } else {
+        __chunk_size_ = __pos_next;
     }
 }
 
