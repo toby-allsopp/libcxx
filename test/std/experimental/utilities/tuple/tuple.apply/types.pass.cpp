@@ -7,6 +7,8 @@
 //
 //===----------------------------------------------------------------------===//
 
+// UNSUPPORTED: c++98, c++03, c++11
+
 // <experimental/tuple>
 
 // template <class F, class T> constexpr decltype(auto) apply(F &&, T &&)
@@ -17,8 +19,6 @@
 #include <array>
 #include <utility>
 #include <cassert>
-
-#if _LIBCPP_STD_VER > 11
 
 namespace ex = std::experimental;
 
@@ -425,7 +425,3 @@ int main()
     test_3<std::tuple<int, int, int>>();
     test_3<std::array<int, 3>>();
 }
-
-#else /* _LIBCPP_STD_VER < 11 */
-int main() {}
-#endif /* _LIBCPP_STD_VER > 11 */

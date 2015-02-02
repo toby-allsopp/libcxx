@@ -7,6 +7,8 @@
 //
 //===----------------------------------------------------------------------===//
 
+// UNSUPPORTED: c++98, c++03, c++11
+
 // <experimental/tuple>
 
 // template <class F, class T> constexpr decltype(auto) apply(F &&, T &&)
@@ -15,8 +17,6 @@
 
 #include <experimental/tuple>
 #include <cassert>
-
-#if _LIBCPP_STD_VER > 11
 
 struct func_obj
 {
@@ -48,7 +48,3 @@ int main()
         assert(4 == ex::apply(static_cast<func_obj &&>(f), tp));
     }
 }
-
-#else /* _LIBCPP_STD_VER < 11 */
-int main() {}
-#endif /* _LIBCPP_STD_VER > 11 */

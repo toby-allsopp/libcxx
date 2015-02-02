@@ -7,6 +7,8 @@
 //
 //===----------------------------------------------------------------------===//
 
+// UNSUPPORTED: c++98, c++03, c++11
+
 // <experimental/tuple>
 
 // template <class F, class T> constexpr decltype(auto) apply(F &&, T &&)
@@ -16,8 +18,6 @@
 #include <experimental/tuple>
 #include <utility>
 #include <cassert>
-
-#if _LIBCPP_STD_VER > 11
 
 constexpr int f_int_0() { return 1; }
 constexpr int f_int_1(int x) { return  x; }
@@ -116,7 +116,3 @@ int main()
     test_2<std::tuple<int, int>>();
     test_2<std::pair<int, int>>();
 }
-
-#else /* _LIBCPP_STD_VER < 11 */
-int main() {}
-#endif /* _LIBCPP_STD_VER > 11 */

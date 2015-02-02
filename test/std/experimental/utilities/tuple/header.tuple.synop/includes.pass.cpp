@@ -9,19 +9,13 @@
 
 // <experimental/tuple>
 
-// template <class T> constexpr size_t tuple_size_v = tuple_size<T>::value;
-
-// Test with pointer
-
 #include <experimental/tuple>
-
-namespace ex = std::experimental;
 
 int main()
 {
 #if _LIBCPP_STD_VER > 11
-    auto x = ex::tuple_size_v<std::tuple<>*>;
-#else
-# error
-#endif
+# ifndef _LIBCPP_TUPLE
+#   error "<experimental/tuple> must include <tuple>"
+# endif
+#endif /* _LIBCPP_STD_VER > 11 */
 }

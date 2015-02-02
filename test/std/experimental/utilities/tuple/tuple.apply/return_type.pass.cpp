@@ -7,6 +7,8 @@
 //
 //===----------------------------------------------------------------------===//
 
+// UNSUPPORTED: c++98, c++03, c++11
+
 // <experimental/tuple>
 
 // template <class F, class T> constexpr decltype(auto) apply(F &&, T &&)
@@ -15,8 +17,6 @@
 
 #include <experimental/tuple>
 #include <cassert>
-
-#if _LIBCPP_STD_VER > 11
 
 static int my_int = 42;
 
@@ -74,6 +74,3 @@ int main()
     test<15, int volatile *>();
     test<16, int const volatile *>();
 }
-#else /* _LIBCPP_STD_VER < 11 */
-int main() {}
-#endif /* _LIBCPP_STD_VER > 11 */

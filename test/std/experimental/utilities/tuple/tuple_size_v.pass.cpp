@@ -7,6 +7,8 @@
 //
 //===----------------------------------------------------------------------===//
 
+// UNSUPPORTED: c++98, c++03, c++11
+
 // <experimental/tuple>
 
 // template <class T> constexpr size_t tuple_size_v = tuple_size<T>::value;
@@ -15,7 +17,6 @@
 #include <utility>
 #include <array>
 
-#if _LIBCPP_STD_VER > 11
 namespace ex = std::experimental;
 
 template <class Tuple, int Expect>
@@ -42,6 +43,3 @@ int main()
     test<std::tuple<int, int, int>, 3>();
     test<std::array<int, 3>, 3>();
 }
-#else /* _LIBCPP_STD_VER <= 11 */
-int main() {}
-#endif

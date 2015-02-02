@@ -7,11 +7,13 @@
 //
 //===----------------------------------------------------------------------===//
 
+// UNSUPPORTED: c++98, c++03, c++11
+
 // <experimental/tuple>
 
 // template <class T> constexpr size_t tuple_size_v = tuple_size<T>::value;
 
-// Test with non tuple type
+// Test with reference
 
 #include <experimental/tuple>
 
@@ -19,9 +21,5 @@ namespace ex = std::experimental;
 
 int main()
 {
-#if _LIBCPP_STD_VER > 11
-    auto x = ex::tuple_size_v<int>;
-#else
-# error
-#endif
+    auto x = ex::tuple_size_v<std::tuple<> &>;
 }
