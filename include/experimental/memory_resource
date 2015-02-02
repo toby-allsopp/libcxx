@@ -593,9 +593,8 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
     public:
         __memory_pool()
             : __chunk_size_(1)
-        {
-            __free_head_ = {0, nullptr};
-        }
+            , __free_head_(nullptr)
+        {}
 
         __memory_pool(__memory_pool const &) = delete;
         __memory_pool & operator=(__memory_pool const &) = delete;
@@ -611,11 +610,7 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
 
     private:
         atomic<size_t> __chunk_size_;
-        struct __counted_head {
-            size_t count;
-            __block_node *head;
-        };
-        atomic<__counted_head> __free_head_;
+        atomic<__block_node *> __free_head_;
         __single_linked_chunk_allocator __alloc_;
     };
 
