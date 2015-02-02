@@ -29,5 +29,4 @@
   namespace chrono { namespace experimental { inline namespace fundamentals_v1 {
 #define _LIBCPP_END_NAMESPACE_CHRONO_LFTS _LIBCPP_END_NAMESPACE_STD } } }
 
-
 #endif
