@@ -13,7 +13,8 @@
 
 // template <class F, class T> constexpr decltype(auto) apply(F &&, T &&)
 
-// Testing extended function types
+// Testing extended function types. The extented function types are those
+// named by INVOKE but that 
 
 #include <experimental/tuple>
 #include <array>

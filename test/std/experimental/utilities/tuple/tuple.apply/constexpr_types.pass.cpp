@@ -61,7 +61,7 @@ void test_0()
     {
         constexpr Tuple t{};
         constexpr A_int_0 a;
-        static_assert(1 == ex::apply(a, t));
+        static_assert(1 == ex::apply(a, t), "");
     }
 }
 
