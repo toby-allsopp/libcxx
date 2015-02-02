@@ -41,7 +41,7 @@ protected:
     }
 
     virtual void do_deallocate(void *, std::size_t s, std::size_t a) 
-    { 
+    {
         ++dealloc_count;
         --alive_count;
         assert(s == m_size);
