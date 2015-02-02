@@ -7,6 +7,10 @@
 project(libcxx CXX C)
 cmake_minimum_required(VERSION 2.8)
 
+if(POLICY CMP0042)
+  cmake_policy(SET CMP0042 NEW) # Set MACOSX_RPATH=YES by default
+endif()
+
 set(PACKAGE_NAME libcxx)
 set(PACKAGE_VERSION trunk-svn)
 set(PACKAGE_STRING "${PACKAGE_NAME} ${PACKAGE_VERSION}")
@@ -27,7 +31,15 @@ MACRO_ENSURE_OUT_OF_SOURCE_BUILD(
  )
 
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+  set(LIBCXX_LIBDIR_SUFFIX "" CACHE STRING
+      "Define suffix of library directory name (32/64)")
+
+  set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib${LIBCXX_LIBDIR_SUFFIX})
+  set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib${LIBCXX_LIBDIR_SUFFIX})
+
   set(LIBCXX_BUILT_STANDALONE 1)
+else()
+  set(LIBCXX_LIBDIR_SUFFIX ${LLVM_LIBDIR_SUFFIX})
 endif()
 
 #===============================================================================
@@ -49,6 +61,8 @@ option(LIBCXX_ENABLE_MONOTONIC_CLOCK
    This option may only be used when LIBCXX_ENABLE_THREADS=OFF." ON)
 option(LIBCXX_INSTALL_HEADERS "Install the libc++ headers." ON)
 option(LIBCXX_INSTALL_SUPPORT_HEADERS "Install libc++ support headers." ON)
+set(LIBCXX_SYSROOT "" CACHE STRING "Use alternate sysroot.")
+set(LIBCXX_GCC_TOOLCHAIN "" CACHE STRING "Use alternate GCC toolchain.")
 if (LIBCXX_BUILT_STANDALONE)
   set(LLVM_USE_SANITIZER "" CACHE STRING
       "Define the sanitizer used to build the library and tests")
@@ -75,26 +89,10 @@ set_property(CACHE LIBCXX_CXX_ABI PROPERTY STRINGS ;${CXXABIS})
 # Configure System
 #===============================================================================
 
-# Get triples.
-include(GetTriple)
-get_host_triple(LIBCXX_HOST_TRIPLE
-  LIBCXX_HOST_ARCH
-  LIBCXX_HOST_VENDOR
-  LIBCXX_HOST_OS
-  )
-set(LIBCXX_HOST_TRIPLE ${LIBCXX_HOST_TRIPLE} CACHE STRING "Host triple.")
-get_target_triple(LIBCXX_TARGET_TRIPLE
-  LIBCXX_TARGET_ARCH
-  LIBCXX_TARGET_VENDOR
-  LIBCXX_TARGET_OS
-  )
-set(LIBCXX_TARGET_TRIPLE ${LIBCXX_TARGET_TRIPLE} CACHE STRING "Target triple.")
-
-
 set(LIBCXX_COMPILER    ${CMAKE_CXX_COMPILER})
 set(LIBCXX_SOURCE_DIR  ${CMAKE_CURRENT_SOURCE_DIR})
 set(LIBCXX_BINARY_DIR  ${CMAKE_CURRENT_BINARY_DIR})
-set(LIBCXX_LIBRARY_DIR ${CMAKE_BINARY_DIR}/lib)
+set(LIBCXX_LIBRARY_DIR ${CMAKE_BINARY_DIR}/lib${LIBCXX_LIBDIR_SUFFIX})
 
 # Declare libc++ configuration variables.
 # They are intended for use as follows:
@@ -269,6 +267,12 @@ if (LIBCXX_BUILT_STANDALONE)
     message(WARNING "LLVM_USE_SANITIZER is not supported with MSVC")
   endif()
 endif()
+
+append_if(LIBCXX_CXX_FLAGS LIBCXX_TARGET_TRIPLE
+          "-target ${LIBCXX_TARGET_TRIPLE}")
+append_if(LIBCXX_CXX_FLAGS LIBCXX_SYSROOT "--sysroot ${LIBCXX_SYSROOT}")
+append_if(LIBCXX_CXX_FLAGS LIBCXX_GCC_TOOLCHAIN
+          "-gcc-toolchain ${LIBCXX_GCC_TOOLCHAIN}")
 
 string(REPLACE ";" " " LIBCXX_CXX_FLAGS "${LIBCXX_CXX_FLAGS}")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${LIBCXX_CXX_FLAGS}")
