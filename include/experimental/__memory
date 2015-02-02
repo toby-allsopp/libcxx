@@ -18,7 +18,6 @@
 #include <cstddef>
 #include <type_traits>
 #include <__functional_base> /* __clz */
-#include <__hash_table> /* __is_power2, __next_pow2 */
 
 
 #ifdef _LIBCPP_DEBUG
@@ -60,6 +59,19 @@ unsigned long long __msb_only(unsigned long long __x) _NOEXCEPT
 {
     _LIBCPP_ASSERT(__x, "__x cannot be zero");
     return ((unsigned long long)-1 << __clz(__x)) + 1;
+}
+
+inline _LIBCPP_INLINE_VISIBILITY
+size_t __is_power2(size_t __bc)
+{
+    return  __bc == 1 || __bc == 2 || (__bc && !(__bc & (__bc - 1)));
+}
+
+inline _LIBCPP_INLINE_VISIBILITY
+size_t __next_pow2(size_t __n)
+{
+    return __n < 2 ? __n + 1
+        : size_t(1) << (std::numeric_limits<size_t>::digits - __clz(__n-1));
 }
 
 inline _LIBCPP_INLINE_VISIBILITY
