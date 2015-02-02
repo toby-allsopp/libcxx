@@ -688,6 +688,7 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
     };
 
 
+    // TODO(EricWF): Make this lock free.
     class _LIBCPP_TYPE_VIS_ONLY synchronized_pool_resource
       : public memory_resource
     {

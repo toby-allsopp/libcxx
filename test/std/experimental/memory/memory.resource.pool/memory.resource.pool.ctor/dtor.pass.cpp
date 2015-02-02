@@ -14,7 +14,7 @@
 
 #include <experimental/memory_resource>
 #include <cassert>
-#include "../../dummy_resource.hpp"
+#include "dummy_memory_resource.hpp"
 
 using namespace std::experimental::pmr;
 

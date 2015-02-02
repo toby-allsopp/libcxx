@@ -14,7 +14,7 @@
 #include <experimental/memory_resource>
 #include <type_traits>
 #include <cassert>
-#include "../../dummy_resource.hpp"
+#include "dummy_memory_resource.hpp"
 
 namespace ex = std::experimental::pmr;
 

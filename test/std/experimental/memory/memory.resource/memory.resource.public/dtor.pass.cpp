@@ -13,7 +13,6 @@
 
 #include <experimental/memory_resource>
 #include <type_traits>
-#include <cassert>
 
 namespace ex = std::experimental::pmr;
 
