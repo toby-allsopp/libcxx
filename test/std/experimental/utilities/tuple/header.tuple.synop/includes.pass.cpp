@@ -17,4 +17,3 @@ int main()
 {
   std::tuple<int> x(1);
 }
-
