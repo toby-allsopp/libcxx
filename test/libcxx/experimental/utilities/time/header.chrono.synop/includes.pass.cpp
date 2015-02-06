@@ -7,20 +7,16 @@
 //
 //===----------------------------------------------------------------------===//
 
-// <chrono>
+// <experimental/chrono>
 
-// high_resolution_clock
+#include <experimental/chrono>
 
-// static time_point now();
-
-#include <chrono>
-#include <cassert>
+#if _LIBCPP_STD_VER > 11
+# ifndef _LIBCPP_CHRONO
+#   error "<experimental/chrono> must include <chrono>"
+# endif
+#endif
 
 int main()
 {
-    typedef std::chrono::high_resolution_clock C;
-    C::time_point t1 = C::now();
-    assert(t1.time_since_epoch().count() != 0);
-    assert(C::time_point::min() < t1);
-    assert(C::time_point::max() > t1);
 }

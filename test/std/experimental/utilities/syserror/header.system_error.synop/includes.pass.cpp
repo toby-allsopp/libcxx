@@ -7,20 +7,15 @@
 //
 //===----------------------------------------------------------------------===//
 
-// <chrono>
+// UNSUPPORTED: c++98, c++03, c++11
 
-// high_resolution_clock
+// <experimental/system_error>
 
-// static time_point now();
-
-#include <chrono>
-#include <cassert>
+#include <experimental/system_error>
 
 int main()
 {
-    typedef std::chrono::high_resolution_clock C;
-    C::time_point t1 = C::now();
-    assert(t1.time_since_epoch().count() != 0);
-    assert(C::time_point::min() < t1);
-    assert(C::time_point::max() > t1);
+  // Check that <system_error> has been included
+  std::error_code ec;
+  ((void)ec);
 }

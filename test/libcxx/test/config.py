@@ -92,6 +92,7 @@ class Configuration(object):
         self.configure_env()
         self.configure_compile_flags()
         self.configure_link_flags()
+        self.configure_warnings()
         self.configure_sanitizer()
         self.configure_substitutions()
         self.configure_features()
@@ -257,6 +258,14 @@ class Configuration(object):
             self.config.available_features.add(
                 'with_system_cxx_lib=%s' % self.config.target_triple)
 
+        # Insert the platform name into the available features as a lower case.
+        # Strip the '2' from linux2.
+        if sys.platform.startswith('linux'):
+            platform_name = 'linux'
+        else:
+            platform_name = sys.platform
+        self.config.available_features.add(platform_name.lower())
+
         # Some linux distributions have different locale data than others.
         # Insert the distributions name and name-version into the available
         # features to allow tests to XFAIL on them.
@@ -332,8 +341,9 @@ class Configuration(object):
             self.cxx.flags += ['-target', self.config.target_triple]
 
     def configure_compile_flags_header_includes(self):
-        self.cxx.compile_flags += [
-            '-I' + os.path.join(self.libcxx_src_root, 'test/support')]
+        support_path = os.path.join(self.libcxx_src_root, 'test/support')
+        self.cxx.compile_flags += ['-I' + support_path]
+        self.cxx.compile_flags += ['-include', os.path.join(support_path, 'nasty_macros.hpp')]
         libcxx_headers = self.get_lit_conf(
             'libcxx_headers', os.path.join(self.libcxx_src_root, 'include'))
         if not os.path.isdir(libcxx_headers):
@@ -447,6 +457,14 @@ class Configuration(object):
             self.cxx.link_flags += ['-lc', '-lm', '-lpthread', '-lgcc_s']
         else:
             self.lit_config.fatal("unrecognized system: %r" % sys.platform)
+
+    def configure_warnings(self):
+        enable_warnings = self.get_lit_bool('enable_warnings', False)
+        if enable_warnings:
+            self.cxx.compile_flags += ['-Wsystem-headers', '-Wall', '-Werror']
+            if ('clang' in self.config.available_features or
+                'apple-clang' in self.config.available_features):
+                self.cxx.compile_flags += ['-Wno-user-defined-literals']
 
     def configure_sanitizer(self):
         san = self.get_lit_conf('use_sanitizer', '').strip()
