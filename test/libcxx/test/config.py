@@ -217,7 +217,7 @@ class Configuration(object):
                 'en_US.UTF-8': 'en_US.UTF-8',
                 'cs_CZ.ISO8859-2': 'cs_CZ.ISO8859-2',
                 'fr_FR.UTF-8': 'fr_FR.UTF-8',
-                'fr_CA.ISO8859-1': 'cs_CZ.ISO8859-1',
+                'fr_CA.ISO8859-1': 'fr_CA.ISO8859-1',
                 'ru_RU.UTF-8': 'ru_RU.UTF-8',
                 'zh_CN.UTF-8': 'zh_CN.UTF-8',
             },
@@ -479,15 +479,7 @@ class Configuration(object):
         if use_color != '':
             self.lit_config.fatal('Invalid value for color_diagnostics "%s".'
                                   % use_color)
-        cxx_type = self.cxx.type
-        if cxx_type is None:
-            self.lit_config.warning(
-                'Unable to force color output for unknown compiler "%s"'
-                % cxx.path)
-        elif cxx_type in ['clang', 'apple-clang']:
-            self.cxx.flags += ['-fcolor-diagnostics']
-        elif cxx_type == 'gcc':
-            self.cxx.flags += ['-fdiagnostics-color=always']
+        self.cxx.flags += ['-fdiagnostics-color=always']
 
     def configure_debug_mode(self):
         debug_level = self.get_lit_conf('debug_level', None)
