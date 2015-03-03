@@ -654,6 +654,7 @@ class BenchmarkConfiguration(Configuration):
             self.cxx,
             self.use_clang_verify,
             self.execute_external,
+            self.executor,
             exec_env=self.env)
 
     def configure(self):
@@ -685,7 +686,7 @@ class BenchmarkConfiguration(Configuration):
         self.allowed_difference = float(allowed_diff)
 
     def configure_benchmark_flags(self):
-        external_dir = os.path.join(self.obj_root, 'external')
+        external_dir = os.path.join(self.libcxx_obj_root, 'external')
         self.cxx.compile_flags += [
           '-I' + external_dir + '/include',
           '-I' + self.libcxx_src_root + '/test/benchmark/support'

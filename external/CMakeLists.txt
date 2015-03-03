@@ -6,16 +6,15 @@ set(LINKER_FLAGS "")
 list(APPEND LINKER_FLAGS "-L${LIBCXX_LIBRARY_DIR}")
 list(APPEND LINKER_FLAGS "-Wl,-rpath,${LIBCXX_LIBRARY_DIR}")
 if (DEFINED LIBCXX_CXX_ABI_LIBRARY_PATH)
-    message(WARNING "THIS SHIT IS DEFINED!!!")
     list(APPEND LINKER_FLAGS "-L${LIBCXX_CXX_ABI_LIBRARY_PATH}")
     list(APPEND LINKER_FLAGS "-Wl,-rpath,${LIBCXX_CXX_ABI_LIBRARY_PATH}")
 endif()
 if (${LIBCXX_CXX_ABI_LIBRARY} STREQUAL "c++abi"
-    OR ${LIBCXX_CXX_ABI_LIBRARY} STREQUAL "cxxabi")
+    OR ${LIBCXX_CXX_ABI_LIBRARY} STREQUAL "cxxabi_shared")
     list(APPEND LINKER_FLAGS "-lc++abi")
 endif()
-if (${LIBCXX_CXX_ABI_LIBRARY} STREQUAL "cxxabi")
-    set(ABI_DEPENDS "cxxabi")
+if (${LIBCXX_CXX_ABI_LIBRARY} STREQUAL "cxxabi_shared")
+    set(ABI_DEPENDS "cxxabi_shared")
 else()
     set(ABI_DEPENDS "")
 endif()
@@ -28,12 +27,13 @@ configure_file(
 
   ExternalProject_Add(
       Benchmark
-      SVN_REPOSITORY https://github.com/efcs/benchmark/branches/libcxx-benchmark
+      SVN_REPOSITORY https://github.com/google/benchmark/branches/api-merge
       DEPENDS cxx ${ABI_DEPENDS}
       CMAKE_ARGS -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_CURRENT_BINARY_DIR}
                  -DCMAKE_TOOLCHAIN_FILE:PATH=${CMAKE_CURRENT_BINARY_DIR}/Toolchain.cmake
                  -DCMAKE_BUILD_TYPE=RELEASE
                  -DBENCHMARK_ENABLE_TESTING:BOOL=OFF
-                 -DBENCHMARK_ENABLE_REGEX:BOOL=OFF
+                 -DBENCHMARK_ENABLE_SHARED:BOOL=ON
+                 -DHAVE_POSIX_REGEX=ON
   )
 endif()
