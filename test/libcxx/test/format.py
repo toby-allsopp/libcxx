@@ -218,7 +218,8 @@ class LibcxxBenchmarkFormat(LibcxxTestFormat):
                 report = "Compiled With: %s\n%s" % (compile_cmd, report)
                 report += "Compiled test failed unexpectedly!"
                 return lit.Test.FAIL, report
-            scale_warning = 'CPU scaling is enabled: Benchmark timings may be noisy.'
+            scale_warning = ('CPU scaling is enabled: ' +
+                             'Benchmark timings may be noisy.')
             if scale_warning in out:
                 lit_config.warning(scale_warning)
             result = lit.Test.Result(lit.Test.PASS, '')
