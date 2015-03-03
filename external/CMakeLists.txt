@@ -2,7 +2,12 @@ include(ExternalProject)
 
 if (LIBCXX_ENABLE_BENCHMARKS)
 
-set(LINKER_FLAGS "")
+set(LINKER_FLAGS)
+if (LIBCXX_HAS_STDLIB_LIBCXX_FLAG)
+  list(APPEND LINKER_FLAGS "-stdlib=libc++")
+else()
+  list(APPEND LINKER_FLAGS "-lc++")
+endif()
 list(APPEND LINKER_FLAGS "-L${LIBCXX_LIBRARY_DIR}")
 list(APPEND LINKER_FLAGS "-Wl,-rpath,${LIBCXX_LIBRARY_DIR}")
 if (DEFINED LIBCXX_CXX_ABI_LIBRARY_PATH)
@@ -34,6 +39,5 @@ configure_file(
                  -DCMAKE_BUILD_TYPE=RELEASE
                  -DBENCHMARK_ENABLE_TESTING:BOOL=OFF
                  -DBENCHMARK_ENABLE_SHARED:BOOL=ON
-                 -DHAVE_POSIX_REGEX=ON
   )
 endif()

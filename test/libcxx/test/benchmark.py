@@ -65,20 +65,8 @@ def benchmarkPercentDifference(first, second):
 
 
 ksplit_line_re = re.compile('\n[-]+\n')
-kbench_line_re = re.compile('^\s*([^\s]+)\s+([-0-9]+)\s+([-0-9]+)\s+([0-9]+)\s*')
+kbench_line_re = re.compile('^\s*([^\s]+)\s+([-0-9]+)\s+([-0-9]+)\s+([0-9]+)\s*([^\n]*)')
 
-def computeNormalizedIterations(bench):
-    kGoalCPUTime = 500000000
-    cpu_time = bench['cpu_time']
-    total_cpu_time = bench['total_cpu_time']
-    iters = bench['iterations']
-    diff = abs(total_cpu_time - kGoalCPUTime)
-    num_iters = float(diff) / cpu_time
-    if total_cpu_time > kGoalCPUTime:
-        bench['normalized_iterations'] = iters - num_iters
-    else:
-        bench['normalized_iterations'] = iters + num_iters
-    bench['normalized_total_cpu_time'] = bench['normalized_iterations'] * cpu_time
 
 def parseBenchmarkOutput(output):
     parts = ksplit_line_re.split(output, maxsplit=1)
