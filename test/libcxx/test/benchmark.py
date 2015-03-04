@@ -77,14 +77,15 @@ def parseBenchmarkOutput(output):
             continue
         if line.startswith('DEBUG: '):
             line = line[len('DEBUG: '):]
-        match = kbench_line_re.match(line)
+        new_line = line.replace(', ', ',$')
+        match = kbench_line_re.match(new_line)
         if match is None:
             with open('/tmp/ERR', 'w') as f:
                 f.write(output + '\n')
         assert match is not None
         name = match.group(1)
         parsed_bench = {
-            'name':       match.group(1),
+            'name':       match.group(1).replace(',$', ', '),
             'time':       int(match.group(2)),
             'cpu_time':   int(match.group(3)),
             'iterations': int(match.group(4)),
