@@ -185,6 +185,7 @@ class LibcxxBenchmarkFormat(LibcxxTestFormat):
             if failing_bench:
                 res.code = lit.Test.FAIL
                 res.output = '\n'.join(failing_bench)
+                res.metrics = {}
         return res
 
     def _benchmark_test(self, test, tmpBase, execDir, lit_config):
@@ -210,7 +211,7 @@ class LibcxxBenchmarkFormat(LibcxxTestFormat):
                 cmd += ['%s=%s' % (k, v) for k, v in self.exec_env.items()]
             if lit_config.useValgrind:
                 cmd = lit_config.valgrindArgs + cmd
-            cmd += [exec_path]
+            cmd += [exec_path, '--benchmark_repetitions=5']
             out, err, rc = lit.util.executeCommand(
                 cmd, cwd=os.path.dirname(source_path))
             if rc != 0:

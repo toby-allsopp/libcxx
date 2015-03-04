@@ -65,20 +65,7 @@ def benchmarkPercentDifference(first, second):
 
 
 ksplit_line_re = re.compile('\n[-]+\n')
-kbench_line_re = re.compile('^\s*([^\s]+)\s+([-0-9]+)\s+([-0-9]+)\s+([0-9]+)\s*')
-
-def computeNormalizedIterations(bench):
-    kGoalCPUTime = 500000000
-    cpu_time = bench['cpu_time']
-    total_cpu_time = bench['total_cpu_time']
-    iters = bench['iterations']
-    diff = abs(total_cpu_time - kGoalCPUTime)
-    num_iters = float(diff) / cpu_time
-    if total_cpu_time > kGoalCPUTime:
-        bench['normalized_iterations'] = iters - num_iters
-    else:
-        bench['normalized_iterations'] = iters + num_iters
-    bench['normalized_total_cpu_time'] = bench['normalized_iterations'] * cpu_time
+kbench_line_re = re.compile('^\s*([^\s]+)\s+([-0-9]+)\s+([-0-9]+)\s+([0-9]+)([^\n]*)')
 
 def parseBenchmarkOutput(output):
     parts = ksplit_line_re.split(output, maxsplit=1)
@@ -142,14 +129,6 @@ def parseBenchmarkOutput(output):
     return benchmark_dict
 
 
-def formatFailDiff(diff, ours, theirs):
-  return ('%s failed:\n    %s\n    %s\n    %s\n' %
-          (ours['name'],
-          formatDiffString('cpu_time', diff, ours, theirs),
-          formatDiffString('iterations', diff, ours, theirs),
-          formatDiffString('time', diff, ours, theirs)))
-
-
 def formatDiffString(key, diff, ours, theirs):
     cmp_str = 'FASTER' if diff[key] <= 0.0 else 'SLOWER'
     fmt_str = '{0:11} {1:8} {2} (ours={3}, theirs={4}, diff={5})'
@@ -157,3 +136,11 @@ def formatDiffString(key, diff, ours, theirs):
     percent = '%.3f%%' % abs(diff[key])
     return fmt_str.format(label, percent, cmp_str, ours[key], theirs[key],
                           ours[key]-theirs[key])
+
+
+def formatFailDiff(diff, ours, theirs):
+  return ('%s failed:\n    %s\n    %s\n    %s\n' %
+          (ours['name'],
+          formatDiffString('cpu_time', diff, ours, theirs),
+          formatDiffString('iterations', diff, ours, theirs),
+          formatDiffString('time', diff, ours, theirs)))
