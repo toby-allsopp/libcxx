@@ -14,6 +14,8 @@
 // template <class Alloc, class... UTypes>
 //   tuple(allocator_arg_t, const Alloc& a, UTypes&&...);
 
+// UNSUPPORTED: c++98, c++03
+
 #include <tuple>
 #include <cassert>
 
@@ -47,12 +49,12 @@ void test_default_constructible_extension_sfinae()
         typedef std::tuple<MoveOnly, MoveOnly, NoDefault> Tuple;
 
         static_assert(!std::is_constructible<
-            std::tuple<MoveOnly, MoveOnly, NoDefault>,
+            Tuple,
             std::allocator_arg_t, A1<int>, MoveOnly, MoveOnly
         >::value, "");
 
         static_assert(std::is_constructible<
-            std::tuple<MoveOnly, MoveOnly, NoDefault>,
+            Tuple,
             std::allocator_arg_t, A1<int>, MoveOnly, MoveOnly, NoDefault
         >::value, "");
     }
