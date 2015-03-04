@@ -38,7 +38,6 @@ configure_file(
                  -DCMAKE_TOOLCHAIN_FILE:PATH=${CMAKE_CURRENT_BINARY_DIR}/Toolchain.cmake
                  -DCMAKE_BUILD_TYPE=RELEASE
                  -DBENCHMARK_ENABLE_TESTING:BOOL=OFF
-                 -DBENCHMARK_ENABLE_REGEX:BOOL=OFF
-                 -DBENCHMARKE_ENABLE_SHARED:BOOL=ON
+                 -DBENCHMARK_ENABLE_SHARED:BOOL=ON
   )
 endif()
