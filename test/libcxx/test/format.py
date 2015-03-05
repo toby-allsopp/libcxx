@@ -242,10 +242,10 @@ class LibcxxBenchmarkFormat(LibcxxTestFormat):
         failing_bench_map = {}
         for k, v in this_bench.items():
             matching = other_bench[k]
-            diff = benchcxx.benchmarkPercentDifference(v, matching)
-            diff_metrics[diff['name']] = diff
-            if diff['cpu_time'] > self.allowed_difference:
-                failing_bench_map[diff['name']] = benchcxx.formatFailDiff(diff, v, matching)
-        sorted_keys = sorted(failing_bench_map, key=lambda key: failing_bench_map[key])
-        failing_bench = [failing_bench_map[k] for k in sorted_keys]
+            times_diff = benchcxx.benchmarkTimesDifference(v, matching)
+            diff_metrics[times_diff['name']] = times_diff
+            if (times_diff['cpu_time'] * 100) - 100 > self.allowed_difference:
+                failing_bench_map[v['index']] = benchcxx.formatFailDiff(
+                    times_diff, v, matching)
+        failing_bench = [v for v in failing_bench_map.items()]
         return diff_metrics, failing_bench
