@@ -180,7 +180,7 @@ class LibcxxBenchmarkFormat(LibcxxTestFormat):
         full_name = test.getFullName()
         # Compare the results to the baseline if the baseline is present.
         if self.baseline:
-            failing_bench = self._compare_results(test, res, lit_config)
+            failing_bench = self._compare_results(test.getFullName(), res)
             if failing_bench:
                 res.code = lit.Test.FAIL
                 res.output = '\n'.join(failing_bench)
@@ -226,9 +226,8 @@ class LibcxxBenchmarkFormat(LibcxxTestFormat):
             # override this, cleanup is your reponsibility.
             self._clean(exec_path)
 
-    def _compare_results(self, test, result, lit_config):
-        full_name = test.getFullName()
-        baseline_results = self.baseline[full_name]
+    def _compare_results(self, test_name, result):
+        baseline_results = self.baseline[test_name]
         this_bench = result.metrics['benchmarks'].value
         baseline_bench = baseline_results['benchmarks']
         # Calculate the timing and iteration differences.

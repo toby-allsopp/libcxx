@@ -4,6 +4,7 @@ import re
 import lit
 import lit.Test
 
+
 def stringToCode(str_code):
     if str_code == 'PASS':
         return lit.Test.PASS
@@ -36,31 +37,13 @@ def loadTestResults(from_file):
         tests[rt['name']] = test
     return tests
 
-def timesDifference(first, second):
-    return second / float(first)
 
-def percentDifference(first, second):
-    return (float(second - first) / first) * 100
-
-def _benchmarkDifference(first, second, diff_fn):
-    result = {
-        'name': first['name'],
-        'iterations': diff_fn(
-            first['iterations'], second['iterations']),
-        'cpu_time': diff_fn(
-            second['cpu_time'], first['cpu_time']),
-        'time': diff_fn(
-            second['time'], first['time'])
-    }
-    return result
-
-def benchmarkTimesDifference(first, second):
-    return _benchmarkDifference(first, second, timesDifference)
-
-ksplit_line_re = re.compile('\n[-]+\n')
 kbench_line_re = re.compile('^\s*([^\s]+)\s+([-0-9]+)\s+([-0-9]+)\s+([0-9]+)([^\n]*)')
 
 def parseBenchmarkLine(line):
+    """
+    Parse the output of a single benchmark
+    """
     assert line  # Assert non-empty and non-null
     if line.startswith('DEBUG: '):
         line = line[len('DEBUG: '):]
@@ -86,11 +69,13 @@ def parseBenchmarkLine(line):
                                   parsed_bench['iterations'])
     return parsed_bench
 
-def want_b(b):
-    return b['name'].endswith('_stddev') or b['name'].endswith('_mean')
-
 
 def removeRepeatedBenchmarks(benchmark_list):
+    """
+    Some benchmarks are run multiple times and report
+    a mean and stddev at the end. This function folds all of repeated runs
+    and combines the mean and stddev into one benchmark result.
+    """
     has_repeats = (len(benchmark_list) >= 4 and
                    benchmark_list[0]['name'] == benchmark_list[1]['name'])
     if not has_repeats:
@@ -113,7 +98,13 @@ def removeRepeatedBenchmarks(benchmark_list):
         new_benchmark_list += [new_bench]
     return new_benchmark_list
 
+
+ksplit_line_re = re.compile('\n[-]+\n')
+
 def parseBenchmarkOutput(output):
+    """
+    Parse the output of the entire benchmark
+    """
     # Split the benchmark output header and results based on a line containing
     # only '-' characters.
     parts = ksplit_line_re.split(output, maxsplit=1)
@@ -128,6 +119,41 @@ def parseBenchmarkOutput(output):
         b['index'] = benchmark_index
         benchmark_dict[b['name']] = b
     return benchmark_dict
+
+
+def createBenchmarkDiff(first, second, diff_fn):
+    """
+    diff two benchmarks and return the difference between the two
+    """
+    def diff_fn(first, second):
+        return second / float(first)
+    result = {
+        'name': first['name'],
+        'iterations': diff_fn(
+            first['iterations'], second['iterations']),
+        'cpu_time': diff_fn(
+            second['cpu_time'], first['cpu_time']),
+        'time': diff_fn(
+            second['time'], first['time'])
+    }
+    return result
+
+
+def DiffBenchmarkResults(baseline, current):
+    """
+    Diff every benchmark in current against baseline and return
+    the results.
+    If there is no matching benchmark in baseline that benchmark is skipped
+    """
+    diff_map = {}
+    for curr_k, curr_v in current.iteritems():
+        matching_baseline = baseline.get(curr_k)
+        if not matching_baseline:
+            continue
+        diff = createBenchmarkDiff(curr_v, matching_baseline)
+        diff_map[curr_k] = diff
+    return diff_map
+
 
 def formatDiffString(key, diff, ours, theirs):
     cmp_str = 'FASTER' if diff[key] < 1.0 else 'SLOWER'
@@ -148,13 +174,3 @@ def formatFailDiff(diff, ours, theirs):
           formatDiffString('cpu_time', diff, ours, theirs),
           formatDiffString('iterations', diff, ours, theirs),
           formatDiffString('time', diff, ours, theirs)))
-
-def DiffBenchmarkResults(baseline, current):
-    diff_map = {}
-    for curr_k, curr_v in current.iteritems():
-        matching_baseline = baseline.get(curr_k)
-        if not matching_baseline:
-            continue
-        times_diff = benchmarkTimesDifference(curr_v, matching_baseline)
-        diff_map[curr_k] = times_diff
-    return diff_map
