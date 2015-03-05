@@ -67,69 +67,73 @@ def benchmarkPercentDifference(first, second):
 ksplit_line_re = re.compile('\n[-]+\n')
 kbench_line_re = re.compile('^\s*([^\s]+)\s+([-0-9]+)\s+([-0-9]+)\s+([0-9]+)([^\n]*)')
 
+def parseBenchmarkLine(line):
+    assert line  # Assert non-empty and non-null
+    if line.startswith('DEBUG: '):
+        line = line[len('DEBUG: '):]
+    # TODO(ericwf): This is a hack because the benchmark name can contain
+    # spaces if it names a template: ex BM_Foo<int, long>. Remove this.
+    new_line = line.replace(', ', ',$')
+    match = kbench_line_re.match(new_line)
+    # TODO(ericwf): Remove this.
+    if match is None:
+        with open('/tmp/ERR', 'w') as f:
+            f.write(output + '\n')
+    assert match is not None
+    name = match.group(1)
+    parsed_bench = {
+        'name':       match.group(1).replace(',$', ', '),
+        'index':      benchmark_index,
+        'time':       max(int(match.group(2)), 1),  # Ensure non-zero
+        'cpu_time':   max(int(match.group(3)), 1),  # Ensure non-zero
+        'iterations': int(match.group(4)),
+    }
+    parsed_bench['total_cpu_time'] = (parsed_bench['cpu_time'] *
+                                      parsed_bench['iterations'])
+    parsed_bench['total_time'] = (parsed_bench['time'] *
+                                  parsed_bench['iterations'])
+
+def removeRepeatedBenchmarks(benchmark_list):
+    new_benchmark_list = []
+    last_bench = None
+    for b in benchmark_list:
+        name = b['name']
+        is_stddev = name.endswith('_stddev')
+        is_mean = name.endswith('_mean')
+        if is_stddev:
+            real_name = name[:-len('_stddev')]
+        elif is_mean:
+            real_name = name[:-len('_mean')]
+        else:
+            continue
+        if is_mean:
+            assert last_bench is None
+            last_bench = dict(b)
+            last_bench['name'] = real_name
+        elif is_stddev:
+            assert last_bench is not None
+            last_bench['time_stddev'] = b['time']
+            last_bench['cpu_time_stddev'] = b['cpu_time']
+            last_bench['iterations_stddev'] = b['iterations']
+
 def parseBenchmarkOutput(output):
+    # Split the benchmark output header and results based on a line containing
+    # only '-' characters.
     parts = ksplit_line_re.split(output, maxsplit=1)
     assert len(parts) == 2
-    benchmark_list = []
-    for line in parts[1].split('\n'):
-        line = line.strip()
-        if not line:
-            continue
-        if line.startswith('DEBUG: '):
-            line = line[len('DEBUG: '):]
-        # TODO(ericwf): This is a hack because the benchmark name can contain
-        # spaces if it names a template: ex BM_Foo<int, long>. Remove this.
-        new_line = line.replace(', ', ',$')
-        match = kbench_line_re.match(new_line)
-        # TODO(ericwf): Remove this.
-        if match is None:
-            with open('/tmp/ERR', 'w') as f:
-                f.write(output + '\n')
-        assert match is not None
-        name = match.group(1)
-        parsed_bench = {
-            'name':       match.group(1).replace(',$', ', '),
-            'time':       int(match.group(2)),
-            'cpu_time':   int(match.group(3)),
-            'iterations': int(match.group(4)),
-        }
-        # Ensure we didn't get a zero time.
-        if parsed_bench['time'] == 0:
-            parsed_bench['time'] = 1
-        if parsed_bench['cpu_time'] == 0:
-            parsed_bench['cpu_time'] = 1
-        parsed_bench['total_cpu_time'] = (parsed_bench['cpu_time'] *
-                                          parsed_bench['iterations'])
-        parsed_bench['total_time'] = (parsed_bench['time'] *
-                                      parsed_bench['iterations'])
-        benchmark_list += [parsed_bench]
-    benchmark_dict = {}
+    benchmark_list = [parseBenchmarkLine(l.strip())
+                      for l in parts[1].split('\n') if l.strip()]
     has_repeats = len(benchmark_list) >= 4 and \
         benchmark_list[0]['name'] == benchmark_list[1]['name']
+    benchmark_dict = {}
     if not has_repeats:
+        benchmark_index = 0
         for b in benchmark_list:
+            benchmark_index += 1
+            b['index'] = benchmark_index
             benchmark_dict[b['name']] = b
     else:
-        for b in benchmark_list:
-            name = b['name']
-            is_stddev = name.endswith('_stddev')
-            is_mean = name.endswith('_mean')
-            if is_stddev:
-                real_name = name[:-len('_stddev')]
-            elif is_mean:
-                real_name = name[:-len('_mean')]
-            else:
-                continue
-            b = dict(b)
-            if is_mean:
-                b['name'] = real_name
-                assert real_name not in benchmark_dict
-                benchmark_dict[real_name] = b
-            elif is_stddev:
-                bench = benchmark_dict[real_name]
-                bench['time_stddev'] = b['time']
-                bench['cpu_time_stddev'] = b['cpu_time']
-                bench['iterations_stddev'] = b['iterations']
+        
     return benchmark_dict
 
 
