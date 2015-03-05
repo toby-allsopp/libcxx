@@ -1,3 +1,4 @@
+import json
 import re
 
 import lit
@@ -21,7 +22,6 @@ def stringToCode(str_code):
 
 
 def loadTestResults(from_file):
-    import json
     with open(from_file, 'r') as output_file:
         output = json.load(output_file)
     raw_tests = output['tests']
@@ -77,8 +77,11 @@ def parseBenchmarkOutput(output):
             continue
         if line.startswith('DEBUG: '):
             line = line[len('DEBUG: '):]
+        # TODO(ericwf): This is a hack because the benchmark name can contain
+        # spaces if it names a template: ex BM_Foo<int, long>. Remove this.
         new_line = line.replace(', ', ',$')
         match = kbench_line_re.match(new_line)
+        # TODO(ericwf): Remove this.
         if match is None:
             with open('/tmp/ERR', 'w') as f:
                 f.write(output + '\n')

@@ -19,8 +19,7 @@ template <class Container, class Generator>
 void container_fill_constructor(benchmark::State& st) {
     Generator g;
     while (st.KeepRunning()) {
-        Container c(st.range_x(), g());
-        volatile Container* dummy = &c;
+        volatile Container c(st.range_x(), g());
     }
 }
 
@@ -28,8 +27,7 @@ template <class Container, class Generator>
 void container_range_constructor(benchmark::State& st) {
     auto arr = generate_test_array<Generator>(st.range_x());
     while (st.KeepRunning()) {
-        Container v(arr.begin(), arr.end());
-        volatile Container* dummy = &v;
+        volatile Container v(arr.begin(), arr.end());
     }
 }
 
@@ -37,8 +35,7 @@ template <class Container, class Generator>
 void container_copy_constructor(benchmark::State& st) {
     Container c = generate_container<Container, Generator>(st.range_x());
     while (st.KeepRunning()) {
-        Container v(c);
-        volatile Container* dummy = &v;
+        volatile Container v(c);
     }
 }
 
