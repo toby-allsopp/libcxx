@@ -15,7 +15,6 @@ from libcxx.compiler import CXXCompiler
 from libcxx.test.executor import *
 from libcxx.test.tracing import *
 
-
 def loadSiteConfig(lit_config, config, param_name, env_name):
     # We haven't loaded the site specific configuration (the user is
     # probably trying to run on a test file directly, and either the site
@@ -702,5 +701,4 @@ class BenchmarkConfiguration(Configuration):
             else:
                 dyn_path = dyn_path + ':' + lib_path
             self.env['DYLD_LIBRARY_PATH'] = dyn_path
-            if cxx_library_root:
-                self.env['DYLD_LIBRARY_PATH'] = cxx_library_root
+

@@ -45,6 +45,7 @@ if (LIT_EXECUTABLE)
   pythonize_bool(LIBCXX_ENABLE_THREADS)
   pythonize_bool(LIBCXX_ENABLE_MONOTONIC_CLOCK)
   pythonize_bool(LIBCXX_ENABLE_BENCHMARKS)
+
   # The tests shouldn't link to any ABI library when it has been linked into
   # libc++ statically.
   if (LIBCXX_ENABLE_STATIC_ABI_LIBRARY)

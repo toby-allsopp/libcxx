@@ -65,8 +65,7 @@ def benchmarkPercentDifference(first, second):
 
 
 ksplit_line_re = re.compile('\n[-]+\n')
-kbench_line_re = re.compile('^\s*([^\s]+)\s+([-0-9]+)\s+([-0-9]+)\s+([0-9]+)\s*([^\n]*)')
-
+kbench_line_re = re.compile('^\s*([^\s]+)\s+([-0-9]+)\s+([-0-9]+)\s+([0-9]+)([^\n]*)')
 
 def parseBenchmarkOutput(output):
     parts = ksplit_line_re.split(output, maxsplit=1)
@@ -78,14 +77,15 @@ def parseBenchmarkOutput(output):
             continue
         if line.startswith('DEBUG: '):
             line = line[len('DEBUG: '):]
-        match = kbench_line_re.match(line)
+        new_line = line.replace(', ', ',$')
+        match = kbench_line_re.match(new_line)
         if match is None:
             with open('/tmp/ERR', 'w') as f:
                 f.write(output + '\n')
         assert match is not None
         name = match.group(1)
         parsed_bench = {
-            'name':       match.group(1),
+            'name':       match.group(1).replace(',$', ', '),
             'time':       int(match.group(2)),
             'cpu_time':   int(match.group(3)),
             'iterations': int(match.group(4)),
@@ -130,14 +130,6 @@ def parseBenchmarkOutput(output):
     return benchmark_dict
 
 
-def formatFailDiff(diff, ours, theirs):
-  return ('%s failed:\n    %s\n    %s\n    %s\n' %
-          (ours['name'],
-          formatDiffString('cpu_time', diff, ours, theirs),
-          formatDiffString('iterations', diff, ours, theirs),
-          formatDiffString('time', diff, ours, theirs)))
-
-
 def formatDiffString(key, diff, ours, theirs):
     cmp_str = 'FASTER' if diff[key] <= 0.0 else 'SLOWER'
     fmt_str = '{0:11} {1:8} {2} (ours={3}, theirs={4}, diff={5})'
@@ -145,3 +137,11 @@ def formatDiffString(key, diff, ours, theirs):
     percent = '%.3f%%' % abs(diff[key])
     return fmt_str.format(label, percent, cmp_str, ours[key], theirs[key],
                           ours[key]-theirs[key])
+
+
+def formatFailDiff(diff, ours, theirs):
+  return ('%s failed:\n    %s\n    %s\n    %s\n' %
+          (ours['name'],
+          formatDiffString('cpu_time', diff, ours, theirs),
+          formatDiffString('iterations', diff, ours, theirs),
+          formatDiffString('time', diff, ours, theirs)))

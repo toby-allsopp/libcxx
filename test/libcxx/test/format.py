@@ -185,6 +185,7 @@ class LibcxxBenchmarkFormat(LibcxxTestFormat):
             if failing_bench:
                 res.code = lit.Test.FAIL
                 res.output = '\n'.join(failing_bench)
+                res.metrics = {}
         return res
 
     def _benchmark_test(self, test, tmpBase, execDir, lit_config):
@@ -210,7 +211,7 @@ class LibcxxBenchmarkFormat(LibcxxTestFormat):
                 cmd += ['%s=%s' % (k, v) for k, v in self.exec_env.items()]
             if lit_config.useValgrind:
                 cmd = lit_config.valgrindArgs + cmd
-            cmd += [exec_path]
+            cmd += [exec_path, '--benchmark_repetitions=3']
             out, err, rc = lit.util.executeCommand(
                 cmd, cwd=os.path.dirname(source_path))
             if rc != 0:
@@ -238,11 +239,13 @@ class LibcxxBenchmarkFormat(LibcxxTestFormat):
         this_bench = result.metrics['benchmarks'].value
         other_bench = other_result['benchmarks']
         diff_metrics = {}
-        failing_bench = []
+        failing_bench_map = {}
         for k, v in this_bench.items():
             matching = other_bench[k]
             diff = benchcxx.benchmarkPercentDifference(v, matching)
             diff_metrics[diff['name']] = diff
             if diff['cpu_time'] > self.allowed_difference:
-                failing_bench += [benchcxx.formatFailDiff(diff, v, matching)]
+                failing_bench_map[diff['name']] = benchcxx.formatFailDiff(diff, v, matching)
+        sorted_keys = sorted(failing_bench_map, key=lambda key: failing_bench_map[key])
+        failing_bench = [failing_bench_map[k] for k in sorted_keys]
         return diff_metrics, failing_bench
