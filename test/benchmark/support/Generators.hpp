@@ -131,4 +131,21 @@ private:
 };
 
 
+template <class KeyGen, class ValueGen>
+struct KeyValueGenerator
+{
+    using Key = typename KeyGen::value_type;
+    using Value = typename ValueGen::value_type;
+    using ValueType = std::pair<Key, Value>;
+    using value_type = ValueType;
+
+    ValueType operator()() {
+        return ValueType(kg(), vg());
+    }
+private:
+    KeyGen kg;
+    ValueGen vg;
+};
+
+
 #endif // GENERATORS_HPP

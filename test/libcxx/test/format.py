@@ -152,9 +152,9 @@ class LibcxxTestFormat(object):
 
 
 class LibcxxBenchmarkFormat(LibcxxTestFormat):
-    def __init__(self, other_results, allowed_difference, *args, **kwargs):
+    def __init__(self, baseline, allowed_difference, *args, **kwargs):
         super(LibcxxBenchmarkFormat, self).__init__(*args, **kwargs)
-        self.other_results = other_results
+        self.baseline = baseline
         self.allowed_difference = allowed_difference
 
     def _execute(self, test, lit_config):
@@ -178,11 +178,9 @@ class LibcxxBenchmarkFormat(LibcxxTestFormat):
         if not res.code == lit.Test.PASS:
             return res
         full_name = test.getFullName()
-        if self.other_results:
-            diff_metrics, failing_bench = self._compare_results(
-                test, res, lit_config)
-            res.addMetric(
-                'benchmark_diff', lit.Test.toMetricValue(diff_metrics))
+        # Compare the results to the baseline if the baseline is present.
+        if self.baseline:
+            failing_bench = self._compare_results(test, res, lit_config)
             if failing_bench:
                 res.code = lit.Test.FAIL
                 res.output = '\n'.join(failing_bench)
@@ -206,15 +204,9 @@ class LibcxxBenchmarkFormat(LibcxxTestFormat):
                 report += "Compilation failed unexpectedly!"
                 return lit.Test.FAIL, report
             # Run the test
-            cmd = []
-            if self.exec_env:
-                cmd += ['env']
-                cmd += ['%s=%s' % (k, v) for k, v in self.exec_env.items()]
-            if lit_config.useValgrind:
-                cmd = lit_config.valgrindArgs + cmd
-            cmd += [exec_path, '--benchmark_repetitions=3']
-            out, err, rc = lit.util.executeCommand(
-                cmd, cwd=os.path.dirname(source_path))
+            cmd = [exec_path, '--benchmark_repetitions=3']
+            out, err, rc = self.executor.run(
+                None, cmd=cmd, work_dir=os.path.dirname(source_path))
             if rc != 0:
                 report = libcxx.util.makeReport(cmd, out, err, rc)
                 report = "Compiled With: %s\n%s" % (compile_cmd, report)
@@ -236,17 +228,22 @@ class LibcxxBenchmarkFormat(LibcxxTestFormat):
 
     def _compare_results(self, test, result, lit_config):
         full_name = test.getFullName()
-        other_result = self.other_results[full_name]
+        baseline_results = self.baseline[full_name]
         this_bench = result.metrics['benchmarks'].value
-        other_bench = other_result['benchmarks']
-        diff_metrics = {}
+        baseline_bench = baseline_results['benchmarks']
+        # Calculate the timing and iteration differences.
+        diff_metrics = benchcxx.DiffBenchmarkResults(
+            baseline_bench, this_bench)
+        result.addMetric(
+                'benchmark_diff', lit.Test.toMetricValue(diff_metrics))
+        # Collect all of the failing test result strings. Map by index
+        # so that they are printed in the order thay were run.
         failing_bench_map = {}
-        for k, v in this_bench.items():
-            matching = other_bench[k]
-            times_diff = benchcxx.benchmarkTimesDifference(v, matching)
-            diff_metrics[times_diff['name']] = times_diff
-            if (times_diff['cpu_time'] * 100) - 100 > self.allowed_difference:
-                failing_bench_map[v['index']] = benchcxx.formatFailDiff(
-                    times_diff, v, matching)
-        failing_bench = [v for v in failing_bench_map.items()]
-        return diff_metrics, failing_bench
+        for diff_name, diff in diff_metrics.items():
+            if diff['cpu_time'] * 100 - 100 <= self.allowed_difference:
+                continue
+            curr_b = this_bench[diff_name]
+            baseline_b = baseline_bench[diff_name]
+            failing_bench_map[curr_b['index']] = benchcxx.formatFailDiff(
+                diff, curr_b, baseline_b)
+        return [v for v in failing_bench_map.values()]

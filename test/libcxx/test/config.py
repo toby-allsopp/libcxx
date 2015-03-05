@@ -643,12 +643,12 @@ class Configuration(object):
 class BenchmarkConfiguration(Configuration):
     def __init__(self, lit_config, config):
         super(BenchmarkConfiguration, self).__init__(lit_config, config)
-        self.other_results = None
+        self.baseline = None
         self.allowed_difference = None
 
     def get_test_format(self):
         return LibcxxBenchmarkFormat(
-            self.other_results,
+            self.baseline,
             self.allowed_difference,
             self.cxx,
             self.use_clang_verify,
@@ -659,7 +659,7 @@ class BenchmarkConfiguration(Configuration):
     def configure(self):
         super(BenchmarkConfiguration, self).configure()
         self.configure_benchmark_flags()
-        self.configure_other_results()
+        self.configure_baseline()
         self.configure_allowed_difference()
         self.print_config_info()
 
@@ -670,15 +670,15 @@ class BenchmarkConfiguration(Configuration):
         tests = output
         self.lit_config.note('Decoded: %s\n' % tests)
 
-    def configure_other_results(self):
-        res = self.get_lit_conf('compare_to_output')
+    def configure_baseline(self):
+        res = self.get_lit_conf('baseline')
         if not res:
             return
         if not os.path.isfile(res):
             self.lit_config.fatal('Invalid output file: %s' % res)
         self.lit_config.note('Comparing to results file: %s' % res)
-        import libcxx.test.benchmark as bench
-        self.other_results = bench.loadTestResults(res)
+        import libcxx.test.benchmark as benchcxx
+        self.baseline = benchcxx.loadTestResults(res)
 
     def configure_allowed_difference(self):
         allowed_diff = self.get_lit_conf('allowed_difference', '5.0')

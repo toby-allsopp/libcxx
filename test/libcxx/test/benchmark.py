@@ -36,17 +36,6 @@ def loadTestResults(from_file):
         tests[rt['name']] = test
     return tests
 
-
-def testResultToBenchmarkResult(test, result):
-    test_res = {
-        'name': test.getFullName(),
-        'code': result.code,
-        'output': result.output,
-        'benchmarks': result.metrics['benchmarks'].value
-    }
-    return test_res
-
-
 def timesDifference(first, second):
     return second / float(first)
 
@@ -159,3 +148,13 @@ def formatFailDiff(diff, ours, theirs):
           formatDiffString('cpu_time', diff, ours, theirs),
           formatDiffString('iterations', diff, ours, theirs),
           formatDiffString('time', diff, ours, theirs)))
+
+def DiffBenchmarkResults(baseline, current):
+    diff_map = {}
+    for curr_k, curr_v in current.iteritems():
+        matching_baseline = baseline.get(curr_k)
+        if not matching_baseline:
+            continue
+        times_diff = benchmarkTimesDifference(curr_v, matching_baseline)
+        diff_map[curr_k] = times_diff
+    return diff_map

@@ -64,38 +64,34 @@ void container_equal(benchmark::State& st) {
     Container c1 = generate_container<Container, Generator1>(st.range_x());
     Container c2 = generate_container<Container, Generator2>(st.range_y());
     while (st.KeepRunning()) {
-        volatile Container* ptr1 = &c1;
-        volatile Container* ptr2 = &c2;
         volatile bool ret;
-        ret = *static_cast<Container*>(ptr1) == *static_cast<Container*>(ptr2);
-        ret = *static_cast<Container*>(ptr2) == *static_cast<Container*>(ptr1);
+        ret = c1 == c2;
+        ret = c2 == c1;
     }
 }
 
 
 template <class Container, class Generator1, class Generator2>
-void container_not_equals(benchmark::State& st) {
+void container_not_equal(benchmark::State& st) {
     Container c1 = generate_container<Container, Generator1>(st.range_x());
     Container c2 = generate_container<Container, Generator2>(st.range_y());
     while (st.KeepRunning()) {
-        volatile Container* ptr1 = &c1;
-        volatile Container* ptr2 = &c2;
         volatile bool ret;
-        ret = *static_cast<Container*>(ptr1) != *static_cast<Container*>(ptr2);
-        ret = *static_cast<Container*>(ptr2) != *static_cast<Container*>(ptr1);
+        ret = c1 != c2;
+        ret = c2 != c1;
     }
 }
+
+
 
 template <class Container, class Generator1, class Generator2>
 void container_less(benchmark::State& st) {
     Container c1 = generate_container<Container, Generator1>(st.range_x());
     Container c2 = generate_container<Container, Generator2>(st.range_y());
     while (st.KeepRunning()) {
-        volatile Container* ptr1 = &c1;
-        volatile Container* ptr2 = &c2;
         volatile bool ret;
-        ret = *static_cast<Container*>(ptr1) < *static_cast<Container*>(ptr2);
-        ret = *static_cast<Container*>(ptr2) < *static_cast<Container*>(ptr1);
+        ret = c1 < c2;
+        ret = c2 < c1;
     }
 }
 
@@ -104,11 +100,9 @@ void container_greater(benchmark::State& st) {
     Container c1 = generate_container<Container, Generator1>(st.range_x());
     Container c2 = generate_container<Container, Generator2>(st.range_y());
     while (st.KeepRunning()) {
-        volatile Container* ptr1 = &c1;
-        volatile Container* ptr2 = &c2;
         volatile bool ret;
-        ret = *static_cast<Container*>(ptr1) > *static_cast<Container*>(ptr2);
-        ret = *static_cast<Container*>(ptr2) > *static_cast<Container*>(ptr1);
+        ret = c1 > c2;
+        ret = c2 > c1;
     }
 }
 
@@ -117,11 +111,9 @@ void container_less_equal(benchmark::State& st) {
     Container c1 = generate_container<Container, Generator1>(st.range_x());
     Container c2 = generate_container<Container, Generator2>(st.range_y());
     while (st.KeepRunning()) {
-        volatile Container* ptr1 = &c1;
-        volatile Container* ptr2 = &c2;
         volatile bool ret;
-        ret = *static_cast<Container*>(ptr1) <= *static_cast<Container*>(ptr2);
-        ret = *static_cast<Container*>(ptr2) <= *static_cast<Container*>(ptr1);
+        ret = c1 <= c2;
+        ret = c2 <= c1;
     }
 }
 
@@ -130,11 +122,9 @@ void container_greater_equal(benchmark::State& st) {
     Container c1 = generate_container<Container, Generator1>(st.range_x());
     Container c2 = generate_container<Container, Generator2>(st.range_y());
     while (st.KeepRunning()) {
-        volatile Container* ptr1 = &c1;
-        volatile Container* ptr2 = &c2;
         volatile bool ret;
-        ret = *static_cast<Container*>(ptr1) >= *static_cast<Container*>(ptr2);
-        ret = *static_cast<Container*>(ptr2) >= *static_cast<Container*>(ptr1);
+        ret = c1 >= c2;
+        ret = c2 >= c1;
     }
 }
 
@@ -223,8 +213,10 @@ void container_erase_value(benchmark::State& st) {
         for (auto b = to_erase.begin(); b != e; ++b) {
             c.erase(*b);
         }
+        volatile Container* cptr = &c;
     }
 }
+
 
 template <class Container, class Generator1>
 void container_erase_range_by_size(benchmark::State& st) {
@@ -237,6 +229,7 @@ void container_erase_range_by_size(benchmark::State& st) {
         auto e = std::advance(c.begin(), range_size);
         st.ResumeTiming();
         c.erase(b, e);
+        volatile Container* cptr = &c;
     }
 }
 
@@ -250,6 +243,7 @@ void container_erase_front(benchmark::State& st) {
         while (!c.empty()) {
             c.erase(c.begin());
         }
+        volatile Container* cptr = &c;
     }
 }
 
@@ -263,7 +257,31 @@ void container_erase_back(benchmark::State& st) {
         while (!c.empty()) {
             c.erase(--c.end());
         }
+        volatile Container* cptr = &c;
     }
 }
+
+
+template <class Container, class Generator1, class Generator2>
+void container_find(benchmark::State& st) {
+    Container c = generate_container<Container, Generator1>(st.range_x());
+    Generator2 g2;
+    while (st.KeepRunning()) {
+        volatile typename Container::iterator found = c.find(g2());
+        ((void)found);
+    }
+}
+
+
+template <class Container, class Generator1, class Generator2>
+void container_count(benchmark::State& st) {
+    Container c = generate_container<Container, Generator1>(st.range_x());
+    Generator2 g2;
+    while (st.KeepRunning()) {
+        volatile std::size_t found = c.find(g2());
+        ((void)found);
+    }
+}
+
 
 #endif // CONTAINER_BENCHMARKS_HPP
