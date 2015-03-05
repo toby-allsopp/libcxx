@@ -26,5 +26,4 @@ BENCHMARK_TEMPLATE(container_not_equal, std::unordered_set<int>, StrideGenerator
 
 BENCHMARK_TEMPLATE(container_iterate, std::unordered_set<int>, StrideGenerator<int>)->Arg(8<<12);
 
-
 BENCHMARK_MAIN()

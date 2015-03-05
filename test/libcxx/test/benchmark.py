@@ -121,7 +121,7 @@ def parseBenchmarkOutput(output):
     return benchmark_dict
 
 
-def createBenchmarkDiff(first, second, diff_fn):
+def createBenchmarkDiff(first, second):
     """
     diff two benchmarks and return the difference between the two
     """
@@ -160,12 +160,14 @@ def formatDiffString(key, diff, ours, theirs):
     fmt_str = '{0:11} {1:8} {2} (ours={3}, theirs={4}, diff={5})'
     label = '%s:' % key
     diff_v = abs(diff[key])
+    # Print the change as a multiplier if it is >= 2. Otherwise print it as
+    # a percentage.
     if diff_v >= 2:
         change = '%.3fx' % diff_v
     else:
         change = '%.3f%%' % ((diff_v * 100) - 100)
     return fmt_str.format(label, change, cmp_str, ours[key], theirs[key],
-                          ours[key]-theirs[key])
+                          abs(ours[key]-theirs[key]))
 
 
 def formatFailDiff(diff, ours, theirs):

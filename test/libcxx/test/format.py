@@ -227,7 +227,9 @@ class LibcxxBenchmarkFormat(LibcxxTestFormat):
             self._clean(exec_path)
 
     def _compare_results(self, test_name, result):
-        baseline_results = self.baseline[test_name]
+        baseline_results = self.baseline.get(test_name)
+        if baseline_results is None:
+            return None
         this_bench = result.metrics['benchmarks'].value
         baseline_bench = baseline_results['benchmarks']
         # Calculate the timing and iteration differences.
