@@ -181,7 +181,7 @@ def formatDiffString(key, diff, ours, theirs):
     if diff_v >= 2:
         change = '%.3fx' % diff_v
     else:
-        change = '%.3f%%' % ((diff_v * 100) - 100)
+        change = '%.3f%%' % abs((diff_v * 100) - 100)
     return fmt_str.format(label, change, cmp_str, ours[key], theirs[key],
                           abs(ours[key]-theirs[key]))
 
