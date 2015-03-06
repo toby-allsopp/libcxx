@@ -6,8 +6,8 @@ import lit.Test        # pylint: disable=import-error
 import lit.TestRunner  # pylint: disable=import-error
 import lit.util        # pylint: disable=import-error
 
+import libcxx.test.benchmark as benchcxx
 from libcxx.test.executor import LocalExecutor as LocalExecutor
-import libcxx.test.executor
 import libcxx.util
 
 
@@ -41,7 +41,7 @@ class LibcxxTestFormat(object):
 
             filepath = os.path.join(source_path, filename)
             if not os.path.isdir(filepath):
-                if any([filename.endswith(ext)
+                if any([filepath.endswith(ext)
                         for ext in localConfig.suffixes]):
                     yield lit.Test.Test(testSuite, path_in_suite + (filename,),
                                         localConfig)
@@ -148,3 +148,124 @@ class LibcxxTestFormat(object):
             report = libcxx.util.makeReport(cmd, out, err, rc)
             return (lit.Test.FAIL,
                     report + 'Expected compilation to fail!\n')
+
+
+class LibcxxBenchmarkFormat(LibcxxTestFormat):
+    def __init__(self, baseline, allowed_difference, *args, **kwargs):
+        super(LibcxxBenchmarkFormat, self).__init__(*args, **kwargs)
+        self.baseline = baseline
+        self.allowed_difference = allowed_difference
+
+    def _execute(self, test, lit_config):
+        res = lit.TestRunner.parseIntegratedTestScript(
+            test, require_script=False)
+        # Check if a result for the test was returned. If so return that
+        # result.
+        if isinstance(res, lit.Test.Result):
+            return res
+        if lit_config.noExecute:
+            return lit.Test.Result(lit.Test.PASS)
+        # res is not an instance of lit.test.Result. Expand res into its parts.
+        script, tmpBase, execDir = res
+        # Check that we don't have run lines on tests that don't support them.
+        if len(script) != 0:
+            lit_config.fatal('Unsupported RUN line found in test %s' % name)
+        res = self._benchmark_test(test, tmpBase, execDir, lit_config)
+        if not isinstance(res, lit.Test.Result):
+            code, output = res
+            res = lit.Test.Result(code, output)
+        if not res.code == lit.Test.PASS:
+            return res
+        return self._benchmark_test(test, tmpBase, execDir, lit_config)
+
+    def _benchmark_test(self, test, tmpBase, execDir, lit_config):
+        source_path = test.getSourcePath()
+        exec_path = tmpBase + '.exe'
+        object_path = tmpBase + '.o'
+        # Create the output directory if it does not already exist.
+        lit.util.mkdir_p(os.path.dirname(tmpBase))
+        try:
+            # Compile the test
+            cmd, out, err, rc = self.cxx.compileLinkTwoSteps(
+                source_path, out=exec_path, object_file=object_path,
+                cwd=execDir)
+            compile_cmd = cmd
+            if rc != 0:
+                report = libcxx.util.makeReport(cmd, out, err, rc)
+                report += "Compilation failed unexpectedly!"
+                return lit.Test.FAIL, report
+            # Run the test
+            cmd = [exec_path, '--benchmark_repetitions=3']
+            out, err, rc = self.executor.run(
+                None, cmd=cmd, work_dir=os.path.dirname(source_path),
+                env=self.exec_env)
+            if rc != 0:
+                report = libcxx.util.makeReport(cmd, out, err, rc)
+                report = "Compiled With: %s\n%s" % (compile_cmd, report)
+                report += "Compiled test failed unexpectedly!"
+                return lit.Test.FAIL, report
+            scale_warning = ('CPU scaling is enabled: ' +
+                             'Benchmark timings may be noisy.')
+            if scale_warning in out:
+                lit_config.warning(scale_warning)
+            result = lit.Test.Result(lit.Test.PASS, '')
+            benchmark_data = benchcxx.parseBenchmarkOutput(out)
+            result.addMetric('benchmarks',
+                             lit.Test.toMetricValue(benchmark_data))
+            # Check for a benchmark that looks like it does nothing.
+            # This is likely a problem.
+            bad_results_str = self._detect_bad_results(benchmark_data)
+            if bad_results_str:
+                result.code = lit.Test.FAIL
+                result.output = bad_results_str
+                return result
+            # Compare the results to the baseline if the baseline is present.
+            if self.baseline:
+                failing_bench_str = self._compare_results(
+                    test.getFullName(), result)
+                if failing_bench_str:
+                    result.code = lit.Test.FAIL
+                    result.output = failing_bench_str
+                    result.metrics = {}
+            return result
+        finally:
+            # Note that cleanup of exec_file happens in `_clean()`. If you
+            # override this, cleanup is your reponsibility.
+            self._clean(exec_path)
+
+    def _detect_bad_results(self, benches):
+        bad_results_str = ''
+        for k, v in benches.iteritems():
+            if v['cpu_time'] < 10 and k != 'BM_test_empty':
+                bad_results_str += ('Test %s runs too quickly! cpu_time=%s\n'
+                                    % (k, v['cpu_time']))
+        return bad_results_str
+
+    def _compare_results(self, test_name, result):
+        baseline_results = self.baseline.get(test_name)
+        if baseline_results is None:
+            return None
+        this_bench = result.metrics['benchmarks'].value
+        baseline_bench = baseline_results['benchmarks']
+        # Calculate the timing and iteration differences.
+        diff_metrics = benchcxx.DiffBenchmarkResults(
+            baseline_bench, this_bench)
+        result.addMetric(
+            'benchmark_diff', lit.Test.toMetricValue(diff_metrics))
+        # Collect all of the failing test result strings. Map by index
+        # so that they are printed in the order thay were run.
+        failing_bench_map = {}
+        passing_bench_map = {}
+        for diff_name, diff in diff_metrics.items():
+            curr_b = this_bench[diff_name]
+            baseline_b = baseline_bench[diff_name]
+            if diff['cpu_time'] * 100 - 100 <= self.allowed_difference:
+                passing_bench_map[curr_b['index']] = benchcxx.formatPassDiff(
+                    baseline_b, curr_b, diff)
+            else:
+                failing_bench_map[curr_b['index']] = benchcxx.formatFailDiff(
+                    baseline_b, curr_b, diff)
+        if failing_bench_map:
+            for k, v in passing_bench_map.iteritems():
+                failing_bench_map[k] = v
+        return '\n'.join([v for v in failing_bench_map.values()])

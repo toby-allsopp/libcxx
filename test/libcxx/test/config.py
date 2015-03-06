@@ -10,10 +10,11 @@ import sys
 import lit.Test  # pylint: disable=import-error,no-name-in-module
 import lit.util  # pylint: disable=import-error,no-name-in-module
 
-from libcxx.test.format import LibcxxTestFormat
+from libcxx.test.format import LibcxxTestFormat, LibcxxBenchmarkFormat
 from libcxx.compiler import CXXCompiler
 from libcxx.test.executor import *
 from libcxx.test.tracing import *
+
 
 def loadSiteConfig(lit_config, config, param_name, env_name):
     # We haven't loaded the site specific configuration (the user is
@@ -639,3 +640,59 @@ class Configuration(object):
                 cxx_library_root = self.cxx_library_root
             if cxx_library_root:
                 self.env['DYLD_LIBRARY_PATH'] = cxx_library_root
+
+
+class BenchmarkConfiguration(Configuration):
+    def __init__(self, lit_config, config):
+        super(BenchmarkConfiguration, self).__init__(lit_config, config)
+        self.baseline = None
+        self.allowed_difference = None
+
+    def get_test_format(self):
+        return LibcxxBenchmarkFormat(
+            self.baseline,
+            self.allowed_difference,
+            self.cxx,
+            self.use_clang_verify,
+            self.execute_external,
+            self.executor,
+            exec_env=self.env)
+
+    def configure(self):
+        super(BenchmarkConfiguration, self).configure()
+        self.configure_benchmark_flags()
+        self.configure_baseline()
+        self.configure_allowed_difference()
+        self.print_config_info()
+
+    def configure_baseline(self):
+        res = self.get_lit_conf('baseline')
+        if not res:
+            return
+        if not os.path.isfile(res):
+            self.lit_config.fatal('Invalid output file: %s' % res)
+        self.lit_config.note('Comparing to results file: %s' % res)
+        import libcxx.test.benchmark as benchcxx
+        self.baseline = benchcxx.loadTestResults(res)
+
+    def configure_allowed_difference(self):
+        allowed_diff = self.get_lit_conf('allowed_difference', '5.0')
+        self.allowed_difference = float(allowed_diff)
+
+    def configure_benchmark_flags(self):
+        external_dir = os.path.join(self.libcxx_obj_root, 'external')
+        self.cxx.compile_flags += [
+            '-I' + external_dir + '/include',
+            '-I' + self.libcxx_src_root + '/test/benchmark/support'
+        ]
+        lib_path = external_dir + '/lib'
+        self.cxx.link_flags = ['-L' + lib_path,
+                               '-Wl,-rpath,' + lib_path] + self.cxx.link_flags
+        self.cxx.link_flags += ['-lbenchmark']
+        if sys.platform == 'darwin':
+            dyn_path = self.env.get('DYLD_LIBRARY_PATH')
+            if dyn_path is None:
+                dyn_path = lib_path
+            else:
+                dyn_path = dyn_path + ':' + lib_path
+            self.env['DYLD_LIBRARY_PATH'] = dyn_path
