@@ -5,6 +5,7 @@
 #include <random>
 #include <type_traits>
 
+
 template <class ValueType>
 bool IsBetween(ValueType value, ValueType start, ValueType end) {
     if (start < end) {
@@ -13,6 +14,7 @@ bool IsBetween(ValueType value, ValueType start, ValueType end) {
         return value <= start && value >= end;
     }
 }
+
 
 template <class ValueType>
 struct StrideGenerator {
@@ -41,6 +43,7 @@ private:
     ValueType m_value;
 };
 
+
 template <class ValueType, ValueType Start = static_cast<ValueType>(0),
                            ValueType End = std::numeric_limits<ValueType>::max(),
                            ValueType Stride = static_cast<ValueType>(1)>
@@ -52,6 +55,7 @@ struct ConstantStrideGenerator : public StrideGenerator<ValueType> {
       : StrideGenerator<ValueType>(Start, End, Stride) {
     }
 };
+
 
 template <class ValueType>
 struct ValueGenerator {
@@ -68,6 +72,7 @@ private:
     ValueType m_value;
 };
 
+
 template <class ValueType, ValueType value>
 struct ConstantGenerator {
 
@@ -80,24 +85,30 @@ struct ConstantGenerator {
     }
 };
 
+
 typedef std::mt19937    RandomEngine;
 typedef std::mt19937_64 RandomEngine64;
+
 
 template <class IntType = int>
 using IntDistribution = std::uniform_int_distribution<IntType>;
 
+
 template <class RealType = double>
 using RealDistribution = std::uniform_real_distribution<RealType>;
+
 
 template <class ValueType, bool = std::is_floating_point<ValueType>::value>
 struct NumberDistributionImp {
     using type = IntDistribution<ValueType>;
 };
 
+
 template <class ValueType>
 struct NumberDistributionImp<ValueType, true> {
     using type = RealDistribution<ValueType>;
 };
+
 
 template <class ValueType>
 using NumberDistribution = typename NumberDistributionImp<ValueType>::type;

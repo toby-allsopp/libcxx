@@ -9,8 +9,7 @@
 #include <iterator>
 
 template <class Container, class Generator>
-Container generate_container(std::size_t size)
-{
+Container generate_container(std::size_t size) {
     auto arr = generate_test_array<Generator>(size);
     return Container(arr.begin(), arr.end());
 }
@@ -70,7 +69,6 @@ void container_equal(benchmark::State& st) {
     }
 }
 
-
 template <class Container, class Generator1, class Generator2>
 void container_not_equal(benchmark::State& st) {
     Container c1 = generate_container<Container, Generator1>(st.range_x());
@@ -81,8 +79,6 @@ void container_not_equal(benchmark::State& st) {
         ret = c2 != c1;
     }
 }
-
-
 
 template <class Container, class Generator1, class Generator2>
 void container_less(benchmark::State& st) {
@@ -185,7 +181,6 @@ void container_insert_range(benchmark::State& st) {
     }
 }
 
-
 template <class Container, class Generator1, class Generator2>
 void container_insert_value(benchmark::State& st) {
     Container initial_cont = generate_container<Container, Generator1>(st.range_x());
@@ -216,7 +211,6 @@ void container_erase_value(benchmark::State& st) {
         volatile Container* cptr = &c;
     }
 }
-
 
 template <class Container, class Generator1>
 void container_erase_range_by_size(benchmark::State& st) {
@@ -261,7 +255,6 @@ void container_erase_back(benchmark::State& st) {
     }
 }
 
-
 template <class Container, class Generator1, class Generator2>
 void container_find(benchmark::State& st) {
     Container c = generate_container<Container, Generator1>(st.range_x());
@@ -272,7 +265,6 @@ void container_find(benchmark::State& st) {
     }
 }
 
-
 template <class Container, class Generator1, class Generator2>
 void container_count(benchmark::State& st) {
     Container c = generate_container<Container, Generator1>(st.range_x());
@@ -282,6 +274,5 @@ void container_count(benchmark::State& st) {
         ((void)found);
     }
 }
-
 
 #endif // CONTAINER_BENCHMARKS_HPP
