@@ -136,11 +136,11 @@ def parseBenchmarkOutput(output):
 
 def createBenchmarkDiff(first, second):
     """
-    diff two benchmarks and return the difference between the two
+    diff two benchmarks and return the difference.
     """
     def diff_fn(first, second):
         return second / float(first)
-    result = {
+    return {
         'name': first['name'],
         'iterations': diff_fn(
             first['iterations'], second['iterations']),
@@ -149,7 +149,6 @@ def createBenchmarkDiff(first, second):
         'time': diff_fn(
             second['time'], first['time'])
     }
-    return result
 
 
 def DiffBenchmarkResults(baseline, current):
