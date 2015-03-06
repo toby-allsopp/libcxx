@@ -262,10 +262,10 @@ class LibcxxBenchmarkFormat(LibcxxTestFormat):
             baseline_b = baseline_bench[diff_name]
             if diff['cpu_time'] * 100 - 100 <= self.allowed_difference:
                 passing_bench_map[curr_b['index']] = benchcxx.formatPassDiff(
-                    diff, curr_b, baseline_b)
+                    baseline_b, curr_b, diff)
             else:
                 failing_bench_map[curr_b['index']] = benchcxx.formatFailDiff(
-                    diff, curr_b, baseline_b)
+                    baseline_b, curr_b, diff)
         if failing_bench_map:
             for k, v in passing_bench_map.iteritems():
                 failing_bench_map[k] = v
