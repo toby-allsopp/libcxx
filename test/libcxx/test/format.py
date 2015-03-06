@@ -6,6 +6,8 @@ import lit.Test        # pylint: disable=import-error
 import lit.TestRunner  # pylint: disable=import-error
 import lit.util        # pylint: disable=import-error
 
+from libcxx.test.executor import LocalExecutor as LocalExecutor
+import libcxx.test.executor
 import libcxx.util
 
 
@@ -20,10 +22,12 @@ class LibcxxTestFormat(object):
       FOO.sh.cpp   - A test that uses LIT's ShTest format.
     """
 
-    def __init__(self, cxx, use_verify_for_fail, execute_external, exec_env):
+    def __init__(self, cxx, use_verify_for_fail, execute_external,
+                 executor, exec_env):
         self.cxx = cxx
         self.use_verify_for_fail = use_verify_for_fail
         self.execute_external = execute_external
+        self.executor = executor
         self.exec_env = dict(exec_env)
 
     # TODO: Move this into lit's FileBasedTest
@@ -73,6 +77,10 @@ class LibcxxTestFormat(object):
 
         # Dispatch the test based on its suffix.
         if is_sh_test:
+            if not isinstance(self.executor, LocalExecutor):
+                # We can't run ShTest tests with a executor yet.
+                # For now, bail on trying to run them
+                return lit.Test.UNSUPPORTED, 'ShTest format not yet supported'
             return lit.TestRunner._runShTest(test, lit_config,
                                              self.execute_external, script,
                                              tmpBase, execDir)
@@ -104,15 +112,12 @@ class LibcxxTestFormat(object):
                 report += "Compilation failed unexpectedly!"
                 return lit.Test.FAIL, report
             # Run the test
-            cmd = []
+            local_cwd = os.path.dirname(source_path)
+            env = None
             if self.exec_env:
-                cmd += ['env']
-                cmd += ['%s=%s' % (k, v) for k, v in self.exec_env.items()]
-            if lit_config.useValgrind:
-                cmd = lit_config.valgrindArgs + cmd
-            cmd += [exec_path]
-            out, err, rc = lit.util.executeCommand(
-                cmd, cwd=os.path.dirname(source_path))
+                env = self.exec_env
+            out, err, rc = self.executor.run(exec_path, [exec_path],
+                                             local_cwd, env)
             if rc != 0:
                 report = libcxx.util.makeReport(cmd, out, err, rc)
                 report = "Compiled With: %s\n%s" % (compile_cmd, report)
