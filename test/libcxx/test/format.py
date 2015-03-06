@@ -256,11 +256,17 @@ class LibcxxBenchmarkFormat(LibcxxTestFormat):
         # Collect all of the failing test result strings. Map by index
         # so that they are printed in the order thay were run.
         failing_bench_map = {}
+        passing_bench_map = {}
         for diff_name, diff in diff_metrics.items():
-            if diff['cpu_time'] * 100 - 100 <= self.allowed_difference:
-                continue
             curr_b = this_bench[diff_name]
             baseline_b = baseline_bench[diff_name]
-            failing_bench_map[curr_b['index']] = benchcxx.formatFailDiff(
-                diff, curr_b, baseline_b)
+            if diff['cpu_time'] * 100 - 100 <= self.allowed_difference:
+                passing_bench_map[curr_b['index']] = benchcxx.formatPassDiff(
+                    diff, curr_b, baseline_b)
+            else:
+                failing_bench_map[curr_b['index']] = benchcxx.formatFailDiff(
+                    diff, curr_b, baseline_b)
+        if failing_bench_map:
+            for k, v in passing_bench_map.iteritems():
+                failing_bench_map[k] = v
         return '\n'.join([v for v in failing_bench_map.values()])

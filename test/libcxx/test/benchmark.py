@@ -196,3 +196,10 @@ def formatFailDiff(diff, ours, theirs):
              formatDiffString('cpu_time', diff, ours, theirs),
              formatDiffString('iterations', diff, ours, theirs),
              formatDiffString('time', diff, ours, theirs)))
+
+def formatPassDiff(diff, ours, theirs):
+    return ('%s passed:\n    %s\n    %s\n    %s\n' %
+            (ours['name'],
+             formatDiffString('cpu_time', diff, ours, theirs),
+             formatDiffString('iterations', diff, ours, theirs),
+             formatDiffString('time', diff, ours, theirs)))
