@@ -2,7 +2,7 @@
 set(CMAKE_CXX_COMPILER @CMAKE_CXX_COMPILER@)
 set(CMAKE_C_COMPILER   @CMAKE_C_COMPILER@)
 
-if (NOT APPLE)
+if (NOT APPLE AND NOT @CMAKE_SYSTEM_NAME@ STREQUAL "FreeBSD")
   set(CMAKE_SHARED_LINKER_FLAGS "-static-libgcc -static-libstdc++" CACHE STRING "")
   set(CMAKE_MODULE_LINKER_FLAGS "-static-libgcc -static-libstdc++" CACHE STRING "")
 endif()
