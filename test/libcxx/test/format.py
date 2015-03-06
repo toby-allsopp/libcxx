@@ -1,7 +1,5 @@
 import errno
 import os
-import re
-import tempfile
 import time
 
 import lit.Test        # pylint: disable=import-error
@@ -43,7 +41,8 @@ class LibcxxTestFormat(object):
 
             filepath = os.path.join(source_path, filename)
             if not os.path.isdir(filepath):
-                if any([filepath.endswith(s) for s in localConfig.suffixes]):
+                if any([filepath.endswith(ext)
+                        for ext in localConfig.suffixes]):
                     yield lit.Test.Test(testSuite, path_in_suite + (filename,),
                                         localConfig)
 
