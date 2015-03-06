@@ -136,11 +136,11 @@ def parseBenchmarkOutput(output):
 
 def createBenchmarkDiff(first, second):
     """
-    diff two benchmarks and return the difference between the two
+    diff two benchmarks and return the difference.
     """
     def diff_fn(first, second):
         return second / float(first)
-    result = {
+    return {
         'name': first['name'],
         'iterations': diff_fn(
             first['iterations'], second['iterations']),
@@ -149,14 +149,13 @@ def createBenchmarkDiff(first, second):
         'time': diff_fn(
             second['time'], first['time'])
     }
-    return result
 
 
 def DiffBenchmarkResults(baseline, current):
     """
     Diff every benchmark in current against baseline and return
-    the results.
-    If there is no matching benchmark in baseline that benchmark is skipped
+    the results. If there is no matching benchmark in baseline that benchmark
+    is skipped.
     """
     diff_map = {}
     for curr_k, curr_v in current.iteritems():
@@ -168,13 +167,13 @@ def DiffBenchmarkResults(baseline, current):
     return diff_map
 
 
-def formatDiffString(key, diff, ours, theirs):
+def formatDiffString(key, baseline, curr, diff):
     """
     Format a user readable string that reports the difference between one
     value of a benchmarks output.
     """
     cmp_str = 'FASTER' if diff[key] < 1.0 else 'SLOWER'
-    fmt_str = '{0:11} {1:8} {2} (ours={3}, theirs={4}, diff={5})'
+    fmt_str = '{0:11} {1:8} {2} (current={3}, baseline={4}, diff={5})'
     label = '%s:' % key
     diff_v = abs(diff[key])
     # Print the change as a multiplier if it is >= 2. Otherwise print it as
@@ -182,18 +181,25 @@ def formatDiffString(key, diff, ours, theirs):
     if diff_v >= 2:
         change = '%.3fx' % diff_v
     else:
-        change = '%.3f%%' % ((diff_v * 100) - 100)
-    return fmt_str.format(label, change, cmp_str, ours[key], theirs[key],
-                          abs(ours[key]-theirs[key]))
+        change = '%.3f%%' % abs((diff_v * 100) - 100)
+    return fmt_str.format(label, change, cmp_str, curr[key], baseline[key],
+                          abs(curr[key]-baseline[key]))
 
 
-def formatFailDiff(diff, ours, theirs):
+def formatFailDiff(baseline, curr, diff):
     """
     Format a user readable string that reports the difference between all
     values of a benchmark output.
     """
     return ('%s failed:\n    %s\n    %s\n    %s\n' %
-            (ours['name'],
-             formatDiffString('cpu_time', diff, ours, theirs),
-             formatDiffString('iterations', diff, ours, theirs),
-             formatDiffString('time', diff, ours, theirs)))
+            (curr['name'],
+             formatDiffString('cpu_time', baseline, curr, diff),
+             formatDiffString('iterations', baseline, curr, diff),
+             formatDiffString('time', baseline, curr, diff)))
+
+def formatPassDiff(baseline, curr, diff):
+    return ('%s passed:\n    %s\n    %s\n    %s\n' %
+            (curr['name'],
+             formatDiffString('cpu_time', baseline, curr, diff),
+             formatDiffString('iterations', baseline, curr, diff),
+             formatDiffString('time', baseline, curr, diff)))
