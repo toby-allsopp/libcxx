@@ -237,7 +237,7 @@ class LibcxxBenchmarkFormat(LibcxxTestFormat):
     def _detect_bad_results(self, benches):
         bad_results_str = ''
         for k, v in benches.iteritems():
-            if v['cpu_time'] < 25 and k != 'BM_test_empty':
+            if v['cpu_time'] < 10 and k != 'BM_test_empty':
                 bad_results_str += ('Test %s runs too quickly! cpu_time=%s\n'
                                     % (k, v['cpu_time']))
         return bad_results_str
