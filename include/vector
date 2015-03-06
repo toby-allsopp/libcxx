@@ -783,7 +783,7 @@ private:
             __is_forward_iterator<_ForwardIterator>::value,
             void
         >::type
-        __construct_at_end(_ForwardIterator __first, _ForwardIterator __last);
+        __construct_at_end(_ForwardIterator __first, _ForwardIterator __last, size_type __n);
     void __append(size_type __n);
     void __append(size_type __n, const_reference __x);
     _LIBCPP_INLINE_VISIBILITY
@@ -1021,12 +1021,12 @@ typename enable_if
     __is_forward_iterator<_ForwardIterator>::value,
     void
 >::type
-vector<_Tp, _Allocator>::__construct_at_end(_ForwardIterator __first, _ForwardIterator __last)
+vector<_Tp, _Allocator>::__construct_at_end(_ForwardIterator __first, _ForwardIterator __last, size_type __n)
 {
     allocator_type& __a = this->__alloc();
-    __RAII_IncreaseAnnotator __annotator(*this, _VSTD::distance(__first, __last));
+    //__RAII_IncreaseAnnotator __annotator(*this, _VSTD::distance(__first, __last));
     __alloc_traits::__construct_forward2(__a, __first, __last, this->__end_);
-    __annotator.__done();
+    //__annotator.__done();
 }
 
 //  Default constructs __n objects starting at __end_
