@@ -638,7 +638,8 @@ class Configuration(object):
                 cxx_library_root = os.path.dirname(libcxx_library)
             else:
                 cxx_library_root = self.cxx_library_root
-            self.env['DYLD_LIBRARY_PATH'] = cxx_library_root
+            if cxx_library_root:
+                self.env['DYLD_LIBRARY_PATH'] = cxx_library_root
 
 
 class BenchmarkConfiguration(Configuration):
