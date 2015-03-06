@@ -177,15 +177,7 @@ class LibcxxBenchmarkFormat(LibcxxTestFormat):
             res = lit.Test.Result(code, output)
         if not res.code == lit.Test.PASS:
             return res
-        full_name = test.getFullName()
-        # Compare the results to the baseline if the baseline is present.
-        if self.baseline:
-            failing_bench = self._compare_results(test.getFullName(), res)
-            if failing_bench:
-                res.code = lit.Test.FAIL
-                res.output = '\n'.join(failing_bench)
-                res.metrics = {}
-        return res
+        return self._benchmark_test(test, tmpBase, execDir, lit_config)
 
     def _benchmark_test(self, test, tmpBase, execDir, lit_config):
         source_path = test.getSourcePath()
@@ -206,7 +198,7 @@ class LibcxxBenchmarkFormat(LibcxxTestFormat):
             # Run the test
             cmd = [exec_path, '--benchmark_repetitions=3']
             out, err, rc = self.executor.run(
-                None, cmd=cmd, work_dir=os.path.dirname(source_path))
+                None, cmd=cmd, work_dir=os.path.dirname(source_path), env=self.exec_env)
             if rc != 0:
                 report = libcxx.util.makeReport(cmd, out, err, rc)
                 report = "Compiled With: %s\n%s" % (compile_cmd, report)
@@ -220,11 +212,33 @@ class LibcxxBenchmarkFormat(LibcxxTestFormat):
             benchmark_data = benchcxx.parseBenchmarkOutput(out)
             result.addMetric('benchmarks',
                              lit.Test.toMetricValue(benchmark_data))
+            # Check for a benchmark that looks like it does nothing.
+            # This is likely a problem.
+            bad_results_str = self._detect_bad_results(benchmark_data)
+            if bad_results_str:
+                result.code = lit.Test.FAIL
+                result.output = bad_results_str
+                return result
+            # Compare the results to the baseline if the baseline is present.
+            if self.baseline:
+                failing_bench_str = self._compare_results(test.getFullName(), result)
+                if failing_bench_str:
+                    result.code = lit.Test.FAIL
+                    result.output = failing_bench_str
+                    result.metrics = {}
             return result
         finally:
             # Note that cleanup of exec_file happens in `_clean()`. If you
             # override this, cleanup is your reponsibility.
             self._clean(exec_path)
+
+    def _detect_bad_results(self, benches):
+        bad_results_str = ''
+        for k, v in benches.iteritems():
+            if v['cpu_time'] < 25 and k != 'BM_test_empty':
+                bad_results_str += ('Test %s runs too quickly! cpu_time=%s\n'
+                                    % (k, v['cpu_time']))
+        return bad_results_str
 
     def _compare_results(self, test_name, result):
         baseline_results = self.baseline.get(test_name)
@@ -247,4 +261,4 @@ class LibcxxBenchmarkFormat(LibcxxTestFormat):
             baseline_b = baseline_bench[diff_name]
             failing_bench_map[curr_b['index']] = benchcxx.formatFailDiff(
                 diff, curr_b, baseline_b)
-        return [v for v in failing_bench_map.values()]
+        return '\n'.join([v for v in failing_bench_map.values()])

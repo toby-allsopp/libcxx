@@ -23,6 +23,9 @@ def stringToCode(str_code):
 
 
 def loadTestResults(from_file):
+    """
+    Read in the output of a benchmark test run.
+    """
     with open(from_file, 'r') as output_file:
         output = json.load(output_file)
     raw_tests = output['tests']
@@ -38,6 +41,8 @@ def loadTestResults(from_file):
     return tests
 
 
+# Regex to parse a single line of a benchmarks output. The basic format is as follows:
+# <name> <time> <cpu_time> <iterations> (<extra fields>...)\n
 kbench_line_re = re.compile('^\s*([^\s]+)\s+([-0-9]+)\s+([-0-9]+)\s+([0-9]+)([^\n]*)')
 
 def parseBenchmarkLine(line):
@@ -51,12 +56,7 @@ def parseBenchmarkLine(line):
     # spaces if it names a template: ex BM_Foo<int, long>. Remove this.
     new_line = line.replace(', ', ',$')
     match = kbench_line_re.match(new_line)
-    # TODO(ericwf): Remove this.
-    if match is None:
-        with open('/tmp/ERR', 'w') as f:
-            f.write(output + '\n')
     assert match is not None
-    name = match.group(1)
     parsed_bench = {
         'name':       match.group(1).replace(',$', ', '),
         'time':       max(int(match.group(2)), 1),  # Ensure non-zero
@@ -73,8 +73,16 @@ def parseBenchmarkLine(line):
 def removeRepeatedBenchmarks(benchmark_list):
     """
     Some benchmarks are run multiple times and report
-    a mean and stddev at the end. This function folds all of repeated runs
+    a mean and stddev at the end. This function removes all of repeated runs
     and combines the mean and stddev into one benchmark result.
+    Example Output:
+      Name               Time(ns)  Iterations
+      BM_my_test         11         95
+      BM_my_test         10        100
+      BM_my_test         9         105
+      BM_my_test_mean    10        100
+      BM_my_test_stddev  1         5
+      BM_different_test (...)
     """
     has_repeats = (len(benchmark_list) >= 4 and
                    benchmark_list[0]['name'] == benchmark_list[1]['name'])
@@ -99,6 +107,8 @@ def removeRepeatedBenchmarks(benchmark_list):
     return new_benchmark_list
 
 
+# Regex to split benchmark output header and results.
+# The header and results are split by a line containing only "-" characters.
 ksplit_line_re = re.compile('\n[-]+\n')
 
 def parseBenchmarkOutput(output):
@@ -156,6 +166,10 @@ def DiffBenchmarkResults(baseline, current):
 
 
 def formatDiffString(key, diff, ours, theirs):
+    """
+    Format a user readable string that reports the difference between one
+    value of a benchmarks output.
+    """
     cmp_str = 'FASTER' if diff[key] < 1.0 else 'SLOWER'
     fmt_str = '{0:11} {1:8} {2} (ours={3}, theirs={4}, diff={5})'
     label = '%s:' % key
@@ -171,8 +185,12 @@ def formatDiffString(key, diff, ours, theirs):
 
 
 def formatFailDiff(diff, ours, theirs):
+  """
+  Format a user readable string that reports the difference between all
+  values of a benchmark output.
+  """
   return ('%s failed:\n    %s\n    %s\n    %s\n' %
           (ours['name'],
-          formatDiffString('cpu_time', diff, ours, theirs),
-          formatDiffString('iterations', diff, ours, theirs),
-          formatDiffString('time', diff, ours, theirs)))
+           formatDiffString('cpu_time', diff, ours, theirs),
+           formatDiffString('iterations', diff, ours, theirs),
+           formatDiffString('time', diff, ours, theirs)))

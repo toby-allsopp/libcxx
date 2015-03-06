@@ -663,13 +663,6 @@ class BenchmarkConfiguration(Configuration):
         self.configure_allowed_difference()
         self.print_config_info()
 
-    def load_benchmark_results(self, from_file):
-        import json
-        with open(from_file, 'r') as output_file:
-          output = json.load(output_file)
-        tests = output
-        self.lit_config.note('Decoded: %s\n' % tests)
-
     def configure_baseline(self):
         res = self.get_lit_conf('baseline')
         if not res:
