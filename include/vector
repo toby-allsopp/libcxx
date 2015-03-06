@@ -1025,7 +1025,7 @@ vector<_Tp, _Allocator>::__construct_at_end(_ForwardIterator __first, _ForwardIt
 {
     allocator_type& __a = this->__alloc();
     __RAII_IncreaseAnnotator __annotator(*this, __n);
-    __alloc_traits::__construct_forward2(__a, __first, __last, this->__end_);
+    __alloc_traits::__construct_range_forward(__a, __first, __last, this->__end_);
     __annotator.__done();
 }
 
