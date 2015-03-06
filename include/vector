@@ -1024,13 +1024,9 @@ typename enable_if
 vector<_Tp, _Allocator>::__construct_at_end(_ForwardIterator __first, _ForwardIterator __last)
 {
     allocator_type& __a = this->__alloc();
-    for (; __first != __last; ++__first)
-    {
-        __RAII_IncreaseAnnotator __annotator(*this);
-        __alloc_traits::construct(__a, _VSTD::__to_raw_pointer(this->__end_), *__first);
-        __annotator.__done();
-        ++this->__end_;
-    }
+    __RAII_IncreaseAnnotator __annotator(*this, _VSTD::distance(__first, __last));
+    __alloc_traits::__construct_forward2(__a, __first, __last, this->__end_);
+    __annotator.__done();
 }
 
 //  Default constructs __n objects starting at __end_
