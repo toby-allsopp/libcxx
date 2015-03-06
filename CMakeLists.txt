@@ -68,7 +68,7 @@ if (LIBCXX_BUILT_STANDALONE)
   set(LLVM_USE_SANITIZER "" CACHE STRING
       "Define the sanitizer used to build the library and tests")
 endif()
-option(LIBCXX_ENABLE_BENCHMARKS "Enable the benchmark tests." OFF)
+option(LIBCXX_ENABLE_BENCHMARKS "Enable the benchmark tests." ON)
 
 if (LIBCXX_ENABLE_STATIC_ABI_LIBRARY)
   if (APPLE)
