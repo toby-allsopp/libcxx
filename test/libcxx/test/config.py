@@ -15,6 +15,7 @@ from libcxx.compiler import CXXCompiler
 from libcxx.test.executor import *
 from libcxx.test.tracing import *
 
+
 def loadSiteConfig(lit_config, config, param_name, env_name):
     # We haven't loaded the site specific configuration (the user is
     # probably trying to run on a test file directly, and either the site
@@ -680,8 +681,8 @@ class BenchmarkConfiguration(Configuration):
     def configure_benchmark_flags(self):
         external_dir = os.path.join(self.libcxx_obj_root, 'external')
         self.cxx.compile_flags += [
-          '-I' + external_dir + '/include',
-          '-I' + self.libcxx_src_root + '/test/benchmark/support'
+            '-I' + external_dir + '/include',
+            '-I' + self.libcxx_src_root + '/test/benchmark/support'
         ]
         lib_path = external_dir + '/lib'
         self.cxx.link_flags = ['-L' + lib_path,
@@ -694,4 +695,3 @@ class BenchmarkConfiguration(Configuration):
             else:
                 dyn_path = dyn_path + ':' + lib_path
             self.env['DYLD_LIBRARY_PATH'] = dyn_path
-

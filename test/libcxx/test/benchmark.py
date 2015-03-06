@@ -41,9 +41,11 @@ def loadTestResults(from_file):
     return tests
 
 
-# Regex to parse a single line of a benchmarks output. The basic format is as follows:
-# <name> <time> <cpu_time> <iterations> (<extra fields>...)\n
-kbench_line_re = re.compile('^\s*([^\s]+)\s+([-0-9]+)\s+([-0-9]+)\s+([0-9]+)([^\n]*)')
+# Regex to parse a single line of a benchmarks output. The basic format is as
+# follows: <name> <time> <cpu_time> <iterations> (<extra fields>...)\n
+kbench_line_re = re.compile(
+    '^\s*([^\s]+)\s+([-0-9]+)\s+([-0-9]+)\s+([0-9]+)([^\n]*)')
+
 
 def parseBenchmarkLine(line):
     """
@@ -110,6 +112,7 @@ def removeRepeatedBenchmarks(benchmark_list):
 # Regex to split benchmark output header and results.
 # The header and results are split by a line containing only "-" characters.
 ksplit_line_re = re.compile('\n[-]+\n')
+
 
 def parseBenchmarkOutput(output):
     """
@@ -185,12 +188,12 @@ def formatDiffString(key, diff, ours, theirs):
 
 
 def formatFailDiff(diff, ours, theirs):
-  """
-  Format a user readable string that reports the difference between all
-  values of a benchmark output.
-  """
-  return ('%s failed:\n    %s\n    %s\n    %s\n' %
-          (ours['name'],
-           formatDiffString('cpu_time', diff, ours, theirs),
-           formatDiffString('iterations', diff, ours, theirs),
-           formatDiffString('time', diff, ours, theirs)))
+    """
+    Format a user readable string that reports the difference between all
+    values of a benchmark output.
+    """
+    return ('%s failed:\n    %s\n    %s\n    %s\n' %
+            (ours['name'],
+             formatDiffString('cpu_time', diff, ours, theirs),
+             formatDiffString('iterations', diff, ours, theirs),
+             formatDiffString('time', diff, ours, theirs)))

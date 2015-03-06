@@ -198,7 +198,8 @@ class LibcxxBenchmarkFormat(LibcxxTestFormat):
             # Run the test
             cmd = [exec_path, '--benchmark_repetitions=3']
             out, err, rc = self.executor.run(
-                None, cmd=cmd, work_dir=os.path.dirname(source_path), env=self.exec_env)
+                None, cmd=cmd, work_dir=os.path.dirname(source_path),
+                env=self.exec_env)
             if rc != 0:
                 report = libcxx.util.makeReport(cmd, out, err, rc)
                 report = "Compiled With: %s\n%s" % (compile_cmd, report)
@@ -221,7 +222,8 @@ class LibcxxBenchmarkFormat(LibcxxTestFormat):
                 return result
             # Compare the results to the baseline if the baseline is present.
             if self.baseline:
-                failing_bench_str = self._compare_results(test.getFullName(), result)
+                failing_bench_str = self._compare_results(
+                    test.getFullName(), result)
                 if failing_bench_str:
                     result.code = lit.Test.FAIL
                     result.output = failing_bench_str
@@ -250,7 +252,7 @@ class LibcxxBenchmarkFormat(LibcxxTestFormat):
         diff_metrics = benchcxx.DiffBenchmarkResults(
             baseline_bench, this_bench)
         result.addMetric(
-                'benchmark_diff', lit.Test.toMetricValue(diff_metrics))
+            'benchmark_diff', lit.Test.toMetricValue(diff_metrics))
         # Collect all of the failing test result strings. Map by index
         # so that they are printed in the order thay were run.
         failing_bench_map = {}
