@@ -68,7 +68,13 @@ if (LIBCXX_BUILT_STANDALONE)
   set(LLVM_USE_SANITIZER "" CACHE STRING
       "Define the sanitizer used to build the library and tests")
 endif()
+
 option(LIBCXX_ENABLE_BENCHMARKS "Enable the benchmark tests." ON)
+
+# Allow the user to specify the path to the benchmark source directory.
+# If no path is given the library is downloaded from SVN.
+set(LIBCXX_BENCHMARK_SOURCE_PATH "" CACHE PATH
+    "The path to the benchmark source directory.")
 
 if (LIBCXX_ENABLE_STATIC_ABI_LIBRARY)
   if (APPLE)
