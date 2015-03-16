@@ -52,8 +52,6 @@ def parseBenchmarkLine(line):
     Parse the output of a single benchmark
     """
     assert line  # Assert non-empty and non-null
-    if line.startswith('DEBUG: '):
-        line = line[len('DEBUG: '):]
     # TODO(ericwf): This is a hack because the benchmark name can contain
     # spaces if it names a template: ex BM_Foo<int, long>. Remove this.
     new_line = line.replace(', ', ',$')

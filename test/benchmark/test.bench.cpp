@@ -1,4 +1,4 @@
-#include "benchmark/minimal_benchmark.h"
+#include "benchmark/benchmark.h"
 
 static void BM_test_empty(benchmark::State& state) {
     while (state.KeepRunning()) {}

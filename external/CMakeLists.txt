@@ -14,17 +14,18 @@ if (LIBCXX_ENABLE_BENCHMARKS)
         -DBENCHMARK_ENABLE_TESTING:BOOL=OFF
         -DBENCHMARK_ENABLE_SHARED:BOOL=ON
   )
-
+  set(LIBCXX_BENCHMARK_SOURCE_PATH "/usr/local/google/home/ericwf/workspace/benchmark")
   if (LIBCXX_BENCHMARK_SOURCE_PATH)
     ExternalProject_Add(
       Benchmark
+      PREFIX ""
       SOURCE_DIR ${LIBCXX_BENCHMARK_SOURCE_PATH}
       CMAKE_ARGS ${BENCHMARK_CMAKE_ARGS}
     )
   else()
     ExternalProject_Add(
       Benchmark
-      SVN_REPOSITORY https://github.com/google/benchmark/branches/api-merge
+      SVN_REPOSITORY https://github.com/google/benchmark
       CMAKE_ARGS ${BENCHMARK_CMAKE_ARGS}
     )
   endif()
