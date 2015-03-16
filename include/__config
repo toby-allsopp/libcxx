@@ -647,6 +647,11 @@ template <unsigned> struct __static_assert_check {};
 #define _LIBCPP_LOCALE__L_EXTENSIONS 1
 #endif
 
+#if !defined(_WIN32) && !defined(__ANDROID__) && !defined(_NEWLIB_VERSION) && \
+    !defined(__CloudABI__)
+#define _LIBCPP_HAS_CATOPEN 1
+#endif
+
 #ifdef __FreeBSD__
 #define _DECLARE_C99_LDBL_MATH 1
 #endif
@@ -719,7 +724,15 @@ extern "C" void __sanitizer_annotate_contiguous_container(
          _LIBCPP_HAS_NO_THREADS is defined.
 #endif
 
-#if defined(__ANDROID__)
+// Systems that use capability-based security (FreeBSD with Capsicum,
+// Nuxi CloudABI) may only provide local filesystem access (using *at()).
+// Functions like open(), rename(), unlink() and stat() should not be
+// used, as they attempt to access the global filesystem namespace.
+#ifdef __CloudABI__
+#define _LIBCPP_HAS_NO_GLOBAL_FILESYSTEM_NAMESPACE
+#endif
+
+#if defined(__ANDROID__) || defined(__CloudABI__)
 #define _LIBCPP_PROVIDES_DEFAULT_RUNE_TABLE
 #endif
 
