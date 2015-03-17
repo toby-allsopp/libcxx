@@ -55,25 +55,24 @@ template <class _Tp>
 _LIBCPP_CONSTEXPR size_t tuple_size_v = tuple_size<_Tp>::value;
 #endif
 
-#define _LIBCPP_AUTO_RETURN(_Tp) -> decltype(_Tp) { return _Tp; }
-
 template <class _Fn, class _Tuple, size_t ..._Id>
 inline _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX11
-auto __apply_tuple_impl(_Fn && __f, _Tuple && __t, integer_sequence<size_t, _Id...>)
-_LIBCPP_AUTO_RETURN(
-    _VSTD::__invoke(_VSTD::forward<_Fn>(__f), _VSTD::get<_Id>(_VSTD::forward<_Tuple>(__t))...)
-  )
+decltype(auto) __apply_tuple_impl(_Fn && __f, _Tuple && __t,
+                                  integer_sequence<size_t, _Id...>) {
+    return _VSTD::__invoke(
+        _VSTD::forward<_Fn>(__f),
+        _VSTD::get<_Id>(_VSTD::forward<_Tuple>(__t))...
+    );
+}
 
 template <class _Fn, class _Tuple>
 inline _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX11
-auto apply(_Fn && __f, _Tuple && __t)
-_LIBCPP_AUTO_RETURN(
-    _VSTD_LFTS::__apply_tuple_impl(
-        _VSTD::forward<_Fn>(__f), _VSTD::forward<_Tuple>(__t)
-      , make_index_sequence<tuple_size<typename decay<_Tuple>::type>::value>()
-      )
-)
-#undef _LIBCPP_AUTO_RETURN
+decltype(auto) apply(_Fn && __f, _Tuple && __t) {
+    return _VSTD_LFTS::__apply_tuple_impl(
+        _VSTD::forward<_Fn>(__f), _VSTD::forward<_Tuple>(__t),
+        make_index_sequence<tuple_size<typename decay<_Tuple>::type>::value>()
+    );
+}
 
 _LIBCPP_END_NAMESPACE_LFTS
 
