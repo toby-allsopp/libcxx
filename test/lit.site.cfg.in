@@ -8,6 +8,7 @@ config.enable_exceptions        = "@LIBCXX_ENABLE_EXCEPTIONS@"
 config.enable_rtti              = "@LIBCXX_ENABLE_RTTI@"
 config.enable_shared            = "@LIBCXX_ENABLE_SHARED@"
 config.enable_32bit             = "@LIBCXX_BUILD_32_BITS@"
+config.enable_global_filesystem_namespace = "@LIBCXX_ENABLE_GLOBAL_FILESYSTEM_NAMESPACE@"
 config.enable_threads           = "@LIBCXX_ENABLE_THREADS@"
 config.enable_monotonic_clock   = "@LIBCXX_ENABLE_MONOTONIC_CLOCK@"
 config.cxx_abi                  = "@LIBCXX_CXX_ABI_LIBNAME@"
@@ -17,6 +18,8 @@ config.configuration_variant    = "@LIBCXX_LIT_VARIANT@"
 config.target_triple            = "@LIBCXX_TARGET_TRIPLE@"
 config.sysroot                  = "@LIBCXX_SYSROOT@"
 config.gcc_toolchain            = "@LIBCXX_GCC_TOOLCHAIN@"
+config.target_info              = "@LIBCXX_TARGET_INFO@"
+config.executor                 = "@LIBCXX_EXECUTOR@"
 
 # Let the main config do the real work.
 lit_config.load_config(config, "@LIBCXX_SOURCE_DIR@/test/lit.cfg")
