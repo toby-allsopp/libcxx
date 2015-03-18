@@ -1,7 +1,7 @@
 #ifndef CONTAINER_BENCHMARKS_HPP
 #define CONTAINER_BENCHMARKS_HPP
 
-#include "benchmark/minimal_benchmark.h"
+#include "benchmark/benchmark_api.h"
 #include "Generators.hpp"
 #include "TestArray.hpp"
 

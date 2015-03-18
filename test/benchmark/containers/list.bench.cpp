@@ -1,4 +1,4 @@
-#include "benchmark/minimal_benchmark.h"
+#include "benchmark/benchmark_api.h"
 #include "ContainerBenchmarks.hpp"
 
 #include <list>

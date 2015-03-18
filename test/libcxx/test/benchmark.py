@@ -40,36 +40,6 @@ def loadTestResults(from_file):
         tests[rt['name']] = test
     return tests
 
-
-# Regex to parse a single line of a benchmarks output. The basic format is as
-# follows: <name> <time> <cpu_time> <iterations> (<extra fields>...)\n
-kbench_line_re = re.compile(
-    '^\s*([^\s]+)\s+([-0-9]+)\s+([-0-9]+)\s+([0-9]+)([^\n]*)')
-
-
-def parseBenchmarkLine(line):
-    """
-    Parse the output of a single benchmark
-    """
-    assert line  # Assert non-empty and non-null
-    # TODO(ericwf): This is a hack because the benchmark name can contain
-    # spaces if it names a template: ex BM_Foo<int, long>. Remove this.
-    new_line = line.replace(', ', ',$')
-    match = kbench_line_re.match(new_line)
-    assert match is not None
-    parsed_bench = {
-        'name':       match.group(1).replace(',$', ', '),
-        'time':       max(int(match.group(2)), 1),  # Ensure non-zero
-        'cpu_time':   max(int(match.group(3)), 1),  # Ensure non-zero
-        'iterations': int(match.group(4)),
-    }
-    parsed_bench['total_cpu_time'] = (parsed_bench['cpu_time'] *
-                                      parsed_bench['iterations'])
-    parsed_bench['total_time'] = (parsed_bench['time'] *
-                                  parsed_bench['iterations'])
-    return parsed_bench
-
-
 def removeRepeatedBenchmarks(benchmark_list):
     """
     Some benchmarks are run multiple times and report
@@ -100,17 +70,11 @@ def removeRepeatedBenchmarks(benchmark_list):
         new_bench['name'] = real_name
         assert len(benchmark_list) > i+1
         stddev_bench = benchmark_list[i+1]
-        new_bench['time_stddev'] = stddev_bench['time']
+        new_bench['real_time_stddev'] = stddev_bench['real_time']
         new_bench['cpu_time_stddev'] = stddev_bench['cpu_time']
         new_bench['iterations_stddev'] = stddev_bench['iterations']
         new_benchmark_list += [new_bench]
     return new_benchmark_list
-
-
-# Regex to split benchmark output header and results.
-# The header and results are split by a line containing only "-" characters.
-ksplit_line_re = re.compile('\n[-]+\n')
-
 
 def parseBenchmarkOutput(output):
     """
@@ -118,10 +82,8 @@ def parseBenchmarkOutput(output):
     """
     # Split the benchmark output header and results based on a line containing
     # only '-' characters.
-    parts = ksplit_line_re.split(output, maxsplit=1)
-    assert len(parts) == 2
-    benchmark_list = [parseBenchmarkLine(l.strip())
-                      for l in parts[1].split('\n') if l.strip()]
+    json_root = json.loads(output)
+    benchmark_list = json_root['benchmarks']
     benchmark_list = removeRepeatedBenchmarks(benchmark_list)
     benchmark_dict = {}
     benchmark_index = 0
@@ -145,7 +107,7 @@ def createBenchmarkDiff(first, second):
         'cpu_time': diff_fn(
             second['cpu_time'], first['cpu_time']),
         'time': diff_fn(
-            second['time'], first['time'])
+            second['real_time'], first['real_time'])
     }
 
 
@@ -193,11 +155,11 @@ def formatFailDiff(baseline, curr, diff):
             (curr['name'],
              formatDiffString('cpu_time', baseline, curr, diff),
              formatDiffString('iterations', baseline, curr, diff),
-             formatDiffString('time', baseline, curr, diff)))
+             formatDiffString('real_time', baseline, curr, diff)))
 
 def formatPassDiff(baseline, curr, diff):
     return ('%s passed:\n    %s\n    %s\n    %s\n' %
             (curr['name'],
              formatDiffString('cpu_time', baseline, curr, diff),
              formatDiffString('iterations', baseline, curr, diff),
-             formatDiffString('time', baseline, curr, diff)))
+             formatDiffString('real_time', baseline, curr, diff)))

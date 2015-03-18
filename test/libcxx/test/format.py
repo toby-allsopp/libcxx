@@ -205,8 +205,8 @@ class LibcxxBenchmarkFormat(LibcxxTestFormat):
                 report += "Compilation failed unexpectedly!"
                 return lit.Test.FAIL, report
             # Run the test
-            cmd = [exec_path, '--benchmark_repetitions=3', '--color_print=False']
-            out, err, rc = self.executor.run(
+            cmd = [exec_path, '--benchmark_repetitions=3', '--benchmark_format=json']
+            cmd, out, err, rc = self.executor.run(
                 None, cmd=cmd, work_dir=os.path.dirname(source_path),
                 env=self.exec_env)
             if rc != 0:
