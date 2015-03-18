@@ -11,6 +11,7 @@ from libcxx.test.executor import LocalExecutor as LocalExecutor
 import libcxx.util
 
 
+
 class LibcxxTestFormat(object):
     """
     Custom test format handler for use with the test format use by libc++.
@@ -189,6 +190,7 @@ class LibcxxBenchmarkFormat(LibcxxTestFormat):
         return self._benchmark_test(test, tmpBase, execDir, lit_config)
 
     def _benchmark_test(self, test, tmpBase, execDir, lit_config):
+        import json
         source_path = test.getSourcePath()
         exec_path = tmpBase + '.exe'
         object_path = tmpBase + '.o'
@@ -214,17 +216,17 @@ class LibcxxBenchmarkFormat(LibcxxTestFormat):
                 report = "Compiled With: %s\n%s" % (compile_cmd, report)
                 report += "Compiled test failed unexpectedly!"
                 return lit.Test.FAIL, report
-            scale_warning = ('CPU scaling is enabled: ' +
-                             'Benchmark timings may be noisy.')
-            if scale_warning in out:
-                lit_config.warning(scale_warning)
+            benchmark_data = json.loads(out)
+            if benchmark_data['context']['cpu_scaling_enabled']:
+                lit_config.warning(
+                    'CPU scaling is enabled: Benchmark timings may be noisy.')
             result = lit.Test.Result(lit.Test.PASS, '')
-            benchmark_data = benchcxx.parseBenchmarkOutput(out)
-            result.addMetric('benchmarks',
+            result.addMetric('benchmark_results',
                              lit.Test.toMetricValue(benchmark_data))
             # Check for a benchmark that looks like it does nothing.
             # This is likely a problem.
-            bad_results_str = self._detect_bad_results(benchmark_data)
+            bad_results_str = self._detect_bad_results(
+                benchmark_data['benchmarks'])
             if bad_results_str:
                 result.code = lit.Test.FAIL
                 result.output = bad_results_str
@@ -232,7 +234,7 @@ class LibcxxBenchmarkFormat(LibcxxTestFormat):
             # Compare the results to the baseline if the baseline is present.
             if self.baseline:
                 failing_bench_str = self._compare_results(
-                    test.getFullName(), result)
+                    test.getFullName(), result, lit_config)
                 if failing_bench_str:
                     result.code = lit.Test.FAIL
                     result.output = failing_bench_str
@@ -243,39 +245,48 @@ class LibcxxBenchmarkFormat(LibcxxTestFormat):
             # override this, cleanup is your reponsibility.
             self._clean(exec_path)
 
-    def _detect_bad_results(self, benches):
+    def _detect_bad_results(self, benchmark_list):
         bad_results_str = ''
-        for k, v in benches.iteritems():
-            if v['cpu_time'] < 10 and k != 'BM_test_empty':
+        for bench in benchmark_list:
+            if (bench['cpu_time'] < 10 and not bench['name'].startswith('BM_test_empty')
+                and not bench['name'].endswith('_stddev')):
                 bad_results_str += ('Test %s runs too quickly! cpu_time=%s\n'
-                                    % (k, v['cpu_time']))
+                                    % (bench['name'], bench['cpu_time']))
         return bad_results_str
 
-    def _compare_results(self, test_name, result):
+    def _compare_results(self, test_name, result, lit_config):
         baseline_results = self.baseline.get(test_name)
         if baseline_results is None:
             return None
-        this_bench = result.metrics['benchmarks'].value
-        baseline_bench = baseline_results['benchmarks']
+        this_bench = result.metrics['benchmark_results'].value
+        baseline_bench = baseline_results['benchmark_results']
+        # Compare the context objects and issue warnings if the differ in any
+        # meaningful way.
+        this_context = this_bench['context']
+        baseline_context = baseline_bench['context']
+        if (this_context['num_cpus'] != baseline_context['num_cpus'] or
+            this_context['mhz_per_cpu'] != baseline_context['mhz_per_cpu'] or
+            (this_context['cpu_scaling_enabled']
+             != baseline_context['cpu_scaling_enabled'])):
+            lit_config.warning('Comparing results from different CPUs')
+        if this_context['build_type'] != baseline_context['build_type']:
+            lit_config.warning('Comparing results from different library builds.')
+        baseline_stats = benchcxx.makeBenchmarkStats(baseline_bench['benchmarks'])
+        current_stats = benchcxx.makeBenchmarkStats(this_bench['benchmarks'])
         # Calculate the timing and iteration differences.
-        diff_metrics = benchcxx.DiffBenchmarkResults(
-            baseline_bench, this_bench)
-        result.addMetric(
-            'benchmark_diff', lit.Test.toMetricValue(diff_metrics))
-        # Collect all of the failing test result strings. Map by index
-        # so that they are printed in the order thay were run.
-        failing_bench_map = {}
-        passing_bench_map = {}
-        for diff_name, diff in diff_metrics.items():
-            curr_b = this_bench[diff_name]
-            baseline_b = baseline_bench[diff_name]
-            if diff['cpu_time'] * 100 - 100 <= self.allowed_difference:
-                passing_bench_map[curr_b['index']] = benchcxx.formatPassDiff(
-                    baseline_b, curr_b, diff)
+        diff_metrics = benchcxx.DiffBenchmarkStats(baseline_stats,
+                                                   current_stats)
+        failing_count = 0
+        diff_results = []
+        for diff in diff_metrics:
+            if diff.CPUTimeWithin(self.allowed_difference):
+                diff_results += [
+                    benchcxx.formatPassDiff(diff)]
             else:
-                failing_bench_map[curr_b['index']] = benchcxx.formatFailDiff(
-                    baseline_b, curr_b, diff)
-        if failing_bench_map:
-            for k, v in passing_bench_map.iteritems():
-                failing_bench_map[k] = v
-        return '\n'.join([v for v in failing_bench_map.values()])
+                diff_results += [
+                   benchcxx.formatFailDiff(diff)]
+                failing_count += 1
+        if failing_count:
+            return '\n'.join(diff_results)
+        else:
+            return ''
