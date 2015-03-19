@@ -17,7 +17,7 @@ void BM_find(benchmark::State& state) {
     }
 }
 BENCHMARK_TEMPLATE(BM_find, StrideGenerator<int>)->Arg(10000);
-BENCHMARK_TEMPLATE(BM_find, StringStrideGenerator<>)->Arg(10000);
+BENCHMARK_TEMPLATE(BM_find, StringStrideGenerator<>)->Arg(100000);
 
 template <class Generator>
 void BM_find_if(benchmark::State& state) {
@@ -33,7 +33,7 @@ void BM_find_if(benchmark::State& state) {
     }
 }
 BENCHMARK_TEMPLATE(BM_find_if, StrideGenerator<int>)->Arg(10000);
-BENCHMARK_TEMPLATE(BM_find, StringStrideGenerator<>)->Arg(10000);
+BENCHMARK_TEMPLATE(BM_find_if, StringStrideGenerator<>)->Arg(100000);
 
 
 template <class Generator>
@@ -50,6 +50,6 @@ void BM_find_if_not(benchmark::State& state) {
     }
 }
 BENCHMARK_TEMPLATE(BM_find_if_not, StrideGenerator<int>)->Arg(10000);
-BENCHMARK_TEMPLATE(BM_find, StringStrideGenerator<>)->Arg(10000);
+BENCHMARK_TEMPLATE(BM_find_if_not, StringStrideGenerator<>)->Arg(100000);
 
 BENCHMARK_MAIN()

@@ -64,7 +64,7 @@ struct StringStrideGenerator
     : public ConstantStrideGenerator<int, Start, End, Stride>
 {
 private:
-    typedef ConstantStrideGenerator<int Start, End, Stride> base;
+    typedef ConstantStrideGenerator<int, Start, End, Stride> base;
 public:
     typedef std::string value_type;
 
