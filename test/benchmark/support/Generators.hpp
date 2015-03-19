@@ -1,7 +1,9 @@
 #ifndef GENERATORS_HPP
 #define GENERATORS_HPP
 
+#include <cstdlib>
 #include <limits>
+#include <string>
 #include <random>
 #include <type_traits>
 
@@ -53,6 +55,22 @@ struct ConstantStrideGenerator : public StrideGenerator<ValueType> {
 
     ConstantStrideGenerator()
       : StrideGenerator<ValueType>(Start, End, Stride) {
+    }
+};
+
+template <int Start = 0, int End = std::numeric_limits<int>::max(),
+          int Stride = 1>
+struct StringStrideGenerator
+    : public ConstantStrideGenerator<int, Start, End, Stride>
+{
+private:
+    typedef ConstantStrideGenerator<int Start, End, Stride> base;
+public:
+    typedef std::string value_type;
+
+    value_type operator()() {
+        int value = base::operator()();
+        return std::to_string(value);
     }
 };
 
