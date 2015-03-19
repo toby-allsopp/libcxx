@@ -14,7 +14,7 @@ if (LIBCXX_ENABLE_BENCHMARKS)
         -DBENCHMARK_ENABLE_TESTING:BOOL=OFF
         -DBENCHMARK_ENABLE_SHARED:BOOL=ON
   )
-  set(LIBCXX_BENCHMARK_SOURCE_PATH "/usr/local/google/home/ericwf/workspace/benchmark")
+
   if (LIBCXX_BENCHMARK_SOURCE_PATH)
     ExternalProject_Add(
       Benchmark
@@ -23,9 +23,14 @@ if (LIBCXX_ENABLE_BENCHMARKS)
       CMAKE_ARGS ${BENCHMARK_CMAKE_ARGS}
     )
   else()
+    # TODO(ericwf) Fix this. There is no way to pull the trunk directly from
+    # github.
+    set(SRC_DIR "${CMAKE_CURRENT_BINARY_DIR}/Benchmark-Source")
     ExternalProject_Add(
       Benchmark
+      SOURCE_DIR ${SRC_DIR}
       SVN_REPOSITORY https://github.com/google/benchmark
+      PATCH_COMMAND ${CMAKE_COMMAND} -E copy_directory ${SRC_DIR}/trunk/ ${SRC_DIR}/
       CMAKE_ARGS ${BENCHMARK_CMAKE_ARGS}
     )
   endif()
