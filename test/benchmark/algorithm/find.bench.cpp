@@ -19,6 +19,7 @@ void BM_find(benchmark::State& state) {
 BENCHMARK_TEMPLATE(BM_find, StrideGenerator<int>)->Arg(10000);
 BENCHMARK_TEMPLATE(BM_find, StringStrideGenerator<>)->Arg(100000);
 
+#if 0
 template <class Generator>
 void BM_find_if(benchmark::State& state) {
     auto arr = generate_test_array<Generator>(state.range_x());
@@ -51,5 +52,6 @@ void BM_find_if_not(benchmark::State& state) {
 }
 BENCHMARK_TEMPLATE(BM_find_if_not, StrideGenerator<int>)->Arg(10000);
 BENCHMARK_TEMPLATE(BM_find_if_not, StringStrideGenerator<>)->Arg(100000);
+#endif
 
 BENCHMARK_MAIN()
