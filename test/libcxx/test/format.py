@@ -233,12 +233,11 @@ class LibcxxBenchmarkFormat(LibcxxTestFormat):
                 return result
             # Compare the results to the baseline if the baseline is present.
             if self.baseline:
-                failing_bench_str = self._compare_results(
+                failing_count, result_str = self._compare_results(
                     test.getFullName(), result, lit_config)
-                if failing_bench_str:
+                result.output = result_str
+                if failing_count != 0:
                     result.code = lit.Test.FAIL
-                    result.output = failing_bench_str
-                    result.metrics = {}
             return result
         finally:
             # Note that cleanup of exec_file happens in `_clean()`. If you
@@ -286,7 +285,4 @@ class LibcxxBenchmarkFormat(LibcxxTestFormat):
                 diff_results += [
                    benchcxx.formatFailDiff(diff)]
                 failing_count += 1
-        if failing_count:
-            return '\n'.join(diff_results)
-        else:
-            return ''
+        return failing_count, '\n'.join(diff_results)
