@@ -60,6 +60,10 @@ class LibcxxTestFormat(object):
         is_pass_test = name.endswith('.pass.cpp')
         is_fail_test = name.endswith('.fail.cpp')
 
+        if test.config.unsupported:
+            return (lit.Test.UNSUPPORTED,
+                    "A lit.local.cfg marked this unsupported")
+
         res = lit.TestRunner.parseIntegratedTestScript(
             test, require_script=is_sh_test)
         # Check if a result for the test was returned. If so return that
@@ -121,8 +125,8 @@ class LibcxxTestFormat(object):
             # should add a `// FILE-DEP: foo.dat` to each test to track this.
             data_files = [os.path.join(local_cwd, f)
                           for f in os.listdir(local_cwd) if f.endswith('.dat')]
-            out, err, rc = self.executor.run(exec_path, [exec_path],
-                                             local_cwd, data_files, env)
+            cmd, out, err, rc = self.executor.run(exec_path, [exec_path],
+                                                  local_cwd, data_files, env)
             if rc != 0:
                 report = libcxx.util.makeReport(cmd, out, err, rc)
                 report = "Compiled With: %s\n%s" % (compile_cmd, report)
