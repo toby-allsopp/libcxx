@@ -54,6 +54,7 @@ option(LIBCXX_ENABLE_PEDANTIC "Compile with pedantic enabled." ON)
 option(LIBCXX_ENABLE_WERROR "Fail and stop if a warning is triggered." OFF)
 option(LIBCXX_ENABLE_CXX1Y "Enable -std=c++1y and use of c++1y language features if the compiler supports it." OFF)
 option(LIBCXX_ENABLE_SHARED "Build libc++ as a shared library." ON)
+option(LIBCXX_ENABLE_GLOBAL_FILESYSTEM_NAMESPACE "Build libc++ with support for the global filesystem namespace." ON)
 option(LIBCXX_ENABLE_THREADS "Build libc++ with support for threads." ON)
 option(LIBCXX_BUILD_32_BITS "Build 32 bit libc++" OFF)
 option(LIBCXX_ENABLE_MONOTONIC_CLOCK
@@ -82,7 +83,7 @@ if (NOT LIBCXX_CXX_ABI)
   if (NOT DEFINED LIBCXX_BUILT_STANDALONE AND
       IS_DIRECTORY "${CMAKE_SOURCE_DIR}/projects/libcxxabi")
     set(LIBCXX_CXX_ABI_LIBNAME "libcxxabi")
-    set(LIBCXX_LIBCXXABI_INCLUDE_PATHS "${CMAKE_SOURCE_DIR}/projects/libcxxabi/include")
+    set(LIBCXX_CXX_ABI_INCLUDE_PATHS "${CMAKE_SOURCE_DIR}/projects/libcxxabi/include")
     set(LIBCXX_CXX_ABI_INTREE 1)
   else ()
     set(LIBCXX_CXX_ABI_LIBNAME "none")
@@ -93,6 +94,27 @@ endif ()
 set(LIBCXX_CXX_ABI "${LIBCXX_CXX_ABI}" CACHE STRING
     "Specify C++ ABI library to use." FORCE)
 set_property(CACHE LIBCXX_CXX_ABI PROPERTY STRINGS ;${CXXABIS})
+
+# TODO(ericwf): Remove these options by March/25/2015.
+# These CMake options have been removed in favor of a generic option
+# "LIBCXX_CXX_ABI_INCLUDE_PATHS". Issue an explicit error message explaining
+# the change for anybody that still uses them.
+if (DEFINED LIBCXX_LIBCXXABI_INCLUDE_PATHS)
+  message(FATAL_ERROR
+    "The option \"LIBCXX_LIBCXXABI_INCLUDE_PATHS\" has been removed. "
+    "Use \"LIBCXX_CXX_ABI_INCLUDE_PATHS\" instead "
+    "and clean your build directory.")
+elseif(DEFINED LIBCXX_LIBSUPCXX_INCLUDE_PATHS)
+  message(FATAL_ERROR
+    "The option \"LIBCXX_LIBSUPCXX_INCLUDE_PATHS\" has been removed. "
+    "Use \"LIBCXX_CXX_ABI_INCLUDE_PATHS\" instead "
+    "and clean your build directory.")
+elseif(DEFINED LIBCXX_LIBCXXRT_INCLUDE_PATHS)
+  message(FATAL_ERROR
+    "The option \"LIBCXX_LIBCXXRT_INCLUDE_PATHS\" has been removed. "
+    "Use \"LIBCXX_CXX_ABI_INCLUDE_PATHS\" instead "
+    "and clean your build directory.")
+endif()
 
 #===============================================================================
 # Configure System
@@ -230,6 +252,11 @@ endif()
 # This is the _ONLY_ place where add_definitions is called.
 if (MSVC)
   add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+endif()
+
+# LIBCXX_ENABLE_GLOBAL_FILESYSTEM_NAMESPACE configuration
+if (NOT LIBCXX_ENABLE_GLOBAL_FILESYSTEM_NAMESPACE)
+  add_definitions(-D_LIBCPP_HAS_NO_GLOBAL_FILESYSTEM_NAMESPACE)
 endif()
 
 # LIBCXX_ENABLE_THREADS configuration
