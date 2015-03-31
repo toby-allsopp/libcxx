@@ -206,6 +206,7 @@ class LibcxxBenchmarkFormat(LibcxxTestFormat):
                 report = libcxx.util.makeReport(cmd, out, err, rc)
                 report += "Compilation failed unexpectedly!"
                 return lit.Test.FAIL, report
+            return lit.Test.PASS, ''
             # Run the test
             cmd = [exec_path, '--benchmark_repetitions=5',
                               '--benchmark_format=json',

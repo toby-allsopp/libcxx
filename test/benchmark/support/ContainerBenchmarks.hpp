@@ -8,6 +8,8 @@
 #include <algorithm>
 #include <iterator>
 
+using benchmark::DoNotOptimize;
+
 template <class Container, class Generator>
 Container generate_container(std::size_t size) {
     auto arr = generate_test_array<Generator>(size);
@@ -43,7 +45,8 @@ void container_copy_assignment(benchmark::State& st) {
     Container c1 = generate_container<Container, Generator>(st.range_x());
     while (st.KeepRunning()) {
         Container c2;
-        volatile Container& cref = (c2 = c1);
+        c2 = c1;
+        DoNotOptimize((const Container&)c2);
     }
 }
 
@@ -53,8 +56,7 @@ void container_swap(benchmark::State& st) {
     Container c2 = generate_container<Container, Generator2>(st.range_y());
     while (st.KeepRunning()) {
         c1.swap(c2);
-        volatile Container* dummy1 = &c1;
-        volatile Container* dummy2 = &c2;
+        DoNotOptimize(c1);
     }
 }
 
@@ -63,9 +65,8 @@ void container_equal(benchmark::State& st) {
     Container c1 = generate_container<Container, Generator1>(st.range_x());
     Container c2 = generate_container<Container, Generator2>(st.range_y());
     while (st.KeepRunning()) {
-        volatile bool ret;
-        ret = c1 == c2;
-        ret = c2 == c1;
+        DoNotOptimize(c1 == c2);
+        DoNotOptimize(c2 == c1);
     }
 }
 
@@ -74,9 +75,8 @@ void container_not_equal(benchmark::State& st) {
     Container c1 = generate_container<Container, Generator1>(st.range_x());
     Container c2 = generate_container<Container, Generator2>(st.range_y());
     while (st.KeepRunning()) {
-        volatile bool ret;
-        ret = c1 != c2;
-        ret = c2 != c1;
+        DoNotOptimize(c1 != c2);
+        DoNotOptimize(c2 != c1);
     }
 }
 
@@ -85,9 +85,8 @@ void container_less(benchmark::State& st) {
     Container c1 = generate_container<Container, Generator1>(st.range_x());
     Container c2 = generate_container<Container, Generator2>(st.range_y());
     while (st.KeepRunning()) {
-        volatile bool ret;
-        ret = c1 < c2;
-        ret = c2 < c1;
+        DoNotOptimize(c1 < c2);
+        DoNotOptimize(c2 < c1);
     }
 }
 
@@ -96,9 +95,8 @@ void container_greater(benchmark::State& st) {
     Container c1 = generate_container<Container, Generator1>(st.range_x());
     Container c2 = generate_container<Container, Generator2>(st.range_y());
     while (st.KeepRunning()) {
-        volatile bool ret;
-        ret = c1 > c2;
-        ret = c2 > c1;
+        DoNotOptimize(c1 > c2);
+        DoNotOptimize(c2 > c1);
     }
 }
 
@@ -107,9 +105,8 @@ void container_less_equal(benchmark::State& st) {
     Container c1 = generate_container<Container, Generator1>(st.range_x());
     Container c2 = generate_container<Container, Generator2>(st.range_y());
     while (st.KeepRunning()) {
-        volatile bool ret;
-        ret = c1 <= c2;
-        ret = c2 <= c1;
+        DoNotOptimize(c1 <= c2);
+        DoNotOptimize(c2 <= c1);
     }
 }
 
@@ -118,24 +115,20 @@ void container_greater_equal(benchmark::State& st) {
     Container c1 = generate_container<Container, Generator1>(st.range_x());
     Container c2 = generate_container<Container, Generator2>(st.range_y());
     while (st.KeepRunning()) {
-        volatile bool ret;
-        ret = c1 >= c2;
-        ret = c2 >= c1;
+        DoNotOptimize(c1 >= c2);
+        DoNotOptimize(c2 >= c1);
     }
 }
 
 template <class Container, class Generator>
 void container_iterate(benchmark::State& st) {
     typedef typename Container::iterator Iter;
-    typedef std::iterator_traits<Iter> IterTraits;
-    typedef typename IterTraits::reference Ref;
-    typedef typename IterTraits::pointer Ptr;
     Container c1 = generate_container<Container, Generator>(st.range_x());
     while (st.KeepRunning()) {
         Iter e = c1.end();
-        for (Iter b = c1.begin(); b != e; ++b) {
-            Ref ref = *b;
-            volatile Ptr p = &ref;
+        Iter b = c1.begin();
+        while (b != e) {
+            DoNotOptimize(++b);
         }
     }
 }
@@ -143,15 +136,12 @@ void container_iterate(benchmark::State& st) {
 template <class Container, class Generator>
 void container_reverse_iterate(benchmark::State& st) {
     typedef typename Container::reverse_iterator Iter;
-    typedef std::iterator_traits<Iter> IterTraits;
-    typedef typename IterTraits::reference Ref;
-    typedef typename IterTraits::pointer Ptr;
     Container c1 = generate_container<Container, Generator>(st.range_x());
     while (st.KeepRunning()) {
         Iter e = c1.rend();
-        for (Iter b = c1.rbegin(); b != e; ++b) {
-            Ref ref = *b;
-            volatile Ptr p = &ref;
+        Iter b = c1.rbegin();
+        while (b != e) {
+            DoNotOptimize(++b);
         }
     }
 }
@@ -163,8 +153,9 @@ void container_clear(benchmark::State& st) {
         st.PauseTiming();
         Container c2 = c1;
         st.ResumeTiming();
-        volatile Container* dummy = &c2;
+        DoNotOptimize(c2);
         c2.clear();
+        // TODO(ericwf): Put DoNotOptimize(...) here?
     }
 }
 
@@ -176,8 +167,7 @@ void container_insert_range(benchmark::State& st) {
         st.PauseTiming();
         Container c(initial_cont);
         st.ResumeTiming();
-        c.insert(to_insert.begin(), to_insert.end());
-        volatile Container* dummy = &c;
+        DoNotOptimize(c.insert(to_insert.begin(), to_insert.end()));
     }
 }
 
@@ -190,9 +180,8 @@ void container_insert_value(benchmark::State& st) {
         Container c(initial_cont);
         st.ResumeTiming();
         for (int i=st.range_y(); i >= 0; --i) {
-            c.insert(g());
+            DoNotOptimize(c.insert(g()));
         }
-        volatile Container* dummy = &c;
     }
 }
 
@@ -206,9 +195,8 @@ void container_erase_value(benchmark::State& st) {
         auto e = to_erase.end();
         st.ResumeTiming();
         for (auto b = to_erase.begin(); b != e; ++b) {
-            c.erase(*b);
+            DoNotOptimize(c.erase(*b));
         }
-        volatile Container* cptr = &c;
     }
 }
 
@@ -222,8 +210,7 @@ void container_erase_range_by_size(benchmark::State& st) {
         auto b = c.begin();
         auto e = std::advance(c.begin(), range_size);
         st.ResumeTiming();
-        c.erase(b, e);
-        volatile Container* cptr = &c;
+        DoNotOptimize(c.erase(b, e));
     }
 }
 
@@ -235,9 +222,8 @@ void container_erase_front(benchmark::State& st) {
         Container c(initial_cont);
         st.ResumeTiming();
         while (!c.empty()) {
-            c.erase(c.begin());
+            DoNotOptimize(c.erase(c.begin()));
         }
-        volatile Container* cptr = &c;
     }
 }
 
@@ -249,9 +235,8 @@ void container_erase_back(benchmark::State& st) {
         Container c(initial_cont);
         st.ResumeTiming();
         while (!c.empty()) {
-            c.erase(--c.end());
+            DoNotOptimize(c.erase(--c.end()));
         }
-        volatile Container* cptr = &c;
     }
 }
 
@@ -260,8 +245,7 @@ void container_find(benchmark::State& st) {
     Container c = generate_container<Container, Generator1>(st.range_x());
     Generator2 g2;
     while (st.KeepRunning()) {
-        volatile typename Container::iterator found = c.find(g2());
-        ((void)found);
+        DoNotOptimize(c.find(g2()));
     }
 }
 
@@ -270,8 +254,7 @@ void container_count(benchmark::State& st) {
     Container c = generate_container<Container, Generator1>(st.range_x());
     Generator2 g2;
     while (st.KeepRunning()) {
-        volatile std::size_t found = c.find(g2());
-        ((void)found);
+        DoNotOptimize(c.find(g2()));
     }
 }
 

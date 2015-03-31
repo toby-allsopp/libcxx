@@ -15,6 +15,7 @@ if (LIBCXX_ENABLE_BENCHMARKS)
         -DBENCHMARK_ENABLE_SHARED:BOOL=ON
   )
 
+  set(LIBCXX_BENCHMARK_SOURCE_PATH "/usr/local/google/home/ericwf/workspace/benchmark")
   if (LIBCXX_BENCHMARK_SOURCE_PATH)
     ExternalProject_Add(
       Benchmark
