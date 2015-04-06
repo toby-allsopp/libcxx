@@ -12,10 +12,10 @@ if (LIBCXX_ENABLE_BENCHMARKS)
         -DCMAKE_TOOLCHAIN_FILE:PATH=${CMAKE_CURRENT_BINARY_DIR}/Toolchain.cmake
         -DCMAKE_BUILD_TYPE=RELEASE
         -DBENCHMARK_ENABLE_TESTING:BOOL=OFF
-        -DBENCHMARK_ENABLE_SHARED:BOOL=ON
+        -DBUILD_SHARED_LIB:BOOL=ON
   )
 
-  set(LIBCXX_BENCHMARK_SOURCE_PATH "/usr/local/google/home/ericwf/workspace/benchmark")
+  #set(LIBCXX_BENCHMARK_SOURCE_PATH "/usr/local/google/home/ericwf/workspace/benchmark")
   if (LIBCXX_BENCHMARK_SOURCE_PATH)
     ExternalProject_Add(
       Benchmark
