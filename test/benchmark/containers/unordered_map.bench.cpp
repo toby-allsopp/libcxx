@@ -29,11 +29,13 @@ BENCHMARK_TEMPLATE(container_copy_assignment, std::unordered_map<int, int>, Cons
 BENCHMARK_TEMPLATE(container_copy_assignment, std::unordered_map<int, int>, StrideMapGen<int>)->Arg(8<<12);
 BENCHMARK_TEMPLATE(container_copy_assignment, std::unordered_map<int, int>, ConstantStrideMapGen<int, 0, 512>)->Arg(8<<12);
 
+/*
 BENCHMARK_TEMPLATE(container_equal, std::unordered_map<int, int>, StrideMapGen<int>, StrideMapGen<int>)->ArgPair(8<<12, 8<<12);
 BENCHMARK_TEMPLATE(container_equal, std::unordered_map<int, int>, StrideMapGen<int>, StrideMapGen<int>)->ArgPair(8<<12, (8<<12) + 1);
 
 BENCHMARK_TEMPLATE(container_not_equal, std::unordered_map<int, int>, StrideMapGen<int>, StrideMapGen<int>)->ArgPair(8<<12, 8<<12);
 BENCHMARK_TEMPLATE(container_not_equal, std::unordered_map<int, int>, StrideMapGen<int>, StrideMapGen<int>)->ArgPair(8<<12, (8<<12) + 1);
+*/
 
 BENCHMARK_TEMPLATE(container_iterate, std::unordered_map<int, int>, StrideMapGen<int>)->Arg(8<<12);
 

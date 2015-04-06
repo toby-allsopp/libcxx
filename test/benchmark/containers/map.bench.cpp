@@ -29,6 +29,7 @@ BENCHMARK_TEMPLATE(container_copy_assignment, std::map<int, int>, ConstantMapGen
 BENCHMARK_TEMPLATE(container_copy_assignment, std::map<int, int>, StrideMapGen<int>)->Arg(8<<12);
 BENCHMARK_TEMPLATE(container_copy_assignment, std::map<int, int>, ConstantStrideMapGen<int, 0, 512>)->Arg(8<<12);
 
+/*
 BENCHMARK_TEMPLATE(container_equal, std::map<int, int>, StrideMapGen<int>, StrideMapGen<int>)->ArgPair(8<<12, 8<<12);
 BENCHMARK_TEMPLATE(container_equal, std::map<int, int>, StrideMapGen<int>, StrideMapGen<int>)->ArgPair(8<<12, (8<<12) + 1);
 
@@ -37,6 +38,7 @@ BENCHMARK_TEMPLATE(container_not_equal, std::map<int, int>, StrideMapGen<int>, S
 
 BENCHMARK_TEMPLATE(container_less, std::map<int, int>, StrideMapGen<int>, StrideMapGen<int>)->ArgPair(8<<12, 8<<12);
 BENCHMARK_TEMPLATE(container_less, std::map<int, int>, StrideMapGen<int>, StrideMapGen<int>)->ArgPair(8<<12, (8<<12) + 1);
+*/
 
 BENCHMARK_TEMPLATE(container_iterate, std::map<int, int>, StrideMapGen<int>)->Arg(8<<12);
 

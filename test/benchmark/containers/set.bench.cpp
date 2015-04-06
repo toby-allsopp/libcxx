@@ -18,6 +18,7 @@ BENCHMARK_TEMPLATE(container_copy_assignment, std::set<int>, ConstantGenerator<i
 BENCHMARK_TEMPLATE(container_copy_assignment, std::set<int>, StrideGenerator<int>)->Arg(8<<12);
 BENCHMARK_TEMPLATE(container_copy_assignment, std::set<int>, ConstantStrideGenerator<int, 0, 512>)->Arg(8<<12);
 
+/*
 BENCHMARK_TEMPLATE(container_equal, std::set<int>, StrideGenerator<int>, StrideGenerator<int>)->ArgPair(8<<12, 8<<12);
 BENCHMARK_TEMPLATE(container_equal, std::set<int>, StrideGenerator<int>, StrideGenerator<int>)->ArgPair(8<<12, (8<<12) + 1);
 
@@ -26,6 +27,7 @@ BENCHMARK_TEMPLATE(container_not_equal, std::set<int>, StrideGenerator<int>, Str
 
 BENCHMARK_TEMPLATE(container_less, std::set<int>, StrideGenerator<int>, StrideGenerator<int>)->ArgPair(8<<12, 8<<12);
 BENCHMARK_TEMPLATE(container_less, std::set<int>, StrideGenerator<int>, StrideGenerator<int>)->ArgPair(8<<12, (8<<12) + 1);
+*/
 
 BENCHMARK_TEMPLATE(container_iterate, std::set<int>, StrideGenerator<int>)->Arg(8<<12);
 
