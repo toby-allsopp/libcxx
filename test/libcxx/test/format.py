@@ -206,7 +206,6 @@ class LibcxxBenchmarkFormat(LibcxxTestFormat):
                 report = libcxx.util.makeReport(cmd, out, err, rc)
                 report += "Compilation failed unexpectedly!"
                 return lit.Test.FAIL, report
-            return lit.Test.PASS, ''
             # Run the test
             cmd = [exec_path, '--benchmark_repetitions=5',
                               '--benchmark_format=json',
@@ -271,7 +270,7 @@ class LibcxxBenchmarkFormat(LibcxxTestFormat):
             (this_context['cpu_scaling_enabled']
              != baseline_context['cpu_scaling_enabled'])):
             lit_config.warning('Comparing results from different CPUs')
-        if this_context['build_type'] != baseline_context['build_type']:
+        if this_context['library_build_type'] != baseline_context['library_build_type']:
             lit_config.warning('Comparing results from different library builds.')
         baseline_stats = benchcxx.makeBenchmarkStats(baseline_bench['benchmarks'])
         current_stats = benchcxx.makeBenchmarkStats(this_bench['benchmarks'])
