@@ -1593,12 +1593,11 @@ __search1(_RandomAccessIterator1 __first1, _RandomAccessIterator1 __last1,
     _D2 __len2 = __last2 - __first2;
     if (__len2 == 0)
         return __first1;
+    if (__len2 == 1)
+        return _VSTD::find_if(__first1, __last1, __iter_comp_iter(__pred, __first2));
     _D1 __len1 = __last1 - __first1;
     if (__len1 < __len2)
         return __last1;
-    _RandomAccessIterator2 __p1 = __first2;
-    if (++__p1 == __last2)
-        return _VSTD::find_if(__first1, __last1, __iter_comp_iter(__pred, __first2));
     const _RandomAccessIterator1 __s = __last1 - (__len2 - 1);  // Start of pattern match can't go beyond here
     while (true)
     {

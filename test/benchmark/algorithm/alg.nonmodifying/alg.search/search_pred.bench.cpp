@@ -18,9 +18,10 @@ void BM_search_pred(benchmark::State& st) {
         test_arr[i] = test_arr1[i];
     }
     while (st.KeepRunning()) {
-        DoNotOptimize(std::search(test_arr.begin(), test_arr.end(),
-                                  test_arr1.begin(), test_arr1.end(),
-                                  &is_equal));
+        auto ret = std::search(test_arr.begin(), test_arr.end(),
+                               test_arr1.begin(), test_arr1.end(),
+                               &is_equal));
+        assert(ret == test_arr.end() - st.range_y());
         DoNotOptimize(test_arr);
         DoNotOptimize(test_arr1);
     }
