@@ -172,6 +172,29 @@ void container_insert_range(benchmark::State& st) {
     }
 }
 
+
+template <class Container, class Generator1, class Generator2>
+void container_insert_range_begin(benchmark::State& st) {
+    Container c = generate_container<Container, Generator1>(st.range_x());
+    auto to_insert = generate_test_array<Generator2>(st.range_y());
+    while (st.KeepRunning()) {
+        DoNotOptimize(
+            c.insert(c.begin(), to_insert.begin(), to_insert.end()));
+    }
+}
+
+
+template <class Container, class Generator1, class Generator2>
+void container_insert_range_end(benchmark::State& st) {
+    Container c = generate_container<Container, Generator1>(st.range_x());
+    auto to_insert = generate_test_array<Generator2>(st.range_y());
+    while (st.KeepRunning()) {
+        DoNotOptimize(
+            c.insert(c.end(), to_insert.begin(), to_insert.end()));
+    }
+}
+
+
 template <class Container, class Generator1, class Generator2>
 void container_insert_value(benchmark::State& st) {
     Container initial_cont = generate_container<Container, Generator1>(st.range_x());
@@ -185,6 +208,57 @@ void container_insert_value(benchmark::State& st) {
         }
     }
 }
+
+
+template <class Container, class Generator>
+void container_push_back(benchmark::State& st) {
+    Container c;
+    Generator g;
+    while (st.KeepRunning()) {
+        c.push_back(g());
+    }
+    DoNotOptimize(c);
+}
+
+
+template <class Container, class Generator>
+void container_push_front(benchmark::State& st) {
+    Container c;
+    Generator g;
+    while (st.KeepRunning()) {
+        c.push_front(g());
+    }
+    DoNotOptimize(c);
+}
+
+
+template <class Container, class Generator1>
+void container_pop_back(benchmark::State& st) {
+    Container initial_cont = generate_container<Container, Generator1>(st.range_x());
+    while (st.KeepRunning()) {
+        st.PauseTiming();
+        Container c(initial_cont);
+        st.ResumeTiming();
+        while (!c.empty())
+            c.pop_back();
+        DoNotOptimize(c);
+    }
+}
+
+
+template <class Container, class Generator1>
+void container_pop_front(benchmark::State& st) {
+    Container initial_cont = generate_container<Container, Generator1>(st.range_x());
+    while (st.KeepRunning()) {
+        st.PauseTiming();
+        Container c(initial_cont);
+        st.ResumeTiming();
+        while (!c.empty())
+            c.pop_front();
+        DoNotOptimize(c);
+    }
+}
+
 
 template <class Container, class Generator1, class Generator2>
 void container_erase_value(benchmark::State& st) {
