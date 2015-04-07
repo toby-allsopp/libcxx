@@ -8,10 +8,12 @@
 using benchmark::DoNotOptimize;
 
 void BM_search(benchmark::State& st) {
-    auto test_arr = make_test_array<int>(st.range_x(), 0);
-    auto test_arr1 = make_test_array<int>(st.range_y(), -1);
-    for (int i=st.range_x() - st.range_y(); i < st.range_x(); ++i) {
-        test_arr[i] = -1;
+    StrideGenerator<int> g(0, st.range_y());
+    StrideGenerator<int> g2(0, st.range_y() + 1);
+    auto test_arr = generate_test_array<int>(st.range_x(), g);
+    auto test_arr1 = generate_test_array<int>(st.range_y() + 1, g2);
+    for (int i=st.range_x() - (st.range_y() + 1); i < st.range_x(); ++i) {
+        test_arr[i] = test_arr1[i];
     }
     auto test_arr2 = make_test_array<int>(1, -1);
     while (st.KeepRunning()) {
