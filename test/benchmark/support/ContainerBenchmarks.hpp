@@ -231,7 +231,6 @@ void container_push_front(benchmark::State& st) {
     DoNotOptimize(c);
 }
 
-
 template <class Container, class Generator1>
 void container_pop_back(benchmark::State& st) {
     Container initial_cont = generate_container<Container, Generator1>(st.range_x());
