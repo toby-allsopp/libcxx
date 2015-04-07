@@ -285,7 +285,7 @@ class LibcxxBenchmarkFormat(LibcxxTestFormat):
         diff_results = []
         for diff in diff_metrics:
             if diff.CPUTimeWithin(self.allowed_difference):
-                if not self.FailOnly:
+                if not self.fail_only:
                     diff_results += [
                         benchcxx.formatPassDiff(diff)]
             else:
