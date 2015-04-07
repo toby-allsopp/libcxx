@@ -206,22 +206,30 @@ Iter find16(Iter first, Iter last, Tp const& value) {
 template <class Generator>
 void BM_find0(benchmark::State& state) {
     auto arr = generate_test_array<Generator>(state.range_x());
-    auto val = arr[arr.size() - 1];
-    auto beg = arr.begin();
-    auto end = arr.end();
+    auto index = arr.begin();
     while (state.KeepRunning()) {
-        DoNotOptimize(find0(beg, end, val));
+        auto pos = find0(arr.begin(), arr.end(), *index);
+        assert(pos == index);
+        DoNotOptimize(pos);
+        DoNotOptimize(arr);
+        ++index;
+        if (index == arr.end())
+            index = arr.begin();
     }
 }
 
 template <class Generator>
 void BM_find2(benchmark::State& state) {
     auto arr = generate_test_array<Generator>(state.range_x());
-    auto val = arr[arr.size() - 1];
-    auto beg = arr.begin();
-    auto end = arr.end();
+    auto index = arr.begin();
     while (state.KeepRunning()) {
-        DoNotOptimize(find2(beg, end, val));
+        auto pos = find2(arr.begin(), arr.end(), *index);
+        assert(pos == index);
+        DoNotOptimize(pos);
+        DoNotOptimize(arr);
+        ++index;
+        if (index == arr.end())
+            index = arr.begin();
     }
 }
 
@@ -229,44 +237,60 @@ void BM_find2(benchmark::State& state) {
 template <class Generator>
 void BM_find4(benchmark::State& state) {
     auto arr = generate_test_array<Generator>(state.range_x());
-    auto val = arr[arr.size() - 1];
-    auto beg = arr.begin();
-    auto end = arr.end();
+    auto index = arr.begin();
     while (state.KeepRunning()) {
-        DoNotOptimize(find4(beg, end, val));
+        auto pos = find4(arr.begin(), arr.end(), *index);
+        assert(pos == index);
+        DoNotOptimize(pos);
+        DoNotOptimize(arr);
+        ++index;
+        if (index == arr.end())
+            index = arr.begin();
     }
 }
 
 template <class Generator>
 void BM_find8(benchmark::State& state) {
     auto arr = generate_test_array<Generator>(state.range_x());
-    auto val = arr[arr.size() - 1];
-    auto beg = arr.begin();
-    auto end = arr.end();
+    auto index = arr.begin();
     while (state.KeepRunning()) {
-        DoNotOptimize(find8(beg, end, val));
+        auto pos = find8(arr.begin(), arr.end(), *index);
+        assert(pos == index);
+        DoNotOptimize(pos);
+        DoNotOptimize(arr);
+        ++index;
+        if (index == arr.end())
+            index = arr.begin();
     }
 }
 
 template <class Generator>
 void BM_find12(benchmark::State& state) {
     auto arr = generate_test_array<Generator>(state.range_x());
-    auto val = arr[arr.size() - 1];
-    auto beg = arr.begin();
-    auto end = arr.end();
+    auto index = arr.begin();
     while (state.KeepRunning()) {
-        DoNotOptimize(find12(beg, end, val));
+        auto pos = find12(arr.begin(), arr.end(), *index);
+        assert(pos == index);
+        DoNotOptimize(pos);
+        DoNotOptimize(arr);
+        ++index;
+        if (index == arr.end())
+            index = arr.begin();
     }
 }
 
 template <class Generator>
 void BM_find16(benchmark::State& state) {
     auto arr = generate_test_array<Generator>(state.range_x());
-    auto val = arr[arr.size() - 1];
-    auto beg = arr.begin();
-    auto end = arr.end();
+    auto index = arr.begin();
     while (state.KeepRunning()) {
-        DoNotOptimize(find16(beg, end, val));
+        auto pos = find16(arr.begin(), arr.end(), *index);
+        assert(pos == index);
+        DoNotOptimize(pos);
+        DoNotOptimize(arr);
+        ++index;
+        if (index == arr.end())
+            index = arr.begin();
     }
 }
 
