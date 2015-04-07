@@ -1722,7 +1722,7 @@ __search1(_RandomAccessIterator1 __first1, _RandomAccessIterator1 __last1,
     const _RandomAccessIterator1 __s = __last1 - (__len2 - 1);  // Start of pattern match can't go beyond here
     while (true)
     {
-#if !_LIBCPP_UNROLL_LOOPS
+#if !defined(_LIBCPP_UNROLL_LOOPS)
         while (true)
         {
             if (__first1 == __s)
@@ -1764,7 +1764,7 @@ __search1(_RandomAccessIterator1 __first1, _RandomAccessIterator1 __last1,
 #endif  // !_LIBCPP_UNROLL_LOOPS
         _RandomAccessIterator1 __m1 = __first1;
         _RandomAccessIterator2 __m2 = __first2;
-#if !_LIBCPP_UNROLL_LOOPS
+#if !defined(_LIBCPP_UNROLL_LOOPS)
          while (true)
          {
              if (++__m2 == __last2)
@@ -1873,7 +1873,7 @@ __search2(_RandomAccessIterator1 __first1, _RandomAccessIterator1 __last1,
     const _RandomAccessIterator1 __s = __last1 - (__len2 - 1);  // Start of pattern match can't go beyond here
     while (true)
     {
-#if !_LIBCPP_UNROLL_LOOPS
+#if !defined(_LIBCPP_UNROLL_LOOPS)
         while (true)
         {
             if (__first1 == __s)
@@ -1915,7 +1915,7 @@ __search2(_RandomAccessIterator1 __first1, _RandomAccessIterator1 __last1,
 #endif  // !_LIBCPP_UNROLL_LOOPS
         _RandomAccessIterator1 __m1 = __first1;
         _RandomAccessIterator2 __m2 = __first2;
-#if !_LIBCPP_UNROLL_LOOPS
+#if !defined(_LIBCPP_UNROLL_LOOPS)
          while (true)
          {
              if (++__m2 == __last2)
