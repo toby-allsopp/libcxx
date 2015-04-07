@@ -212,8 +212,7 @@ class LibcxxBenchmarkFormat(LibcxxTestFormat):
             if self.compile_only:
                 return lit.Test.PASS, ""
             # Run the test
-            cmd = [exec_path, '--benchmark_repetitions=5',
-                              '--benchmark_min_time=1.0',
+            cmd = [exec_path, '--benchmark_repetitions=3',
                               '--benchmark_format=json']
             cmd, out, err, rc = self.executor.run(
                 None, cmd=cmd, work_dir=os.path.dirname(source_path),
