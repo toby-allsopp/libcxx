@@ -689,6 +689,7 @@ class BenchmarkConfiguration(Configuration):
         super(BenchmarkConfiguration, self).__init__(lit_config, config)
         self.baseline = None
         self.allowed_difference = None
+        self.use_libstdcxx = False
         self.compile_only = False
 
     def get_test_format(self):
@@ -703,12 +704,17 @@ class BenchmarkConfiguration(Configuration):
             exec_env=self.env)
 
     def configure(self):
+        self.compile_only = self.get_lit_bool('compile_only', False)
+        self.use_libstdcxx = self.get_lit_bool('use_libstdcxx', False)
+        if self.use_libstdcxx:
+            self.lit_config.params['no_default_flags'] = 'True'
         super(BenchmarkConfiguration, self).configure()
         self.configure_benchmark_flags()
         self.configure_baseline()
         self.configure_allowed_difference()
+        if self.use_libstdcxx:
+            self.cxx.compile_flags += ['-std=c++11']
         self.print_config_info()
-        self.compile_only = self.get_lit_bool('compile_only', False)
 
     def configure_baseline(self):
         res = self.get_lit_conf('baseline')

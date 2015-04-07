@@ -178,8 +178,8 @@ void container_insert_range_begin(benchmark::State& st) {
     Container c = generate_container<Container, Generator1>(st.range_x());
     auto to_insert = generate_test_array<Generator2>(st.range_y());
     while (st.KeepRunning()) {
-        DoNotOptimize(
-            c.insert(c.begin(), to_insert.begin(), to_insert.end()));
+        c.insert(c.begin(), to_insert.begin(), to_insert.end());
+        DoNotOptimize(c);
     }
 }
 
@@ -189,8 +189,8 @@ void container_insert_range_end(benchmark::State& st) {
     Container c = generate_container<Container, Generator1>(st.range_x());
     auto to_insert = generate_test_array<Generator2>(st.range_y());
     while (st.KeepRunning()) {
-        DoNotOptimize(
-            c.insert(c.end(), to_insert.begin(), to_insert.end()));
+        c.insert(c.end(), to_insert.begin(), to_insert.end());
+        DoNotOptimize(c);
     }
 }
 
