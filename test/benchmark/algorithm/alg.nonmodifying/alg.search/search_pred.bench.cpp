@@ -20,7 +20,7 @@ void BM_search_pred(benchmark::State& st) {
     while (st.KeepRunning()) {
         auto ret = std::search(test_arr.begin(), test_arr.end(),
                                test_arr1.begin(), test_arr1.end(),
-                               &is_equal));
+                               &is_equal);
         assert(ret == test_arr.end() - st.range_y());
         DoNotOptimize(test_arr);
         DoNotOptimize(test_arr1);
