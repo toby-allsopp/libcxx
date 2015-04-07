@@ -803,6 +803,45 @@ inline _LIBCPP_INLINE_VISIBILITY int __pop_count(unsigned           __x) {return
 inline _LIBCPP_INLINE_VISIBILITY int __pop_count(unsigned      long __x) {return __builtin_popcountl (__x);}
 inline _LIBCPP_INLINE_VISIBILITY int __pop_count(unsigned long long __x) {return __builtin_popcountll(__x);}
 
+// all_of
+
+template <class _InputIterator, class _Predicate>
+inline _LIBCPP_INLINE_VISIBILITY
+bool
+all_of(_InputIterator __first, _InputIterator __last, _Predicate __pred)
+{
+    for (; __first != __last; ++__first)
+        if (!__pred(*__first))
+            return false;
+    return true;
+}
+
+// any_of
+
+template <class _InputIterator, class _Predicate>
+inline _LIBCPP_INLINE_VISIBILITY
+bool
+any_of(_InputIterator __first, _InputIterator __last, _Predicate __pred)
+{
+    for (; __first != __last; ++__first)
+        if (__pred(*__first))
+            return true;
+    return false;
+}
+
+// none_of
+
+template <class _InputIterator, class _Predicate>
+inline _LIBCPP_INLINE_VISIBILITY
+bool
+none_of(_InputIterator __first, _InputIterator __last, _Predicate __pred)
+{
+    for (; __first != __last; ++__first)
+        if (__pred(*__first))
+            return false;
+    return true;
+}
+
 // for_each
 
 template <class _InputIterator, class _Function>
@@ -820,8 +859,7 @@ for_each(_InputIterator __first, _InputIterator __last, _Function __f)
 template <class _InputIterator, class _Tp>
 inline _LIBCPP_INLINE_VISIBILITY
 _InputIterator
-__find1(_InputIterator __first, _InputIterator __last, const _Tp& __value_,
-        input_iterator_tag)
+find(_InputIterator __first, _InputIterator __last, const _Tp& __value_)
 {
     for (; __first != __last; ++__first)
         if (*__first == __value_)
@@ -829,50 +867,12 @@ __find1(_InputIterator __first, _InputIterator __last, const _Tp& __value_,
     return __first;
 }
 
-template <class _RandomAccessIterator, class _Tp>
-inline _LIBCPP_INLINE_VISIBILITY
-_RandomAccessIterator
-__find1(_RandomAccessIterator __first, _RandomAccessIterator __last,
-        const _Tp& __value_, random_access_iterator_tag)
-{
-    std::ptrdiff_t __count = __last - __first;
-    if (__count == 0) return __last;
-    std::size_t __n = (__count + 3) / 4;
-    switch (__count % 4) {
-    case 0:
-        do {
-                if (*__first == __value_) return __first;
-                ++__first;
-            case 3:
-                if (*__first == __value_) return __first;
-                ++__first;
-            case 2:
-                if (*__first == __value_) return __first;
-                ++__first;
-            case 1:
-                if (*__first == __value_) return __first;
-                ++__first;
-        } while(--__n > 0);
-    }
-    return __last;
-}
-
-template <class _InputIterator, class _Tp>
-inline _LIBCPP_INLINE_VISIBILITY
-_InputIterator
-find(_InputIterator __first, _InputIterator __last, const _Tp& __value_)
-{
-    typedef typename iterator_traits<_InputIterator>::iterator_category _Category;
-    return __find1(__first, __last, __value_, _Category());
-}
-
 // find_if
 
-template <class _InputIterator, class _Pred>
+template <class _InputIterator, class _Predicate>
 inline _LIBCPP_INLINE_VISIBILITY
 _InputIterator
-__find_if1(_InputIterator __first, _InputIterator __last, _Pred __pred,
-           input_iterator_tag)
+find_if(_InputIterator __first, _InputIterator __last, _Predicate __pred)
 {
     for (; __first != __last; ++__first)
         if (__pred(*__first))
@@ -880,50 +880,12 @@ __find_if1(_InputIterator __first, _InputIterator __last, _Pred __pred,
     return __first;
 }
 
-template <class _RandomAccessIterator, class _Pred>
-inline _LIBCPP_INLINE_VISIBILITY
-_RandomAccessIterator
-__find_if1(_RandomAccessIterator __first, _RandomAccessIterator __last,
-           _Pred __pred, random_access_iterator_tag)
-{
-    std::ptrdiff_t __count = __last - __first;
-    if (__count == 0) return __first;
-    std::size_t __n = (__count + 3) / 4;
-    switch (__count % 4) {
-    case 0:
-        do {
-                if (__pred(*__first)) return __first;
-                ++__first;
-            case 3:
-                if (__pred(*__first)) return __first;
-                ++__first;
-            case 2:
-                if (__pred(*__first)) return __first;
-                ++__first;
-            case 1:
-                if (__pred(*__first)) return __first;
-                ++__first;
-        } while(--__n > 0);
-    }
-    return __first;
-}
-
-template <class _InputIterator, class _Pred>
-inline _LIBCPP_INLINE_VISIBILITY
-_InputIterator
-find_if(_InputIterator __first, _InputIterator __last, _Pred __pred)
-{
-    typedef typename iterator_traits<_InputIterator>::iterator_category _Category;
-    return __find_if1(__first, __last, __pred, _Category());
-}
-
 // find_if_not
 
-template <class _InputIterator, class _Pred>
+template<class _InputIterator, class _Predicate>
 inline _LIBCPP_INLINE_VISIBILITY
 _InputIterator
-__find_if_not1(_InputIterator __first, _InputIterator __last,
-               _Pred __pred, input_iterator_tag)
+find_if_not(_InputIterator __first, _InputIterator __last, _Predicate __pred)
 {
     for (; __first != __last; ++__first)
         if (!__pred(*__first))
@@ -931,74 +893,152 @@ __find_if_not1(_InputIterator __first, _InputIterator __last,
     return __first;
 }
 
-template <class _RandomAccessIterator, class _Pred>
-inline _LIBCPP_INLINE_VISIBILITY
-_RandomAccessIterator
-__find_if_not1(_RandomAccessIterator __first, _RandomAccessIterator __last,
-               _Pred __pred, random_access_iterator_tag)
+// find_end
+
+template <class _BinaryPredicate, class _ForwardIterator1, class _ForwardIterator2>
+_ForwardIterator1
+__find_end(_ForwardIterator1 __first1, _ForwardIterator1 __last1,
+           _ForwardIterator2 __first2, _ForwardIterator2 __last2, _BinaryPredicate __pred,
+           forward_iterator_tag, forward_iterator_tag)
 {
-    std::ptrdiff_t __count = __last - __first;
-    if (__count == 0) return __first;
-    std::size_t __n = (__count + 3) / 4;
-    switch (__count % 4) {
-    case 0:
-        do {
-                if (!__pred(*__first)) return __first;
-                ++__first;
-            case 3:
-                if (!__pred(*__first)) return __first;
-                ++__first;
-            case 2:
-                if (!__pred(*__first)) return __first;
-                ++__first;
-            case 1:
-                if (!__pred(*__first)) return __first;
-                ++__first;
-        } while(--__n > 0);
+    // modeled after search algorithm
+    _ForwardIterator1 __r = __last1;  // __last1 is the "default" answer
+    if (__first2 == __last2)
+        return __r;
+    while (true)
+    {
+        while (true)
+        {
+            if (__first1 == __last1)         // if source exhausted return last correct answer
+                return __r;                  //    (or __last1 if never found)
+            if (__pred(*__first1, *__first2))
+                break;
+            ++__first1;
+        }
+        // *__first1 matches *__first2, now match elements after here
+        _ForwardIterator1 __m1 = __first1;
+        _ForwardIterator2 __m2 = __first2;
+        while (true)
+        {
+            if (++__m2 == __last2)
+            {                         // Pattern exhaused, record answer and search for another one
+                __r = __first1;
+                ++__first1;
+                break;
+            }
+            if (++__m1 == __last1)     // Source exhausted, return last answer
+                return __r;
+            if (!__pred(*__m1, *__m2))  // mismatch, restart with a new __first
+            {
+                ++__first1;
+                break;
+            }  // else there is a match, check next elements
+        }
     }
-    return __first;
 }
 
-template <class _InputIterator, class _Pred>
-inline _LIBCPP_INLINE_VISIBILITY
-_InputIterator
-find_if_not(_InputIterator __first, _InputIterator __last, _Pred __pred)
+template <class _BinaryPredicate, class _BidirectionalIterator1, class _BidirectionalIterator2>
+_BidirectionalIterator1
+__find_end(_BidirectionalIterator1 __first1, _BidirectionalIterator1 __last1,
+           _BidirectionalIterator2 __first2, _BidirectionalIterator2 __last2, _BinaryPredicate __pred,
+           bidirectional_iterator_tag, bidirectional_iterator_tag)
 {
-    typedef typename iterator_traits<_InputIterator>::iterator_category _Category;
-    return __find_if_not1(__first, __last, __pred, _Category());
+    // modeled after search algorithm (in reverse)
+    if (__first2 == __last2)
+        return __last1;  // Everything matches an empty sequence
+    _BidirectionalIterator1 __l1 = __last1;
+    _BidirectionalIterator2 __l2 = __last2;
+    --__l2;
+    while (true)
+    {
+        // Find last element in sequence 1 that matchs *(__last2-1), with a mininum of loop checks
+        while (true)
+        {
+            if (__first1 == __l1)  // return __last1 if no element matches *__first2
+                return __last1;
+            if (__pred(*--__l1, *__l2))
+                break;
+        }
+        // *__l1 matches *__l2, now match elements before here
+        _BidirectionalIterator1 __m1 = __l1;
+        _BidirectionalIterator2 __m2 = __l2;
+        while (true)
+        {
+            if (__m2 == __first2)  // If pattern exhausted, __m1 is the answer (works for 1 element pattern)
+                return __m1;
+            if (__m1 == __first1)  // Otherwise if source exhaused, pattern not found
+                return __last1;
+            if (!__pred(*--__m1, *--__m2))  // if there is a mismatch, restart with a new __l1
+            {
+                break;
+            }  // else there is a match, check next elements
+        }
+    }
 }
 
-
-// all_of
-
-template <class _InputIterator, class _Predicate>
-inline _LIBCPP_INLINE_VISIBILITY
-bool
-all_of(_InputIterator __first, _InputIterator __last, _Predicate __pred)
+template <class _BinaryPredicate, class _RandomAccessIterator1, class _RandomAccessIterator2>
+_LIBCPP_CONSTEXPR_AFTER_CXX11 _RandomAccessIterator1
+__find_end(_RandomAccessIterator1 __first1, _RandomAccessIterator1 __last1,
+           _RandomAccessIterator2 __first2, _RandomAccessIterator2 __last2, _BinaryPredicate __pred,
+           random_access_iterator_tag, random_access_iterator_tag)
 {
-    return _VSTD::find_if_not(__first, __last, __pred) == __last;
+    // Take advantage of knowing source and pattern lengths.  Stop short when source is smaller than pattern
+    typename iterator_traits<_RandomAccessIterator2>::difference_type __len2 = __last2 - __first2;
+    if (__len2 == 0)
+        return __last1;
+    typename iterator_traits<_RandomAccessIterator1>::difference_type __len1 = __last1 - __first1;
+    if (__len1 < __len2)
+        return __last1;
+    const _RandomAccessIterator1 __s = __first1 + (__len2 - 1);  // End of pattern match can't go before here
+    _RandomAccessIterator1 __l1 = __last1;
+    _RandomAccessIterator2 __l2 = __last2;
+    --__l2;
+    while (true)
+    {
+        while (true)
+        {
+            if (__s == __l1)
+                return __last1;
+            if (__pred(*--__l1, *__l2))
+                break;
+        }
+        _RandomAccessIterator1 __m1 = __l1;
+        _RandomAccessIterator2 __m2 = __l2;
+        while (true)
+        {
+            if (__m2 == __first2)
+                return __m1;
+                                 // no need to check range on __m1 because __s guarantees we have enough source
+            if (!__pred(*--__m1, *--__m2))
+            {
+                break;
+            }
+        }
+    }
 }
 
-// any_of
-
-template <class _InputIterator, class _Predicate>
+template <class _ForwardIterator1, class _ForwardIterator2, class _BinaryPredicate>
 inline _LIBCPP_INLINE_VISIBILITY
-bool
-any_of(_InputIterator __first, _InputIterator __last, _Predicate __pred)
+_ForwardIterator1
+find_end(_ForwardIterator1 __first1, _ForwardIterator1 __last1,
+         _ForwardIterator2 __first2, _ForwardIterator2 __last2, _BinaryPredicate __pred)
 {
-    return _VSTD::find_if(__first, __last, __pred) != __last;
+    return _VSTD::__find_end<typename add_lvalue_reference<_BinaryPredicate>::type>
+                         (__first1, __last1, __first2, __last2, __pred,
+                          typename iterator_traits<_ForwardIterator1>::iterator_category(),
+                          typename iterator_traits<_ForwardIterator2>::iterator_category());
 }
 
-// none_of
-
-template <class _InputIterator, class _Predicate>
+template <class _ForwardIterator1, class _ForwardIterator2>
 inline _LIBCPP_INLINE_VISIBILITY
-bool
-none_of(_InputIterator __first, _InputIterator __last, _Predicate __pred)
+_ForwardIterator1
+find_end(_ForwardIterator1 __first1, _ForwardIterator1 __last1,
+         _ForwardIterator2 __first2, _ForwardIterator2 __last2)
 {
-    return _VSTD::find_if(__first, __last, __pred) == __last;
+    typedef typename iterator_traits<_ForwardIterator1>::value_type __v1;
+    typedef typename iterator_traits<_ForwardIterator2>::value_type __v2;
+    return _VSTD::find_end(__first1, __last1, __first2, __last2, __equal_to<__v1, __v2>());
 }
-
 
 // find_first_of
 
@@ -1066,11 +1106,10 @@ adjacent_find(_ForwardIterator __first, _ForwardIterator __last)
 
 // count
 
-
 template <class _InputIterator, class _Tp>
 inline _LIBCPP_INLINE_VISIBILITY
 typename iterator_traits<_InputIterator>::difference_type
-count(_InputIterator __first, _InputIterator __last, _Tp const& __value_)
+count(_InputIterator __first, _InputIterator __last, const _Tp& __value_)
 {
     typename iterator_traits<_InputIterator>::difference_type __r(0);
     for (; __first != __last; ++__first)
@@ -1079,14 +1118,12 @@ count(_InputIterator __first, _InputIterator __last, _Tp const& __value_)
     return __r;
 }
 
-
 // count_if
 
-
-template <class _InputIterator, class _Pred>
+template <class _InputIterator, class _Predicate>
 inline _LIBCPP_INLINE_VISIBILITY
 typename iterator_traits<_InputIterator>::difference_type
-count_if(_InputIterator __first, _InputIterator __last, _Pred __pred)
+count_if(_InputIterator __first, _InputIterator __last, _Predicate __pred)
 {
     typename iterator_traits<_InputIterator>::difference_type __r(0);
     for (; __first != __last; ++__first)
@@ -1150,8 +1187,7 @@ mismatch(_InputIterator1 __first1, _InputIterator1 __last1,
 template <class _InputIterator1, class _InputIterator2, class _BinaryPredicate>
 inline _LIBCPP_INLINE_VISIBILITY
 bool
-__equal1(_InputIterator1 __first1, _InputIterator1 __last1, _InputIterator2 __first2,
-         _BinaryPredicate __pred, input_iterator_tag)
+equal(_InputIterator1 __first1, _InputIterator1 __last1, _InputIterator2 __first2, _BinaryPredicate __pred)
 {
     for (; __first1 != __last1; ++__first1, (void) ++__first2)
         if (!__pred(*__first1, *__first2))
@@ -1159,156 +1195,14 @@ __equal1(_InputIterator1 __first1, _InputIterator1 __last1, _InputIterator2 __fi
     return true;
 }
 
-
-template <class _RandomAccessIterator1, class _InputIterator2, class _BinaryPredicate>
-inline _LIBCPP_INLINE_VISIBILITY
-bool
-__equal1(_RandomAccessIterator1 __first1, _RandomAccessIterator1 __last1,
-         _InputIterator2 __first2,
-         _BinaryPredicate __pred, random_access_iterator_tag)
-{
-    std::ptrdiff_t __count = __last1 - __first1;
-    if (__count == 0) return true;
-    std::size_t __n = (__count + 7) / 8;
-    switch (__count % 8) {
-    case 0:
-        do {
-                if (!__pred(*__first1, *__first2)) return false;
-                ++__first1;
-                ++__first2;
-            case 7:
-                if (!__pred(*__first1, *__first2)) return false;
-                ++__first1;
-                ++__first2;
-            case 6:
-                if (!__pred(*__first1, *__first2)) return false;
-                ++__first1;
-                ++__first2;
-            case 5:
-                if (!__pred(*__first1, *__first2)) return false;
-                ++__first1;
-                ++__first2;
-            case 4:
-                if (!__pred(*__first1, *__first2)) return false;
-                ++__first1;
-                ++__first2;
-            case 3:
-                if (!__pred(*__first1, *__first2)) return false;
-                ++__first1;
-                ++__first2;
-            case 2:
-                if (!__pred(*__first1, *__first2)) return false;
-                ++__first1;
-                ++__first2;
-            case 1:
-                if (!__pred(*__first1, *__first2)) return false;
-                ++__first1;
-                ++__first2;
-        } while(--__n > 0);
-    }
-    return true;
-}
-
-template <class _InputIterator1, class _InputIterator2, class _Predicate>
-inline _LIBCPP_INLINE_VISIBILITY
-bool
-equal(_InputIterator1 __first1, _InputIterator1 __last1, _InputIterator2 __first2,
-      _Predicate __pred)
-{
-    typedef typename iterator_traits<_InputIterator1>::iterator_category _Category;
-    return __equal1(__first1, __last1, __first2, __pred, _Category());
-}
-
-
-template <class _InputIterator1, class _InputIterator2>
-inline _LIBCPP_INLINE_VISIBILITY
-bool
-__equal2(_InputIterator1 __first1, _InputIterator1 __last1, _InputIterator2 __first2,
-         input_iterator_tag, false_type)
-{
-    for (; __first1 != __last1; ++__first1, (void) ++__first2)
-        if (!(*__first1 == *__first2))
-            return false;
-    return true;
-}
-
-
-template <class _RandomAccessIterator1, class _InputIterator2>
-inline _LIBCPP_INLINE_VISIBILITY
-bool
-__equal2(_RandomAccessIterator1 __first1, _RandomAccessIterator1 __last1,
-         _InputIterator2 __first2, random_access_iterator_tag, false_type)
-{
-    std::ptrdiff_t __count = __last1 - __first1;
-    if (__count == 0) return true;
-    std::size_t __n = (__count + 7) / 8;
-    switch (__count % 8) {
-    case 0:
-        do {
-                if (!(*__first1 == *__first2)) return false;
-                ++__first1;
-                ++__first2;
-            case 7:
-                if (!(*__first1 == *__first2)) return false;
-                ++__first1;
-                ++__first2;
-            case 6:
-                if (!(*__first1 == *__first2)) return false;
-                ++__first1;
-                ++__first2;
-            case 5:
-                if (!(*__first1 == *__first2)) return false;
-                ++__first1;
-                ++__first2;
-            case 4:
-                if (!(*__first1 == *__first2)) return false;
-                ++__first1;
-                ++__first2;
-            case 3:
-                if (!(*__first1 == *__first2)) return false;
-                ++__first1;
-                ++__first2;
-            case 2:
-                if (!(*__first1 == *__first2)) return false;
-                ++__first1;
-                ++__first2;
-            case 1:
-                if (!(*__first1 == *__first2)) return false;
-                ++__first1;
-                ++__first2;
-        } while(--__n > 0);
-    }
-    return true;
-}
-
-
-template <class _RandomAccessIterator1, class _InputIterator2>
-inline _LIBCPP_INLINE_VISIBILITY
-bool
-__equal2(_RandomAccessIterator1 __first1, _RandomAccessIterator1 __last1,
-         _InputIterator2 __first2, random_access_iterator_tag, true_type)
-{
-    typedef typename iterator_traits<_RandomAccessIterator1>::value_type _VT1;
-    return !_VSTD::memcmp(__first1, __first2,
-        sizeof(_VT1) * (__last1 - __first1));
-}
-
-
 template <class _InputIterator1, class _InputIterator2>
 inline _LIBCPP_INLINE_VISIBILITY
 bool
 equal(_InputIterator1 __first1, _InputIterator1 __last1, _InputIterator2 __first2)
 {
-    typedef typename iterator_traits<_InputIterator1>::value_type _VT1;
-    typedef typename iterator_traits<_InputIterator2>::value_type _VT2;
-    typedef integral_constant<bool,
-        (is_pointer<_VT1>::value || is_integral<_VT1>::value) &&
-            is_pointer<_InputIterator1>::value &&
-            is_pointer<_InputIterator2>::value &&
-            is_same<_VT1, _VT2>::value
-        >  _CanOptimize;
-    typedef typename iterator_traits<_InputIterator1>::iterator_category _Category;
-    return __equal2(__first1, __last1, __first2, _Category(), _CanOptimize());
+    typedef typename iterator_traits<_InputIterator1>::value_type __v1;
+    typedef typename iterator_traits<_InputIterator2>::value_type __v2;
+    return _VSTD::equal(__first1, __last1, __first2, __equal_to<__v1, __v2>());
 }
 
 #if _LIBCPP_STD_VER > 11
@@ -1520,9 +1414,9 @@ is_permutation(_ForwardIterator1 __first1, _ForwardIterator1 __last1,
 
 // search
 
-template <class _ForwardIterator1, class _ForwardIterator2, class _BinaryPredicate>
+template <class _BinaryPredicate, class _ForwardIterator1, class _ForwardIterator2>
 _ForwardIterator1
-__search1(_ForwardIterator1 __first1, _ForwardIterator1 __last1,
+__search(_ForwardIterator1 __first1, _ForwardIterator1 __last1,
          _ForwardIterator2 __first2, _ForwardIterator2 __last2, _BinaryPredicate __pred,
          forward_iterator_tag, forward_iterator_tag)
 {
@@ -1557,34 +1451,10 @@ __search1(_ForwardIterator1 __first1, _ForwardIterator1 __last1,
     }
 }
 
-template <class _Pred, class _Iter>
-struct __iter_comp_iter_t {
-    __iter_comp_iter_t(_Pred& __p, _Iter __it)
-        : __pred_(&__p), __iter_(__it)
-        {}
-
-   template <class _Value>
-   _LIBCPP_INLINE_VISIBILITY
-   bool operator()(_Value const& __v) {
-       return (*__pred_)(*__iter_, __v);
-   }
-private:
-    _Pred* __pred_;
-    _Iter __iter_;
-};
-
-template <class _Pred, class _Iter>
-inline _LIBCPP_INLINE_VISIBILITY
-__iter_comp_iter_t<_Pred, _Iter>
-__iter_comp_iter(_Pred& __p, _Iter __it) {
-    return __iter_comp_iter_t<_Pred, _Iter>(__p, __it);
-}
-
-
-template <class _RandomAccessIterator1, class _RandomAccessIterator2, class _BinaryPredicate>
+template <class _BinaryPredicate, class _RandomAccessIterator1, class _RandomAccessIterator2>
 _LIBCPP_CONSTEXPR_AFTER_CXX11 _RandomAccessIterator1
-__search1(_RandomAccessIterator1 __first1, _RandomAccessIterator1 __last1,
-           _RandomAccessIterator2 __first2, _RandomAccessIterator2 __last2, _BinaryPredicate& __pred,
+__search(_RandomAccessIterator1 __first1, _RandomAccessIterator1 __last1,
+           _RandomAccessIterator2 __first2, _RandomAccessIterator2 __last2, _BinaryPredicate __pred,
            random_access_iterator_tag, random_access_iterator_tag)
 {
     typedef typename std::iterator_traits<_RandomAccessIterator1>::difference_type _D1;
@@ -1593,15 +1463,13 @@ __search1(_RandomAccessIterator1 __first1, _RandomAccessIterator1 __last1,
     _D2 __len2 = __last2 - __first2;
     if (__len2 == 0)
         return __first1;
-    if (__len2 == 1)
-        return _VSTD::__find_if1(__first1, __last1, __iter_comp_iter(__pred, __first2), random_access_iterator_tag());
     _D1 __len1 = __last1 - __first1;
     if (__len1 < __len2)
         return __last1;
     const _RandomAccessIterator1 __s = __last1 - (__len2 - 1);  // Start of pattern match can't go beyond here
     while (true)
     {
-#if !defined(_LIBCPP_UNROLL_LOOPS)
+#if !_LIBCPP_UNROLL_LOOPS
         while (true)
         {
             if (__first1 == __s)
@@ -1643,7 +1511,7 @@ __search1(_RandomAccessIterator1 __first1, _RandomAccessIterator1 __last1,
 #endif  // !_LIBCPP_UNROLL_LOOPS
         _RandomAccessIterator1 __m1 = __first1;
         _RandomAccessIterator2 __m2 = __first2;
-#if !defined(_LIBCPP_UNROLL_LOOPS)
+#if !_LIBCPP_UNROLL_LOOPS
          while (true)
          {
              if (++__m2 == __last2)
@@ -1695,166 +1563,16 @@ __search1(_RandomAccessIterator1 __first1, _RandomAccessIterator1 __last1,
     }
 }
 
-
-
-template <class _ForwardIterator1, class _ForwardIterator2>
-_ForwardIterator1
-__search2(_ForwardIterator1 __first1, _ForwardIterator1 __last1,
-         _ForwardIterator2 __first2, _ForwardIterator2 __last2,
-         forward_iterator_tag, forward_iterator_tag)
-{
-    if (__first2 == __last2)
-        return __first1;  // Everything matches an empty sequence
-    while (true)
-    {
-        // Find first element in sequence 1 that matchs *__first2, with a mininum of loop checks
-        while (true)
-        {
-            if (__first1 == __last1)  // return __last1 if no element matches *__first2
-                return __last1;
-            if (*__first1 == *__first2)
-                break;
-            ++__first1;
-        }
-        // *__first1 matches *__first2, now match elements after here
-        _ForwardIterator1 __m1 = __first1;
-        _ForwardIterator2 __m2 = __first2;
-        while (true)
-        {
-            if (++__m2 == __last2)  // If pattern exhausted, __first1 is the answer (works for 1 element pattern)
-                return __first1;
-            if (++__m1 == __last1)  // Otherwise if source exhaused, pattern not found
-                return __last1;
-            if (!(*__m1 == *__m2))  // if there is a mismatch, restart with a new __first1
-            {
-                ++__first1;
-                break;
-            }  // else there is a match, check next elements
-        }
-    }
-}
-
-template <class _RandomAccessIterator1, class _RandomAccessIterator2>
-_LIBCPP_CONSTEXPR_AFTER_CXX11 _RandomAccessIterator1
-__search2(_RandomAccessIterator1 __first1, _RandomAccessIterator1 __last1,
-           _RandomAccessIterator2 __first2, _RandomAccessIterator2 __last2,
-           random_access_iterator_tag, random_access_iterator_tag)
-{
-    typedef typename std::iterator_traits<_RandomAccessIterator1>::difference_type _D1;
-    typedef typename std::iterator_traits<_RandomAccessIterator2>::difference_type _D2;
-    // Take advantage of knowing source and pattern lengths.  Stop short when source is smaller than pattern
-    _D2 __len2 = __last2 - __first2;
-    if (__len2 == 0)
-        return __first1;
-    _D1 __len1 = __last1 - __first1;
-    if (__len1 < __len2)
-        return __last1;
-    const _RandomAccessIterator1 __s = __last1 - (__len2 - 1);  // Start of pattern match can't go beyond here
-    while (true)
-    {
-#if !defined(_LIBCPP_UNROLL_LOOPS)
-        while (true)
-        {
-            if (__first1 == __s)
-                return __last1;
-            if ((*__first1 == *__first2))
-                break;
-            ++__first1;
-        }
-#else  // !_LIBCPP_UNROLL_LOOPS
-        for (_D1 __loop_unroll = (__s - __first1) / 4; __loop_unroll > 0; --__loop_unroll)
-        {
-            if ((*__first1 == *__first2))
-                goto __phase2;
-            if ((*++__first1 == *__first2))
-                goto __phase2;
-            if ((*++__first1 == *__first2))
-                goto __phase2;
-            if ((*++__first1 == *__first2))
-                goto __phase2;
-            ++__first1;
-        }
-        switch (__s - __first1)
-        {
-        case 3:
-            if ((*__first1 == *__first2))
-                break;
-            ++__first1;
-        case 2:
-            if ((*__first1 == *__first2))
-                break;
-            ++__first1;
-        case 1:
-            if ((*__first1 == *__first2))
-                break;
-        case 0:
-            return __last1;
-        }
-    __phase2:
-#endif  // !_LIBCPP_UNROLL_LOOPS
-        _RandomAccessIterator1 __m1 = __first1;
-        _RandomAccessIterator2 __m2 = __first2;
-#if !defined(_LIBCPP_UNROLL_LOOPS)
-         while (true)
-         {
-             if (++__m2 == __last2)
-                 return __first1;
-             ++__m1;          // no need to check range on __m1 because __s guarantees we have enough source
-             if (!(*__m1 == *__m2))
-             {
-                 ++__first1;
-                 break;
-             }
-         }
-#else  // !_LIBCPP_UNROLL_LOOPS
-        ++__m2;
-        ++__m1;
-        for (_D2 __loop_unroll = (__last2 - __m2) / 4; __loop_unroll > 0; --__loop_unroll)
-        {
-            if (!(*__m1 == *__m2))
-                goto __continue;
-            if (!(*++__m1 == *++__m2))
-                goto __continue;
-            if (!(*++__m1 == *++__m2))
-                goto __continue;
-            if (!(*++__m1 == *++__m2))
-                goto __continue;
-            ++__m1;
-            ++__m2;
-        }
-        switch (__last2 - __m2)
-        {
-        case 3:
-            if (!(*__m1 == *__m2))
-                break;
-            ++__m1;
-            ++__m2;
-        case 2:
-            if (!(*__m1 == *__m2))
-                break;
-            ++__m1;
-            ++__m2;
-        case 1:
-            if (!(*__m1 == *__m2))
-                break;
-        case 0:
-            return __first1;
-        }
-    __continue:
-        ++__first1;
-#endif  // !_LIBCPP_UNROLL_LOOPS
-    }
-}
-
 template <class _ForwardIterator1, class _ForwardIterator2, class _BinaryPredicate>
 inline _LIBCPP_INLINE_VISIBILITY
 _ForwardIterator1
 search(_ForwardIterator1 __first1, _ForwardIterator1 __last1,
        _ForwardIterator2 __first2, _ForwardIterator2 __last2, _BinaryPredicate __pred)
 {
-    return __search1(__first1, __last1, __first2, __last2, __pred,
-                     typename std::iterator_traits<_ForwardIterator1>::iterator_category(),
-                     typename std::iterator_traits<_ForwardIterator2>::iterator_category());
+    return _VSTD::__search<typename add_lvalue_reference<_BinaryPredicate>::type>
+                         (__first1, __last1, __first2, __last2, __pred,
+                          typename std::iterator_traits<_ForwardIterator1>::iterator_category(),
+                          typename std::iterator_traits<_ForwardIterator2>::iterator_category());
 }
 
 template <class _ForwardIterator1, class _ForwardIterator2>
@@ -1863,9 +1581,9 @@ _ForwardIterator1
 search(_ForwardIterator1 __first1, _ForwardIterator1 __last1,
        _ForwardIterator2 __first2, _ForwardIterator2 __last2)
 {
-    return __search2(__first1, __last1, __first2, __last2,
-        typename std::iterator_traits<_ForwardIterator1>::iterator_category(),
-        typename std::iterator_traits<_ForwardIterator2>::iterator_category());
+    typedef typename std::iterator_traits<_ForwardIterator1>::value_type __v1;
+    typedef typename std::iterator_traits<_ForwardIterator2>::value_type __v2;
+    return _VSTD::search(__first1, __last1, __first2, __last2, __equal_to<__v1, __v2>());
 }
 
 // search_n
@@ -1967,101 +1685,6 @@ search_n(_ForwardIterator __first, _ForwardIterator __last, _Size __count, const
     return _VSTD::search_n(__first, __last, __convert_to_integral(__count),
                            __value_, __equal_to<__v, _Tp>());
 }
-
-
-// find_end
-
-template <class _BinaryPredicate, class _ForwardIterator1, class _ForwardIterator2>
-_ForwardIterator1
-__find_end(_ForwardIterator1 __first1, _ForwardIterator1 __last1,
-           _ForwardIterator2 __first2, _ForwardIterator2 __last2, _BinaryPredicate __pred,
-           forward_iterator_tag, forward_iterator_tag)
-{
-    // modeled after search algorithm
-    _ForwardIterator1 __r = __last1;  // __last1 is the "default" answer
-    if (__first2 == __last2)
-        return __r;
-    while (true)
-    {
-        _ForwardIterator1 __m1 = _VSTD::search(__first1, __last1, __first2, __last2, __pred);
-        if (__m1 == __last1)
-            return __r;
-        __first1 = __m1;
-        __r = __m1;
-        ++__first1;
-    }
-}
-
-template <class _BinaryPredicate, class _BidirectionalIterator1, class _BidirectionalIterator2>
-_BidirectionalIterator1
-__find_end(_BidirectionalIterator1 __first1, _BidirectionalIterator1 __last1,
-           _BidirectionalIterator2 __first2, _BidirectionalIterator2 __last2, _BinaryPredicate __pred,
-           bidirectional_iterator_tag, bidirectional_iterator_tag)
-{
-    typedef reverse_iterator<_BidirectionalIterator1> _RevIter1;
-    typedef reverse_iterator<_BidirectionalIterator2> _RevIter2;
-    _RevIter1 __rlast1(__first1);
-    _RevIter2 __rlast2(__first2);
-    _RevIter1 __rresult = _VSTD::search(_RevIter1(__last1), __rlast1,
-                                   _RevIter2(__last2), __rlast2,
-                                   __pred);
-    if (__rresult == __rlast1)
-        return __last1;
-    _BidirectionalIterator1 __result = __rresult.base();
-    _VSTD::advance(__result, -_VSTD::distance(__first2, __last2));
-    return __result;
-}
-
-template <class _BinaryPredicate, class _RandomAccessIterator1, class _RandomAccessIterator2>
-_LIBCPP_CONSTEXPR_AFTER_CXX11 _RandomAccessIterator1
-__find_end(_RandomAccessIterator1 __first1, _RandomAccessIterator1 __last1,
-           _RandomAccessIterator2 __first2, _RandomAccessIterator2 __last2, _BinaryPredicate __pred,
-           random_access_iterator_tag, random_access_iterator_tag)
-{
-    // Take advantage of knowing source and pattern lengths.  Stop short when source is smaller than pattern
-    typename iterator_traits<_RandomAccessIterator2>::difference_type __len2 = __last2 - __first2;
-    if (__len2 == 0)
-        return __last1;
-    typename iterator_traits<_RandomAccessIterator1>::difference_type __len1 = __last1 - __first1;
-    if (__len1 < __len2)
-        return __last1;
-    typedef reverse_iterator<_RandomAccessIterator1> _RevIter1;
-    typedef reverse_iterator<_RandomAccessIterator2> _RevIter2;
-    _RevIter1 __rlast1(__first1);
-    _RevIter2 __rlast2(__first2);
-    _RevIter1 __rresult = _VSTD::search(_RevIter1(__last1), __rlast1,
-                                   _RevIter2(__last2), __rlast2,
-                                   __pred);
-    if (__rresult == __rlast1)
-        return __last1;
-    _RandomAccessIterator1 __result = __rresult.base();
-    _VSTD::advance(__result, -_VSTD::distance(__first2, __last2));
-    return __result;
-}
-
-template <class _ForwardIterator1, class _ForwardIterator2, class _BinaryPredicate>
-inline _LIBCPP_INLINE_VISIBILITY
-_ForwardIterator1
-find_end(_ForwardIterator1 __first1, _ForwardIterator1 __last1,
-         _ForwardIterator2 __first2, _ForwardIterator2 __last2, _BinaryPredicate __pred)
-{
-    return _VSTD::__find_end<typename add_lvalue_reference<_BinaryPredicate>::type>
-                         (__first1, __last1, __first2, __last2, __pred,
-                          typename iterator_traits<_ForwardIterator1>::iterator_category(),
-                          typename iterator_traits<_ForwardIterator2>::iterator_category());
-}
-
-template <class _ForwardIterator1, class _ForwardIterator2>
-inline _LIBCPP_INLINE_VISIBILITY
-_ForwardIterator1
-find_end(_ForwardIterator1 __first1, _ForwardIterator1 __last1,
-         _ForwardIterator2 __first2, _ForwardIterator2 __last2)
-{
-    typedef typename iterator_traits<_ForwardIterator1>::value_type __v1;
-    typedef typename iterator_traits<_ForwardIterator2>::value_type __v2;
-    return _VSTD::find_end(__first1, __last1, __first2, __last2, __equal_to<__v1, __v2>());
-}
-
 
 // copy
 
