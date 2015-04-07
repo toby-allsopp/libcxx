@@ -751,4 +751,12 @@ extern "C" void __sanitizer_annotate_contiguous_container(
 #define _LIBCPP_PROVIDES_DEFAULT_RUNE_TABLE
 #endif
 
+#ifdef _LIBCPP_EXTERN_TEMPLATE
+#undef _LIBCPP_EXTERN_TEMPLATE
+#endif
+
+#ifdef _LIBCPP_EXTERN_TEMPLATE2
+#undef _LIBCPP_EXTERN_TEMPLATE2
+#endif
+
 #endif  // _LIBCPP_CONFIG
