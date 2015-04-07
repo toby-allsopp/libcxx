@@ -17,7 +17,7 @@ void BM_adjacent_find(benchmark::State& st) {
         auto val = g();
         test_arr[st.range_x() - 1] = val;
         test_arr[st.range_x() - 2] = val;
-        DoNotOptimize(std::adjacent_find(test_arr.begin(), test_arr.end()));
+        DoNotOptimize(std::adjacent_find(test_arr.begin(), test_arr.end(), &is_equal));
         DoNotOptimize(test_arr);
     }
 }
