@@ -10,11 +10,11 @@ using benchmark::DoNotOptimize;
 bool is_equal(int x, int y) { return x == y; }
 
 void BM_search_pred(benchmark::State& st) {
-    StrideGenerator<int> g(0, st.range_y());
-    StrideGenerator<int> g2(0, st.range_y() + 1);
+    StrideGenerator<int> g(0, st.range_y() - 1);
+    StrideGenerator<int> g2(0, st.range_y());
     auto test_arr = generate_test_array<int>(st.range_x(), g);
-    auto test_arr1 = generate_test_array<int>(st.range_y() + 1, g2);
-    for (int i=st.range_x() - (st.range_y() + 1); i < st.range_x(); ++i) {
+    auto test_arr1 = generate_test_array<int>(st.range_y(), g2);
+    for (int i=st.range_x() - st.range_y(); i < st.range_x(); ++i) {
         test_arr[i] = test_arr1[i];
     }
     while (st.KeepRunning()) {
