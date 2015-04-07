@@ -25,7 +25,7 @@ BENCHMARK(BM_search)->ArgPair(1<<14, 1<<4);
 BENCHMARK(BM_search)->ArgPair(1<<14, 1<<14);
 
 
-void BM_search_single_length_pattern(benchmark::State& st) {
+void BM_search_pred_single_length_pattern(benchmark::State& st) {
     StrideGenerator<int> g(0, st.range_y());
     auto test_arr = generate_test_array<int>(st.range_x(), g);
     auto test_arr1 = make_test_array<int>(1, -1);
@@ -36,7 +36,7 @@ void BM_search_single_length_pattern(benchmark::State& st) {
         DoNotOptimize(test_arr1);
     }
 }
-BENCHMARK(BM_search_single_length_pattern)->Arg(1<<14);
+BENCHMARK(BM_search_single_length_pattern)->ArgPair(1<<14, 16);
 
 
 BENCHMARK_MAIN()
