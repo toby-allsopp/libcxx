@@ -39,6 +39,6 @@ void BM_search_pred_single_length_pattern(benchmark::State& st) {
         DoNotOptimize(test_arr1);
     }
 }
-BENCHMARK(BM_search_pred_single_length_pattern)->ArgPair(1<<14);
+BENCHMARK(BM_search_pred_single_length_pattern)->Arg(1<<14);
 
 BENCHMARK_MAIN()
