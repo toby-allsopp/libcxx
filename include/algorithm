@@ -1557,6 +1557,30 @@ __search1(_ForwardIterator1 __first1, _ForwardIterator1 __last1,
     }
 }
 
+template <class _Pred, class _Iter>
+struct __iter_comp_iter_t {
+    __iter_comp_iter_t(_Pred& __p, _Iter __it)
+        : __pred_(&__p), __iter_(__it)
+        {}
+
+   template <class _Value>
+   _LIBCPP_INLINE_VISIBILITY
+   bool operator()(_Value const& __v) {
+       return (*__pred_)(*__iter_, __v);
+   }
+private:
+    _Pred* __pred_;
+    _Iter __iter_;
+};
+
+template <class _Pred, class _Iter>
+inline _LIBCPP_INLINE_VISIBILITY
+__iter_comp_iter_t<_Pred, _Iter>
+__iter_comp_iter(_Pred& __p, _Iter __it) {
+    return __iter_comp_iter_t<_Pred, _Iter>(__p, __it);
+}
+
+
 template <class _RandomAccessIterator1, class _RandomAccessIterator2, class _BinaryPredicate>
 _LIBCPP_CONSTEXPR_AFTER_CXX11 _RandomAccessIterator1
 __search1(_RandomAccessIterator1 __first1, _RandomAccessIterator1 __last1,
@@ -1572,6 +1596,9 @@ __search1(_RandomAccessIterator1 __first1, _RandomAccessIterator1 __last1,
     _D1 __len1 = __last1 - __first1;
     if (__len1 < __len2)
         return __last1;
+    _RandomAccessIterator2 __p1 = __first2;
+    if (++__p1 == __last2)
+        return _VSTD::find_if(__first1, __last1, __iter_comp_iter(__pred, __first2));
     const _RandomAccessIterator1 __s = __last1 - (__len2 - 1);  // Start of pattern match can't go beyond here
     while (true)
     {
