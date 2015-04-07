@@ -215,7 +215,9 @@ void container_push_back(benchmark::State& st) {
     Container c;
     Generator g;
     while (st.KeepRunning()) {
-        c.push_back(g());
+        for (int i=0; i < 1000; ++i) {
+            c.push_back(g());
+        }
     }
     DoNotOptimize(c);
 }
@@ -226,7 +228,9 @@ void container_push_front(benchmark::State& st) {
     Container c;
     Generator g;
     while (st.KeepRunning()) {
-        c.push_front(g());
+        for (int i=0; i < 1000; ++i) {
+            c.push_front(g());
+        }
     }
     DoNotOptimize(c);
 }
