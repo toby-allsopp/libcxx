@@ -167,7 +167,8 @@ void container_insert_range(benchmark::State& st) {
         st.PauseTiming();
         Container c(initial_cont);
         st.ResumeTiming();
-        DoNotOptimize(c.insert(to_insert.begin(), to_insert.end()));
+        c.insert(to_insert.begin(), to_insert.end());
+        DoNotOptimize(c);
     }
 }
 
@@ -244,10 +245,10 @@ void container_erase_back(benchmark::State& st) {
 }
 
 
-template <class Container, class Generator1>
+template <class Container, class Generator1, class Generator2 = Generator1>
 void container_erase_front_key(benchmark::State& st) {
     Container initial_cont = generate_container<Container, Generator1>(st.range_x());
-    auto keys = generate_test_array<Generator1>(st.range_x());
+    auto keys = generate_test_array<Generator2>(st.range_x());
     while (st.KeepRunning()) {
         st.PauseTiming();
         Container c(initial_cont);
@@ -258,10 +259,10 @@ void container_erase_front_key(benchmark::State& st) {
     }
 }
 
-template <class Container, class Generator1>
+template <class Container, class Generator1, class Generator2 = Generator1>
 void container_erase_back_key(benchmark::State& st) {
     Container initial_cont = generate_container<Container, Generator1>(st.range_x());
-    auto keys = generate_test_array<Generator1>(st.range_x());
+    auto keys = generate_test_array<Generator2>(st.range_x());
     while (st.KeepRunning()) {
         st.PauseTiming();
         Container c(initial_cont);
@@ -290,6 +291,34 @@ void container_count(benchmark::State& st) {
     Generator2 g2;
     while (st.KeepRunning()) {
         DoNotOptimize(c.find(g2()));
+    }
+}
+
+
+template <class Container, class Generator1, class Generator2>
+void container_equal_range(benchmark::State& st) {
+    Container c = generate_container<Container, Generator1>(st.range_x());
+    Generator2 g2;
+    while (st.KeepRunning()) {
+        DoNotOptimize(c.equal_range(g2()));
+    }
+}
+
+template <class Container, class Generator1, class Generator2>
+void container_lower_bound(benchmark::State& st) {
+    Container c = generate_container<Container, Generator1>(st.range_x());
+    Generator2 g2;
+    while (st.KeepRunning()) {
+        DoNotOptimize(c.lower_bound(g2()));
+    }
+}
+
+template <class Container, class Generator1, class Generator2>
+void container_upper_bound(benchmark::State& st) {
+    Container c = generate_container<Container, Generator1>(st.range_x());
+    Generator2 g2;
+    while (st.KeepRunning()) {
+        DoNotOptimize(c.lower_bound(g2()));
     }
 }
 
