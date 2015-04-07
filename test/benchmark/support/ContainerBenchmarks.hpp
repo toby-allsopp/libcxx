@@ -367,7 +367,7 @@ void container_count(benchmark::State& st) {
     Container c = generate_container<Container, Generator1>(st.range_x());
     Generator2 g2;
     while (st.KeepRunning()) {
-        DoNotOptimize(c.find(g2()));
+        DoNotOptimize(c.count(g2()));
     }
 }
 
