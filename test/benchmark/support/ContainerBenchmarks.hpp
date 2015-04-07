@@ -207,10 +207,13 @@ void container_erase_range_by_size(benchmark::State& st) {
     while (st.KeepRunning()) {
         st.PauseTiming();
         Container c(initial_cont);
-        auto b = c.begin();
-        auto e = std::advance(c.begin(), range_size);
         st.ResumeTiming();
-        DoNotOptimize(c.erase(b, e));
+        while (c.size() >= range_size) {
+            auto b = c.begin();
+            auto e = c.begin();
+            std::advance(e, range_size);
+            DoNotOptimize(c.erase(b, e));
+        }
     }
 }
 
@@ -239,6 +242,38 @@ void container_erase_back(benchmark::State& st) {
         }
     }
 }
+
+
+template <class Container, class Generator1>
+void container_erase_front_key(benchmark::State& st) {
+    Container initial_cont = generate_container<Container, Generator1>(st.range_x());
+    auto keys = generate_test_array<Generator1>(st.range_x());
+    while (st.KeepRunning()) {
+        st.PauseTiming();
+        Container c(initial_cont);
+        st.ResumeTiming();
+        for (auto it=keys.begin(); it != keys.end(); ++it) {
+            DoNotOptimize(c.erase(*it));
+        }
+    }
+}
+
+template <class Container, class Generator1>
+void container_erase_back_key(benchmark::State& st) {
+    Container initial_cont = generate_container<Container, Generator1>(st.range_x());
+    auto keys = generate_test_array<Generator1>(st.range_x());
+    while (st.KeepRunning()) {
+        st.PauseTiming();
+        Container c(initial_cont);
+        st.ResumeTiming();
+        auto it = keys.end();
+        do {
+            --it;
+            DoNotOptimize(c.erase(*it));
+        } while (it != keys.begin());
+    }
+}
+
 
 template <class Container, class Generator1, class Generator2>
 void container_find(benchmark::State& st) {
