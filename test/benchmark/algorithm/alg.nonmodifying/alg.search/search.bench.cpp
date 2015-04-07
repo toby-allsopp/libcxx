@@ -16,11 +16,9 @@ void BM_search(benchmark::State& st) {
         test_arr[i] = test_arr1[i];
     }
     while (st.KeepRunning()) {
-        for (int i=0; i < 1000; ++i) {
-            DoNotOptimize(std::search(test_arr.begin(), test_arr.end(), test_arr1.begin(), test_arr1.end()));
-            DoNotOptimize(test_arr);
-            DoNotOptimize(test_arr1);
-        }
+        DoNotOptimize(std::search(test_arr.begin(), test_arr.end(), test_arr1.begin(), test_arr1.end()));
+        DoNotOptimize(test_arr);
+        DoNotOptimize(test_arr1);
     }
 }
 BENCHMARK(BM_search)->ArgPair(1<<14, 1<<4);
