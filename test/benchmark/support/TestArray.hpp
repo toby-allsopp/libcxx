@@ -79,6 +79,14 @@ TestArray<ValueType[]> make_test_array(std::size_t size) {
     return TestArray<ValueType[]>(new ValueType[size], size);
 }
 
+
+template <class ValueType, class FromValue>
+TestArray<ValueType[]> make_test_array(std::size_t size, FromValue const & v) {
+    TestArray<ValueType[]> arr(new ValueType[size], size);
+    std::fill(arr.begin(), arr.end(), v);
+    return arr;
+}
+
 template <class ValueType, class FromValue>
 TestArray<ValueType[]> generate_test_array(std::size_t size, FromValue const & v) {
     TestArray<ValueType[]> arr(new ValueType[size], size);

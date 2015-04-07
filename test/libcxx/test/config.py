@@ -689,11 +689,13 @@ class BenchmarkConfiguration(Configuration):
         super(BenchmarkConfiguration, self).__init__(lit_config, config)
         self.baseline = None
         self.allowed_difference = None
+        self.compile_only = False
 
     def get_test_format(self):
         return LibcxxBenchmarkFormat(
             self.baseline,
             self.allowed_difference,
+            self.compile_only,
             self.cxx,
             self.use_clang_verify,
             self.execute_external,
@@ -706,6 +708,7 @@ class BenchmarkConfiguration(Configuration):
         self.configure_baseline()
         self.configure_allowed_difference()
         self.print_config_info()
+        self.compile_only = self.get_lit_bool('compile_only', False)
 
     def configure_baseline(self):
         res = self.get_lit_conf('baseline')

@@ -162,10 +162,12 @@ class LibcxxTestFormat(object):
 
 
 class LibcxxBenchmarkFormat(LibcxxTestFormat):
-    def __init__(self, baseline, allowed_difference, *args, **kwargs):
+    def __init__(self, baseline, allowed_difference, compile_only,
+                 *args, **kwargs):
         super(LibcxxBenchmarkFormat, self).__init__(*args, **kwargs)
         self.baseline = baseline
         self.allowed_difference = allowed_difference
+        self.compile_only = compile_only
 
     def _execute(self, test, lit_config):
         res = lit.TestRunner.parseIntegratedTestScript(
@@ -206,7 +208,8 @@ class LibcxxBenchmarkFormat(LibcxxTestFormat):
                 report = libcxx.util.makeReport(cmd, out, err, rc)
                 report += "Compilation failed unexpectedly!"
                 return lit.Test.FAIL, report
-            # return lit.Test.PASS, ""
+            if self.compile_only:
+                return lit.Test.PASS, ""
             # Run the test
             cmd = [exec_path, '--benchmark_repetitions=3',
                               '--benchmark_format=json']
