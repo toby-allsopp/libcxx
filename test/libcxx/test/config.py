@@ -690,12 +690,14 @@ class BenchmarkConfiguration(Configuration):
         self.baseline = None
         self.allowed_difference = None
         self.use_libstdcxx = False
+        self.fail_only = False
         self.compile_only = False
 
     def get_test_format(self):
         return LibcxxBenchmarkFormat(
             self.baseline,
             self.allowed_difference,
+            self.fail_only,
             self.compile_only,
             self.cxx,
             self.use_clang_verify,
@@ -706,6 +708,7 @@ class BenchmarkConfiguration(Configuration):
     def configure(self):
         self.compile_only = self.get_lit_bool('compile_only', False)
         self.use_libstdcxx = self.get_lit_bool('use_libstdcxx', False)
+        self.fail_only = self.get_lit_bool('fail_only', False)
         if self.use_libstdcxx:
             self.lit_config.params['no_default_flags'] = 'True'
         super(BenchmarkConfiguration, self).configure()

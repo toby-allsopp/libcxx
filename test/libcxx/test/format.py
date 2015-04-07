@@ -162,11 +162,12 @@ class LibcxxTestFormat(object):
 
 
 class LibcxxBenchmarkFormat(LibcxxTestFormat):
-    def __init__(self, baseline, allowed_difference, compile_only,
+    def __init__(self, baseline, allowed_difference, fail_only, compile_only,
                  *args, **kwargs):
         super(LibcxxBenchmarkFormat, self).__init__(*args, **kwargs)
         self.baseline = baseline
         self.allowed_difference = allowed_difference
+        self.fail_only = fail_only
         self.compile_only = compile_only
 
     def _execute(self, test, lit_config):
@@ -284,8 +285,9 @@ class LibcxxBenchmarkFormat(LibcxxTestFormat):
         diff_results = []
         for diff in diff_metrics:
             if diff.CPUTimeWithin(self.allowed_difference):
-                diff_results += [
-                    benchcxx.formatPassDiff(diff)]
+                if not self.FailOnly:
+                    diff_results += [
+                        benchcxx.formatPassDiff(diff)]
             else:
                 diff_results += [
                    benchcxx.formatFailDiff(diff)]
