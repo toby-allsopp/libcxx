@@ -4,24 +4,29 @@
 #include "TestArray.hpp"
 
 #include <algorithm>
+#include <iostream>
 
 using benchmark::DoNotOptimize;
 
 bool is_equal(int x, int y) { return x == y; }
 
 void BM_search_pred(benchmark::State& st) {
-    StrideGenerator<int> g(0, st.range_y() - 1);
-    StrideGenerator<int> g2(0, st.range_y());
+    StrideGenerator<int> g(0, st.range_y() - 2);
     auto test_arr = generate_test_array<int>(st.range_x(), g);
+    StrideGenerator<int> g2(0, st.range_y());
     auto test_arr1 = generate_test_array<int>(st.range_y(), g2);
-    for (int i=st.range_x() - st.range_y(); i < st.range_x(); ++i) {
-        test_arr[i] = test_arr1[i];
+
+    int start = st.range_x() - st.range_y();
+    int i = 0;
+    while ((start + i) < st.range_x()) {
+        test_arr[start + i] = test_arr1[i];
+        ++i;
     }
     while (st.KeepRunning()) {
-        auto ret = std::search(test_arr.begin(), test_arr.end(),
-                               test_arr1.begin(), test_arr1.end(),
-                               &is_equal);
-        assert(ret == test_arr.end() - (st.range_x() - st.range_y()));
+        DoNotOptimize(
+            std::search(test_arr.begin(), test_arr.end(),
+                        test_arr1.begin(), test_arr1.end(),
+                        &is_equal));
         DoNotOptimize(test_arr);
         DoNotOptimize(test_arr1);
     }

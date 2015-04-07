@@ -52,6 +52,14 @@ public:
     ValueType* data() const {
         return m_holder.get();
     }
+    
+    ValueType* begin() {
+        return m_holder.get();
+    }
+
+    ValueType* end() {
+        return m_holder.get() + m_size;
+    }
 
     ValueType* begin() const {
         return m_holder.get();
@@ -61,8 +69,8 @@ public:
         return m_holder.get() + m_size;
     }
 
-    ValueType& operator[](std::size_t i) const{
-        return m_holder[i];
+    ValueType& operator[](std::size_t i) const {
+        return *(m_holder.get() + i);
     }
 private:
     std::unique_ptr<ValueType[]> m_holder;
