@@ -7,16 +7,24 @@
 //
 //===----------------------------------------------------------------------===//
 
-// <experimental/system_error>
+// <iterator>
 
-#include <experimental/system_error>
+// class istream_iterator
 
-#if _LIBCPP_STD_VER > 11
-# ifndef _LIBCPP_SYSTEM_ERROR
-#   error "<experimental/system_error> must include <system_error>"
-# endif
-#endif
+// constexpr istream_iterator();
+
+#include <iterator>
+#include <cassert>
+
+struct S { S(); }; // not constexpr 
 
 int main()
 {
+#if __cplusplus >= 201103L
+    {
+    constexpr std::istream_iterator<S> it;
+    }
+#else
+#error "C++11 only test"
+#endif
 }
