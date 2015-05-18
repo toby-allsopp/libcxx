@@ -48,6 +48,7 @@ endif()
 
 # Basic options ---------------------------------------------------------------
 option(LIBCXX_ENABLE_ASSERTIONS "Enable assertions independent of build mode." ON)
+option(LIBCXX_ENABLE_FILESYSTEM "Build the C++ filesystem library." ON)
 option(LIBCXX_ENABLE_SHARED "Build libc++ as a shared library." ON)
 
 option(LIBCXX_INCLUDE_TESTS "Build the libc++ tests." ${LLVM_INCLUDE_TESTS})
@@ -394,7 +395,9 @@ endif()
 include_directories(include)
 add_subdirectory(include)
 add_subdirectory(lib)
-add_subdirectory(lib/filesystem)
+if (LIBCXX_ENABLE_FILESYSTEM)
+  add_subdirectory(lib/filesystem)
+endif()
 
 if (LIBCXX_INCLUDE_TESTS)
   add_subdirectory(test)
