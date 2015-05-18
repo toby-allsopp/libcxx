@@ -287,6 +287,7 @@ add_subdirectory(include)
 # Add source code. This also contains all of the logic for deciding linker flags
 # soname, etc...
 add_subdirectory(lib)
+add_subdirectory(lib/filesystem)
 
 #===============================================================================
 # Setup Tests
