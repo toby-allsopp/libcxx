@@ -394,6 +394,7 @@ endif()
 include_directories(include)
 add_subdirectory(include)
 add_subdirectory(lib)
+add_subdirectory(lib/filesystem)
 
 if (LIBCXX_INCLUDE_TESTS)
   add_subdirectory(test)
