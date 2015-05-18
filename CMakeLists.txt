@@ -53,6 +53,7 @@ option(LIBCXX_ENABLE_ASSERTIONS "Enable assertions independent of build mode." O
 option(LIBCXX_ENABLE_PEDANTIC "Compile with pedantic enabled." ON)
 option(LIBCXX_ENABLE_WERROR "Fail and stop if a warning is triggered." OFF)
 option(LIBCXX_ENABLE_CXX1Y "Enable -std=c++1y and use of c++1y language features if the compiler supports it." OFF)
+option(LIBCXX_ENABLE_FILESYSTEM "Build the C++ filesystem library." ON)
 option(LIBCXX_ENABLE_SHARED "Build libc++ as a shared library." ON)
 option(LIBCXX_ENABLE_GLOBAL_FILESYSTEM_NAMESPACE "Build libc++ with support for the global filesystem namespace." ON)
 option(LIBCXX_ENABLE_STDIN "Build libc++ with support for stdin/std::cin." ON)
@@ -352,7 +353,9 @@ add_subdirectory(include)
 # Add source code. This also contains all of the logic for deciding linker flags
 # soname, etc...
 add_subdirectory(lib)
-add_subdirectory(lib/filesystem)
+if (LIBCXX_ENABLE_FILESYSTEM)
+  add_subdirectory(lib/filesystem)
+endif()
 
 #===============================================================================
 # Setup Tests
