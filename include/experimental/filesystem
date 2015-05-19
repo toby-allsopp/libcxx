@@ -227,6 +227,9 @@
 #include <system_error>
 #include <utility>
 
+#include <vector> // TODO: remove this
+#include <list> // TODO: remove this
+
 #if !defined(_LIBCPP_HAS_NO_PRAGMA_SYSTEM_HEADER)
 #pragma GCC system_header
 #endif
@@ -355,12 +358,88 @@ private:
     perms __prms_;
 };
 
+class directory_entry;
+
+template <class _Tp>
+struct __is_pathable_imp : public false_type {};
+
+template <>
+struct __is_pathable_imp<char*> : public true_type {};
+
+template <>
+struct __is_pathable_imp<const char*> : public true_type { };
+
+template <>
+struct __is_pathable_imp<string> : public true_type { };
+
+template <>
+struct __is_pathable_imp<vector<char>> : public true_type { };
+
+template <>
+struct __is_pathable_imp<list<char>> : public true_type { };
+
+template <>
+struct __is_pathable_imp<directory_entry> : public true_type { };
+
+template <class _Tp>
+struct __is_pathable : public __is_pathable_imp<typename decay<_Tp>::type>::type {};
+
+template <typename _Ret>
+_LIBCPP_INLINE_VISIBILITY
+_Ret __pathable_convert(const string&);
+
+template <>
+_LIBCPP_INLINE_VISIBILITY
+inline string
+__pathable_convert(const string& __s)
+{ return __s; }
+
+template <typename _Ret>
+_LIBCPP_INLINE_VISIBILITY
+_Ret __pathable_dispatch(const char* __from)
+{
+    return {string{__from}};
+}
+
+template <typename _Ret>
+_LIBCPP_INLINE_VISIBILITY
+_Ret __pathable_dispatch(const string& __from)
+{
+    return {__from};
+}
+
+template <typename _Ret>
+_LIBCPP_INLINE_VISIBILITY
+_Ret __pathable_dispatch(const vector<char>& __from)
+{
+    return {string{__from.begin(), __from.end()}};
+}
+
+template <typename _Ret>
+_LIBCPP_INLINE_VISIBILITY
+_Ret __pathable_dispatch(const list<char>& __from)
+{
+    return {__from.begin(), __from.end()};
+}
+
+template <typename _Ret>
+_LIBCPP_INLINE_VISIBILITY
+_Ret __pathable_dispatch(const directory_entry & __from)
+{
+    return __pathable_dispatch<_Ret>(__pathable_dispatch<string>(__from));
+}
+
+template <> string
+_LIBCPP_INLINE_VISIBILITY
+__pathable_dispatch(const directory_entry & __from);
+
 class _LIBCPP_TYPE_VIS path
 {
 public:
     typedef char value_type;
     typedef basic_string<value_type> string_type;
     static _LIBCPP_CONSTEXPR value_type preferred_separator = '/';
+    static _LIBCPP_CONSTEXPR value_type __other_separator = '\\';
 
     // constructors and destructor
     _LIBCPP_INLINE_VISIBILITY
@@ -372,10 +451,27 @@ public:
     _LIBCPP_INLINE_VISIBILITY
     path(path&& __p) _NOEXCEPT : __pn_(_VSTD::move(__p.__pn_)) {}
 
-    template <class _Source>
-        path(const _Source& __src);
+    template <
+        class _Source,
+        class = typename enable_if<
+                    __is_pathable<_Source>::value
+                >::type
+        >
+    path(const _Source& __src)
+        : __pn_(__pathable_dispatch<string_type>(__src))
+    {}
+
     template <class _InputIt>
-        path(_InputIt __first, _InputIt __last);
+    path(_InputIt __first, _InputIt __last)
+    {
+        typedef typename iterator_traits<_InputIt>::value_type _ItVal;
+        if (__first != __last) {
+            basic_string<_ItVal> __s(__first, __last);
+            __pn_ = __pathable_convert<string_type>(__s);
+        }
+    }
+
+    // TODO
     template <class _Source>
         path(const _Source& __src, const locale& __loc);
     template <class _InputIt>
@@ -398,20 +494,73 @@ public:
     }
 
     template <class _Source>
-        path& operator=(const _Source& __src);
+    typename enable_if<__is_pathable<_Source>::value, path&>::type
+    operator=(const _Source& __src)
+    {
+        return this->assign(__src);
+    }
+
+
     template <class _Source>
-        path& assign(const _Source& __src);
+    typename enable_if<__is_pathable<_Source>::value, path&>::type
+    assign(const _Source& __src)
+    {
+        __pn_ = __pathable_dispatch<string_type>(__src);
+        return *this;
+    }
+
     template <class _InputIt>
-        path& assign(_InputIt __first, _InputIt __last);
+    path& assign(_InputIt __first, _InputIt __last)
+    {
+        typedef typename iterator_traits<_InputIt>::value_type _ItVal;
+        if (__first != __last) {
+            basic_string<_ItVal> __s(__first, __last);
+            __pn_ = __pathable_convert<string_type>(__s);
+        }
+        return *this;
+    }
 
     // appends
-    path& operator/=(const path& __p);
+    path& operator/=(const path& __p)
+    {
+        bool const __append_sep =
+            ! empty() && not __p.empty()
+                && __p.__pn_[0] != preferred_separator
+                && __p.__pn_[0] != __other_separator
+                && __pn_.back() != preferred_separator
+                && __pn_.back() != __other_separator;
+        if (__append_sep) __pn_ += preferred_separator;
+        __pn_ += __p.native();
+        return *this;
+    }
+
     template <class _Source>
-        path& operator/=(const _Source& __src);
+    typename enable_if<__is_pathable<_Source>::value, path&>::type
+    operator/=(const _Source& __src)
+    {
+        path __p(__pathable_dispatch<string_type>(__src));
+        return this->operator/=(__p);
+    }
+
     template <class _Source>
-        path& append(const _Source& __src);
+    typename enable_if<__is_pathable<_Source>::value, path&>::type
+    append(const _Source& __src)
+    {
+        path __p(__pathable_dispatch<string_type>(__src));
+        return this->operator/=(__p);
+    }
+
     template <class _InputIt>
-        path& append(_InputIt __first, _InputIt __last);
+    path& append(_InputIt __first, _InputIt __last)
+    {
+        typedef typename iterator_traits<_InputIt>::value_type _ItVal;
+        if (__first != __last) {
+            basic_string<_ItVal> __s(__first, __last);
+            path __p = __pathable_convert<string_type>(__s);
+            this->operator/=(__p);
+        }
+        return *this;
+    }
 
     // concatenation
     _LIBCPP_INLINE_VISIBILITY
@@ -439,13 +588,39 @@ public:
     }
 
     template <class _Source>
-        path& operator+=(const _Source& __x);
+    typename enable_if<__is_pathable<_Source>::value, path&>::type
+    operator+=(const _Source& __x)
+    {
+        return this->operator+=(__pathable_dispatch<string_type>(__x));
+    }
+
     template <class _EcharT>
-        path& operator+=(_EcharT __x);
+    typename enable_if<__is_pathable<basic_string<_EcharT>>::value, path&>::type
+    operator+=(_EcharT __x)
+    {
+        basic_string<_EcharT> __tmp;
+        __tmp += __x;
+        return this->operator+=(__pathable_convert<string_type>(__tmp));
+    }
+
     template <class _Source>
-        path& concat(const _Source& __x);
+    typename enable_if<__is_pathable<_Source>::value, path&>::type
+    concat(const _Source& __x)
+    {
+        return this->operator+=(__x);
+    }
+
     template <class _InputIt>
-        path& concat(_InputIt __first, _InputIt __last);
+    path& concat(_InputIt __first, _InputIt __last)
+    {
+        typedef typename iterator_traits<_InputIt>::value_type _ItVal;
+        if (__first != __last) {
+            basic_string<_ItVal> __s(__first, __last);
+            path __p = __pathable_convert<string_type>(__s);
+            this->operator+=(__p);
+        }
+        return *this;
+    }
 
     // modifiers
     _LIBCPP_INLINE_VISIBILITY
@@ -454,8 +629,16 @@ public:
     }
 
     path& make_preferred();
-    path& remove_filename();
-    path& replace_filename(const path& __replacement);
+
+    path& remove_filename() {
+        return *this = parent_path();
+    }
+
+    path& replace_filename(const path& __replacement) {
+        remove_filename();
+        return (*this /= __replacement);
+    }
+
     path& replace_extension(const path& __replacement = path());
 
     _LIBCPP_INLINE_VISIBILITY
@@ -479,31 +662,32 @@ public:
         return __pn_;
     }
 
+    // TODO
     template <class _EcharT, class _Traits = char_traits<_EcharT>,
               class _Allocator = allocator<_EcharT> >
     basic_string<_EcharT, _Traits, _Allocator>
-        string(const _Allocator& __a = _Allocator()) const;
+    string(const _Allocator& __a = _Allocator()) const;
 
     _LIBCPP_INLINE_VISIBILITY
     std::string string() const {
         return __pn_;
     }
 
-    std::wstring wstring() const;
-    std::string  u8string() const;
-    std::u16string u16string() const;
-    std::u32string u32string() const;
+    std::wstring wstring() const; // TODO
+    std::string  u8string() const; // TODO
+    std::u16string u16string() const; // TODO
+    std::u32string u32string() const; // TODO
 
     // generic format observers
     template <class _EcharT, class _Traits = char_traits<_EcharT>,
               class _Allocator = allocator<_EcharT> >
     basic_string<_EcharT, _Traits, _Allocator>
-        generic_string(const _Allocator& __a = _Allocator()) const;
-    std::string    generic_string() const;
-    std::wstring   generic_wstring() const;
-    std::string    generic_u8string() const;
-    std::u16string generic_u16string() const;
-    std::u32string generic_u32string() const;
+    generic_string(const _Allocator& __a = _Allocator()) const; // TODO
+    std::string    generic_string() const; // TODO
+    std::wstring   generic_wstring() const; // TODO
+    std::string    generic_u8string() const; // TODO
+    std::u16string generic_u16string() const; // TODO
+    std::u32string generic_u32string() const; // TODO
 
     // compare
     _LIBCPP_INLINE_VISIBILITY
@@ -537,16 +721,35 @@ public:
         return __pn_.empty();
     }
 
-    bool has_root_name() const;
-    bool has_root_directory() const;
-    bool has_root_path() const;
-    bool has_relative_path() const;
-    bool has_parent_path() const;
-    bool has_filename() const;
-    bool has_stem() const;
-    bool has_extension() const;
-    bool is_absolute() const;
-    bool is_relative() const;
+    bool has_root_name() const
+    { return !root_name().empty(); }
+
+    bool has_root_directory() const
+    { return !root_directory().empty(); }
+
+    bool has_root_path() const
+    { return !root_path().empty(); }
+
+    bool has_relative_path() const
+    { return !relative_path().empty(); }
+
+    bool has_parent_path() const
+    { return !parent_path().empty(); }
+
+    bool has_filename() const
+    { return !filename().empty(); }
+
+    bool has_stem() const
+    { return !stem().empty(); }
+
+    bool has_extension() const
+    { return !extension().empty(); }
+
+    bool is_absolute() const
+    { return has_root_directory(); }
+
+    bool is_relative() const
+    { return !is_absolute(); }
 
     // iterators
     class iterator;
@@ -617,20 +820,31 @@ path operator/(const path& __lhs, const path& __rhs)
 
 template <class _CharT, class _Traits>
 basic_ostream<_CharT, _Traits>&
-operator<<(basic_ostream<_CharT, _Traits>& __os, const path& __p);
+operator<<(basic_ostream<_CharT, _Traits>& __os, const path& __p)
+{
+    __os << __p.native();
+    return __os;
+}
 
 template <class _CharT, class _Traits>
 basic_istream<_CharT, _Traits>&
-operator>>(basic_istream<_CharT, _Traits>& __is, path& __p);
+operator>>(basic_istream<_CharT, _Traits>& __is, path& __p)
+{
+    path::string_type __tmp;
+    __is >> __tmp;
+    __p = __tmp;
+    return __is;
+}
 
 template <class _Source>
-  path u8path(const _Source&);
+path u8path(const _Source&); // TODO
+
 template <class _InputIt>
-  path u8path(_InputIt, _InputIt);
+path u8path(_InputIt, _InputIt); // TODO
 
 
 class _LIBCPP_TYPE_VIS path::iterator
-    : public std::iterator<bidirectional_iterator_tag, path>
+    : public _VSTD::iterator<bidirectional_iterator_tag, path>
 {
 public:
     _LIBCPP_INLINE_VISIBILITY
@@ -645,15 +859,17 @@ public:
 
     _LIBCPP_INLINE_VISIBILITY
     const path& operator*() const {
-        return &__elem_;
+        return __elem_;
     }
 
     _LIBCPP_INLINE_VISIBILITY
     const path& operator->() const {
-        return &__elem_;
+        return __elem_;
     }
 
-    iterator& operator++();
+    iterator& operator++() {
+        return __increment();
+    }
 
     _LIBCPP_INLINE_VISIBILITY
     iterator operator++(int) {
@@ -662,7 +878,9 @@ public:
         return __it;
     }
 
-    iterator& operator--();
+    iterator& operator--() {
+        return __decrement();
+    }
 
     _LIBCPP_INLINE_VISIBILITY
     iterator operator--(int) {
@@ -671,6 +889,12 @@ public:
         return __it;
     }
 private:
+    iterator& __increment();
+    iterator& __decrement();
+    bool __set_position(size_t);
+    bool __valid_iterator_position() const;
+private:
+    friend class path;
     friend bool operator==(const iterator&, const iterator&);
 
     path __elem_;
@@ -731,8 +955,6 @@ private:
     typedef pair<path, path> _Storage;
     shared_ptr<_Storage> __paths_;
 };
-
-class directory_entry;
 
 class directory_iterator;
 
@@ -880,6 +1102,84 @@ path system_complete(const path&, error_code&);
 
 path temp_directory_path();
 path temp_directory_path(error_code&);
+
+
+class directory_entry
+{
+private:
+    typedef _VSTD_FS::path _Path;
+
+public:
+    // constructors and destructors
+    directory_entry() _NOEXCEPT = default;
+    directory_entry(directory_entry const&) = default;
+    directory_entry(directory_entry&&) _NOEXCEPT = default;
+    directory_entry(_Path const& __p) : __p_(__p) {}
+
+    ~directory_entry() {}
+
+    directory_entry& operator=(directory_entry const&) = default;
+    directory_entry& operator=(directory_entry&&) _NOEXCEPT = default;
+
+    void assign(_Path const& __p) {
+        __p_ = __p;
+    }
+
+    void replace_filename(_Path const& __p) {
+        __p_ = __p_.parent_path() / __p;
+    }
+
+    _Path const& path() const _NOEXCEPT {
+        return __p_;
+    }
+
+    operator const _Path&() const _NOEXCEPT {
+        return __p_;
+    }
+
+    file_status status() const {
+        return _VSTD_FS::status(__p_);
+    }
+
+    file_status status(error_code& __ec) const _NOEXCEPT {
+        return _VSTD_FS::status(__p_, __ec);
+    }
+
+    file_status symlink_status() const {
+        return _VSTD_FS::symlink_status(__p_);
+    }
+
+    file_status symlink_status(error_code& __ec) const _NOEXCEPT {
+        return _VSTD_FS::symlink_status(__p_, __ec);
+    }
+
+    bool operator< (directory_entry const& __rhs) const _NOEXCEPT {
+        return __p_ < __rhs.__p_;
+    }
+
+    bool operator==(directory_entry const& __rhs) const _NOEXCEPT {
+        return __p_ == __rhs.__p_;
+    }
+
+    bool operator!=(directory_entry const& __rhs) const _NOEXCEPT {
+        return __p_ != __rhs.__p_;
+    }
+
+    bool operator<=(directory_entry const& __rhs) const _NOEXCEPT {
+        return __p_ <= __rhs.__p_;
+    }
+
+    bool operator> (directory_entry const& __rhs) const _NOEXCEPT {
+        return __p_ > __rhs.__p_;
+    }
+
+    bool operator>=(directory_entry const& __rhs) const _NOEXCEPT {
+        return __p_ >= __rhs.__p_;
+    }
+private:
+    _Path __p_;
+};
+
 
 _LIBCPP_END_NAMESPACE_EXPERIMENTAL_FILESYSTEM
 
