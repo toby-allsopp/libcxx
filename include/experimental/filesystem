@@ -819,6 +819,7 @@ path operator/(const path& __lhs, const path& __rhs)
 }
 
 template <class _CharT, class _Traits>
+_LIBCPP_INLINE_VISIBILITY
 basic_ostream<_CharT, _Traits>&
 operator<<(basic_ostream<_CharT, _Traits>& __os, const path& __p)
 {
@@ -827,6 +828,7 @@ operator<<(basic_ostream<_CharT, _Traits>& __os, const path& __p)
 }
 
 template <class _CharT, class _Traits>
+_LIBCPP_INLINE_VISIBILITY
 basic_istream<_CharT, _Traits>&
 operator>>(basic_istream<_CharT, _Traits>& __is, path& __p)
 {
@@ -867,6 +869,7 @@ public:
         return __elem_;
     }
 
+    _LIBCPP_INLINE_VISIBILITY
     iterator& operator++() {
         return __increment();
     }
@@ -878,6 +881,7 @@ public:
         return __it;
     }
 
+    _LIBCPP_INLINE_VISIBILITY
     iterator& operator--() {
         return __decrement();
     }
@@ -889,9 +893,16 @@ public:
         return __it;
     }
 private:
+    _LIBCPP_FUNC_VIS
     iterator& __increment();
+
+    _LIBCPP_FUNC_VIS
     iterator& __decrement();
+
+    _LIBCPP_FUNC_VIS
     bool __set_position(size_t);
+
+    _LIBCPP_FUNC_VIS
     bool __valid_iterator_position() const;
 private:
     friend class path;
@@ -955,19 +966,6 @@ private:
     typedef pair<path, path> _Storage;
     shared_ptr<_Storage> __paths_;
 };
-
-class directory_iterator;
-
-// enable directory_iterator range-based for statements
-directory_iterator begin(directory_iterator) _NOEXCEPT;
-directory_iterator end(const directory_iterator&) _NOEXCEPT;
-
-class recursive_directory_iterator;
-
-// enable recursive_directory_iterator range-based for statements
-recursive_directory_iterator begin(recursive_directory_iterator) _NOEXCEPT;
-recursive_directory_iterator end(const recursive_directory_iterator&) _NOEXCEPT;
-
 
 // operational functions
 
@@ -1114,6 +1112,8 @@ public:
     directory_entry() _NOEXCEPT = default;
     directory_entry(directory_entry const&) = default;
     directory_entry(directory_entry&&) _NOEXCEPT = default;
+
+    _LIBCPP_INLINE_VISIBILITY
     directory_entry(_Path const& __p) : __p_(__p) {}
 
     ~directory_entry() {}
@@ -1121,64 +1121,292 @@ public:
     directory_entry& operator=(directory_entry const&) = default;
     directory_entry& operator=(directory_entry&&) _NOEXCEPT = default;
 
+    _LIBCPP_INLINE_VISIBILITY
     void assign(_Path const& __p) {
         __p_ = __p;
     }
 
+    _LIBCPP_INLINE_VISIBILITY
     void replace_filename(_Path const& __p) {
         __p_ = __p_.parent_path() / __p;
     }
 
+    _LIBCPP_INLINE_VISIBILITY
     _Path const& path() const _NOEXCEPT {
         return __p_;
     }
 
+    _LIBCPP_INLINE_VISIBILITY
     operator const _Path&() const _NOEXCEPT {
         return __p_;
     }
 
+    _LIBCPP_INLINE_VISIBILITY
     file_status status() const {
         return _VSTD_FS::status(__p_);
     }
 
+    _LIBCPP_INLINE_VISIBILITY
     file_status status(error_code& __ec) const _NOEXCEPT {
         return _VSTD_FS::status(__p_, __ec);
     }
 
+    _LIBCPP_INLINE_VISIBILITY
     file_status symlink_status() const {
         return _VSTD_FS::symlink_status(__p_);
     }
 
+    _LIBCPP_INLINE_VISIBILITY
     file_status symlink_status(error_code& __ec) const _NOEXCEPT {
         return _VSTD_FS::symlink_status(__p_, __ec);
     }
 
+    _LIBCPP_INLINE_VISIBILITY
     bool operator< (directory_entry const& __rhs) const _NOEXCEPT {
         return __p_ < __rhs.__p_;
     }
 
+    _LIBCPP_INLINE_VISIBILITY
     bool operator==(directory_entry const& __rhs) const _NOEXCEPT {
         return __p_ == __rhs.__p_;
     }
 
+    _LIBCPP_INLINE_VISIBILITY
     bool operator!=(directory_entry const& __rhs) const _NOEXCEPT {
         return __p_ != __rhs.__p_;
     }
 
+    _LIBCPP_INLINE_VISIBILITY
     bool operator<=(directory_entry const& __rhs) const _NOEXCEPT {
         return __p_ <= __rhs.__p_;
     }
 
+    _LIBCPP_INLINE_VISIBILITY
     bool operator> (directory_entry const& __rhs) const _NOEXCEPT {
         return __p_ > __rhs.__p_;
     }
 
+    _LIBCPP_INLINE_VISIBILITY
     bool operator>=(directory_entry const& __rhs) const _NOEXCEPT {
         return __p_ >= __rhs.__p_;
     }
 private:
     _Path __p_;
 };
+
+
+class directory_iterator;
+class recursive_directory_iterator;
+class __dir_stream;
+
+class directory_iterator
+{
+public:
+    typedef directory_entry value_type;
+    typedef ptrdiff_t difference_type;
+    typedef value_type const* pointer;
+    typedef value_type const& reference;
+    typedef input_iterator_tag iterator_category;
+
+public:
+    //ctor & dtor
+    directory_iterator() _NOEXCEPT
+    { }
+
+    explicit directory_iterator(const path& __p)
+        : directory_iterator(__p, nullptr)
+    { }
+
+    directory_iterator(const path& __p, error_code& __ec) _NOEXCEPT
+        : directory_iterator(__p, &__ec)
+    { }
+
+    directory_iterator(const directory_iterator&) = default;
+    directory_iterator(directory_iterator&&) = default;
+    directory_iterator& operator=(const directory_iterator&) = default;
+    directory_iterator& operator=(directory_iterator&&) = default;
+    ~directory_iterator() = default;
+
+    const directory_entry& operator*() const
+    { return __elem_; }
+
+    const directory_entry* operator->() const
+    { return &__elem_; }
+
+    directory_iterator& operator++()
+    { return __increment(); }
+
+    directory_iterator operator++(int)
+    {
+        directory_iterator __it(*this);
+        __increment();
+        return __it;
+    }
+
+    directory_iterator& increment(error_code& __ec) _NOEXCEPT
+    { return __increment(&__ec); }
+
+    bool operator==(const directory_iterator& __rhs) const _NOEXCEPT
+    { return __stream_.get() == __rhs.__stream_.get(); }
+
+    bool operator!=(const directory_iterator& __rhs) const _NOEXCEPT
+    { return !(*this == __rhs); }
+
+private:
+    // recursive_directory_iterator uses this class
+    // as its underlying implementation, and therefore it
+    // needs access to the methods that take an optional error_code
+    friend class recursive_directory_iterator;
+
+    // construct the dir_stream
+    directory_iterator(const path&, error_code *);
+    directory_iterator& __increment(error_code * __ec = nullptr);
+    // convert iterator into end iterator
+    void __make_end();
+
+private:
+    shared_ptr<__dir_stream> __stream_;
+    path __root_path_;
+    directory_entry __elem_;
+};
+
+// enable directory_iterator range-based for statements
+inline _LIBCPP_INLINE_VISIBILITY
+directory_iterator begin(directory_iterator __iter) _NOEXCEPT
+{
+    return __iter;
+}
+
+inline _LIBCPP_INLINE_VISIBILITY
+directory_iterator end(const directory_iterator&) _NOEXCEPT
+{
+    return directory_iterator();
+}
+
+class recursive_directory_iterator
+    {
+    public:
+        using value_type = directory_entry;
+        using difference_type = std::ptrdiff_t;
+        using pointer = directory_entry const *;
+        using reference = directory_entry const &;
+        using iterator_category = std::input_iterator_tag;
+
+    public:
+        // constructors and destructor
+        recursive_directory_iterator() _NOEXCEPT
+        {}
+
+        explicit recursive_directory_iterator(const path& p,
+                    directory_options xoptions = directory_options::none)
+            : recursive_directory_iterator(p, xoptions,  nullptr)
+        { }
+
+        recursive_directory_iterator(const path& p,
+            directory_options xoptions, std::error_code& ec) _NOEXCEPT
+            : recursive_directory_iterator(p, xoptions, &ec)
+        { }
+
+        recursive_directory_iterator(const path& p, std::error_code& ec) _NOEXCEPT
+            : recursive_directory_iterator(p, directory_options::none,  &ec)
+        { }
+
+        recursive_directory_iterator(const recursive_directory_iterator&) = default;
+        recursive_directory_iterator(recursive_directory_iterator&&) = default;
+
+        recursive_directory_iterator & 
+        operator=(const recursive_directory_iterator&) = default;
+
+        recursive_directory_iterator & 
+        operator=(recursive_directory_iterator&&) = default;
+
+        ~recursive_directory_iterator() = default;
+
+        ////////////////////////////////////////////////////////////////////////
+        //
+        const directory_entry& operator*() const
+        { return __entry_; }
+
+        const directory_entry* operator->() const
+        { return &__entry_; }
+
+        ////////////////////////////////////////////////////////////////////////
+        recursive_directory_iterator& operator++()
+        { return __increment(); }
+
+        recursive_directory_iterator operator++(int)
+        {
+            auto cp = *this;
+            __increment();
+            return cp;
+        }
+        
+        recursive_directory_iterator& increment(std::error_code& ec)
+        { return __increment(&ec); }
+
+        ////////////////////////////////////////////////////////////////////////
+        directory_options options() const _NOEXCEPT
+        { return __options_; }
+        
+        ////////////////////////////////////////////////////////////////////////
+        int depth() const
+        {
+            // __stack_ptr_ && __stack_ptr_->size() == 0 should
+            // never be true
+            return (__stack_ptr_ ? static_cast<int>(__stack_ptr_->size() - 1) : 0); 
+        }
+        
+        ////////////////////////////////////////////////////////////////////////
+        bool recursion_pending() const _NOEXCEPT
+        { return __rec_; }
+           
+        ////////////////////////////////////////////////////////////////////////
+        void pop()
+        {
+            if (!__stack_ptr_) return;
+            ELIB_ASSERT(__stack_ptr_->size() > 0);
+            __stack_ptr_->top() = directory_iterator();
+            __increment();
+        }
+        
+        ////////////////////////////////////////////////////////////////////////
+        void disable_recursion_pending() _NOEXCEPT
+        { __rec_ = false; }
+        
+        ////////////////////////////////////////////////////////////////////////
+        bool operator==(const recursive_directory_iterator& other) const _NOEXCEPT
+        { return __stack_ptr_ == other.__stack_ptr_; }
+        
+        ////////////////////////////////////////////////////////////////////////
+        bool operator!=(const recursive_directory_iterator& other) const _NOEXCEPT
+        { return !(*this == other);}
+    
+    private:
+        recursive_directory_iterator(const path& __p, directory_options __opt,
+                                     error_code *__ec);
+
+        void __make_end();
+        bool ___try_recursion(error_code *ec);
+        recursive_directory_iterator& __increment(error_code *__ec=nullptr);
+
+        shared_ptr<stack<directory_iterator>> __stack_ptr_{nullptr};
+        directory_entry __entry_;
+        directory_options __options_{directory_options::none};
+        bool __rec_{true};
+    };                                     // class recursive_directory_iterator
+
+// enable recursive_directory_iterator range-based for statements
+inline _LIBCPP_INLINE_VISIBILITY
+recursive_directory_iterator begin(recursive_directory_iterator __iter) _NOEXCEPT
+{
+    return __iter;
+}
+
+inline _LIBCPP_INLINE_VISIBILITY
+recursive_directory_iterator end(const recursive_directory_iterator&) _NOEXCEPT
+{
+    return recursive_directory_iterator();
+}
 
 
 _LIBCPP_END_NAMESPACE_EXPERIMENTAL_FILESYSTEM
