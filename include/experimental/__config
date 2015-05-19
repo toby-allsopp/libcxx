@@ -36,4 +36,7 @@
 #define _LIBCPP_END_NAMESPACE_EXPERIMENTAL_FILESYSTEM \
     } } _LIBCPP_END_NAMESPACE_EXPERIMENTAL
 
+
+#define _VSTD_FS ::std::experimental::filesystem::v1
+
 #endif
