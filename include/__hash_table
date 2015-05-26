@@ -19,6 +19,7 @@
 #include <cmath>
 
 #include <__undef_min_max>
+#include <__undef___deallocate>
 
 #include <__debug>
 
@@ -84,8 +85,6 @@ template <class _Tp, class _Hash, class _Equal, class _Alloc> class __hash_table
 template <class _ConstNodePtr> class _LIBCPP_TYPE_VIS_ONLY __hash_const_iterator;
 template <class _HashIterator> class _LIBCPP_TYPE_VIS_ONLY __hash_map_iterator;
 template <class _HashIterator> class _LIBCPP_TYPE_VIS_ONLY __hash_map_const_iterator;
-template <class _Key, class _Tp, class _Hash, class _Pred, class _Alloc>
-    class _LIBCPP_TYPE_VIS_ONLY unordered_map;
 
 template <class _NodePtr>
 class _LIBCPP_TYPE_VIS_ONLY __hash_iterator
@@ -776,13 +775,7 @@ public:
 public:
     // Create __node
     typedef __hash_node<value_type, typename __alloc_traits::void_pointer> __node;
-    typedef typename __alloc_traits::template
-#ifndef _LIBCPP_HAS_NO_TEMPLATE_ALIASES
-            rebind_alloc<__node>
-#else
-            rebind_alloc<__node>::other
-#endif
-                                                     __node_allocator;
+    typedef typename __rebind_alloc_helper<__alloc_traits, __node>::type __node_allocator;
     typedef allocator_traits<__node_allocator>       __node_traits;
     typedef typename __node_traits::pointer          __node_pointer;
     typedef typename __node_traits::pointer          __node_const_pointer;
@@ -797,13 +790,7 @@ public:
 
 private:
 
-    typedef typename __node_traits::template
-#ifndef _LIBCPP_HAS_NO_TEMPLATE_ALIASES
-            rebind_alloc<__node_pointer>
-#else
-            rebind_alloc<__node_pointer>::other
-#endif
-                                                            __pointer_allocator;
+    typedef typename __rebind_alloc_helper<__node_traits, __node_pointer>::type __pointer_allocator;
     typedef __bucket_list_deallocator<__pointer_allocator> __bucket_list_deleter;
     typedef unique_ptr<__node_pointer[], __bucket_list_deleter> __bucket_list;
     typedef allocator_traits<__pointer_allocator>          __pointer_alloc_traits;
