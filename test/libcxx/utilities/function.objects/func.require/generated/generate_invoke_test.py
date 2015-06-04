@@ -139,7 +139,7 @@ class TypeList(object):
         return len(self.Types)
 
 class FT:
-    """FT - An enumeration represeting the different kinds of callable C++
+    """ FT - An enumeration represeting the different kinds of callable C++
         types.
     """
     Free = 1,
@@ -180,12 +180,11 @@ class FunctionType(object):
                               QT.asString(self.Quals))).strip()
 
     def getBody(self):
-        """getBody - Create the body of a test function. The body asserts that
-        each call parameter has the expected value (p1=1, p2=2, pi=i ect). When
-        creating the body for a member function assert that "this" has the
-        expected value (42).
-        Construct and return the ReturnTag from the sum of "this" (or 42) and
-        every parameter.
+        """ getBody - Create the body of a test function. The body asserts that
+            each call parameter has the expected value (p1=1, p2=2, pi=i ect).
+            When creating the body for a member function assert that "this" has
+            the expected value (42). Construct and return the ReturnTag from
+            the sum of "this" (or 42) and every parameter.
         """
         Statements = []
         NamedParams = self.Params.getNamedParams()
@@ -200,8 +199,9 @@ class FunctionType(object):
         return Statements
 
     def getDefinition(self, Indent=0):
-        """getDefinition - Create and return a string represeting the
-        definition of the function."""
+        """ getDefinition - Create and return a string represeting the
+            definition of the function.
+        """
         FunctionStr = """
 {Indent}{FunctionReturn}
 {Indent}{FunctionSignature} {{
@@ -220,7 +220,8 @@ class FunctionType(object):
 
 class FunctionGroup(object):
     """ FunctionGroup - A group of functions that all share the same
-        function type and identifier.
+        function type and identifier. If a function is not overloaded then
+        the group will have size 1.
     """
     def __init__(self, FuncList):
         self.FuncList = list(FuncList)
