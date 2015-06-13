@@ -19,8 +19,13 @@ namespace std
 
     // helper class:
     template <class T, T v> struct integral_constant;
-    typedef integral_constant<bool, true>  true_type;
-    typedef integral_constant<bool, false> false_type;
+    typedef integral_constant<bool, true>  true_type;   // C++11
+    typedef integral_constant<bool, false> false_type;  // C++11
+    
+    template <bool B>                                   // C++14
+    using bool_constant = integral_constant<bool, B>;   // C++14
+    typedef bool_constant<true> true_type;              // C++14
+    typedef bool_constant<false> false_type;            // C++14
 
     // helper traits
     template <bool, class T = void> struct enable_if;
@@ -211,10 +216,8 @@ namespace std
 
 _LIBCPP_BEGIN_NAMESPACE_STD
 
-#ifndef _LIBCPP_HAS_NO_VARIADICS
-template <class...> 
+template <class>
 struct __void_t { typedef void type; };
-#endif
 
 template <class _Tp, bool>
 struct _LIBCPP_TYPE_VIS_ONLY __dependent_type : public _Tp {};
@@ -260,8 +263,16 @@ struct _LIBCPP_TYPE_VIS_ONLY integral_constant
 template <class _Tp, _Tp __v>
 _LIBCPP_CONSTEXPR const _Tp integral_constant<_Tp, __v>::value;
 
-typedef integral_constant<bool, true>  true_type;
-typedef integral_constant<bool, false> false_type;
+#if _LIBCPP_STD_VER > 14
+template <bool __b>
+using bool_constant = integral_constant<bool, __b>;
+#define	_LIBCPP_BOOL_CONSTANT(__b) bool_constant<(__b)>
+#else
+#define	_LIBCPP_BOOL_CONSTANT(__b) integral_constant<bool,(__b)>
+#endif
+
+typedef _LIBCPP_BOOL_CONSTANT(true)  true_type;
+typedef _LIBCPP_BOOL_CONSTANT(false) false_type;
 
 // is_const
 
@@ -466,19 +477,15 @@ struct __member_pointer_traits_imp
 };
 
 
-namespace __libcpp_is_member_function_pointer_imp {
-    template <typename _Tp>
-    char __test(typename std::__member_pointer_traits_imp<_Tp, true, false>::_FnType *);
-
-    template <typename>
-    std::__two __test(...);
-};
-    
 template <class _Tp> struct __libcpp_is_member_function_pointer
-    : public integral_constant<bool, sizeof(__libcpp_is_member_function_pointer_imp::__test<_Tp>(nullptr)) == 1> {};
+    : public false_type {};
+
+template <class _Ret, class _Class>
+struct __libcpp_is_member_function_pointer<_Ret _Class::*>
+    : public is_function<_Ret> {};
 
 template <class _Tp> struct _LIBCPP_TYPE_VIS_ONLY is_member_function_pointer
-    : public __libcpp_is_member_function_pointer<typename remove_cv<_Tp>::type> {};
+    : public __libcpp_is_member_function_pointer<typename remove_cv<_Tp>::type>::type {};
 
 // is_member_pointer
 
@@ -679,7 +686,7 @@ template <class _Tp> using add_pointer_t = typename add_pointer<_Tp>::type;
 // is_signed
 
 template <class _Tp, bool = is_integral<_Tp>::value>
-struct __libcpp_is_signed_impl : public integral_constant<bool, _Tp(-1) < _Tp(0)> {};
+struct __libcpp_is_signed_impl : public _LIBCPP_BOOL_CONSTANT(_Tp(-1) < _Tp(0)) {};
 
 template <class _Tp>
 struct __libcpp_is_signed_impl<_Tp, false> : public true_type {};  // floating point
@@ -694,7 +701,7 @@ template <class _Tp> struct _LIBCPP_TYPE_VIS_ONLY is_signed : public __libcpp_is
 // is_unsigned
 
 template <class _Tp, bool = is_integral<_Tp>::value>
-struct __libcpp_is_unsigned_impl : public integral_constant<bool, _Tp(0) < _Tp(-1)> {};
+struct __libcpp_is_unsigned_impl : public _LIBCPP_BOOL_CONSTANT(_Tp(0) < _Tp(-1)) {};
 
 template <class _Tp>
 struct __libcpp_is_unsigned_impl<_Tp, false> : public false_type {};  // floating point
@@ -1533,7 +1540,7 @@ template <class _Tp, class _Arg, bool = is_void<_Tp>::value || is_void<_Arg>::va
 struct __is_assignable_imp
     : public common_type
         <
-            decltype(__is_assignable_test(declval<_Tp>(), declval<_Arg>()))
+            decltype(_VSTD::__is_assignable_test(declval<_Tp>(), declval<_Arg>()))
         >::type {};
 
 template <class _Tp, class _Arg>
@@ -1780,7 +1787,8 @@ struct __member_pointer_traits_imp<_Rp (_Class::*)(_Param..., ...) const volatil
     typedef _Rp (_FnType) (_Param..., ...);
 };
 
-#if __has_feature(cxx_reference_qualified_functions)
+#if __has_feature(cxx_reference_qualified_functions) || \
+    (defined(_GNUC_VER) && _GNUC_VER >= 409)
 
 template <class _Rp, class _Class, class ..._Param>
 struct __member_pointer_traits_imp<_Rp (_Class::*)(_Param...) &, true, false>
@@ -1910,7 +1918,7 @@ struct __member_pointer_traits_imp<_Rp (_Class::*)(_Param..., ...) const volatil
     typedef _Rp (_FnType) (_Param..., ...);
 };
 
-#endif  // __has_feature(cxx_reference_qualified_functions)
+#endif  // __has_feature(cxx_reference_qualified_functions) || _GNUC_VER >= 409
 
 #else  // _LIBCPP_HAS_NO_VARIADICS
 
@@ -2682,7 +2690,7 @@ struct _LIBCPP_TYPE_VIS_ONLY is_move_constructible
 
 #ifndef _LIBCPP_HAS_NO_VARIADICS
 
-#if __has_feature(is_trivially_constructible)
+#if __has_feature(is_trivially_constructible) || _GNUC_VER >= 501
 
 template <class _Tp, class... _Args>
 struct _LIBCPP_TYPE_VIS_ONLY is_trivially_constructible
@@ -2741,7 +2749,7 @@ struct _LIBCPP_TYPE_VIS_ONLY is_trivially_constructible
 {
 };
 
-#if __has_feature(is_trivially_constructible)
+#if __has_feature(is_trivially_constructible) || _GNUC_VER >= 501
 
 template <class _Tp>
 struct _LIBCPP_TYPE_VIS_ONLY is_trivially_constructible<_Tp, __is_construct::__nat,
@@ -2829,7 +2837,7 @@ template <class _Tp> struct _LIBCPP_TYPE_VIS_ONLY is_trivially_move_constructibl
 
 // is_trivially_assignable
 
-#if __has_feature(is_trivially_assignable)
+#if __has_feature(is_trivially_assignable) || _GNUC_VER >= 501
 
 template <class _Tp, class _Arg>
 struct is_trivially_assignable
@@ -3267,6 +3275,8 @@ template <class _Tp> struct _LIBCPP_TYPE_VIS_ONLY is_standard_layout
 template <class _Tp> struct _LIBCPP_TYPE_VIS_ONLY is_trivially_copyable
 #if __has_feature(is_trivially_copyable)
     : public integral_constant<bool, __is_trivially_copyable(_Tp)>
+#elif _GNUC_VER >= 501
+    : public integral_constant<bool, !is_volatile<_Tp>::value && __is_trivially_copyable(_Tp)>
 #else
     : integral_constant<bool, is_scalar<typename remove_all_extents<_Tp>::type>::value>
 #endif
@@ -3275,7 +3285,7 @@ template <class _Tp> struct _LIBCPP_TYPE_VIS_ONLY is_trivially_copyable
 // is_trivial;
 
 template <class _Tp> struct _LIBCPP_TYPE_VIS_ONLY is_trivial
-#if __has_feature(is_trivial) || (_GNUC_VER >= 407)
+#if __has_feature(is_trivial) || _GNUC_VER >= 407
     : public integral_constant<bool, __is_trivial(_Tp)>
 #else
     : integral_constant<bool, is_trivially_copyable<_Tp>::value &&
@@ -3448,7 +3458,7 @@ template <class _Fp, class _A0, class ..._Args,
                            typename remove_reference<_A0>::type>::value
             >::type
          >
-_LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX11
+_LIBCPP_INLINE_VISIBILITY
 auto
 __invoke(_Fp&& __f, _A0&& __a0, _Args&& ...__args)
     -> decltype((_VSTD::forward<_A0>(__a0).*__f)(_VSTD::forward<_Args>(__args)...));
@@ -3461,7 +3471,7 @@ template <class _Fp, class _A0, class ..._Args,
                            typename remove_reference<_A0>::type>::value
             >::type
          >
-_LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX11
+_LIBCPP_INLINE_VISIBILITY
 auto
 __invoke(_Fp&& __f, _A0&& __a0, _Args&& ...__args)
     -> decltype(((*_VSTD::forward<_A0>(__a0)).*__f)(_VSTD::forward<_Args>(__args)...));
@@ -3476,7 +3486,7 @@ template <class _Fp, class _A0,
                            typename remove_reference<_A0>::type>::value
             >::type
          >
-_LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX11
+_LIBCPP_INLINE_VISIBILITY
 auto
 __invoke(_Fp&& __f, _A0&& __a0)
     -> decltype(_VSTD::forward<_A0>(__a0).*__f);
@@ -3489,7 +3499,7 @@ template <class _Fp, class _A0,
                            typename remove_reference<_A0>::type>::value
             >::type
          >
-_LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX11
+_LIBCPP_INLINE_VISIBILITY
 auto
 __invoke(_Fp&& __f, _A0&& __a0)
     -> decltype((*_VSTD::forward<_A0>(__a0)).*__f);
@@ -3497,7 +3507,7 @@ __invoke(_Fp&& __f, _A0&& __a0)
 // bullet 5
 
 template <class _Fp, class ..._Args>
-_LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX11
+_LIBCPP_INLINE_VISIBILITY
 auto
 __invoke(_Fp&& __f, _Args&& ...__args)
     -> decltype(_VSTD::forward<_Fp>(__f)(_VSTD::forward<_Args>(__args)...));
