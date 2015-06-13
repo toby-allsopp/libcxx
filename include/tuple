@@ -511,8 +511,8 @@ class _LIBCPP_TYPE_VIS_ONLY tuple
         typename tuple_element<_Jp, tuple<_Up...> >::type&& get(tuple<_Up...>&&) _NOEXCEPT;
 public:
 
-    template <bool _Dummy = true, class _Up = typename enable_if<
-        __all<(_Dummy && is_default_constructible<_Tp>::value)...>::value
+    template <bool _Dummy = true, class = typename enable_if<
+        __all<__dependent_type<is_default_constructible<_Tp>, _Dummy>::value...>::value
     >::type>
     _LIBCPP_INLINE_VISIBILITY
     _LIBCPP_CONSTEXPR tuple()
@@ -845,8 +845,6 @@ struct __ignore_t
 };
 
 namespace { const __ignore_t<unsigned char> ignore = __ignore_t<unsigned char>(); }
-
-template <class _Tp> class _LIBCPP_TYPE_VIS_ONLY reference_wrapper;
 
 template <class _Tp>
 struct __make_tuple_return_impl
