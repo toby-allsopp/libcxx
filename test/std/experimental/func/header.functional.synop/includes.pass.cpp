@@ -7,18 +7,15 @@
 //
 //===----------------------------------------------------------------------===//
 
-// <functional>
+// UNSUPPORTED: c++98, c++03, c++11
 
-// class function<R()>
+// <experimental/functional>
+//
+//  has to include <functional>
 
-// template<class F> function(F);
-
-#define _LIBCPP_HAS_NO_VARIADICS
-#include <functional>
-#include <cassert>
+#include <experimental/functional>
 
 int main()
 {
-    std::function<void()> f(static_cast<void(*)()>(0));
-    assert(!f);
+  std::function<int(int)> x;
 }
