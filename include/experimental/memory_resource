@@ -74,7 +74,7 @@ namespace pmr {
 #include <utility>
 #include <cstddef>
 
-#   include <__debug>
+#include <__debug>
 
 #if !defined(_LIBCPP_HAS_NO_PRAGMA_SYSTEM_HEADER)
 #pragma GCC system_header
@@ -93,8 +93,7 @@ public:
     virtual ~memory_resource();
 
     _LIBCPP_INLINE_VISIBILITY
-    void* allocate(size_t __bytes, size_t __align = __max_align)
-    {
+    void* allocate(size_t __bytes, size_t __align = __max_align) {
         _LIBCPP_ASSERT(__align != 0, "can't be zero");
         _LIBCPP_ASSERT(__is_power2(__align), "alignment must be power of two");
         void * const __ret = do_allocate(__bytes, __align);
@@ -105,8 +104,7 @@ public:
     }
 
     _LIBCPP_INLINE_VISIBILITY
-    void deallocate(void * __p, size_t __bytes, size_t __align = __max_align)
-    {
+    void deallocate(void * __p, size_t __bytes, size_t __align = __max_align) {
         _LIBCPP_ASSERT(__is_power2(__align), "alignment must be power of two");
         _LIBCPP_ASSERT(
             __alignment_offset(__p, __max_align < __align ? __max_align : __align) == 0
@@ -115,21 +113,15 @@ public:
     }
 
     _LIBCPP_INLINE_VISIBILITY
-    bool is_equal(memory_resource const & __other) const _NOEXCEPT
-    {
+    bool is_equal(memory_resource const & __other) const _NOEXCEPT {
         return do_is_equal(__other);
     }
 
 // 8.5.3, memory.resource.priv
 protected:
-    virtual void* do_allocate(
-        size_t __bytes, size_t __align) = 0;
-
-    virtual void do_deallocate(
-        void * __p, size_t __bytes, size_t __align) = 0;
-
-    virtual bool do_is_equal(
-        memory_resource const & __other) const _NOEXCEPT = 0;
+    virtual void* do_allocate(size_t __bytes, size_t __align) = 0;
+    virtual void do_deallocate(void * __p, size_t __bytes, size_t __align) = 0;
+    virtual bool do_is_equal(memory_resource const & __other) const _NOEXCEPT = 0;
 };
 
 // 8.5.4, memory.resource.eq
@@ -150,19 +142,10 @@ bool operator!=(
     return !(__lhs == __rhs);
 }
 
-extern memory_resource* _LIBCPP_FUNC_VIS __new_delete_res_pointer;
-extern memory_resource* _LIBCPP_FUNC_VIS __null_res_pointer;
-
-_LIBCPP_FUNC_VIS
-memory_resource * new_delete_resource() _NOEXCEPT;
-_LIBCPP_FUNC_VIS
-memory_resource * null_memory_resource() _NOEXCEPT;
-
-_LIBCPP_FUNC_VIS
-memory_resource * get_default_resource() _NOEXCEPT;
-
-_LIBCPP_FUNC_VIS
-memory_resource * set_default_resource(memory_resource * __new_res) _NOEXCEPT;
+_LIBCPP_FUNC_VIS memory_resource* new_delete_resource() _NOEXCEPT;
+_LIBCPP_FUNC_VIS memory_resource* null_memory_resource() _NOEXCEPT;
+_LIBCPP_FUNC_VIS memory_resource* get_default_resource() _NOEXCEPT;
+_LIBCPP_FUNC_VIS memory_resource* set_default_resource(memory_resource*) _NOEXCEPT;
 
 _LIBCPP_END_NAMESPACE_LFTS_PMR
 

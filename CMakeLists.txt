@@ -346,7 +346,7 @@ add_subdirectory(lib)
 
 add_subdirectory(test)
 
-#include_directories(test/support)
+include_directories(test/support)
 
-#file(GLOB_RECURSE LIBCXX_FILES include/* src/*.cpp src/*.h test/*.cpp)
-#add_executable(STUFF EXCLUDE_FROM_ALL ${LIBCXX_FILES})
+file(GLOB_RECURSE LIBCXX_FILES include/* src/*.cpp src/*.h test/*.cpp)
+add_executable(STUFF EXCLUDE_FROM_ALL ${LIBCXX_FILES})

@@ -88,39 +88,32 @@ bool __null_memory_resource_imp::do_is_equal(
     return &__other == static_cast<memory_resource const *>(this);
 }
 ///////////////////////////////////////////////////////////////////////////////
-_ALIGNAS_TYPE(__new_delete_memory_resource_imp)
-static char __new_delete_res_storage[sizeof(__new_delete_memory_resource_imp)];
-
-_ALIGNAS_TYPE(__null_memory_resource_imp)
-static char __null_res_storage[sizeof(__null_memory_resource_imp)];
-
-__new_delete_memory_resource_imp nd_resource = {};
 
 memory_resource * new_delete_resource() _NOEXCEPT {
-    return &nd_resource;
+    static __new_delete_memory_resource_imp resource;
+    return &resource;
 }
-
 
 memory_resource * null_memory_resource() _NOEXCEPT {
     static __null_memory_resource_imp resource;
     return &resource;
 }
 
+///////////////////////////////////////////////////////////////////////////////
 static memory_resource** __default_resource() {
-    static memory_resource* ptr = { &nd_resource };
+    static memory_resource* ptr = { new_delete_resource() };
     return &ptr;
 }
 
-///////////////////////////////////////////////////////////////////////////////
 memory_resource* get_default_resource() _NOEXCEPT
 {
-    return __libcpp_atomic_load(__default_resource());
+    return __libcpp_atomic_load(__default_resource(), _AO_Aquire);
 }
 
 memory_resource * set_default_resource(memory_resource * new_res) _NOEXCEPT
 {
     new_res = new_res ? new_res : new_delete_resource();
-    return __libcpp_atomic_exchange(__default_resource(), new_res);
+    return __libcpp_atomic_exchange(__default_resource(), new_res, _AO_Acq_Rel);
 }
 
 _LIBCPP_END_NAMESPACE_LFTS_PMR
