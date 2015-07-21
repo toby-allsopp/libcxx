@@ -11,12 +11,12 @@
 
 // void * memory_resource::allocate(size_t, size_t)
 
+// UNSUPPORTED: c++98, c++03, c++11
+
 #include <experimental/memory_resource>
 #include <type_traits>
 #include <cassert>
 #include "dummy_memory_resource.hpp"
-
-#if _LIBCPP_STD_VER > 11
 
 namespace ex = std::experimental::pmr;
 
@@ -41,6 +41,3 @@ int main()
         assert(D::last_pointer == ret);
     }
 }
-#else /* _LIBCPP_STD_VER <= 11 */
-int main() {}
-#endif /* _LIBCPP_STD_VER > 11 */

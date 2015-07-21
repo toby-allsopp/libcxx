@@ -18,26 +18,9 @@
 #include <cassert>
 #include <cstdlib>
 
+#include "count_new.hpp"
+
 namespace ex = std::experimental::pmr;
-
-int alive = 0;
-int new_called = 0;
-int delete_called = 0;
-
-void* operator new(std::size_t s) throw(std::bad_alloc)
-{
-    ++alive;
-    ++new_called;
-    return std::malloc(s);
-}
-
-void  operator delete(void* p) throw()
-{
-    ++delete_called;
-    --alive;
-    std::free(p);
-}
-
 
 struct assert_on_compare : public ex::memory_resource
 {
@@ -96,35 +79,22 @@ void test_equality()
         assert(r1 != r2);
         assert(!(r1 == r2));
     }
-#if 0
-    // Same type different objects (NOTE: the actual type is not user visible)
-    // But the equality comparison requires this.
-    {
-        ex::memory_resource & r1 = *ex::new_delete_resource();
-
-        ex::__new_delete_memory_resource_imp imp;
-        ex::memory_resource & r2 = imp;
-
-        assert(r1 != r2);
-        assert(r2 != r1);
-        assert(!(r1 == r2));
-        assert(!(r2 == r1));
-    }
-#endif
 }
 
 void test_allocate_deallocate()
 {
+    MemCounter& M = globalMemCounter;
     ex::memory_resource & r1 = *ex::new_delete_resource();
     void *ret = r1.allocate(1);
     assert(ret);
-    assert(new_called == 1);
-    assert(alive == 1);
+    assert(M.checkNewCalledEq(1));
+    assert(M.checkOutstandingNewEq(1));
+    assert(M.checkDeleteCalledEq(0));
 
     r1.deallocate(ret, 1);
-    assert(new_called == 1);
-    assert(alive == 0);
-    assert(delete_called == 1);
+    assert(M.checkNewCalledEq(1));
+    assert(M.checkOutstandingNewEq(0));
+    assert(M.checkDeleteCalledEq(1));
 }
 
 int main()

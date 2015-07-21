@@ -18,26 +18,9 @@
 #include <cassert>
 #include <cstdlib>
 
+#include "count_new.hpp"
 
 namespace ex = std::experimental::pmr;
-
-int alive = 0;
-int new_called = 0;
-int delete_called = 0;
-
-void* operator new(std::size_t s) throw(std::bad_alloc)
-{
-    ++alive;
-    ++new_called;
-    return std::malloc(s);
-}
-
-void  operator delete(void* p) throw()
-{
-    ++delete_called;
-    --alive;
-    std::free(p);
-}
 
 
 struct assert_on_compare : public ex::memory_resource
@@ -98,21 +81,6 @@ void test_equality()
         assert(r1 != r2);
         assert(!(r1 == r2));
     }
-#if 0
-    // Same type different objects (NOTE: the actual type is not user visible)
-    // But the equality comparison requires this.
-    {
-        ex::memory_resource & r1 = *ex::null_memory_resource();
-
-        ex::__null_memory_resource_imp imp;
-        ex::memory_resource & r2 = imp;
-
-        assert(r1 != r2);
-        assert(r2 != r1);
-        assert(!(r1 == r2));
-        assert(!(r2 == r1));
-    }
-#endif
 }
 
 void test_allocate()
@@ -125,14 +93,14 @@ void test_allocate()
     } catch (...) {
         assert(false);
     }
-    assert(new_called == 0);
+    assert(globalMemCounter.checkNewCalledEq(0));
 }
 
 void test_deallocate()
 {
     ex::null_memory_resource()->deallocate(nullptr, 0);
-    assert(new_called == 0);
-    assert(delete_called == 0);
+    assert(globalMemCounter.checkNewCalledEq(0));
+    assert(globalMemCounter.checkDeleteCalledEq(0));
 }
 
 int main()

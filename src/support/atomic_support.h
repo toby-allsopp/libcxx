@@ -31,8 +31,8 @@ _LIBCPP_BEGIN_NAMESPACE_STD
 
 namespace {
 
-#if defined(_LIBCPP_HAS_ATOMIC_BUILTINS) && !defined(_LIBCPP_HAS_NO_THREADS)
-
+//#if defined(_LIBCPP_HAS_ATOMIC_BUILTINS) && !defined(_LIBCPP_HAS_NO_THREADS)
+#if 1
 enum __libcpp_atomic_order {
     _AO_Relaxed = __ATOMIC_RELAXED,
     _AO_Consume = __ATOMIC_CONSUME,
@@ -72,6 +72,13 @@ _ValueType __libcpp_atomic_add(_ValueType* __val, _AddType __a,
 {
     return __atomic_add_fetch(__val, __a, __order);
 }
+
+template <class _ValueType, class _ValueType2>
+inline _LIBCPP_INLINE_VISIBILITY
+_ValueType __libcpp_atomic_exchange(_ValueType* __val, _ValueType2 __new, int __order = _AO_Seq)
+{
+    return __atomic_exchange_n(__val, __new, __order);
+};
 
 template <class _ValueType>
 inline _LIBCPP_INLINE_VISIBILITY
@@ -118,6 +125,15 @@ _ValueType __libcpp_atomic_add(_ValueType* __val, _AddType __a,
 {
     return *__val += __a;
 }
+
+template <class _ValueType, class _ValueType2>
+inline _LIBCPP_INLINE_VISIBILITY
+_ValueType __libcpp_atomic_exchange(_ValueType* __val, _ValueType2 __new, int = 0)
+{
+    _ValueType __tmp = *__val;
+    *__val = __new;
+    return __tmp;
+};
 
 template <class _ValueType>
 inline _LIBCPP_INLINE_VISIBILITY
