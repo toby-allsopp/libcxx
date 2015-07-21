@@ -117,4 +117,3 @@ int main()
         assert(P1.checkIsEqualCalledEq(1));
     }
 }
-

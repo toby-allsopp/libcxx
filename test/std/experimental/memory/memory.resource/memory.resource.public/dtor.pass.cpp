@@ -66,4 +66,3 @@ int main()
         assert(RT::resource_destructed == 1);
     }
 }
-

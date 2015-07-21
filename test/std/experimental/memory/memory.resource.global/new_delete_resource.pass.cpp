@@ -77,7 +77,7 @@ int main()
         TestResource R;
         auto& P = R.getProvider();
         memory_resource const& O = R;
-        
+
         assert(M.is_equal(O) == false);
         assert(P.checkIsEqualCalledEq(0));
     }
@@ -88,4 +88,3 @@ int main()
           );
     }
 }
-
