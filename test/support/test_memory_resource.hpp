@@ -11,9 +11,11 @@
 #define SUPPORT_TEST_MEMORY_RESOURCE_HPP
 
 #include <experimental/memory_resource>
+#include <memory>
 #include <type_traits>
 #include <cstddef>
 #include <cstdlib>
+#include <cstring>
 
 #define DISALLOW_COPY(Type) \
   Type(Type const&) = delete; \
