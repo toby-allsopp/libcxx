@@ -153,15 +153,10 @@ bool operator!=(
 extern memory_resource* _LIBCPP_FUNC_VIS __new_delete_res_pointer;
 extern memory_resource* _LIBCPP_FUNC_VIS __null_res_pointer;
 
-_LIBCPP_INLINE_VISIBILITY
-inline memory_resource * new_delete_resource() _NOEXCEPT {
-    return __new_delete_res_pointer;
-}
-
-_LIBCPP_INLINE_VISIBILITY
-inline memory_resource * null_memory_resource() _NOEXCEPT {
-    return __null_res_pointer;
-}
+_LIBCPP_FUNC_VIS
+memory_resource * new_delete_resource() _NOEXCEPT;
+_LIBCPP_FUNC_VIS
+memory_resource * null_memory_resource() _NOEXCEPT;
 
 _LIBCPP_FUNC_VIS
 memory_resource * get_default_resource() _NOEXCEPT;

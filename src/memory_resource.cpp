@@ -94,30 +94,33 @@ static char __new_delete_res_storage[sizeof(__new_delete_memory_resource_imp)];
 _ALIGNAS_TYPE(__null_memory_resource_imp)
 static char __null_res_storage[sizeof(__null_memory_resource_imp)];
 
-_LIBCPP_FUNC_VIS memory_resource* __new_delete_res_pointer;
-_LIBCPP_FUNC_VIS memory_resource* __null_res_pointer;
-static memory_resource* __default_res_pointer;
+__new_delete_memory_resource_imp nd_resource = {};
 
-struct ResPointerInit {
-    ResPointerInit() {
-        __new_delete_res_pointer = ::new(&__new_delete_res_storage) __new_delete_memory_resource_imp();
-        __null_res_pointer = ::new(&__null_res_storage) __null_memory_resource_imp();
-        __default_res_pointer = __new_delete_res_pointer;
-    }
-};
+memory_resource * new_delete_resource() _NOEXCEPT {
+    return &nd_resource;
+}
 
-ResPointerInit memoryResourcePointerInit;
+
+memory_resource * null_memory_resource() _NOEXCEPT {
+    static __null_memory_resource_imp resource;
+    return &resource;
+}
+
+static memory_resource** __default_resource() {
+    static memory_resource* ptr = { &nd_resource };
+    return &ptr;
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 memory_resource* get_default_resource() _NOEXCEPT
 {
-    return __libcpp_atomic_load(&__default_res_pointer);
+    return __libcpp_atomic_load(__default_resource());
 }
 
 memory_resource * set_default_resource(memory_resource * new_res) _NOEXCEPT
 {
     new_res = new_res ? new_res : new_delete_resource();
-    return __libcpp_atomic_exchange(&__default_res_pointer, new_res);
+    return __libcpp_atomic_exchange(__default_resource(), new_res);
 }
 
 _LIBCPP_END_NAMESPACE_LFTS_PMR
