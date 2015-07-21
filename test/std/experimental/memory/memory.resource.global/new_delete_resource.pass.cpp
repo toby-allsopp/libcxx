@@ -9,99 +9,83 @@
 
 // <experimental/memory_resource>
 
-// memory_resource * new_delete_resource()
+// UNSUPPORTED: c++98, c++03
+
+//-----------------------------------------------------------------------------
+// TESTING memory_resource * new_delete_resource() noexcept
+//
+// Concerns:
+//  A) 'new_delete_memory_resource()' returns a non-null pointer to a 'memory_resource' 'M'.
+//  B) 'new_delete_memory_resource()' always returns the same pointer.
+//  C) 'M.allocate(s, a)' calls '::operator new(s)' and returns that pointer.
+//  D) 'M.deallocate(p, s, a)' calls '::operator delete(p)'.
+//  E) 'M' only compares equal to itself. 'M.is_equal(Other)' will not invoke
+//     'Other.is_equal(M)'.
+//  F) 'new_delete_resource()' is marked as 'noexcept'.
+//
+// Plan:
+//   1) Check concerns A, B and E by getting two pointers 'p1' and 'p2' from
+//      calling 'new_deletee_memory_resource()' twice. Check that these pointers
+//      have the same address and are not null.
+//
+//  2) Check concerns C and D by performing an allocation and deallocation with
+//     'M'. Use 'globalMemCounter' to check that 'new' and 'delete' were invoked
+//     by those operations with the correct arguments.
+//
+//  3) Check concern E by comparing 'M' to other 'memory_resource' objects
+//     with different base classes. Check that 'M.is_equal(Other)' is always
+//     false and it does not invoke 'Other.is_equal(M)'.
+//
+//  4) Check concern F by calling 'new_delete_resource()' in a noexcept expression
+//     and check that the expression returns true.
 
 #include <experimental/memory_resource>
-#include <type_traits>
-#include <memory>
-#include <new>
 #include <cassert>
-#include <cstdlib>
 
+#include "test_memory_resource.hpp"
 #include "count_new.hpp"
 
-namespace ex = std::experimental::pmr;
-
-struct assert_on_compare : public ex::memory_resource
-{
-protected:
-    virtual void * do_allocate(size_t, size_t)
-    {
-        assert(false);
-        return 0;
-    }
-
-    virtual void do_deallocate(void *, size_t, size_t)
-    {
-        assert(false);
-    }
-
-    virtual bool do_is_equal(ex::memory_resource const &) const _NOEXCEPT
-    {
-        assert(false);
-    }
-};
-
-void test_return()
-{
-    {
-        static_assert(
-            std::is_same<decltype(ex::new_delete_resource()), ex::memory_resource*>::value
-          , ""
-          );
-    }
-    // assert not null
-    {
-        assert(ex::new_delete_resource());
-    }
-    // assert same return value
-    {
-        assert(ex::new_delete_resource() == ex::new_delete_resource());
-    }
-}
-
-void test_equality()
-{
-    // Same object
-    {
-        ex::memory_resource & r1 = *ex::new_delete_resource();
-        ex::memory_resource & r2 = *ex::new_delete_resource();
-        assert(r1 == r2);
-        assert(r2 == r1);
-        assert(!(r1 != r2));
-        assert(!(r2 != r1));
-    }
-    // Different types
-    {
-        ex::memory_resource & r1 = *ex::new_delete_resource();
-        assert_on_compare c;
-        ex::memory_resource & r2 = c;
-        assert(r1 != r2);
-        assert(!(r1 == r2));
-    }
-}
-
-void test_allocate_deallocate()
-{
-    MemCounter& M = globalMemCounter;
-    ex::memory_resource & r1 = *ex::new_delete_resource();
-    void *ret = r1.allocate(1);
-    assert(ret);
-    assert(M.checkNewCalledEq(1));
-    assert(M.checkOutstandingNewEq(1));
-    assert(M.checkDeleteCalledEq(0));
-
-    r1.deallocate(ret, 1);
-    assert(M.checkNewCalledEq(1));
-    assert(M.checkOutstandingNewEq(0));
-    assert(M.checkDeleteCalledEq(1));
-}
+using namespace std::experimental::pmr;
 
 int main()
 {
-    static_assert(noexcept(ex::new_delete_resource()), "Must be noexcept");
-    test_return();
-    test_equality();
-    test_allocate_deallocate();
+    { // Plan Part 1
+        memory_resource* p1 = new_delete_resource();
+        assert(p1 != nullptr);
+        assert(p1->is_equal(*p1));
+
+        memory_resource* p2 = new_delete_resource();
+        assert(p2 != nullptr);
+        assert(p1 == p2);
+        assert(p1->is_equal(*p2));
+        assert(p2->is_equal(*p1));
+    }
+    { // Plan part 2
+        MemCounter& G = globalMemCounter;
+        memory_resource& M = *new_delete_resource();
+        void* p = M.allocate(1024);
+        assert(p != nullptr);
+        assert(G.checkOutstandingNewEq(1));
+        assert(G.checkLastNewSizeEq(1024));
+
+        M.deallocate(p, 1024);
+        assert(G.checkOutstandingNewEq(0));
+        assert(G.checkDeleteCalledEq(1));
+    }
+    { // Plan part 3
+        memory_resource const& M = *new_delete_resource();
+        TestResource R;
+        auto& P = R.getProvider();
+        memory_resource const& O = R;
+        
+        assert(M.is_equal(O) == false);
+        assert(P.checkIsEqualCalledEq(0));
+    }
+    { // Plan Part 4
+        static_assert(
+            noexcept(new_delete_resource())
+          , "new_delete_resource() must be noexcept"
+          );
+    }
 }
 
