@@ -552,9 +552,9 @@ _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
         void __release(memory_resource * __res) _NOEXCEPT
         {
             while (__head_) {
-                _ChunkNode * const __block = __head_;
-                __head_ = __block->__next_;
-                __res->deallocate(__block, __block->__size_);
+                _ChunkNode * const __tmp_block = __head_;
+                __head_ = __tmp_block->__next_;
+                __res->deallocate(__tmp_block, __tmp_block->__size_);
             }
         }
 
