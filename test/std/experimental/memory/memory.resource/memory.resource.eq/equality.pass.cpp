@@ -124,4 +124,3 @@ int main()
         assert(P2.checkIsEqualCalledEq(2));
     }
 }
-
