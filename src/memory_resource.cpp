@@ -36,9 +36,9 @@ __new_delete_memory_resource_imp::~__new_delete_memory_resource_imp()
 {
 }
 
-void * __new_delete_memory_resource_imp::do_allocate(size_t s, size_t a)
+void * __new_delete_memory_resource_imp::do_allocate(size_t s, size_t)
 {
-    return ::operator new(__aligned_allocation_size(s, a));
+    return ::operator new(s);
 }
 
 void __new_delete_memory_resource_imp::do_deallocate(void * p, size_t, size_t)
@@ -89,19 +89,27 @@ bool __null_memory_resource_imp::do_is_equal(
 }
 ///////////////////////////////////////////////////////////////////////////////
 
+_ALIGNAS_TYPE(__new_delete_memory_resource_imp)
+static char __nd_res_buf[sizeof(__new_delete_memory_resource_imp)];
+
+_ALIGNAS_TYPE(__null_memory_resource_imp)
+static char __null_res_buf[sizeof(__null_memory_resource_imp)];
+
 memory_resource * new_delete_resource() _NOEXCEPT {
-    static __new_delete_memory_resource_imp resource;
-    return &resource;
+    static memory_resource* resource =
+        ::new ((void*)&__nd_res_buf) __new_delete_memory_resource_imp();
+    return resource;
 }
 
 memory_resource * null_memory_resource() _NOEXCEPT {
-    static __null_memory_resource_imp resource;
-    return &resource;
+    static memory_resource* resource =
+        ::new ((void*)&__null_res_buf) __null_memory_resource_imp();
+    return resource;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 static memory_resource** __default_resource() {
-    static memory_resource* ptr = { new_delete_resource() };
+    static memory_resource* ptr =  new_delete_resource() ;
     return &ptr;
 }
 
