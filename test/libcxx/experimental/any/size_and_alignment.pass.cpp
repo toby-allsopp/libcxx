@@ -7,22 +7,17 @@
 //
 //===----------------------------------------------------------------------===//
 
-// <memory>
+// UNSUPPORTED: c++98, c++03, c++11
 
-// unique_ptr
+// <experimental/any>
 
-// Test unique_ptr move assignment
+// Check that the size and alignment of any are what we expect.
 
-#include <memory>
-
-#include "test_macros.h"
+#include <experimental/any>
 
 int main()
 {
-    std::unique_ptr<int> s, s2;
-#if TEST_STD_VER >= 11
-    s2 = s; // expected-error {{cannot be assigned because its copy assignment operator is implicitly deleted}}
-#else
-    s2 = s; // expected-error {{'operator=' is a private member of 'std::__1::unique_ptr}}
-#endif
+    using std::experimental::any;
+    static_assert(sizeof(any) == sizeof(void*)*4, "");
+    static_assert(alignof(any) == alignof(void*), "");
 }
