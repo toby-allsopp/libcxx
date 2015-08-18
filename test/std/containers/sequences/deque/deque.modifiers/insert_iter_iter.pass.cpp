@@ -17,8 +17,9 @@
 #include <deque>
 #include <cassert>
 
+#include "test_macros.h"
 #include "test_iterators.h"
-#include "../../../MoveOnly.h"
+#include "MoveOnly.h"
 #include "../../../stack_allocator.h"
 #include "min_allocator.h"
 
@@ -42,15 +43,16 @@ make(int size, int start = 0 )
     for (int i = 0; i < start; ++i)
         c.pop_front();
     return c;
-};
+}
 
 template <class C>
 void
-test(int P, C& c1, const C& c2)
+test(int P, const C& c0, const C& c2)
 {
-    typedef typename C::iterator I;
+    {
     typedef typename C::const_iterator CI;
-    typedef bidirectional_iterator<CI> BCI;
+    typedef input_iterator<CI> BCI;
+    C c1 = c0;
     std::size_t c1_osize = c1.size();
     CI i = c1.insert(c1.begin() + P, BCI(c2.begin()), BCI(c2.end()));
     assert(i == c1.begin() + P);
@@ -63,14 +65,47 @@ test(int P, C& c1, const C& c2)
         assert(*i == j);
     for (int j = P; j < c1_osize; ++j, ++i)
         assert(*i == j);
+    }
+    {
+    typedef typename C::const_iterator CI;
+    typedef forward_iterator<CI> BCI;
+    C c1 = c0;
+    std::size_t c1_osize = c1.size();
+    CI i = c1.insert(c1.begin() + P, BCI(c2.begin()), BCI(c2.end()));
+    assert(i == c1.begin() + P);
+    assert(c1.size() == c1_osize + c2.size());
+    assert(distance(c1.begin(), c1.end()) == c1.size());
+    i = c1.begin();
+    for (int j = 0; j < P; ++j, ++i)
+        assert(*i == j);
+    for (int j = 0; j < c2.size(); ++j, ++i)
+        assert(*i == j);
+    for (int j = P; j < c1_osize; ++j, ++i)
+        assert(*i == j);
+    }
+    {
+    typedef typename C::const_iterator CI;
+    typedef bidirectional_iterator<CI> BCI;
+    C c1 = c0;
+    std::size_t c1_osize = c1.size();
+    CI i = c1.insert(c1.begin() + P, BCI(c2.begin()), BCI(c2.end()));
+    assert(i == c1.begin() + P);
+    assert(c1.size() == c1_osize + c2.size());
+    assert(distance(c1.begin(), c1.end()) == c1.size());
+    i = c1.begin();
+    for (int j = 0; j < P; ++j, ++i)
+        assert(*i == j);
+    for (int j = 0; j < c2.size(); ++j, ++i)
+        assert(*i == j);
+    for (int j = P; j < c1_osize; ++j, ++i)
+        assert(*i == j);
+    }
 }
 
 template <class C>
 void
 testN(int start, int N, int M)
 {
-    typedef typename C::iterator I;
-    typedef typename C::const_iterator CI;
     for (int i = 0; i <= 3; ++i)
     {
         if (0 <= i && i <= N)
@@ -131,7 +166,6 @@ template <class C>
 void
 testI(int P, C& c1, const C& c2)
 {
-    typedef typename C::iterator I;
     typedef typename C::const_iterator CI;
     typedef input_iterator<CI> ICI;
     std::size_t c1_osize = c1.size();
@@ -152,8 +186,6 @@ template <class C>
 void
 testNI(int start, int N, int M)
 {
-    typedef typename C::iterator I;
-    typedef typename C::const_iterator CI;
     for (int i = 0; i <= 3; ++i)
     {
         if (0 <= i && i <= N)
@@ -205,7 +237,7 @@ template <class C>
 void
 test_move()
 {
-#ifndef _LIBCPP_HAS_NO_RVALUE_REFERENCES
+#if TEST_STD_VER >= 11
     C c;
     typedef typename C::const_iterator CI;
     {
@@ -224,7 +256,7 @@ test_move()
     j = 0;
     for (CI i = c.begin(); i != c.end(); ++i, ++j)
         assert(*i == MoveOnly(j));
-#endif  // _LIBCPP_HAS_NO_RVALUE_REFERENCES
+#endif
 }
 
 int main()
@@ -237,11 +269,11 @@ int main()
             for (int k = 0; k < N; ++k)
                 testN<std::deque<int> >(rng[i], rng[j], rng[k]);
     testNI<std::deque<int> >(1500, 2000, 1000);
-#ifndef _LIBCPP_HAS_NO_RVALUE_REFERENCES
+#if TEST_STD_VER >= 11
     test_move<std::deque<MoveOnly, stack_allocator<MoveOnly, 2000> > >();
-#endif  // _LIBCPP_HAS_NO_RVALUE_REFERENCES
+#endif
     }
-#if __cplusplus >= 201103L
+#if TEST_STD_VER >= 11
     {
     int rng[] = {0, 1, 2, 3, 1023, 1024, 1025, 2047, 2048, 2049};
     const int N = sizeof(rng)/sizeof(rng[0]);
