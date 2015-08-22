@@ -15,12 +15,14 @@
 
 // template <class F, class ...Args> thread(F&& f, Args&&... args);
 
-// UNSUPPORTED: asan, msan
+// UNSUPPORTED: sanitizer-new-delete
 
 #include <thread>
 #include <new>
 #include <cstdlib>
 #include <cassert>
+
+#include "test_macros.h"
 
 unsigned throw_one = 0xFFFF;
 
@@ -75,7 +77,7 @@ public:
 int G::n_alive = 0;
 bool G::op_run = false;
 
-#ifndef _LIBCPP_HAS_NO_VARIADICS
+#if TEST_STD_VER >= 11
 
 class MoveOnly
 {
@@ -137,7 +139,7 @@ int main()
             assert(!G::op_run);
         }
     }
-#ifndef _LIBCPP_HAS_NO_VARIADICS
+#if TEST_STD_VER >= 11
     {
         assert(G::n_alive == 0);
         assert(!G::op_run);
@@ -150,5 +152,5 @@ int main()
         std::thread t = std::thread(MoveOnly(), MoveOnly());
         t.join();
     }
-#endif  // _LIBCPP_HAS_NO_VARIADICS
+#endif
 }

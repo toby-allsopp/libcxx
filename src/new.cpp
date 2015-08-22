@@ -38,7 +38,7 @@
 #ifndef __GLIBCXX__
 
 // Implement all new and delete operators as weak definitions
-// in this shared library, so that they can be overriden by programs
+// in this shared library, so that they can be overridden by programs
 // that define non-weak copies of the functions.
 
 _LIBCPP_WEAK _LIBCPP_NEW_DELETE_VIS
@@ -140,13 +140,6 @@ operator delete(void* ptr, size_t) _NOEXCEPT
 
 _LIBCPP_WEAK _LIBCPP_NEW_DELETE_VIS
 void
-operator delete(void* ptr, size_t, const std::nothrow_t& nt) _NOEXCEPT
-{
-    ::operator delete(ptr, nt);
-}
-
-_LIBCPP_WEAK _LIBCPP_NEW_DELETE_VIS
-void
 operator delete[] (void* ptr) _NOEXCEPT
 {
     ::operator delete(ptr);
@@ -164,13 +157,6 @@ void
 operator delete[] (void* ptr, size_t) _NOEXCEPT
 {
     ::operator delete[](ptr);
-}
-
-_LIBCPP_WEAK _LIBCPP_NEW_DELETE_VIS
-void
-operator delete[] (void* ptr, size_t, const std::nothrow_t& nt) _NOEXCEPT
-{
-    ::operator delete[](ptr, nt);
 }
 
 #endif // !__GLIBCXX__
