@@ -6,13 +6,20 @@
 // Source Licenses. See LICENSE.TXT for details.
 //
 //===----------------------------------------------------------------------===//
-// XFAIL: libcpp-has-no-threads
+//
+// UNSUPPORTED: libcpp-has-no-threads
 
-#ifdef _LIBCPP_HAS_NO_THREADS
-#error This should be XFAIL'd for the purpose of detecting that the LIT feature\
- 'libcpp-has-no-threads' is available iff _LIBCPP_HAS_NO_THREADS is defined
-#endif
+// <atomic>
+
+// struct atomic_flag
+
+// TESTING EXTENSION atomic_flag(bool)
+
+#include <atomic>
+#include <cassert>
 
 int main()
 {
+    std::atomic_flag f(false);
+    assert(f.test_and_set() == 0);
 }
