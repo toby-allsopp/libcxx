@@ -223,9 +223,12 @@
 #include <iosfwd>
 #include <locale>
 #include <memory>
+#include <stack>
 #include <string>
 #include <system_error>
 #include <utility>
+
+#include <__debug>
 
 #include <vector> // TODO: remove this
 #include <list> // TODO: remove this
@@ -1364,7 +1367,7 @@ class recursive_directory_iterator
         void pop()
         {
             if (!__stack_ptr_) return;
-            ELIB_ASSERT(__stack_ptr_->size() > 0);
+            _LIBCPP_ASSERT(__stack_ptr_->size() > 0, "Popping an empty stack");
             __stack_ptr_->top() = directory_iterator();
             __increment();
         }
