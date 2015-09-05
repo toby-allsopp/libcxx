@@ -6,6 +6,7 @@
 #include <iostream>
 #include "filesystem_test_helper.hpp"
 #include "rapid-cxx-test.hpp"
+
 using namespace std::experimental::filesystem;
 
 // END.
@@ -112,7 +113,7 @@ TEST_CASE(append_operator_test)
         std::string rhs;
         std::string expect;
     };
-    
+
     const std::vector<append_operator_testcase> testcases =
     {
         {"", "", ""}
@@ -124,7 +125,7 @@ TEST_CASE(append_operator_test)
       , {"p1", "", "p1"}
       , {"", "p2", "p2"}
     };
-    
+
     for (auto const & testcase : testcases) {
         path lhs(testcase.lhs);
         path rhs(testcase.rhs);
@@ -165,7 +166,7 @@ TEST_CASE(concat_test)
     const std::string expect("p1/p2");
     const std::string s1("p1/");
     const std::string s2("p2");
-    
+
     // concat path
     {
         path p1(s1);
@@ -236,7 +237,7 @@ TEST_CASE(make_preferred_test)
         std::string raw;
         std::string expect;
     };
-    
+
     const std::vector<make_preferred_testcase> testcases =
     {
         {"", ""}
@@ -247,7 +248,7 @@ TEST_CASE(make_preferred_test)
       , {"\\foo\\bar\\baz\\", "/foo/bar/baz/"}
       , {"\\foo/bar\\/baz\\", "/foo/bar//baz/"}
     };
-    
+
     for (auto const & testcase : testcases) {
         path p(testcase.raw);
         p.make_preferred();
@@ -262,7 +263,7 @@ TEST_CASE(remove_filename_test)
         std::string raw;
         std::string expect;
     };
-    
+
     const std::vector<remove_filename_testcase> testcases =
     {
         {"", ""}
@@ -280,7 +281,7 @@ TEST_CASE(remove_filename_test)
       , {"file.txt", ""}
       , {"bar/../baz/./file.txt", "bar/../baz/."}
     };
-    
+
     for (auto const & testcase :  testcases) {
         path p(testcase.raw);
         p.remove_filename();
@@ -301,7 +302,7 @@ TEST_CASE(replace_filename_test)
         std::string expect;
         std::string filename;
     };
-    
+
     const std::vector<replace_filename_testcase> testcases =
     {
         {"/foo", "/bar", "bar"}
@@ -314,7 +315,7 @@ TEST_CASE(replace_filename_test)
       , {"/foo\\baz/bong/", "/foo\\baz/bong/bar", "bar"}
       , {"/foo\\baz/bong", "/foo\\baz/bar", "bar"}
     };
-    
+
     for (auto const & testcase : testcases) {
         path p(testcase.raw);
         p.replace_filename(testcase.filename);
@@ -330,7 +331,7 @@ TEST_CASE(replace_extension_test)
         std::string expect;
         std::string extension;
     };
-    
+
     const std::vector<extension_testcase> testcases =
     {
         {"", "", ""}
@@ -341,7 +342,7 @@ TEST_CASE(replace_extension_test)
       , {"/foo.cpp", "/foo.txt", ".txt"}
       , {"/foo.cpp", "/foo.txt", "txt"}
     };
-    
+
     for (auto const & testcase : testcases) {
         path p(testcase.raw);
         p.replace_extension(testcase.extension);
@@ -353,11 +354,11 @@ TEST_CASE(swap_test)
 {
     path p1("hello");
     path p2("world");
-    
+
     p1.swap(p2);
     TEST_CHECK(p1 == "world");
     TEST_CHECK(p2 == "hello");
-    
+
     swap(p1, p2);
     TEST_CHECK(p1 == "hello");
     TEST_CHECK(p2 == "world");
@@ -379,33 +380,33 @@ TEST_CASE(compare_test)
     const std::string s2("/foo/bar/baz");
     const path p1(s1);
     const path p2(s2);
-    
+
     TEST_CHECK(p1.compare(p2) < 0);
     TEST_CHECK(p1.compare(p1) == 0);
     TEST_CHECK(p2.compare(p1) > 0);
-    
+
     TEST_CHECK(p1.compare(s2) < 0);
     TEST_CHECK(p1.compare(s1) == 0);
     TEST_CHECK(p2.compare(s1) > 0);
-    
+
     TEST_CHECK(p1.compare(s2.c_str()) < 0);
     TEST_CHECK(p1.compare(s1.c_str()) == 0);
     TEST_CHECK(p2.compare(s1.c_str()) > 0);
-    
+
     TEST_CHECK(p1 < p2);
     TEST_CHECK(p1 <= p2);
     TEST_CHECK(not (p1 > p2));
     TEST_CHECK(not (p1 >= p2));
     TEST_CHECK(not (p1 == p2));
     TEST_CHECK(p1 != p2);
-    
+
     TEST_CHECK(not (p2 < p1));
     TEST_CHECK(not (p2 <= p1));
     TEST_CHECK(p2 > p1);
     TEST_CHECK(p2 >= p1);
     TEST_CHECK(not (p2 == p1));
     TEST_CHECK(p2 != p1);
-    
+
     TEST_CHECK(p1 == p1);
     TEST_CHECK(not (p1 != p1));
     TEST_CHECK(not (p1 < p1));
@@ -418,7 +419,7 @@ TEST_CASE(hash_value_test)
 {
     const path p1("/foo/./bar");
     const path p2("/foo/bar");
-    
+
     auto const h1 = hash_value(p1);
     auto const h2 = hash_value(p2);
 
@@ -484,35 +485,35 @@ TEST_CASE(path_decomp_test)
       , {"c:\\foo\\", {"c:\\foo\\"}, "", "", "", "c:\\foo\\", "", "c:\\foo\\"}
       , {"c:\\foo/",  {"c:\\foo", "."}, "", "", "", "c:\\foo/", "c:\\foo", "."}
       , {"c:/foo\\bar", {"c:", "foo\\bar"}, "", "", "", "c:/foo\\bar", "c:", "foo\\bar"}
-      
+
       , {"//", {"//"}, "//", "//", "", "", "", "//"}
     };
-    
+
     for (auto const & testcase : testcases) {
         path p(testcase.raw);
         TEST_REQUIRE(p == testcase.raw);
-        
+
         TEST_CHECK(p.root_path() == testcase.root_path);
         TEST_CHECK(p.has_root_path() == not testcase.root_path.empty());
-        
+
         TEST_CHECK(p.root_name() == testcase.root_name);
         TEST_CHECK(p.has_root_name() == not testcase.root_name.empty());
-        
+
         TEST_CHECK(p.root_directory() == testcase.root_directory);
         TEST_CHECK(p.has_root_directory() == not testcase.root_directory.empty());
-        
+
         TEST_CHECK(p.relative_path() == testcase.relative_path);
         TEST_CHECK(p.has_relative_path() == not testcase.relative_path.empty());
-        
+
         TEST_CHECK(p.parent_path() == testcase.parent_path);
         TEST_CHECK(p.has_parent_path() == not testcase.parent_path.empty());
-        
+
         TEST_CHECK(p.filename() == testcase.filename);
         TEST_CHECK(p.has_filename() == not testcase.filename.empty());
-        
+
         TEST_CHECK(p.is_absolute() == p.has_root_directory());
         TEST_CHECK(p.is_relative() == not p.is_absolute());
-        
+
         TEST_CHECK_EQUAL_COLLECTIONS(
             p.begin(), p.end()
           , testcase.elements.begin(), testcase.elements.end()
@@ -529,8 +530,8 @@ TEST_CASE(filename_decomp_test)
         std::string stem;
         std::string extension;
     };
-    
-    const std::vector<filename_decomp_testcase> testcases = 
+
+    const std::vector<filename_decomp_testcase> testcases =
     {
         {"", "", "", ""}
       , {".", ".", ".", ""}
@@ -540,17 +541,17 @@ TEST_CASE(filename_decomp_test)
       , {"/foo/bar.txt", "bar.txt", "bar", ".txt"}
       , {"foo..txt", "foo..txt", "foo.", ".txt"}
     };
-    
+
     for (auto const & testcase : testcases) {
         path p(testcase.raw);
         TEST_REQUIRE(p == testcase.raw);
-        
+
         TEST_CHECK(p.filename() == testcase.filename);
         TEST_CHECK(p.has_filename() == not testcase.filename.empty());
-        
+
         TEST_CHECK(p.stem() == testcase.stem);
         TEST_CHECK(p.has_stem() == not testcase.stem.empty());
-        
+
         TEST_CHECK(p.extension() == testcase.extension);
         TEST_CHECK(p.has_extension() == not testcase.extension.empty());
     }
@@ -560,7 +561,7 @@ TEST_CASE(output_stream_test)
 {
     const std::string s("/foo/bar/baz");
     const path p(s);
-    
+
     std::stringstream ss;
     ss << p;
     TEST_REQUIRE(ss);
@@ -572,7 +573,7 @@ TEST_CASE(input_stream_test)
     const std::string s("/foo/bar/baz");
     const path expect(s);
     path p;
-    
+
     std::stringstream ss;
     ss << s;
     ss >> p;
