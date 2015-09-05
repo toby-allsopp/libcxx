@@ -249,7 +249,7 @@ struct _LIBCPP_TYPE_VIS space_info
   uintmax_t available;
 };
 
-enum class file_type
+enum class _LIBCPP_TYPE_VIS file_type
 {
     none = 0,
     not_found = -1,
@@ -263,7 +263,7 @@ enum class file_type
     unknown = 8
 };
 
-enum class perms
+enum class _LIBCPP_TYPE_VIS perms
 {
     none = 0,
 
@@ -295,7 +295,7 @@ enum class perms
     resolve_symlinks = 0x40000
 };
 
-enum class copy_options
+enum class _LIBCPP_TYPE_VIS copy_options
 {
     none               = 0,
     skip_existing      = 1,
@@ -361,7 +361,7 @@ private:
     perms __prms_;
 };
 
-class directory_entry;
+class _LIBCPP_TYPE_VIS directory_entry;
 
 template <class _Tp>
 struct __is_pathable_imp : public false_type {};
