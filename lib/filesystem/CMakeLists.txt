@@ -1,7 +1,9 @@
 file(GLOB FILESYSTEM_SOURCES ../../src/filesystem/*.cpp)
+set(FILESYSTEM_HEADERS ../../include/experimental/filesystem)
 
 add_library(cxx_filesystem STATIC
-    ${FILESYSTEM_SOURCES}
+  ${FILESYSTEM_SOURCES}
+  ${FILESYSTEM_HEADERS}
   )
 
 split_list(LIBCXX_COMPILE_FLAGS)
@@ -10,7 +12,7 @@ split_list(LIBCXX_LINK_FLAGS)
 set_target_properties(cxx_filesystem
   PROPERTIES
     COMPILE_FLAGS "${LIBCXX_COMPILE_FLAGS}"
-    LINK_FLAGS "${LIBCXX_LINK_FLAGS}"
+    LINK_FLAGS    "${LIBCXX_LINK_FLAGS}"
     OUTPUT_NAME "c++filesystem"
     VERSION "1.0"
   )
