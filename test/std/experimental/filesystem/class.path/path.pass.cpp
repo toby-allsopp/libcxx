@@ -15,12 +15,16 @@ TEST_SUITE(std_filesystem_path_test_suite)
 
 TEST_CASE(default_ctor_test)
 {
+    static_assert(std::is_nothrow_default_constructible<path>::value,
+                  "filesystem::path's default constructor is marked noexcept");
     path p;
     TEST_CHECK(p.empty());
 }
 
 TEST_CASE(copy_ctor_test)
 {
+    static_assert(!std::is_nothrow_copy_constructible<path>::value,
+                  "filesystem::path's copy constructor should not be noexecept");
     path p("my_path");
     path p2(p);
     TEST_CHECK(p == p2);
@@ -28,6 +32,8 @@ TEST_CASE(copy_ctor_test)
 
 TEST_CASE(move_ctor_test)
 {
+    static_assert(std::is_nothrow_move_constructible<path>::value,
+                  "filesystem::path's move constructor is marked noexcept");
     path p("my_path");
     path p2(std::move(p));
     TEST_CHECK(p2 == path("my_path"));
@@ -44,7 +50,7 @@ TEST_CASE(iterator_ctor_test)
 {
     std::string str_path("my_path");
     path p(str_path.begin(), str_path.end());
-    TEST_CHECK(p== str_path);
+    TEST_CHECK(p == str_path);
 }
 
 TEST_CASE(dentry_ctor_test)
