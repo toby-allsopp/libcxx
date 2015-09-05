@@ -203,8 +203,10 @@ class Configuration(object):
         '''If set, run clang with -verify on failing tests.'''
         self.use_clang_verify = self.get_lit_bool('use_clang_verify')
         if self.use_clang_verify is None:
-            # TODO: Default this to True when using clang.
-            self.use_clang_verify = False
+            # NOTE: We do not test for the -verify flag directly because
+            #   -verify will always exit with non-zero on an empty file.
+            self.use_clang_verify = self.cxx.hasCompileFlag(
+                ['-Xclang', '-verify-ignore-unexpected'])
             self.lit_config.note(
                 "inferred use_clang_verify as: %r" % self.use_clang_verify)
 
@@ -327,6 +329,11 @@ class Configuration(object):
         if self.long_tests:
             self.config.available_features.add('long_tests')
 
+        # Run a compile test for the -fsized-deallocation flag. This is needed
+        # in test/std/language.support/support.dynamic/new.delete
+        if self.cxx.hasCompileFlag('-fsized-deallocation'):
+            self.config.available_features.add('fsized-deallocation')
+
     def configure_compile_flags(self):
         no_default_flags = self.get_lit_bool('no_default_flags', False)
         if not no_default_flags:
@@ -369,6 +376,8 @@ class Configuration(object):
         elif not enable_monotonic_clock:
             self.lit_config.fatal('enable_monotonic_clock cannot be false when'
                                   ' enable_threads is true.')
+        self.configure_compile_flags_no_thread_unsafe_c_functions()
+
         # Use verbose output for better errors
         self.cxx.flags += ['-v']
         sysroot = self.get_lit_conf('sysroot')
@@ -427,6 +436,15 @@ class Configuration(object):
     def configure_compile_flags_no_threads(self):
         self.cxx.compile_flags += ['-D_LIBCPP_HAS_NO_THREADS']
         self.config.available_features.add('libcpp-has-no-threads')
+
+    def configure_compile_flags_no_thread_unsafe_c_functions(self):
+        enable_thread_unsafe_c_functions = self.get_lit_bool(
+            'enable_thread_unsafe_c_functions', True)
+        if not enable_thread_unsafe_c_functions:
+            self.cxx.compile_flags += [
+                '-D_LIBCPP_HAS_NO_THREAD_UNSAFE_C_FUNCTIONS']
+            self.config.available_features.add(
+                'libcpp-has-no-thread-unsafe-c-functions')
 
     def configure_compile_flags_no_monotonic_clock(self):
         self.cxx.compile_flags += ['-D_LIBCPP_HAS_NO_MONOTONIC_CLOCK']
@@ -535,7 +553,7 @@ class Configuration(object):
             else:
                 self.cxx.link_flags += ['-lgcc_s']
         elif target_platform.startswith('freebsd'):
-            self.cxx.link_flags += ['-lc', '-lm', '-lpthread', '-lgcc_s']
+            self.cxx.link_flags += ['-lc', '-lm', '-lpthread', '-lgcc_s', '-lcxxrt']
         else:
             self.lit_config.fatal("unrecognized system: %r" % target_platform)
 
@@ -551,7 +569,15 @@ class Configuration(object):
         if use_color != '':
             self.lit_config.fatal('Invalid value for color_diagnostics "%s".'
                                   % use_color)
-        self.cxx.flags += ['-fdiagnostics-color=always']
+        color_flag = '-fdiagnostics-color=always'
+        # Check if the compiler supports the color diagnostics flag. Issue a
+        # warning if it does not since color diagnostics have been requested.
+        if not self.cxx.hasCompileFlag(color_flag):
+            self.lit_config.warning(
+                'color diagnostics have been requested but are not supported '
+                'by the compiler')
+        else:
+            self.cxx.flags += [color_flag]
 
     def configure_debug_mode(self):
         debug_level = self.get_lit_conf('debug_level', None)
@@ -565,10 +591,23 @@ class Configuration(object):
     def configure_warnings(self):
         enable_warnings = self.get_lit_bool('enable_warnings', False)
         if enable_warnings:
-            self.cxx.compile_flags += ['-Wsystem-headers', '-Wall', '-Werror']
-            if ('clang' in self.config.available_features or
-                'apple-clang' in self.config.available_features):
-                self.cxx.compile_flags += ['-Wno-user-defined-literals']
+            self.cxx.compile_flags += [
+                '-D_LIBCPP_HAS_NO_PRAGMA_SYSTEM_HEADER',
+                '-Wall', '-Werror'
+            ]
+            self.cxx.addWarningFlagIfSupported('-Wno-attributes')
+            self.cxx.addWarningFlagIfSupported('-Wno-pessimizing-move')
+            self.cxx.addWarningFlagIfSupported('-Wno-c++11-extensions')
+            self.cxx.addWarningFlagIfSupported('-Wno-user-defined-literals')
+            # TODO(EricWF) Remove the unused warnings once the test suite
+            # compiles clean with them.
+            self.cxx.addWarningFlagIfSupported('-Wno-unused-local-typedef')
+            self.cxx.addWarningFlagIfSupported('-Wno-unused-variable')
+            std = self.get_lit_conf('std', None)
+            if std in ['c++98', 'c++03']:
+                # The '#define static_assert' provided by libc++ in C++03 mode
+                # causes an unused local typedef whenever it is used.
+                self.cxx.addWarningFlagIfSupported('-Wno-unused-local-typedef')
 
     def configure_sanitizer(self):
         san = self.get_lit_conf('use_sanitizer', '').strip()
@@ -608,6 +647,8 @@ class Configuration(object):
                                    '-fno-sanitize-recover']
                 self.cxx.compile_flags += ['-O3']
                 self.config.available_features.add('ubsan')
+                if self.target_info.platform() == 'darwin':
+                    self.config.available_features.add('sanitizer-new-delete')
             elif san == 'Thread':
                 self.cxx.flags += ['-fsanitize=thread']
                 self.config.available_features.add('tsan')
@@ -615,6 +656,10 @@ class Configuration(object):
             else:
                 self.lit_config.fatal('unsupported value for '
                                       'use_sanitizer: {0}'.format(san))
+            san_lib = self.get_lit_conf('sanitizer_library')
+            if san_lib:
+                self.cxx.link_flags += [
+                    san_lib, '-Wl,-rpath,%s' % os.path.dirname(san_lib)]
 
     def configure_coverage(self):
         self.generate_coverage = self.get_lit_bool('generate_coverage', False)

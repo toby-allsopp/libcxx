@@ -137,3 +137,52 @@ class CXXCompiler(object):
     def getTriple(self):
         cmd = [self.path] + self.flags + ['-dumpmachine']
         return lit.util.capture(cmd).strip()
+
+    def hasCompileFlag(self, flag):
+        if isinstance(flag, list):
+            flags = list(flag)
+        else:
+            flags = [flag]
+        # Add -Werror to ensure that an unrecognized flag causes a non-zero
+        # exit code. -Werror is supported on all known compiler types.
+        if self.type is not None:
+            flags += ['-Werror']
+        cmd, out, err, rc = self.compile(os.devnull, out=os.devnull,
+                                         flags=flags)
+        return rc == 0
+
+    def addCompileFlagIfSupported(self, flag):
+        if isinstance(flag, list):
+            flags = list(flag)
+        else:
+            flags = [flag]
+        if self.hasCompileFlag(flags):
+            self.compile_flags += flags
+            return True
+        else:
+            return False
+
+    def addWarningFlagIfSupported(self, flag):
+        """
+        addWarningFlagIfSupported - Add a warning flag if the compiler
+        supports it. Unlike addCompileFlagIfSupported, this function detects
+        when "-Wno-<warning>" flags are unsupported. If flag is a
+        "-Wno-<warning>" GCC will not emit an unknown option diagnostic unless
+        another error is triggered during compilation.
+        """
+        assert isinstance(flag, str)
+        if not flag.startswith('-Wno-'):
+            return self.addCompileFlagIfSupported(flag)
+        flags = ['-Werror', flag]
+        cmd = self.compileCmd('-', os.devnull, flags)
+        # Remove '-v' because it will cause the command line invocation
+        # to be printed as part of the error output.
+        # TODO(EricWF): Are there other flags we need to worry about?
+        if '-v' in cmd:
+            cmd.remove('-v')
+        out, err, rc = lit.util.executeCommand(cmd, input='#error\n')
+        assert rc != 0
+        if flag in err:
+            return False
+        self.compile_flags += [flag]
+        return True
