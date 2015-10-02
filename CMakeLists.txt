@@ -156,6 +156,7 @@ endif()
 set(LIBCXX_COMPILER    ${CMAKE_CXX_COMPILER})
 set(LIBCXX_SOURCE_DIR  ${CMAKE_CURRENT_SOURCE_DIR})
 set(LIBCXX_BINARY_DIR  ${CMAKE_CURRENT_BINARY_DIR})
+set(LIBCXX_HEADER_DIR   ${CMAKE_BINARY_DIR}/include/c++/v1/)
 set(LIBCXX_LIBRARY_DIR ${CMAKE_BINARY_DIR}/lib${LIBCXX_LIBDIR_SUFFIX})
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${LIBCXX_LIBRARY_DIR})
@@ -169,6 +170,7 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${LIBCXX_LIBRARY_DIR})
 set(LIBCXX_COMPILE_FLAGS "")
 set(LIBCXX_LINK_FLAGS "")
 set(LIBCXX_LIBRARIES "")
+set(LIBCXX_NEEDS_SITE_CONFIG OFF)
 
 # Configure compiler.
 include(config-ix)
@@ -258,16 +260,8 @@ endif()
 
 # Feature flags ===============================================================
 define_if(MSVC -D_CRT_SECURE_NO_WARNINGS)
-define_if_not(LIBCXX_ENABLE_GLOBAL_FILESYSTEM_NAMESPACE -D_LIBCPP_HAS_NO_GLOBAL_FILESYSTEM_NAMESPACE)
-define_if_not(LIBCXX_ENABLE_STDIN -D_LIBCPP_HAS_NO_STDIN)
-define_if_not(LIBCXX_ENABLE_STDOUT -D_LIBCPP_HAS_NO_STDOUT)
-define_if_not(LIBCXX_ENABLE_THREADS -D_LIBCPP_HAS_NO_THREADS)
-define_if_not(LIBCXX_ENABLE_MONOTONIC_CLOCK -D_LIBCPP_HAS_NO_MONOTONIC_CLOCK)
-define_if_not(LIBCXX_ENABLE_THREAD_UNSAFE_C_FUNCTIONS -D_LIBCPP_HAS_NO_THREAD_UNSAFE_C_FUNCTIONS)
 
-
-# Sanitizer flags =============================================================
-
+# Sanitizer flags ==============================================================
 # Configure for sanitizers. If LIBCXX_BUILT_STANDALONE then we have to do
 # the flag translation ourselves. Othewise LLVM's CMakeList.txt will handle it.
 if (LIBCXX_BUILT_STANDALONE)
@@ -301,6 +295,24 @@ if (LIBCXX_BUILT_STANDALONE)
     message(WARNING "LLVM_USE_SANITIZER is not supported on this platform.")
   endif()
 endif()
+
+
+# Configuration file flags =====================================================
+config_define_if_not(LIBCXX_ENABLE_GLOBAL_FILESYSTEM_NAMESPACE _LIBCPP_HAS_NO_GLOBAL_FILESYSTEM_NAMESPACE)
+config_define_if_not(LIBCXX_ENABLE_STDIN _LIBCPP_HAS_NO_STDIN)
+config_define_if_not(LIBCXX_ENABLE_STDOUT _LIBCPP_HAS_NO_STDOUT)
+config_define_if_not(LIBCXX_ENABLE_THREADS _LIBCPP_HAS_NO_THREADS)
+config_define_if_not(LIBCXX_ENABLE_MONOTONIC_CLOCK _LIBCPP_HAS_NO_MONOTONIC_CLOCK)
+config_define_if_not(LIBCXX_ENABLE_THREAD_UNSAFE_C_FUNCTIONS _LIBCPP_HAS_NO_THREAD_UNSAFE_C_FUNCTIONS)
+
+if (LIBCXX_NEEDS_SITE_CONFIG)
+set(LIBCXX_SITE_CONFIG_HEADER ${LIBCXX_BINARY_DIR}/__config_site)
+configure_file(
+  include/__config_site.in
+  ${LIBCXX_SITE_CONFIG_HEADER}
+  @ONLY)
+endif()
+
 #===============================================================================
 # Setup Source Code And Tests
 #===============================================================================
