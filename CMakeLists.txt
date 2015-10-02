@@ -306,11 +306,12 @@ config_define_if_not(LIBCXX_ENABLE_MONOTONIC_CLOCK _LIBCPP_HAS_NO_MONOTONIC_CLOC
 config_define_if_not(LIBCXX_ENABLE_THREAD_UNSAFE_C_FUNCTIONS _LIBCPP_HAS_NO_THREAD_UNSAFE_C_FUNCTIONS)
 
 if (LIBCXX_NEEDS_SITE_CONFIG)
-set(LIBCXX_SITE_CONFIG_HEADER ${LIBCXX_BINARY_DIR}/__config_site)
-configure_file(
-  include/__config_site.in
-  ${LIBCXX_SITE_CONFIG_HEADER}
-  @ONLY)
+  set(LIBCXX_CONFIG_SITE_HEADER ${LIBCXX_BINARY_DIR}/__config_site)
+  configure_file(
+    include/__config_site.in
+    ${LIBCXX_CONFIG_SITE_HEADER}
+    @ONLY)
+  add_compile_flags(-include ${LIBCXX_CONFIG_SITE_HEADER})
 endif()
 
 #===============================================================================

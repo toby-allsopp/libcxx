@@ -2,6 +2,7 @@ if (NOT LIBCXX_INSTALL_SUPPORT_HEADERS)
   set(LIBCXX_SUPPORT_HEADER_PATTERN PATTERN "support" EXCLUDE)
 endif()
 
+
 set(LIBCXX_HEADER_PATTERN
   PATTERN "*"
   PATTERN "CMakeLists.txt" EXCLUDE
@@ -10,18 +11,11 @@ set(LIBCXX_HEADER_PATTERN
   ${LIBCXX_SUPPORT_HEADER_PATTERN}
   )
 
-# The headers should be copied to the build directory every time libc++ is built.
-# Because the CMake file(...) commands only run at configuration time we use
-# a cmake script that we can run during every build.
-add_custom_target(libcxx-copy-headers ALL
-  COMMAND
-  ${CMAKE_COMMAND}
-  -DLIBCXX_HEADER_DIR=${LIBCXX_HEADER_DIR}
-  -DLIBCXX_BINARY_DIR=${LIBCXX_BINARY_DIR}
-  -DLIBCXX_SOURCE_DIR=${LIBCXX_SOURCE_DIR}
-  -DLIBCXX_NEEDS_SITE_CONFIG=${LIBCXX_NEEDS_SITE_CONFIG}
-  -P ${LIBCXX_SOURCE_DIR}/cmake/Modules/CopyLibcxxHeaders.cmake
-  WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR})
+file(COPY .
+  DESTINATION "${LIBCXX_HEADER_DIR}"
+  FILES_MATCHING
+  ${LIBCXX_HEADER_PATTERN}
+  )
 
 
 if (LIBCXX_INSTALL_HEADERS)
@@ -32,4 +26,25 @@ if (LIBCXX_INSTALL_HEADERS)
     ${LIBCXX_HEADER_PATTERN}
     PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
   )
+
+  if (LIBCXX_NEEDS_SITE_CONFIG)
+    # Generate and install a custom __config header. The new header is created
+    # by  prepending __config_site to the current __config header.
+    add_custom_command(OUTPUT ${LIBCXX_BINARY_DIR}/__generated_config
+      COMMAND ${CMAKE_COMMAND} -E copy ${LIBCXX_BINARY_DIR}/__config_site ${LIBCXX_BINARY_DIR}/__generated_config
+      COMMAND cat ${LIBCXX_SOURCE_DIR}/include/__config >> ${LIBCXX_BINARY_DIR}/__generated_config
+      DEPENDS ${LIBCXX_SOURCE_DIR}/include/__config
+    )
+    # Add a target that executes the generation commands.
+    add_custom_target(generate_config_header ALL
+      DEPENDS ${LIBCXX_BINARY_DIR}/__generated_config)
+    # Install the generated header as __config.
+    install(FILES ${LIBCXX_BINARY_DIR}/__generated_config
+      DESTINATION include/c++/v1
+      PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
+      RENAME __config
+      COMPONENT libcxx)
+
+  endif()
+
 endif()

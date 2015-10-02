@@ -2,7 +2,7 @@
 config.cxx_under_test           = "@LIBCXX_COMPILER@"
 config.libcxx_src_root          = "@LIBCXX_SOURCE_DIR@"
 config.libcxx_obj_root          = "@LIBCXX_BINARY_DIR@"
-config.site_config_header       = "@LIBCXX_SITE_CONFIG_HEADER@"
+config.config_site_header       = "@LIBCXX_CONFIG_SITE_HEADER@"
 config.cxx_library_root         = "@LIBCXX_LIBRARY_DIR@"
 config.enable_exceptions        = "@LIBCXX_ENABLE_EXCEPTIONS@"
 config.enable_rtti              = "@LIBCXX_ENABLE_RTTI@"

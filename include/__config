@@ -15,6 +15,7 @@
 #pragma GCC system_header
 #endif
 
+
 #ifdef __GNUC__
 #define _GNUC_VER (__GNUC__ * 100 + __GNUC_MINOR__)
 #else
