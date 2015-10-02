@@ -384,11 +384,10 @@ class Configuration(object):
         if os.path.isfile(config_site_header):
             self.lit_config.note('Using __config_site header in %s' %
                 os.path.dirname(config_site_header))
-            # FIXME: deduce_config_site_features wont work after we add 
+            # FIXME: deduce_config_site_features wont work after we add
             # -include <header> below.
             self.deduce_config_site_features(config_site_header)
             self.cxx.compile_flags += ['-include', config_site_header]
-            
 
         libcxx_headers = self.get_lit_conf(
             'libcxx_headers', os.path.join(self.libcxx_src_root, 'include'))
