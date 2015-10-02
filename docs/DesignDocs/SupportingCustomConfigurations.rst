@@ -9,8 +9,8 @@ The Problem
 ===========
 
 Currently the libc++ CMake build supports many different configuration options.
-Some of these configuration options need to be captured and stored inside
-the libc++ headers in order to work correctly after libc++ is installed.
+Some of which need to be captured and stored inside the libc++ headers in order
+to work correctly after libc++ is installed.
 
 For example the CMake option "-DLIBCXX_ENABLE_THREADS=OFF" is used to build
 libc++ on platforms that have no pthread support. A library built without threading

@@ -156,7 +156,6 @@ endif()
 set(LIBCXX_COMPILER    ${CMAKE_CXX_COMPILER})
 set(LIBCXX_SOURCE_DIR  ${CMAKE_CURRENT_SOURCE_DIR})
 set(LIBCXX_BINARY_DIR  ${CMAKE_CURRENT_BINARY_DIR})
-set(LIBCXX_HEADER_DIR   ${CMAKE_BINARY_DIR}/include/c++/v1/)
 set(LIBCXX_LIBRARY_DIR ${CMAKE_BINARY_DIR}/lib${LIBCXX_LIBDIR_SUFFIX})
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${LIBCXX_LIBRARY_DIR})
@@ -170,7 +169,7 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${LIBCXX_LIBRARY_DIR})
 set(LIBCXX_COMPILE_FLAGS "")
 set(LIBCXX_LINK_FLAGS "")
 set(LIBCXX_LIBRARIES "")
-set(LIBCXX_NEEDS_SITE_CONFIG OFF)
+
 
 # Configure compiler.
 include(config-ix)
@@ -306,12 +305,12 @@ config_define_if_not(LIBCXX_ENABLE_MONOTONIC_CLOCK _LIBCPP_HAS_NO_MONOTONIC_CLOC
 config_define_if_not(LIBCXX_ENABLE_THREAD_UNSAFE_C_FUNCTIONS _LIBCPP_HAS_NO_THREAD_UNSAFE_C_FUNCTIONS)
 
 if (LIBCXX_NEEDS_SITE_CONFIG)
-  set(LIBCXX_CONFIG_SITE_HEADER ${LIBCXX_BINARY_DIR}/__config_site)
+  set(CS_HEADER ${LIBCXX_BINARY_DIR}/__config_site)
   configure_file(
     include/__config_site.in
-    ${LIBCXX_CONFIG_SITE_HEADER}
+    ${CS_HEADER}
     @ONLY)
-  add_compile_flags(-include ${LIBCXX_CONFIG_SITE_HEADER})
+  add_compile_flags(-include ${CS_HEADER})
 endif()
 
 #===============================================================================

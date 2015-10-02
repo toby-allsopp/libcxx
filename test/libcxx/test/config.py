@@ -357,24 +357,10 @@ class Configuration(object):
         # Configure feature flags.
         self.configure_compile_flags_exceptions()
         self.configure_compile_flags_rtti()
-        self.configure_compile_flags_no_global_filesystem_namespace()
-        self.configure_compile_flags_no_stdin()
-        self.configure_compile_flags_no_stdout()
+        
         enable_32bit = self.get_lit_bool('enable_32bit', False)
         if enable_32bit:
             self.cxx.flags += ['-m32']
-        # Configure threading features.
-        enable_threads = self.get_lit_bool('enable_threads', True)
-        enable_monotonic_clock = self.get_lit_bool('enable_monotonic_clock',
-                                                   True)
-        if not enable_threads:
-            self.configure_compile_flags_no_threads()
-            if not enable_monotonic_clock:
-                self.configure_compile_flags_no_monotonic_clock()
-        elif not enable_monotonic_clock:
-            self.lit_config.fatal('enable_monotonic_clock cannot be false when'
-                                  ' enable_threads is true.')
-        self.configure_compile_flags_no_thread_unsafe_c_functions()
 
         # Use verbose output for better errors
         self.cxx.flags += ['-v']
@@ -392,16 +378,43 @@ class Configuration(object):
         self.cxx.compile_flags += ['-I' + support_path]
         self.cxx.compile_flags += ['-include', os.path.join(support_path, 'nasty_macros.hpp')]
 
-        libcxx_headers = self.get_lit_conf('libcxx_headers')
-        if libcxx_headers:
-            self.lit_config.note('Using libc++ headers in: %s' % libcxx_headers)
-        else:
-            libcxx_headers = os.path.join(self.libcxx_src_root, 'include')
+        # Check for the presence of a __config_site header in the build directory
+        # If one exists we need to manually include in all of the tests.
+        config_site_header = os.path.join(self.libcxx_obj_root, '__config_site')
+        if os.path.isfile(config_site_header):
+            self.lit_config.note('Using __config_site header in %s' %
+                os.path.dirname(config_site_header))
+            # FIXME: deduce_config_site_features wont work after we add 
+            # -include <header> below.
+            self.deduce_config_site_features(config_site_header)
+            self.cxx.compile_flags += ['-include', config_site_header]
+            
+
+        libcxx_headers = self.get_lit_conf(
+            'libcxx_headers', os.path.join(self.libcxx_src_root, 'include'))
 
         if not os.path.isdir(libcxx_headers):
             self.lit_config.fatal("libcxx_headers='%s' is not a directory."
                                   % libcxx_headers)
         self.cxx.compile_flags += ['-I' + libcxx_headers]
+
+    def deduce_config_site_features(self, header):
+        
+        predefines = self.cxx.dumpMacros()
+        macros = self.cxx.dumpMacros(header)
+        feature_macros = set(macros.keys()) - set(predefines.keys())
+        # We expect the header guard to be one of the definitions
+        assert '_LIBCPP_CONFIG_SITE' in feature_macros
+        feature_macros.remove('_LIBCPP_CONFIG_SITE')
+        # The __config_site header should be non-empty. Otherwise it should
+        # have never been emitted by CMake.
+        assert len(feature_macros) > 0
+        # Transform each macro name into the feature name used in the tests.
+        # Ex. _LIBCPP_HAS_NO_THREADS -> libcpp-has-no-threads
+        for m in feature_macros:
+            assert m.startswith('_LIBCPP_HAS')
+            m = m.lower()[1:].replace('_', '-')
+            self.config.available_features.add(m)
 
     def configure_compile_flags_exceptions(self):
         enable_exceptions = self.get_lit_bool('enable_exceptions', True)
@@ -415,35 +428,7 @@ class Configuration(object):
             self.config.available_features.add('libcpp-no-rtti')
             self.cxx.compile_flags += ['-fno-rtti', '-D_LIBCPP_NO_RTTI']
 
-    def configure_compile_flags_no_global_filesystem_namespace(self):
-        enable_global_filesystem_namespace = self.get_lit_bool(
-            'enable_global_filesystem_namespace', True)
-        if not enable_global_filesystem_namespace:
-            self.config.available_features.add(
-                'libcpp-has-no-global-filesystem-namespace')
 
-    def configure_compile_flags_no_stdin(self):
-        enable_stdin = self.get_lit_bool('enable_stdin', True)
-        if not enable_stdin:
-            self.config.available_features.add('libcpp-has-no-stdin')
-
-    def configure_compile_flags_no_stdout(self):
-        enable_stdout = self.get_lit_bool('enable_stdout', True)
-        if not enable_stdout:
-            self.config.available_features.add('libcpp-has-no-stdout')
-
-    def configure_compile_flags_no_threads(self):
-        self.config.available_features.add('libcpp-has-no-threads')
-
-    def configure_compile_flags_no_thread_unsafe_c_functions(self):
-        enable_thread_unsafe_c_functions = self.get_lit_bool(
-            'enable_thread_unsafe_c_functions', True)
-        if not enable_thread_unsafe_c_functions:
-            self.config.available_features.add(
-                'libcpp-has-no-thread-unsafe-c-functions')
-
-    def configure_compile_flags_no_monotonic_clock(self):
-        self.config.available_features.add('libcpp-has-no-monotonic-clock')
 
     def configure_link_flags(self):
         no_default_flags = self.get_lit_bool('no_default_flags', False)
