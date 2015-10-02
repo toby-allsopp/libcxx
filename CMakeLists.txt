@@ -85,7 +85,7 @@ option(LIBCXX_ENABLE_STDOUT "Build libc++ with support for stdout/std::cout." ON
 option(LIBCXX_ENABLE_THREADS "Build libc++ with support for threads." ON)
 option(LIBCXX_ENABLE_THREAD_UNSAFE_C_FUNCTIONS "Build libc++ with support for thread-unsafe C functions" ON)
 option(LIBCXX_ENABLE_MONOTONIC_CLOCK
-  "Build libc++ with support for a monotonic clock.
+  "Build libc++ with support for a monotonic clock.c
    This option may only be set to OFF when LIBCXX_ENABLE_THREADS=OFF." ON)
 
 # Misc options ----------------------------------------------------------------
