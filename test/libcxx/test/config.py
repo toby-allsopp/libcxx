@@ -391,8 +391,13 @@ class Configuration(object):
         support_path = os.path.join(self.libcxx_src_root, 'test/support')
         self.cxx.compile_flags += ['-I' + support_path]
         self.cxx.compile_flags += ['-include', os.path.join(support_path, 'nasty_macros.hpp')]
-        libcxx_headers = self.get_lit_conf(
-            'libcxx_headers', os.path.join(self.libcxx_src_root, 'include'))
+
+        libcxx_headers = self.get_lit_conf('libcxx_headers')
+        if libcxx_headers:
+            self.lit_config.note('Using libc++ headers in: %s' % libcxx_headers)
+        else:
+            libcxx_headers = os.path.join(self.libcxx_src_root, 'include')
+
         if not os.path.isdir(libcxx_headers):
             self.lit_config.fatal("libcxx_headers='%s' is not a directory."
                                   % libcxx_headers)
@@ -416,36 +421,28 @@ class Configuration(object):
         if not enable_global_filesystem_namespace:
             self.config.available_features.add(
                 'libcpp-has-no-global-filesystem-namespace')
-            self.cxx.compile_flags += [
-                '-D_LIBCPP_HAS_NO_GLOBAL_FILESYSTEM_NAMESPACE']
 
     def configure_compile_flags_no_stdin(self):
         enable_stdin = self.get_lit_bool('enable_stdin', True)
         if not enable_stdin:
             self.config.available_features.add('libcpp-has-no-stdin')
-            self.cxx.compile_flags += ['-D_LIBCPP_HAS_NO_STDIN']
 
     def configure_compile_flags_no_stdout(self):
         enable_stdout = self.get_lit_bool('enable_stdout', True)
         if not enable_stdout:
             self.config.available_features.add('libcpp-has-no-stdout')
-            self.cxx.compile_flags += ['-D_LIBCPP_HAS_NO_STDOUT']
 
     def configure_compile_flags_no_threads(self):
-        self.cxx.compile_flags += ['-D_LIBCPP_HAS_NO_THREADS']
         self.config.available_features.add('libcpp-has-no-threads')
 
     def configure_compile_flags_no_thread_unsafe_c_functions(self):
         enable_thread_unsafe_c_functions = self.get_lit_bool(
             'enable_thread_unsafe_c_functions', True)
         if not enable_thread_unsafe_c_functions:
-            self.cxx.compile_flags += [
-                '-D_LIBCPP_HAS_NO_THREAD_UNSAFE_C_FUNCTIONS']
             self.config.available_features.add(
                 'libcpp-has-no-thread-unsafe-c-functions')
 
     def configure_compile_flags_no_monotonic_clock(self):
-        self.cxx.compile_flags += ['-D_LIBCPP_HAS_NO_MONOTONIC_CLOCK']
         self.config.available_features.add('libcpp-has-no-monotonic-clock')
 
     def configure_link_flags(self):

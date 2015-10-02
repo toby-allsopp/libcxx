@@ -25,7 +25,8 @@ the headers and the rational for the design.
 Design Goals
 ============
 
-* Configuration macros should be automatically captured and stored in the libc++ headers.
+* Configuration macros should be automatically captured and stored in the
+  libc++ headers.
 
 * The solution should not require any new headers.
 
@@ -49,14 +50,14 @@ Solution
 
 The simplest way to capture the configuration options in CMake is to generate
 a C++ header containing macro definitions for the options. In libc++'s case we
-create a header called "__config_prefix" and store it in the "build/include"
-directory. The `__config_prefix` header is never installed or included by any
+create a header called "__config_site" and store it in the "build/include"
+directory. The `__config_site` header is never installed or included by any
 libc++ headers. Instead it is prepended to the "__config" header during installation.
 The resulting __config header contains all of the captured configuration options
-and the "__config_prefix" header is discarded.
+and the "__config_site" header is discarded.
 
 Note that we only generate the new "__config" header for installation and not
-before that. While building and testing we manually include "__config_prefix"
+before that. While building and testing we manually include "__config_site"
 on the command line. This allows us to use the __config header in the source tree
 directly with no need for modification.
 
@@ -64,15 +65,15 @@ directly with no need for modification.
 Step by Step Explanation
 ========================
 
-Each step in the build process handles the "__config_prefix" slightly differently.
+Each step in the build process handles the "__config_site" slightly differently.
 The descriptions below explains what happens during each step.
 
 
 Configuration Time
 ------------------
 
-1. At CMake configuration time we generate a "__config_prefix" header from the
-   "src/include/__config_prefix.in" file. The generated file contains a macro
+1. At CMake configuration time we generate a "__config_site" header from the
+   "src/include/__config_site.in" file. The generated file contains a macro
    definition for each configuration option passed to CMake. This header will
    never be installed or directly included by another file.
 
@@ -80,23 +81,23 @@ Build Time
 ----------
 
 1. Build libc++ using the headers in "src/include" and use "-include" to
-   to manually include "build/include/__config_prefix" header.
+   to manually include "build/include/__config_site" header.
 
 Test Time
 ---------
 
 1. Build the libc++ tests using the headers in "src/include" and use "-include"
-   to manually include "build/include/__config_prefix" header.
+   to manually include "build/include/__config_site" header.
 
 Installation Time
 -----------------
 
-This is where the real magic happens. The trick is to prepend the "__config_prefix"
+This is where the real magic happens. The trick is to prepend the "__config_site"
 header to the "__config" header you plan to install.
 
 1. First we copy the headers from "libcxx/include" to "build/include/c++/v1".
 
-2. We then prepend the contents of "__config_prefix" to "build/include/c++/v1/__config".
+2. We then prepend the contents of "__config_site" to "build/include/c++/v1/__config".
    By doing this we remove the need for an extra configuration header.
 
 3. Finally we install the headers in "build/include/c++/v1". The installed
@@ -105,12 +106,4 @@ header to the "__config" header you plan to install.
 
 Although steps #1 and #2 actually happen during build time their purpose is to
 support the installation rule.
-
-
-
-
-
-
-
-
 

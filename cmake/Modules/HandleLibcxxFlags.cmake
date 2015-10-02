@@ -49,6 +49,22 @@ macro(define_if_not condition def)
   endif()
 endmacro()
 
+macro(config_define_if condition def)
+  if (${condition})
+    add_definitions(-D${def})
+    set(${def} ON)
+    set(LIBCXX_NEEDS_SITE_CONFIG ON)
+  endif()
+endmacro()
+
+macro(config_define_if_not condition def)
+  if (NOT ${condition})
+    add_definitions(-D${def})
+    set(${def} ON)
+    set(LIBCXX_NEEDS_SITE_CONFIG ON)
+  endif()
+endmacro()
+
 # Add a specified list of flags to both 'LIBCXX_COMPILE_FLAGS' and
 # 'LIBCXX_LINK_FLAGS'.
 macro(add_flags)
