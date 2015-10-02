@@ -12,7 +12,7 @@ set(LIBCXX_HEADER_PATTERN
   )
 
 file(COPY .
-  DESTINATION "${LIBCXX_HEADER_DIR}"
+  DESTINATION include/c++/v1
   FILES_MATCHING
   ${LIBCXX_HEADER_PATTERN}
   )
@@ -30,6 +30,7 @@ if (LIBCXX_INSTALL_HEADERS)
   if (LIBCXX_NEEDS_SITE_CONFIG)
     # Generate and install a custom __config header. The new header is created
     # by  prepending __config_site to the current __config header.
+    # TODO(EricWF) Is it portable to use "cat" and ">>"?
     add_custom_command(OUTPUT ${LIBCXX_BINARY_DIR}/__generated_config
       COMMAND ${CMAKE_COMMAND} -E copy ${LIBCXX_BINARY_DIR}/__config_site ${LIBCXX_BINARY_DIR}/__generated_config
       COMMAND cat ${LIBCXX_SOURCE_DIR}/include/__config >> ${LIBCXX_BINARY_DIR}/__generated_config
@@ -44,7 +45,6 @@ if (LIBCXX_INSTALL_HEADERS)
       PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
       RENAME __config
       COMPONENT libcxx)
-
   endif()
 
 endif()

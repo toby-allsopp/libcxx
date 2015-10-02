@@ -357,7 +357,7 @@ class Configuration(object):
         # Configure feature flags.
         self.configure_compile_flags_exceptions()
         self.configure_compile_flags_rtti()
-        
+
         enable_32bit = self.get_lit_bool('enable_32bit', False)
         if enable_32bit:
             self.cxx.flags += ['-m32']
@@ -399,7 +399,9 @@ class Configuration(object):
         self.cxx.compile_flags += ['-I' + libcxx_headers]
 
     def deduce_config_site_features(self, header):
-        
+        """ deduce_config_site_features - Deduce and add the test features that
+            that are implied by the #define's in the __config_site header.
+        """
         predefines = self.cxx.dumpMacros()
         macros = self.cxx.dumpMacros(header)
         feature_macros = set(macros.keys()) - set(predefines.keys())
