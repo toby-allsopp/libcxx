@@ -127,7 +127,7 @@ Design Documents
 .. toctree::
    :maxdepth: 1
 
-   DesignDocs/SupportingCustomConfigurations
+   DesignDocs/CapturingConfigInfo
 
 
 * `<atomic> design <http://libcxx.llvm.org/atomic_design.html>`_
