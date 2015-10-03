@@ -1,5 +1,5 @@
 =============================================================
-__config_site - How libc++ captures configuration information
+Capturing configuration information during installation
 =============================================================
 
 .. contents::
@@ -8,7 +8,41 @@ __config_site - How libc++ captures configuration information
 The Problem
 ===========
 
-Currently the libc++ CMake build supports many different configuration options.
+Currently the libc++ supports building the library with a number of different
+configuration options.  Unfortunately all of that configuration information is
+lost when libc++ is installed. In order to support "persistent"
+configurations libc++ needs a mechanism to capture the configuration options
+in the INSTALLED headers. By only modifying the headers during installation
+we avoid changing how libc++ is built or tested (that already works).
+
+The Solution
+============
+
+When you first configure libc++ using CMake we check to see if we need to
+capture any options. If we haven't been given any "persistent" options then
+we do NOTHING.
+
+Otherwise we create a custom installation rule that modifies the installed __config
+header. The rule first generates a dummy "__config_site" header containing the required
+#defines. The contents of the dummy header are then prependend to the installed
+__config header. For example the "__config" header generated when
+-DLIBCXX_ENABLE_THREADS=OFF is given to CMake would look something like:
+
+.. code-block:: cpp
+
+  #ifndef _LIBCPP_CONFIG_SITE
+  #define _LIBCPP_CONFIG_SITE
+
+  #define _LIBCPP_HAS_NO_THREADS
+
+  #endif // _LIBCPP_CONFIG_SITE
+  #ifndef _LIBCPP_CONFIG
+  // ...
+
+
+
+
+supports many different configuration options.
 Some of which need to be captured and stored inside the libc++ headers in order
 to work correctly after libc++ is installed.
 
