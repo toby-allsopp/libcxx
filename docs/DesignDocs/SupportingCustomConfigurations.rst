@@ -1,6 +1,7 @@
 =============================================================
 Capturing configuration information during installation
-=============================================================
+========================================================
+
 
 .. contents::
    :local:
@@ -12,57 +13,17 @@ Currently the libc++ supports building the library with a number of different
 configuration options.  Unfortunately all of that configuration information is
 lost when libc++ is installed. In order to support "persistent"
 configurations libc++ needs a mechanism to capture the configuration options
-in the INSTALLED headers. By only modifying the headers during installation
-we avoid changing how libc++ is built or tested (that already works).
+in the INSTALLED headers.
 
-The Solution
-============
-
-When you first configure libc++ using CMake we check to see if we need to
-capture any options. If we haven't been given any "persistent" options then
-we do NOTHING.
-
-Otherwise we create a custom installation rule that modifies the installed __config
-header. The rule first generates a dummy "__config_site" header containing the required
-#defines. The contents of the dummy header are then prependend to the installed
-__config header. For example the "__config" header generated when
--DLIBCXX_ENABLE_THREADS=OFF is given to CMake would look something like:
-
-.. code-block:: cpp
-
-  #ifndef _LIBCPP_CONFIG_SITE
-  #define _LIBCPP_CONFIG_SITE
-
-  #define _LIBCPP_HAS_NO_THREADS
-
-  #endif // _LIBCPP_CONFIG_SITE
-  #ifndef _LIBCPP_CONFIG
-  // ...
-
-
-
-
-supports many different configuration options.
-Some of which need to be captured and stored inside the libc++ headers in order
-to work correctly after libc++ is installed.
-
-For example the CMake option "-DLIBCXX_ENABLE_THREADS=OFF" is used to build
-libc++ on platforms that have no pthread support. A library built without threading
-support can only be used with headers that also disable threading support. In order
-to support these kind of options libc++ needs to be able to capture configuration
-time decisions and store them in the libc++ headers.
-
-This document describes how libc++ captures configuration options in
-the headers and the rational for the design.
 
 Design Goals
 ============
 
-* The solution should take into account the needs of libc++ developers as well
-  as it's users.
-
 * The solution should not INSTALL any additional headers. We don't want an extra
   #include slowing everybody down.
+
+* The solution should not unduly affect libc++ developers. The problem is limited
+  to installed versions of libc++ and the solution should be as well.
 
 * The solution should not modify any existing headers EXCEPT during installation.
   It makes developers lives harder if they have to regenerate the libc++ headers
@@ -76,79 +37,54 @@ Design Goals
   configuration options. The vast majority of users will never need this so it
   shouldn't cost them.
 
-It's important to remember that we only need to capture the configuration decisions
-in the installed version of the headers. We already have this information when
-we are building and testing libc++. Therefore we should focus on a solution
 
-Breakdown
-=========
+The Solution
+============
 
-1. Capture the configuration decisions in a C++ header named __config_site.
-2. When building and testing libc++ we manually include the __config_site header
-   on the command line.
-3.
+When you first configure libc++ using CMake we check to see if we need to
+capture any options. If we haven't been given any "persistent" options then
+we do NOTHING.
 
+Otherwise we create a custom installation rule that modifies the installed __config
+header. The rule first generates a dummy "__config_site" header containing the required
+#defines. The contents of the dummy header are then prependend to the installed
+__config header. By manually prepending the files we avoid the cost of an
+extra #include and we allow the __config header to be ignorant of the extra
+ configuration all together. An example "__config" header generated when
+-DLIBCXX_ENABLE_THREADS=OFF is given to CMake would look something like:
 
+.. code-block:: cpp
 
-Solution
-========
+  //===----------------------------------------------------------------------===//
+  //
+  //                     The LLVM Compiler Infrastructure
+  //
+  // This file is dual licensed under the MIT and the University of Illinois Open
+  // Source Licenses. See LICENSE.TXT for details.
+  //
+  //===----------------------------------------------------------------------===//
 
-The simplest way to capture the configuration options in CMake is to generate
-a C++ header containing macro definitions for the options. In libc++'s case we
-create a header called "__config_site" and store it in the "build/include"
-directory. The `__config_site` header is never installed or included by any
-libc++ headers. Instead it is prepended to the "__config" header during installation.
-The resulting __config header contains all of the captured configuration options
-and the "__config_site" header is discarded.
+  #ifndef _LIBCPP_CONFIG_SITE
+  #define _LIBCPP_CONFIG_SITE
 
-Note that we only generate the new "__config" header for installation and not
-before that. While building and testing we manually include "__config_site"
-on the command line. This allows us to use the __config header in the source tree
-directly with no need for modification.
+  /* #undef _LIBCPP_HAS_NO_GLOBAL_FILESYSTEM_NAMESPACE */
+  /* #undef _LIBCPP_HAS_NO_STDIN */
+  /* #undef _LIBCPP_HAS_NO_STDOUT */
+  #define _LIBCPP_HAS_NO_THREADS
+  /* #undef _LIBCPP_HAS_NO_MONOTONIC_CLOCK */
+  /* #undef _LIBCPP_HAS_NO_THREAD_UNSAFE_C_FUNCTIONS */
 
+  #endif
+  // -*- C++ -*-
+  //===--------------------------- __config ---------------------------------===//
+  //
+  //                     The LLVM Compiler Infrastructure
+  //
+  // This file is dual licensed under the MIT and the University of Illinois Open
+  // Source Licenses. See LICENSE.TXT for details.
+  //
+  //===----------------------------------------------------------------------===//
 
-Step by Step Explanation
-========================
-
-Each step in the build process handles the "__config_site" slightly differently.
-The descriptions below explains what happens during each step.
-
-
-Configuration Time
-------------------
-
-1. At CMake configuration time we generate a "__config_site" header from the
-   "src/include/__config_site.in" file. The generated file contains a macro
-   definition for each configuration option passed to CMake. This header will
-   never be installed or included directly by another file.
-
-Build Time
-----------
-
-1. Build libc++ using the headers in "src/include" and use "-include" to
-   to manually include "build/include/__config_site" header.
-
-Test Time
----------
-
-1. Build the libc++ tests using the headers in "src/include" and use "-include"
-   to manually include "build/include/__config_site" header.
-
-Installation Time
------------------
-
-This is where the real magic happens. The trick is to prepend the "__config_site"
-header to the "__config" header you plan to install.
-
-1. First we copy the headers from "libcxx/include" to "build/include/c++/v1".
-
-2. We then prepend the contents of "__config_site" to "build/include/c++/v1/__config".
-   By doing this we remove the need for an extra configuration header.
-
-3. Finally we install the headers in "build/include/c++/v1". The installed
-   "__config" header contains all of the required configuration options at the
-   top of the file.
-
-Although steps #1 and #2 actually happen during build time their purpose is to
-support the installation rule.
+  #ifndef _LIBCPP_CONFIG
+  #define _LIBCPP_CONFIG
 
