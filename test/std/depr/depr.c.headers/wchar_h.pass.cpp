@@ -9,6 +9,12 @@
 
 // <wchar.h>
 
+// This test fails on systems whose C library doesn't provide a correct overload
+// set for wcschr, wcspbrk, wcsrchr, wcsstr, and wmemchr. There's no way for
+// libc++ to fix that on the C library's behalf.
+//
+// XFAIL: apple-darwin
+
 #include <wchar.h>
 #include <type_traits>
 
