@@ -31,6 +31,7 @@
 #define STATIC_ASSERT_CXX14(Pred) assert(Pred)
 #endif
 
+
 #if TEST_STD_VER >= 11
 #define ASSERT_CXX03_ONLY(Pred) ((void)0)
     // Assert the specified expression 'Pred' only in C++98 and C++03. In C++11
@@ -102,7 +103,6 @@ void test_deleted_default()
 }
 
 
-
 // Check that the SFINAE on the default constructor is not evaluated when
 // it isn't needed. If the default constructor of 'IllFormedDefault' is evaluated
 // in C++11, even with is_default_constructible, then this test should fail to
@@ -135,6 +135,7 @@ void test_illformed_default()
     ASSERT_CXX03_ONLY(std::is_default_constructible<P>::value); // ASSERTS BUG IN C++03
     }
 }
+
 
 int main()
 {

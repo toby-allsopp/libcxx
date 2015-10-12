@@ -267,7 +267,7 @@ struct _LIBCPP_TYPE_VIS_ONLY pair
         __dependent_type<is_default_constructible<_T2>, _Dummy>::value
       >::type>
 #endif
-    inline _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR pair() : first(), second() {}
+    _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR pair() : first(), second() {}
 
     _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX11
     pair(const _T1& __x, const _T2& __y)
