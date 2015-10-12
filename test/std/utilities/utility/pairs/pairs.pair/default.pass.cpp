@@ -20,6 +20,26 @@
 #include "test_macros.h"
 
 
+#if TEST_STD_VER > 11
+#define CONSTEXPR_CXX14 constexpr
+    // Expands to 'constexpr' in C++14 and greater and '' otherwise.
+#define STATIC_ASSERT_CXX14(Pred) static_assert(Pred, "")
+    // Assert the specified expression 'Pred' using a static_assert in C++14 and
+    // greater and using assert(...) otherwise.
+#else
+#define CONSTEXPR_CXX14
+#define STATIC_ASSERT_CXX14(Pred) assert(Pred)
+#endif
+
+#if TEST_STD_VER >= 11
+#define ASSERT_CXX03_ONLY(Pred) ((void)0)
+    // Assert the specified expression 'Pred' only in C++98 and C++03. In C++11
+    // and greater 'ASSERT_CXX03_ONLY' expands to a nop expression.
+#else
+#define ASSERT_CXX03_ONLY(Pred) assert(Pred)
+#endif
+
+
 #if TEST_STD_VER >= 11
 struct DeletedDefault {
     // A class with a deleted default constructor. Used to test the SFINAE
@@ -38,9 +58,9 @@ struct IllFormedDefaultImp {
 };
 
 typedef IllFormedDefaultImp<int> IllFormedDefault;
-    // A class which provides a default constructor with a valid signature but
-    // an ill-formed body. A compile error will be emitted if the default
-    // constructor is instantiated.
+    // A class which provides a constexpr default constructor with a valid
+    // signature but an ill-formed body. The A compile error will be emitted if
+    // the default constructor is instantiated.
 
 
 // Test that the defaulted constructor does not participate in overload
@@ -48,7 +68,7 @@ typedef IllFormedDefaultImp<int> IllFormedDefault;
 // See LWG issue #2367
 void test_deleted_default()
 {
-#if TEST_STD_VER >= 110
+#if TEST_STD_VER >= 11
     {
     typedef std::pair<int, int> P;
     static_assert(std::is_default_constructible<P>::value, "");
@@ -59,8 +79,8 @@ void test_deleted_default()
     static_assert(!std::is_default_constructible<P>::value, "");
     static_assert(!std::is_constructible<P>::value, "");
     static_assert(std::is_constructible<P, DeletedDefault, int>::value, "");
-    constexpr P p(DeletedDefault(42), -5);
-    static_assert(p.first.value == 42 && p.second == -5, "");
+    CONSTEXPR_CXX14 P p(DeletedDefault(42), -5);
+    STATIC_ASSERT_CXX14(p.first.value == 42 && p.second == -5);
     }
     {
     typedef std::pair<int, DeletedDefault> P;
@@ -68,38 +88,20 @@ void test_deleted_default()
     static_assert(!std::is_constructible<P>::value, "");
     static_assert(std::is_constructible<P, int, DeletedDefault>::value, "");
     constexpr DeletedDefault dd(-5);
-    constexpr P p(42, dd);
-    static_assert(p.first == 42 && p.second.value == -5, "");
+    CONSTEXPR_CXX14 P p(42, dd);
+    STATIC_ASSERT_CXX14(p.first == 42 && p.second.value == -5);
     }
     {
     typedef std::pair<DeletedDefault, DeletedDefault> P;
     static_assert(!std::is_default_constructible<P>::value, "");
     static_assert(std::is_constructible<P, DeletedDefault, DeletedDefault>::value, "");
-    constexpr P p(DeletedDefault(42), DeletedDefault(-5));
-    static_assert(p.first.value == 42 && p.second.value == -5, "");
+    CONSTEXPR_CXX14 P p(DeletedDefault(42), DeletedDefault(-5));
+    STATIC_ASSERT_CXX14(p.first.value == 42 && p.second.value == -5);
     }
 #endif
 }
 
 
-#if TEST_STD_VER > 11
-#define CONSTEXPR_CXX14 constexpr
-    // Expands to 'constexpr' in C++14 and greater and '' otherwise.
-#define STATIC_ASSERT_CXX14(Pred) static_assert(Pred, "")
-    // Assert the specified expression 'Pred' using a static_assert in C++14 and
-    // greater and using assert(...) otherwise.
-#else
-#define CONSTEXPR_CXX14
-#define STATIC_ASSERT_CXX14(Pred) assert(Pred)
-#endif
-    
-#if TEST_STD_VER >= 11
-#define ASSERT_CXX03_ONLY(Pred) ((void)0)
-    // Assert the specified expression 'Pred' only in C++98 and C++03. In C++11
-    // and greater 'ASSERT_CXX03_ONLY' expands to a nop expression.
-#else
-#define ASSERT_CXX03_ONLY(Pred) assert(Pred)
-#endif
 
 // Check that the SFINAE on the default constructor is not evaluated when
 // it isn't needed. If the default constructor of 'IllFormedDefault' is evaluated
@@ -133,6 +135,16 @@ void test_illformed_default()
     ASSERT_CXX03_ONLY(std::is_default_constructible<P>::value); // ASSERTS BUG IN C++03
     }
 }
+
+
+#if TEST_STD_VER >= 11
+namespace std { inline namespace __1 {
+extern template class pair<int, int>;
+extern template class pair<DeletedDefault, DeletedDefault>;
+template class pair<int, int>;
+template class pair<DeletedDefault, DeletedDefault>;
+}}
+#endif
 
 int main()
 {
