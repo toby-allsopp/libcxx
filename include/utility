@@ -268,7 +268,7 @@ struct _LIBCPP_TYPE_VIS_ONLY pair
 #endif
     inline _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR pair() : first(), second() {}
 
-     _LIBCPP_CONSTEXPR_AFTER_CXX11
+    _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX11
     pair(const _T1& __x, const _T2& __y)
         : first(__x), second(__y) {}
 
