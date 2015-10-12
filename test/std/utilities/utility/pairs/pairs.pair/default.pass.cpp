@@ -136,16 +136,6 @@ void test_illformed_default()
     }
 }
 
-
-#if TEST_STD_VER >= 11
-namespace std { inline namespace __1 {
-extern template class pair<int, int>;
-extern template class pair<DeletedDefault, DeletedDefault>;
-template class pair<int, int>;
-template class pair<DeletedDefault, DeletedDefault>;
-}}
-#endif
-
 int main()
 {
     {
