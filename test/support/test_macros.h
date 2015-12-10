@@ -26,6 +26,12 @@
 #define TEST_HAS_EXTENSION(X) 0
 #endif
 
+#ifdef __has_builtin
+#define TEST_HAS_BUILTIN(X) __has_builtin(X)
+#else
+#define TEST_HAS_BUILTIN(X) 0
+#endif
+
 /* Make a nice name for the standard version */
 #if  __cplusplus <= 199711L
 # define TEST_STD_VER 3
@@ -94,6 +100,11 @@ template <unsigned> struct static_assert_check {};
 
 #if !TEST_HAS_FEATURE(cxx_exceptions) && !defined(__cxx_exceptions)
 #define TEST_HAS_NO_EXCEPTIONS
+#endif
+
+#if TEST_HAS_FEATURE(address_sanitizer) || TEST_HAS_FEATURE(memory_sanitizer) || \
+    TEST_HAS_FEATURE(thread_sanitizer)
+#define TEST_HAS_SANITIZERS
 #endif
 
 #endif // SUPPORT_TEST_MACROS_HPP

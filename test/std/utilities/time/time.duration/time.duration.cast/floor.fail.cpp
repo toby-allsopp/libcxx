@@ -6,13 +6,21 @@
 // Source Licenses. See LICENSE.TXT for details.
 //
 //===----------------------------------------------------------------------===//
-// XFAIL: libcpp-has-no-threads
 
-#ifdef _LIBCPP_HAS_NO_THREADS
-#error This should be XFAIL'd for the purpose of detecting that the LIT feature\
- 'libcpp-has-no-threads' is available iff _LIBCPP_HAS_NO_THREADS is defined
-#endif
+// UNSUPPORTED: c++03, c++11, c++14
+// <chrono>
+
+// floor
+
+// template <class ToDuration, class Rep, class Period>
+//   ToDuration
+//   floor(const duration<Rep, Period>& d);
+
+// ToDuration shall be an instantiation of duration.
+
+#include <chrono>
 
 int main()
 {
+    std::chrono::floor<int>(std::chrono::milliseconds(3));
 }

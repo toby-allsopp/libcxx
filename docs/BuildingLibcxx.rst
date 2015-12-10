@@ -34,7 +34,7 @@ The basic steps needed to build libc++ are:
 
 #. Configure and build libc++ with libc++abi:
 
-   `CMake <CMake.html>`_ is the only supported configuration system. Unlike other LLVM
+   CMake is the only supported configuration system. Unlike other LLVM
    projects autotools is not supported for either libc++ or libc++abi.
 
    Clang is the preferred compiler when building and using libc++.
@@ -69,8 +69,8 @@ The instructions are for building libc++ on
 FreeBSD, Linux, or Mac using `libc++abi`_ as the C++ ABI library.
 On Linux, it is also possible to use :ref:`libsupc++ <libsupcxx>` or libcxxrt.
 
-It is sometimes beneficial to build outside of the LLVM tree. To build
-libc++ TODO
+It is sometimes beneficial to build outside of the LLVM tree. An out-of-tree
+build would look like this:
 
 .. code-block:: bash
 
@@ -170,6 +170,14 @@ ABI Library Specific Options
   If this option is enabled, libc++ will try and link the selected ABI library
   statically.
 
+.. option:: LIBCXX_ENABLE_ABI_LINKER_SCRIPT:BOOL
+
+  **Default**: ``ON`` by default on UNIX platforms other than Apple unless
+  'LIBCXX_ENABLE_STATIC_ABI_LIBRARY' is ON. Otherwise the default value is ``OFF``.
+
+  This option generate and installs a linker script as ``libc++.so`` which
+  links the correct ABI library.
+
 .. option:: LIBCXXABI_USE_LLVM_UNWINDER:BOOL
 
   **Default**: ``OFF``
@@ -192,6 +200,25 @@ libc++ Feature options
   **Default**: ``ON``
 
   Build libc++ with run time type information.
+
+
+libc++ Feature options
+----------------------
+
+The following options allow building libc++ for a different ABI version.
+
+.. option:: LIBCXX_ABI_VERSION:STRING
+
+  **Default**: ``1``
+
+  Defines the target ABI version of libc++.
+
+.. option:: LIBCXX_ABI_UNSTABLE:BOOL
+
+  **Default**: ``OFF``
+
+  Build the "unstable" ABI version of libc++. Includes all ABI changing features
+  on top of the current stable version.
 
 .. _LLVM-specific variables:
 
