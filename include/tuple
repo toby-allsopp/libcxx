@@ -540,6 +540,8 @@ public:
               typename enable_if
                       <
                          sizeof...(_Up) <= sizeof...(_Tp) &&
+                        __lazy_and<
+                          __lazy_not<__disable_tuple_args_ctor<tuple, _Up...>>,
                          __tuple_convertible
                          <
                             tuple<_Up...>,
@@ -547,13 +549,14 @@ public:
                                      sizeof...(_Up) < sizeof...(_Tp) ?
                                         sizeof...(_Up) :
                                         sizeof...(_Tp)>::type
-                         >::value &&
+                         >,
                          __all_default_constructible<
                             typename __make_tuple_types<tuple, sizeof...(_Tp),
                                 sizeof...(_Up) < sizeof...(_Tp) ?
                                     sizeof...(_Up) :
                                     sizeof...(_Tp)>::type
-                         >::value,
+                         >
+                    >::type::value,
                          bool
                       >::type = false
              >
@@ -578,6 +581,8 @@ public:
               typename enable_if
                       <
                          sizeof...(_Up) <= sizeof...(_Tp) &&
+                        __lazy_and<
+                         __lazy_not<__disable_tuple_args_ctor<tuple, _Up...>>,
                          __tuple_constructible
                          <
                             tuple<_Up...>,
@@ -585,21 +590,21 @@ public:
                                      sizeof...(_Up) < sizeof...(_Tp) ?
                                         sizeof...(_Up) :
                                         sizeof...(_Tp)>::type
-                         >::value &&
-                         !__tuple_convertible
+                         >,
+                         __lazy_not<__tuple_convertible
                          <
                             tuple<_Up...>,
                             typename __make_tuple_types<tuple,
                                      sizeof...(_Up) < sizeof...(_Tp) ?
                                         sizeof...(_Up) :
                                         sizeof...(_Tp)>::type
-                         >::value &&
+                         >>,
                          __all_default_constructible<
                             typename __make_tuple_types<tuple, sizeof...(_Tp),
                                 sizeof...(_Up) < sizeof...(_Tp) ?
                                     sizeof...(_Up) :
                                     sizeof...(_Tp)>::type
-                         >::value,
+                         >>::type::value,
                          bool
                       >::type =false
              >
@@ -625,6 +630,8 @@ public:
               class = typename enable_if
                       <
                          sizeof...(_Up) <= sizeof...(_Tp) &&
+                         __lazy_and<
+                         __lazy_not<__disable_tuple_args_ctor<tuple, _Up...>>,
                          __tuple_convertible
                          <
                             tuple<_Up...>,
@@ -632,13 +639,13 @@ public:
                                      sizeof...(_Up) < sizeof...(_Tp) ?
                                         sizeof...(_Up) :
                                         sizeof...(_Tp)>::type
-                         >::value &&
+                         >,
                          __all_default_constructible<
                             typename __make_tuple_types<tuple, sizeof...(_Tp),
                                 sizeof...(_Up) < sizeof...(_Tp) ?
                                     sizeof...(_Up) :
                                     sizeof...(_Tp)>::type
-                         >::value
+                         >>::value
                       >::type
              >
         _LIBCPP_INLINE_VISIBILITY
@@ -653,6 +660,7 @@ public:
     template <class _Tuple,
               typename enable_if
                       <
+                        !__disable_tuple_like_ctor<_Tuple, tuple>::value &&
                          __tuple_convertible<_Tuple, tuple>::value,
                          bool
                       >::type = false
@@ -664,6 +672,7 @@ public:
     template <class _Tuple,
               typename enable_if
                       <
+                         !__disable_tuple_like_ctor<_Tuple, tuple>::value &&
                          __tuple_constructible<_Tuple, tuple>::value &&
                          !__tuple_convertible<_Tuple, tuple>::value,
                          bool
@@ -677,6 +686,7 @@ public:
     template <class _Alloc, class _Tuple,
               class = typename enable_if
                       <
+                         !__disable_tuple_like_ctor<_Tuple, tuple>::value &&
                          __tuple_convertible<_Tuple, tuple>::value
                       >::type
              >
