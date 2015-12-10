@@ -22,6 +22,7 @@
 
 _LIBCPP_BEGIN_NAMESPACE_STD
 
+
 template <class _Tp> class _LIBCPP_TYPE_VIS_ONLY tuple_size;
 
 template <class _Tp>
@@ -341,6 +342,10 @@ struct __tuple_assignable<_Tp, _Up, true, true>
                                     tuple_size<_Up>::value, _Tp, _Up>
 {};
 
+template <class _Tp>
+struct __uncvref {
+  typedef typename remove_cv<typename remove_reference<_Tp>::type>::type type;
+};
 
 /**
  * A utility metafunction that gets the first element type of a tuple
@@ -353,78 +358,91 @@ struct __first_tuple_elem : remove_reference<
     >::type
 > {};
 
-/**
- * A metafunction that determines if the tuple-like copy/move ctor should be
- * disabled because it would construct a dangling reference to a nested tuple.
- * See PR22806 - https://llvm.org/bugs/show_bug.cgi?id=22806.
- *
- * The goal of this meta-function is to disable the tuple-like ctor for
- * instantiations like:
- *
- * std::tuple<std::tuple<ValueType>&&>::tuple(std::tuple<ValueType>&&);
- *
- * In this case the constructor would attempt to bind 'ValueType&&' to the first
- * element of type 'std::tuple<ValueType>&&' which would create a temporary
- * 'std::tuple<ValueType>' from 'ValueType&&' and assign it to a reference. The
- * temporary would then go out of scope and the tuple would contain a dangling
- * reference.
- *
- * This metafunction returns true if all of the following are true.
- *   1. _From is "tuple-like". This is always true but we need it to guard other
- *      meta-programming.
- *
- *   2. _Tuple has size 1. This is the only case where the copy/move ctors can
- *      be a better match that the UTypes... ctors because a single argument
- *      ctor is a better match than a variadic one that deduces one argument.
- *
- *   3. The first element of _Tuple, 'TupleElem0', is a reference.
- *
- *   4. The first element of _From, 'FromElem0', is not an instance of
- *      or derived from 'TupleElem0'. If it were then the construction of
- *     'TupleElem0' wouldn't result in a dangling reference.
- */
-template <class _From, class _Tuple,
-          bool = __tuple_like<typename remove_reference<_From>::type>::value &&
-                tuple_size<_Tuple>::value == 1 &&
-                is_reference<typename tuple_element<0, _Tuple>::type>::value
-          >
-struct __disable_tuple_like_ctor : false_type {};
 
-template <class _From, class _Tuple>
-struct __disable_tuple_like_ctor<_From, _Tuple, true> : integral_constant<bool,
-    tuple_size<typename remove_reference<_From>::type>::value == 1 &&
-    !is_base_of<
-        typename __first_tuple_elem<_Tuple>::type,
-        typename __first_tuple_elem<_From>::type
-    >::value
-> {};
+template <class ..._Tp>
+_LIBCPP_INLINE_VISIBILITY
+void __swallow(_Tp&&...) _NOEXCEPT {}
 
+template <bool ..._Pred>
+struct __all
+    : is_same<__all<_Pred...>, __all<(_Pred, true)...>>
+{ };
+
+template <class _Tp>
+struct __all_default_constructible;
+
+template <class ..._Tp>
+struct __all_default_constructible<__tuple_types<_Tp...>>
+    : __all<is_default_constructible<_Tp>::value...>
+{ };
 
 /**
- * A metafunction that returns 'true' when the tuple(UTypes&&...) constructor
- * should not participate in overload resolution. This metafunction is meant to
- * guard the other SFINAE on the tuple(UTypes&&...) from being evaluated when
- * its clear that a tuple copy/move constructor should be chosen instead.
- * See PR23256 - https://llvm.org/bugs/show_bug.cgi?id=23256.
- *
- * The metafunction returns true if and only if:
- *   1. sizeof...(UTypes) == 1. The copy constructor only takes 1 argument
- *     so we obviously didn't intend to call it if we provide more that one
- *     argument.
- *
- *   2. The first element (and only) element type, 'UT0', is the same type as the
- *      tuple. Ex std::tuple<A>(std::tuple<A> const&).
- *
+ * A metafunction that determines if _Tuple(_Args&&...) will call the copy
+ * or move ctor for _Tuple.
  */
 template <class _Tuple, class ..._Args>
-struct __disable_tuple_args_ctor : false_type {};
+struct __select_tuple_copy_or_move : false_type {};
 
-template <class _Tuple, class _Arg0>
-struct __disable_tuple_args_ctor<_Tuple, _Arg0>
-    : is_same<
+template <class _Tuple, class _A0>
+struct __select_tuple_copy_or_move<_Tuple, _A0> :
+        is_same<_Tuple, typename __uncvref<_A0>::type>::type
+{};
+
+template <bool _Val>
+struct _BoolT : public integral_constant<bool, _Val> {};
+
+template <bool _Explicit, class _Tuple, class _TypeList>
+struct __lazy_tuple_creatable : __identity<__tuple_convertible<_Tuple, typename _TypeList::type>> {};
+
+template <class _Tuple, class _TypeList>
+struct __lazy_tuple_creatable<true, _Tuple, _TypeList>
+    : __lazy_and<
+        __lazy_not<__tuple_convertible<_Tuple, typename _TypeList::type>>,
+        __tuple_constructible<_Tuple, typename _TypeList::type>
+      >
+{};
+
+
+template <class _TupleTypes>
+struct __lazy_all_default_constructible : __all_default_constructible<typename _TupleTypes::type> {};
+
+
+template <bool _Explicit,
+        size_t _Size, size_t _ArgSize, size_t _MinSize,
+        class _Tuple, class ..._Args
+        >
+struct __enable_tuple_args_ctor_imp : __lazy_and<
+    _BoolT<_Size >= _ArgSize && !__select_tuple_copy_or_move<_Tuple, _Args...>::value>,
+    __lazy_tuple_creatable<_Explicit, tuple<_Args...>,  __make_tuple_types<_Tuple, _MinSize>>,
+    __lazy_all_default_constructible<__make_tuple_types<_Tuple, _Size, _MinSize>>
+> {};
+
+template <bool _Explicit, class _Tuple, class ..._Args>
+struct __enable_tuple_args_ctor : __enable_tuple_args_ctor_imp<_Explicit,
+        tuple_size<_Tuple>::value,
+        sizeof...(_Args),
+        sizeof...(_Args) < tuple_size<_Tuple>::value ? sizeof...(_Args) : tuple_size<_Tuple>::value,
         _Tuple,
-        typename remove_cv<typename remove_reference<_Arg0>::type>::type
-      > {};
+        _Args...>
+{};
+
+template <bool _Explicit, class _Tuple, class _Arg, bool _IsAlloc = false,
+          bool = __tuple_like<typename remove_reference<_Arg>::type>::value>
+struct __enable_tuple_like_ctor : false_type {};
+
+template <bool _Explicit, class _Tuple, class _Arg, bool _IsAlloc>
+struct __enable_tuple_like_ctor<_Explicit, _Tuple, _Arg, _IsAlloc, true>
+        : __lazy_and<
+                _BoolT<tuple_size<_Tuple>::value != 1 || _IsAlloc || !__select_tuple_copy_or_move<_Tuple, _Arg>::value)>,
+                __lazy_tuple_creatable<_Explicit, _Arg, __identity<_Tuple>>,
+                __lazy_not<__tuple_convertible<tuple<_Arg>, _Tuple>>,
+                __lazy_not<__tuple_constructible<tuple<_Arg>, _Tuple>>
+          >
+{
+};
+
+
+
 
 #endif  // _LIBCPP_HAS_NO_VARIADICS
 

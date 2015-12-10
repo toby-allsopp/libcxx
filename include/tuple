@@ -370,22 +370,6 @@ public:
     _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX11 const _Hp& get() const _NOEXCEPT {return static_cast<const _Hp&>(*this);}
 };
 
-template <class ..._Tp>
-_LIBCPP_INLINE_VISIBILITY
-void __swallow(_Tp&&...) _NOEXCEPT {}
-
-template <bool ..._Pred>
-struct __all
-    : is_same<__all<_Pred...>, __all<(_Pred, true)...>>
-{ };
-
-template <class _Tp>
-struct __all_default_constructible;
-
-template <class ..._Tp>
-struct __all_default_constructible<__tuple_types<_Tp...>>
-    : __all<is_default_constructible<_Tp>::value...>
-{ };
 
 // __tuple_impl
 
@@ -539,24 +523,7 @@ public:
     template <class ..._Up,
               typename enable_if
                       <
-                         sizeof...(_Up) <= sizeof...(_Tp) &&
-                        __lazy_and<
-                          __lazy_not<__disable_tuple_args_ctor<tuple, _Up...>>,
-                         __tuple_convertible
-                         <
-                            tuple<_Up...>,
-                            typename __make_tuple_types<tuple,
-                                     sizeof...(_Up) < sizeof...(_Tp) ?
-                                        sizeof...(_Up) :
-                                        sizeof...(_Tp)>::type
-                         >,
-                         __all_default_constructible<
-                            typename __make_tuple_types<tuple, sizeof...(_Tp),
-                                sizeof...(_Up) < sizeof...(_Tp) ?
-                                    sizeof...(_Up) :
-                                    sizeof...(_Tp)>::type
-                         >
-                    >::type::value,
+                         __enable_tuple_args_ctor<false, tuple, _Up...>::type::value,
                          bool
                       >::type = false
              >
@@ -580,31 +547,7 @@ public:
     template <class ..._Up,
               typename enable_if
                       <
-                         sizeof...(_Up) <= sizeof...(_Tp) &&
-                        __lazy_and<
-                         __lazy_not<__disable_tuple_args_ctor<tuple, _Up...>>,
-                         __tuple_constructible
-                         <
-                            tuple<_Up...>,
-                            typename __make_tuple_types<tuple,
-                                     sizeof...(_Up) < sizeof...(_Tp) ?
-                                        sizeof...(_Up) :
-                                        sizeof...(_Tp)>::type
-                         >,
-                         __lazy_not<__tuple_convertible
-                         <
-                            tuple<_Up...>,
-                            typename __make_tuple_types<tuple,
-                                     sizeof...(_Up) < sizeof...(_Tp) ?
-                                        sizeof...(_Up) :
-                                        sizeof...(_Tp)>::type
-                         >>,
-                         __all_default_constructible<
-                            typename __make_tuple_types<tuple, sizeof...(_Tp),
-                                sizeof...(_Up) < sizeof...(_Tp) ?
-                                    sizeof...(_Up) :
-                                    sizeof...(_Tp)>::type
-                         >>::type::value,
+                        __enable_tuple_args_ctor<true, tuple, _Up...>::type::value,
                          bool
                       >::type =false
              >
@@ -629,23 +572,7 @@ public:
     template <class _Alloc, class ..._Up,
               class = typename enable_if
                       <
-                         sizeof...(_Up) <= sizeof...(_Tp) &&
-                         __lazy_and<
-                         __lazy_not<__disable_tuple_args_ctor<tuple, _Up...>>,
-                         __tuple_convertible
-                         <
-                            tuple<_Up...>,
-                            typename __make_tuple_types<tuple,
-                                     sizeof...(_Up) < sizeof...(_Tp) ?
-                                        sizeof...(_Up) :
-                                        sizeof...(_Tp)>::type
-                         >,
-                         __all_default_constructible<
-                            typename __make_tuple_types<tuple, sizeof...(_Tp),
-                                sizeof...(_Up) < sizeof...(_Tp) ?
-                                    sizeof...(_Up) :
-                                    sizeof...(_Tp)>::type
-                         >>::value
+                         __enable_tuple_args_ctor<false, tuple, _Up...>::type::value
                       >::type
              >
         _LIBCPP_INLINE_VISIBILITY
@@ -660,8 +587,7 @@ public:
     template <class _Tuple,
               typename enable_if
                       <
-                        !__disable_tuple_like_ctor<_Tuple, tuple>::value &&
-                         __tuple_convertible<_Tuple, tuple>::value,
+                         __enable_tuple_like_ctor<false, tuple, _Tuple>::type::value,
                          bool
                       >::type = false
              >
@@ -672,9 +598,7 @@ public:
     template <class _Tuple,
               typename enable_if
                       <
-                         !__disable_tuple_like_ctor<_Tuple, tuple>::value &&
-                         __tuple_constructible<_Tuple, tuple>::value &&
-                         !__tuple_convertible<_Tuple, tuple>::value,
+                         __enable_tuple_like_ctor<true, tuple, _Tuple>::type::value,
                          bool
                       >::type = false
              >
@@ -686,8 +610,7 @@ public:
     template <class _Alloc, class _Tuple,
               class = typename enable_if
                       <
-                         !__disable_tuple_like_ctor<_Tuple, tuple>::value &&
-                         __tuple_convertible<_Tuple, tuple>::value
+                        __enable_tuple_like_ctor<false, tuple, _Tuple, true>::type::value
                       >::type
              >
         _LIBCPP_INLINE_VISIBILITY
