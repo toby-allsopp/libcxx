@@ -2171,7 +2171,7 @@ move(const _Tp& __t)
 
 template <class _Tp>
 inline _LIBCPP_INLINE_VISIBILITY
-_Tp&
+typename remove_reference<_Tp>::type&
 forward(typename std::remove_reference<_Tp>::type& __t) _NOEXCEPT
 {
     return __t;
@@ -2749,13 +2749,16 @@ struct __result_of_mdp;
 template <class _Rp, class _Class, class _Tp>
 struct __result_of_mdp<_Rp _Class::*, _Tp, false>
 {
-    typedef typename __apply_cv<decltype(*_VSTD::declval<_Tp>()), _Rp>::type& type;
+    typedef typename
+        add_lvalue_reference<
+        typename __apply_cv<decltype(*_VSTD::declval<_Tp>()), _Rp>::type>::type type;
 };
 
 template <class _Rp, class _Class, class _Tp>
 struct __result_of_mdp<_Rp _Class::*, _Tp, true>
 {
-    typedef typename __apply_cv<_Tp, _Rp>::type& type;
+    typedef typename add_lvalue_reference<
+    typename __apply_cv<_Tp, _Rp>::type>::type type;
 };
 
 template <class _Rp, class _Class, class _Tp>
@@ -3018,7 +3021,7 @@ template <bool, class _Tp, class _A0>
 struct __is_constructible1_imp // false, _Tp is not a scalar
     : public common_type
              <
-                 decltype(__is_constructible1_test(declval<_Tp&>(), declval<_A0&>()))
+                 decltype(__is_constructible1_test(declval<_Tp>(), declval<_A0>()))
              >::type
     {};
 

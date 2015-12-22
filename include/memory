@@ -2676,7 +2676,7 @@ public:
     typename enable_if<
         !is_array<_Up>::value &&
         is_convertible<typename unique_ptr<_Up, _Ep>::pointer, pointer>::value &&
-        is_assignable<deleter_type&, _Ep&>::value,
+        is_assignable<deleter_type, _Ep>::value,
         unique_ptr&
     >::type
     operator=(unique_ptr<_Up, _Ep> __u)

@@ -291,7 +291,9 @@ struct _LIBCPP_TYPE_VIS_ONLY pair
     _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR pair() : first(), second() {}
 
     _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX11
-    pair(const _T1& __x, const _T2& __y)
+    pair(
+            typename add_lvalue_reference<const _T1>::type __x,
+            typename add_lvalue_reference<const _T2>::type  __y)
         : first(__x), second(__y) {}
 
     template<class _U1, class _U2>
