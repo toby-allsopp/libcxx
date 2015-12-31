@@ -185,15 +185,18 @@ _LIBCPP_BEGIN_NAMESPACE_STD
 template <class _Tp, class _VoidPtr> struct __forward_list_node;
 template <class _NodePtr> struct __forward_begin_node;
 
-template <class _NodePtr>
-struct __forward_list_node_pointer_traits {
-    typedef typename __rebind_pointer<_NodePtr, void>::type __void_pointer;
-    typedef _NodePtr __node_pointer;
-    typedef __forward_begin_node<_NodePtr> __begin_node;
-    typedef typename __rebind_pointer<__void_pointer, __begin_node>::type
-            __begin_node_pointer;
 
-#if defined(_LIBCPP_ABI_FORWARD_LIST_REMOVE_NODE_POINTER_UB)
+template <class _Tp, class _VoidPtr>
+struct __forward_list_node_types {
+  typedef _VoidPtr __void_pointer;
+
+  typedef __forward_list_node<_Tp, _VoidPtr> __node;
+  typedef typename __rebind_pointer<_VoidPtr, __node>::type __node_pointer;
+
+  typedef __forward_begin_node<__node_pointer> __begin_node;
+  typedef typename __rebind_pointer<_VoidPtr, __begin_node>::type __begin_node_pointer;
+
+  #if defined(_LIBCPP_ABI_FORWARD_LIST_REMOVE_NODE_POINTER_UB)
     typedef __begin_node_pointer __link_pointer;
 #elif 1
     typedef __node_pointer __link_pointer;
@@ -211,18 +214,36 @@ struct __forward_list_node_pointer_traits {
             __node_pointer
     >::type __non_link_pointer;
 
-
   static __begin_node_pointer __as_begin(__begin_node_pointer __p) { return __p; }
   static __begin_node_pointer __as_begin(__node_pointer __p) {
       return static_cast<__begin_node_pointer>(static_cast<__void_pointer>(__p));
   }
 
-  static __link_pointer __as_link_unsafe_downcast(__link_pointer const& __p) { return __p; }
-  static __link_pointer __as_link_unsafe_downcast(__non_link_pointer const &__p) {
+  static __link_pointer __as_link_unsafe_downcast(__link_pointer  __p) = delete;
+  static __link_pointer __as_link_unsafe_downcast(__non_link_pointer __p) {
       return static_cast<__link_pointer>(static_cast<__void_pointer>(__p));
   }
 };
 
+template <class>
+struct __node_types_from_pointer_imp;
+
+template <class _Tp, class _VoidPtr>
+struct __node_types_from_pointer_imp<__forward_list_node<_Tp, _VoidPtr> > {
+    typedef __forward_list_node_types<_Tp, _VoidPtr> type;
+};
+
+
+template <class _NodePtr>
+struct __node_types_from_pointer
+    : public __node_types_from_pointer_imp<
+        typename pointer_traits<_NodePtr>::element_type>
+{};
+
+template <class _NodePtr>
+struct __forward_list_node_pointer_traits : public __node_types_from_pointer<_NodePtr>::type
+{
+};
 
 
 
@@ -248,26 +269,29 @@ struct __forward_begin_node
     __node_pointer __as_node() {
       return static_cast<__node_pointer>(__begin_ptr());
     }
+
+    _LIBCPP_INLINE_VISIBILITY
+    __node_pointer __next_as_node() {
+      return static_cast<__node_pointer>(__next_);
+    }
 };
 
 
 template <class _Tp, class _VoidPtr>
 struct __forward_list_node
-    : public __forward_begin_node<
-            typename __rebind_pointer<_VoidPtr, __forward_list_node<_Tp, _VoidPtr> >::type
-        >
+    : public __forward_list_node_types<_Tp, _VoidPtr>::__begin_node
 {
 
     typedef typename __rebind_pointer<_VoidPtr, __forward_list_node<_Tp, _VoidPtr> >::type __node_pointer;
     typedef __forward_list_node_pointer_traits<__node_pointer> __traits;;
     typedef typename __traits::__link_pointer __link_pointer;
 
-    typedef _Tp value_type;
-
     _LIBCPP_INLINE_VISIBILITY
-    __link_pointer __as_link() {
-        return pointer_traits<__link_pointer>::pointer_to(*this);
+    typename __traits::__link_pointer __as_link() {
+        return pointer_traits<typename __traits::__link_pointer>::pointer_to(*this);
     }
+
+    typedef _Tp value_type;
 
     value_type __value_;
 };
@@ -286,9 +310,21 @@ class _LIBCPP_TYPE_VIS_ONLY __forward_list_iterator
 
     __link_pointer __ptr_;
 
+    __begin_node_pointer __get() const {
+        return __traits::__as_begin(__ptr_);
+    }
+
     _LIBCPP_INLINE_VISIBILITY
-    explicit __forward_list_iterator(__link_pointer __p) _NOEXCEPT
-        : __ptr_(__p) {}
+    explicit __forward_list_iterator(nullptr_t) _NOEXCEPT
+        : __ptr_(nullptr) {}
+
+    _LIBCPP_INLINE_VISIBILITY
+    explicit __forward_list_iterator(__node_pointer __p) _NOEXCEPT
+        : __ptr_(static_cast<__link_pointer>(__p)) {}
+
+    _LIBCPP_INLINE_VISIBILITY
+    explicit __forward_list_iterator(__begin_node_pointer __p) _NOEXCEPT
+        : __ptr_(__traits::__as_link_unsafe_downcast(__p)) {}
 
     template<class, class> friend class _LIBCPP_TYPE_VIS_ONLY forward_list;
     template<class> friend class _LIBCPP_TYPE_VIS_ONLY __forward_list_const_iterator;
@@ -348,9 +384,21 @@ class _LIBCPP_TYPE_VIS_ONLY __forward_list_const_iterator
 
     __link_pointer __ptr_;
 
+    __begin_node_pointer __get() const {
+        return __traits::__as_begin(__ptr_);
+    }
+
     _LIBCPP_INLINE_VISIBILITY
-    explicit __forward_list_const_iterator(__link_pointer __p) _NOEXCEPT
-        : __ptr_(__p) {}
+    explicit __forward_list_const_iterator(nullptr_t) _NOEXCEPT
+        : __ptr_(nullptr) {}
+
+    _LIBCPP_INLINE_VISIBILITY
+    explicit __forward_list_const_iterator(__node_pointer __p) _NOEXCEPT
+        : __ptr_(static_cast<__link_pointer>(__p)) {}
+
+    _LIBCPP_INLINE_VISIBILITY
+    explicit __forward_list_const_iterator(__begin_node_pointer __p) _NOEXCEPT
+        : __ptr_(__traits::__as_link_unsafe_downcast(__p)) {}
 
     template<class, class> friend class forward_list;
 
@@ -681,10 +729,10 @@ public:
 
     _LIBCPP_INLINE_VISIBILITY
     iterator       begin() _NOEXCEPT
-        {return       iterator(base::__before_begin()->__next_);}
+        {return       iterator(static_cast<__begin_node_pointer>(base::__before_begin()->__next_));}
     _LIBCPP_INLINE_VISIBILITY
     const_iterator begin() const _NOEXCEPT
-        {return const_iterator(base::__before_begin()->__next_);}
+        {return const_iterator(static_cast<__begin_node_pointer>(base::__before_begin()->__next_));}
     _LIBCPP_INLINE_VISIBILITY
     iterator       end() _NOEXCEPT
         {return       iterator(nullptr);}
@@ -694,20 +742,20 @@ public:
 
     _LIBCPP_INLINE_VISIBILITY
     const_iterator cbegin() const _NOEXCEPT
-        {return const_iterator(base::__before_begin()->__next_);}
+        {return const_iterator(static_cast<__begin_node_pointer>(base::__before_begin()->__next_));}
     _LIBCPP_INLINE_VISIBILITY
     const_iterator cend() const _NOEXCEPT
         {return const_iterator(nullptr);}
 
     _LIBCPP_INLINE_VISIBILITY
     iterator       before_begin() _NOEXCEPT
-        {return       iterator(__traits::__as_link_unsafe_downcast(base::__before_begin()));}
+        {return       iterator(base::__before_begin());}
     _LIBCPP_INLINE_VISIBILITY
     const_iterator before_begin() const _NOEXCEPT
-        {return const_iterator(__traits::__as_link_unsafe_downcast(base::__before_begin()));}
+        {return const_iterator(base::__before_begin());}
     _LIBCPP_INLINE_VISIBILITY
     const_iterator cbefore_begin() const _NOEXCEPT
-        {return const_iterator(__traits::__as_link_unsafe_downcast(base::__before_begin()));}
+        {return const_iterator(base::__before_begin());}
 
     _LIBCPP_INLINE_VISIBILITY
     bool empty() const _NOEXCEPT
@@ -717,9 +765,9 @@ public:
         {return numeric_limits<size_type>::max();}
 
     _LIBCPP_INLINE_VISIBILITY
-    reference       front()       {return base::__as_node_checked(base::__before_begin()->__next_)->__value_;}
+    reference       front()       {return base::__before_begin()->__next_as_node()->__value_;}
     _LIBCPP_INLINE_VISIBILITY
-    const_reference front() const {return base::__as_node_checked(base::__before_begin()->__next_)->__value_;}
+    const_reference front() const {return base::__before_begin()->__next_as_node()->__value_;}
 
 #ifndef _LIBCPP_HAS_NO_RVALUE_REFERENCES
 #ifndef _LIBCPP_HAS_NO_VARIADICS
@@ -1272,7 +1320,7 @@ forward_list<_Tp, _Alloc>::insert_after(const_iterator __p,
         __r->__next_ = __first;
         __r = __last->__begin_ptr();
     }
-    return iterator(__traits::__as_link_unsafe_downcast(__r));
+    return iterator(__r);
 }
 
 template <class _Tp, class _Alloc>
@@ -1295,7 +1343,7 @@ forward_list<_Tp, _Alloc>::erase_after(const_iterator __f, const_iterator __l)
     __link_pointer __e = __l.__ptr_;
     if (__f != __l)
     {
-        __begin_node_pointer __fp = __traits::__as_begin(__f.__ptr_);
+        __begin_node_pointer __fp = __f.__get();
         if (__fp->__next_ != __e)
         {
             __link_pointer __ln = __fp->__next_;
@@ -1303,7 +1351,7 @@ forward_list<_Tp, _Alloc>::erase_after(const_iterator __f, const_iterator __l)
             __node_allocator& __a = base::__alloc();
             do
             {
-                __node_pointer __n = base::__as_node_checked(__ln);
+                __node_pointer __n = __ln->__as_node();
                 __ln = __n->__next_;
                 __node_traits::destroy(__a, _VSTD::addressof(__n->__value_));
                 __node_traits::deallocate(__a, __n, 1);
@@ -1472,7 +1520,7 @@ forward_list<_Tp, _Alloc>::remove(const value_type& __v)
     iterator __e = end();
     for (iterator __i = before_begin(); __i.__ptr_->__next_ != nullptr;)
     {
-        if (__i.__ptr_->__next_->__as_node()->__value_ == __v)
+        if (__i.__ptr_->__next_as_node()->__value_ == __v)
         {
             iterator __j = _VSTD::next(__i, 2);
             for (; __j != __e && *__j == __v; ++__j)
@@ -1495,7 +1543,7 @@ forward_list<_Tp, _Alloc>::remove_if(_Predicate __pred)
     iterator __e = end();
     for (iterator __i = before_begin(); __i.__ptr_->__next_ != nullptr;)
     {
-        if (__pred(__i.__ptr_->__next_->__as_node()->__value_))
+        if (__pred(__i.__ptr_->__next_as_node()->__value_))
         {
             iterator __j = _VSTD::next(__i, 2);
             for (; __j != __e && __pred(*__j); ++__j)
@@ -1555,7 +1603,7 @@ forward_list<_Tp, _Alloc>::__merge(__link_pointer __f1, __link_pointer __f2,
     {
         __link_pointer __t = __f2;
         while (__t->__next_ != nullptr &&
-                             __comp(__t->__next_->__as_node()->__value_, __f1->__as_node()->__value_))
+                             __comp(__t->__next_as_node()->__value_, __f1->__as_node()->__value_))
             __t = __t->__next_;
         __r = __f2;
         __f2 = __t->__next_;
@@ -1571,7 +1619,7 @@ forward_list<_Tp, _Alloc>::__merge(__link_pointer __f1, __link_pointer __f2,
         {
             __link_pointer __t = __f2;
             while (__t->__next_ != nullptr &&
-                                 __comp(__t->__next_->__as_node()->__value_, __f1->__as_node()->__value_))
+                                 __comp(__t->__next_as_node()->__value_, __f1->__as_node()->__value_))
                 __t = __t->__next_;
             __p->__next_ = __f2;
             __f2 = __t->__next_;
@@ -1607,7 +1655,7 @@ forward_list<_Tp, _Alloc>::__sort(__link_pointer __f1, difference_type __sz,
     case 1:
         return __f1;
     case 2:
-        if (__comp(__f1->__next_->__as_node()->__value_, __f1->__as_node()->__value_))
+        if (__comp(__f1->__next_as_node()->__value_, __f1->__as_node()->__value_))
         {
             __link_pointer __t = __f1->__next_;
             __t->__next_ = __f1;
