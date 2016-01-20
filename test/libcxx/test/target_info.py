@@ -1,3 +1,12 @@
+#===----------------------------------------------------------------------===//
+#
+#                     The LLVM Compiler Infrastructure
+#
+# This file is dual licensed under the MIT and the University of Illinois Open
+# Source Licenses. See LICENSE.TXT for details.
+#
+#===----------------------------------------------------------------------===//
+
 import importlib
 import lit.util  # pylint: disable=import-error,no-name-in-module
 import locale
@@ -62,7 +71,7 @@ class DarwinLocalTI(DefaultTargetInfo):
         super(DarwinLocalTI, self).__init__(full_config)
 
     def add_locale_features(self, features):
-        add_common_locales(feature, self.full_config.lit_config)
+        add_common_locales(features, self.full_config.lit_config)
 
     def add_cxx_compile_flags(self, flags):
         try:
