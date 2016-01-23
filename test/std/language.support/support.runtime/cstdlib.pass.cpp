@@ -13,6 +13,12 @@
 #include <type_traits>
 #include <cassert>
 
+// As of 1/10/2015 clang emits a -Wnonnull warnings even if the warning occurs
+// in an unevaluated context. For this reason we manually suppress the warning.
+#if defined(__clang__)
+#pragma clang diagnostic ignored "-Wnonnull"
+#endif
+
 #ifndef EXIT_FAILURE
 #error EXIT_FAILURE not defined
 #endif
@@ -37,8 +43,8 @@ template <class TestType, class IntType>
 void test_div_struct() {
     TestType obj;
     static_assert(sizeof(obj) >= sizeof(IntType) * 2, ""); // >= to account for alignment.
-    static_assert(std::is_same<decltype(obj.quot), IntType>::value, "");
-    static_assert(std::is_same<decltype(obj.rem), IntType>::value, "");
+    static_assert((std::is_same<decltype(obj.quot), IntType>::value), "");
+    static_assert((std::is_same<decltype(obj.rem), IntType>::value), "");
     ((void) obj);
 };
 
@@ -46,7 +52,7 @@ int main()
 {
     std::size_t s = 0;
     ((void)s);
-    static_assert(std::is_same<std::size_t, decltype(sizeof(int))>::value, "");
+    static_assert((std::is_same<std::size_t, decltype(sizeof(int))>::value), "");
     test_div_struct<std::div_t, int>();
     test_div_struct<std::ldiv_t, long>();
     test_div_struct<std::lldiv_t, long long>();
