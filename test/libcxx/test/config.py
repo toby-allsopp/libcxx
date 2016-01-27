@@ -286,6 +286,7 @@ class Configuration(object):
         self.cxx.compile_flags += shlex.split(compile_flags_str)
 
     def configure_default_compile_flags(self):
+	self.cxx.compile_flags += ['-ferror-limit=2']
         # Try and get the std version from the command line. Fall back to
         # default given in lit.site.cfg is not present. If default is not
         # present then force c++11.
