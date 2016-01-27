@@ -566,7 +566,7 @@ class Configuration(object):
             elif san == 'Undefined':
                 self.cxx.flags += ['-fsanitize=undefined',
                                    '-fno-sanitize=vptr,function',
-                                   '-fno-sanitize-recover']
+                                   '-fno-sanitize-recover=undefined,integer']
                 self.cxx.compile_flags += ['-O3']
                 self.env['UBSAN_OPTIONS'] = 'print_stacktrace=1'
                 self.config.available_features.add('ubsan')
