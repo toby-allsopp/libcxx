@@ -55,7 +55,7 @@ struct __tree_node_traits {
   typedef typename __rebind_pointer<_NodePtr, __end_node>::type   __end_node_pointer;
 
 
-#if defined(_LIBCPP_ABI_TREE_REMOVE_NODE_POINTER_UB) || 1
+#if defined(_LIBCPP_ABI_TREE_REMOVE_NODE_POINTER_UB)
   typedef __end_node_pointer __iter_node_pointer;
 #else
   typedef typename conditional<
@@ -240,7 +240,7 @@ typename _NodeTypes::__iter_node_pointer
 __iter_tree_next(typename _NodeTypes::__iter_node_pointer __x) _NOEXCEPT
 {
     typedef typename _NodeTypes::__base_node_pointer __base_node_pointer;
-    __base_node_pointer __bx = _NodeTypes::__as_base_node_unsafe(__x);
+    __base_node_pointer __bx = static_cast<__base_node_pointer>(__x);
     if (__bx->__right_ != nullptr)
         return _NodeTypes::__as_iter_node(__tree_min(__bx->__right_));
     while (!__tree_is_left_child(__bx))
@@ -268,10 +268,12 @@ template <class _NodeTypes>
 typename _NodeTypes::__iter_node_pointer
 __iter_tree_prev(typename _NodeTypes::__iter_node_pointer __x) _NOEXCEPT
 {
+    typedef typename _NodeTypes::__end_node_pointer  __end_node_pointer;
     typedef typename _NodeTypes::__base_node_pointer __base_node_pointer;
-    if (__x->__left_ != nullptr)
-        return _NodeTypes::__as_iter_node(__tree_max(__x->__left_));
-    __base_node_pointer __bx = _NodeTypes::__as_base_node_unsafe(__x);
+    __end_node_pointer __ex = static_cast<__end_node_pointer>(__x);
+    if (__ex->__left_ != nullptr)
+        return _NodeTypes::__as_iter_node(__tree_max(__ex->__left_));
+    __base_node_pointer __bx = static_cast<__base_node_pointer>(__x);
     while (__tree_is_left_child(__bx))
         __bx = __bx->__parent_;
     return _NodeTypes::__as_iter_node(__bx->__parent_);
@@ -285,10 +287,10 @@ _NodePtr
 __tree_leaf(_NodePtr __x) _NOEXCEPT
 {
     while (true)
-
+    {
         if (__x->__left_ != nullptr)
         {
-            __x = __x->__left_;{
+            __x = __x->__left_;
             continue;
         }
         if (__x->__right_ != nullptr)
@@ -1679,7 +1681,7 @@ __tree<_Tp, _Compare, _Allocator>::__find_leaf(const_iterator __hint,
         if (__prior == begin() || !value_comp()(__v, *--__prior))
         {
             // *prev(__hint) <= __v <= *__hint
-            if (__hint.__ptr_->__left_ == nullptr)
+            if (__hint.__get_as_end()->__left_ == nullptr)
             {
                 __parent = static_cast<__node_base_pointer>(__hint.__ptr_);
                 return __parent->__left_;
@@ -1764,7 +1766,7 @@ __tree<_Tp, _Compare, _Allocator>::__find_equal(const_iterator __hint,
         if (__prior == begin() || value_comp()(*--__prior, __v))
         {
             // *prev(__hint) < __v < *__hint
-            if (__hint.__ptr_->__left_ == nullptr)
+            if (__hint.__get_as_end()->__left_ == nullptr)
             {
                 __parent = static_cast<__node_base_pointer>(__hint.__ptr_);
                 return __parent->__left_;
