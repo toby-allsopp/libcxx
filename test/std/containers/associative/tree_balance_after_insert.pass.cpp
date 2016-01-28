@@ -17,15 +17,7 @@
 #include <__tree>
 #include <cassert>
 
-struct Node
-{
-    Node* __left_;
-    Node* __right_;
-    Node* __parent_;
-    bool __is_black_;
-
-    Node() : __left_(), __right_(), __parent_(), __is_black_() {}
-};
+typedef std::__tree_node_base<void*> Node;
 
 void
 test1()
