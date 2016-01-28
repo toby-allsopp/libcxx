@@ -42,9 +42,9 @@ struct __tree_node_value_type<__tree_node<_Tp, _VoidPtr> > {
 
 template <class _NodePtr>
 struct __tree_node_traits {
-  typedef typename __rebind_pointer<_NodePtr, void>::type       __void_pointer;
-  typedef typename remove_cv<
-        typename pointer_traits<_NodePtr>::element_type>::type    __node;
+  typedef typename __rebind_pointer<_NodePtr, void>::type         __void_pointer;
+
+  typedef typename pointer_traits<_NodePtr>::element_type         __node;
   typedef typename __tree_node_value_type<__node>::type           __node_value_type;
   typedef _NodePtr                                                __node_pointer;
 
@@ -83,12 +83,6 @@ struct __tree_node_traits {
   static __iter_node_pointer __as_iter_node(__base_node_pointer __p) {
       return static_cast<__iter_node_pointer>(static_cast<__void_pointer>(__p));
   }
-
-  template <class _Dest, class _From>
-  _Dest cast_pointer(_From __f) { return static_cast<_Dest>(__f); }
-
-  template <class _Dest>
-  _Dest cast_pointer(_Dest __f) { return __f; }
 };
 /*
 
@@ -641,7 +635,7 @@ public:
 };
 
 template <class _VoidPtr>
-class __tree_node_base
+class alignas(16) __tree_node_base
     : public __tree_end_node
              <
                 typename __rebind_pointer<_VoidPtr, __tree_node_base<_VoidPtr> >::type
@@ -651,8 +645,6 @@ class __tree_node_base
     __tree_node_base& operator=(const __tree_node_base&);
 public:
     typedef typename __rebind_pointer<_VoidPtr, __tree_node_base>::type pointer;
-    typedef typename __rebind_pointer<_VoidPtr, const __tree_node_base>::type const_pointer;
-
     typedef __tree_end_node<pointer> base;
 
     pointer __right_;
@@ -665,7 +657,7 @@ public:
 };
 
 template <class _Tp, class _VoidPtr>
-class alignas(16) __tree_node
+class  __tree_node
     : public __tree_node_base<_VoidPtr>
 {
 public:
