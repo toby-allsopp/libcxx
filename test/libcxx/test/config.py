@@ -286,7 +286,6 @@ class Configuration(object):
         self.cxx.compile_flags += shlex.split(compile_flags_str)
 
     def configure_default_compile_flags(self):
-	self.cxx.compile_flags += ['-ferror-limit=2']
         # Try and get the std version from the command line. Fall back to
         # default given in lit.site.cfg is not present. If default is not
         # present then force c++11.
@@ -305,6 +304,7 @@ class Configuration(object):
                     'Failed to infer a supported language dialect from one of %r'
                     % possible_stds)
         self.cxx.compile_flags += ['-std={0}'.format(std)]
+        self.cxx.compile_flags += ['-ferror-limit=2']
         self.config.available_features.add(std)
         # Configure include paths
         self.cxx.compile_flags += ['-nostdinc++']
@@ -522,6 +522,10 @@ class Configuration(object):
             self.cxx.addWarningFlagIfSupported('-Wno-pessimizing-move')
             self.cxx.addWarningFlagIfSupported('-Wno-c++11-extensions')
             self.cxx.addWarningFlagIfSupported('-Wno-user-defined-literals')
+            #self.cxx.addWarningFlagIfSupported('-fstrict-aliasing')
+            #self.cxx.addWarningFlagIfSupported('-Wstrict-aliasing=2')
+            self.cxx.addWarningFlagIfSupported('-Wno-literal-suffix')
+            self.cxx.addWarningFlagIfSupported('-O2')
             # TODO(EricWF) Remove the unused warnings once the test suite
             # compiles clean with them.
             self.cxx.addWarningFlagIfSupported('-Wno-unused-local-typedef')

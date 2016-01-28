@@ -32,6 +32,19 @@ template <class _Tp, class _NodePtr, class _DiffType>
 template <class _Tp, class _ConstNodePtr, class _DiffType>
     class _LIBCPP_TYPE_VIS_ONLY __tree_const_iterator;
 
+template <class _To, class _From>
+typename enable_if<!is_same<_To, _From>::value, _To>::type
+__ptr_cast(_From __f) {
+  typedef typename __rebind_pointer<_From, void>::type _VoidPtr;
+  return static_cast<_To>(static_cast<_VoidPtr>(__f));
+}
+
+template <class _To, class _From>
+typename enable_if<is_same<_To, _From>::value, _To>::type
+__ptr_cast(_From __f) {
+  return __f;
+}
+
 template <class _NodeType>
 struct __tree_node_value_type;
 
@@ -105,6 +118,14 @@ __root, have a non-null __parent_ field.
 
 */
 
+template <class _NodePtr>
+inline _LIBCPP_INLINE_VISIBILITY
+_NodePtr& __tree_parent_left_safe(_NodePtr __x) _NOEXCEPT {
+    typedef typename pointer_traits<_NodePtr>::element_type _NodeBase;
+    typedef typename __rebind_pointer<_NodePtr, typename _NodeBase::base>::type _EndPtr;
+    return __ptr_cast<_EndPtr>(__x->__parent_)->__left_;
+}
+
 // Returns:  true if __x is a left child of its parent, else false
 // Precondition:  __x != nullptr.
 template <class _NodePtr>
@@ -112,7 +133,7 @@ inline _LIBCPP_INLINE_VISIBILITY
 bool
 __tree_is_left_child(_NodePtr __x) _NOEXCEPT
 {
-    return __x == __x->__parent_->__left_;
+    return __x == __x->__parent_left();
 }
 
 // Determintes if the subtree rooted at __x is a proper red black subtree.  If
@@ -126,10 +147,10 @@ __tree_sub_invariant(_NodePtr __x)
         return 1;
     // parent consistency checked by caller
     // check __x->__left_ consistency
-    if (__x->__left_ != nullptr && __x->__left_->__parent_ != __x)
+    if (__x->__left_ != nullptr && __x->__left_->__parent_equals(__x) == false)
         return 0;
     // check __x->__right_ consistency
-    if (__x->__right_ != nullptr && __x->__right_->__parent_ != __x)
+    if (__x->__right_ != nullptr && __x->__right_->__parent_equals(__x) == false)
         return 0;
     // check __x->__left_ != __x->__right_ unless both are nullptr
     if (__x->__left_ == __x->__right_ && __x->__left_ != nullptr)
@@ -204,8 +225,8 @@ __tree_next(_NodePtr __x) _NOEXCEPT
     if (__x->__right_ != nullptr)
         return __tree_min(__x->__right_);
     while (!__tree_is_left_child(__x))
-        __x = __x->__parent_;
-    return __x->__parent_;
+        __x = __x->__parent_as_base();
+    return __x->__parent_as_base();
 }
 
 
@@ -216,25 +237,13 @@ typename _NodeTypes::__iter_node_pointer
 __iter_tree_next(typename _NodeTypes::__iter_node_pointer __x) _NOEXCEPT
 {
     typedef typename _NodeTypes::__base_node_pointer __base_node_pointer;
+    typedef typename _NodeTypes::__end_node_pointer __end_node_pointer;
     __base_node_pointer __bx = static_cast<__base_node_pointer>(__x);
     if (__bx->__right_ != nullptr)
         return _NodeTypes::__as_iter_node(__tree_min(__bx->__right_));
     while (!__tree_is_left_child(__bx))
-        __bx = __bx->__parent_;
-    return _NodeTypes::__as_iter_node(__bx->__parent_);
-}
-
-// Returns:  pointer to the previous in-order node before __x.
-// Precondition:  __x != nullptr.
-template <class _NodePtr>
-_NodePtr
-__tree_prev(_NodePtr __x) _NOEXCEPT
-{
-    if (__x->__left_ != nullptr)
-        return __tree_max(__x->__left_);
-    while (__tree_is_left_child(__x))
-        __x = __x->__parent_;
-    return __x->__parent_;
+        __bx = __bx->__parent_as_base();
+    return _NodeTypes::__as_iter_node(__bx->__parent());
 }
 
 
@@ -251,7 +260,7 @@ __iter_tree_prev(typename _NodeTypes::__iter_node_pointer __x) _NOEXCEPT
         return _NodeTypes::__as_iter_node(__tree_max(__ex->__left_));
     __base_node_pointer __bx = static_cast<__base_node_pointer>(__x);
     while (__tree_is_left_child(__bx))
-        __bx = __bx->__parent_;
+        __bx = __bx->__parent_as_base();
     return _NodeTypes::__as_iter_node(__bx->__parent_);
 }
 
@@ -289,14 +298,14 @@ __tree_left_rotate(_NodePtr __x) _NOEXCEPT
     _NodePtr __y = __x->__right_;
     __x->__right_ = __y->__left_;
     if (__x->__right_ != nullptr)
-        __x->__right_->__parent_ = __x;
+        __x->__right_->__set_parent(__x);
     __y->__parent_ = __x->__parent_;
     if (__tree_is_left_child(__x))
-        __x->__parent_->__left_ = __y;
+        __x->__parent_left() = __y;
     else
-        __x->__parent_->__right_ = __y;
+        __x->__parent_right() = __y;
     __y->__left_ = __x;
-    __x->__parent_ = __y;
+    __x->__set_parent(__y);
 }
 
 // Effects:  Makes __x->__left_ the subtree root with __x as its right child
@@ -312,11 +321,11 @@ __tree_right_rotate(_NodePtr __x) _NOEXCEPT
         __x->__left_->__parent_ = __x;
     __y->__parent_ = __x->__parent_;
     if (__tree_is_left_child(__x))
-        __x->__parent_->__left_ = __y;
+        __x->__parent_left() = __y;
     else
-        __x->__parent_->__right_ = __y;
+        __x->__parent_right() = __y;
     __y->__right_ = __x;
-    __x->__parent_ = __y;
+    __x->__set_parent(__y);
 }
 
 // Effects:  Rebalances __root after attaching __x to a leaf.
@@ -332,17 +341,17 @@ void
 __tree_balance_after_insert(_NodePtr __root, _NodePtr __x) _NOEXCEPT
 {
     __x->__is_black_ = __x == __root;
-    while (__x != __root && !__x->__parent_->__is_black_)
+    while (__x != __root && !__x->__parent_as_base()->__is_black_)
     {
         // __x->__parent_ != __root because __x->__parent_->__is_black == false
-        if (__tree_is_left_child(__x->__parent_))
+        if (__tree_is_left_child(__x->__parent_as_base()))
         {
-            _NodePtr __y = __x->__parent_->__parent_->__right_;
+            _NodePtr __y = __x->__parent_as_base()->__parent_right();
             if (__y != nullptr && !__y->__is_black_)
             {
-                __x = __x->__parent_;
+                __x = __x->__parent_as_base();
                 __x->__is_black_ = true;
-                __x = __x->__parent_;
+                __x = __x->__parent_as_base();
                 __x->__is_black_ = __x == __root;
                 __y->__is_black_ = true;
             }
@@ -350,12 +359,12 @@ __tree_balance_after_insert(_NodePtr __root, _NodePtr __x) _NOEXCEPT
             {
                 if (!__tree_is_left_child(__x))
                 {
-                    __x = __x->__parent_;
+                    __x = __x->__parent_as_base();
                     __tree_left_rotate(__x);
                 }
-                __x = __x->__parent_;
+                __x = __x->__parent_as_base();
                 __x->__is_black_ = true;
-                __x = __x->__parent_;
+                __x = __x->__parent_as_base();
                 __x->__is_black_ = false;
                 __tree_right_rotate(__x);
                 break;
@@ -363,12 +372,12 @@ __tree_balance_after_insert(_NodePtr __root, _NodePtr __x) _NOEXCEPT
         }
         else
         {
-            _NodePtr __y = __x->__parent_->__parent_->__left_;
+            _NodePtr __y = __x->__parent_as_base()->__parent_left();
             if (__y != nullptr && !__y->__is_black_)
             {
-                __x = __x->__parent_;
+                __x = __x->__parent_as_base();
                 __x->__is_black_ = true;
-                __x = __x->__parent_;
+                __x = __x->__parent_as_base();
                 __x->__is_black_ = __x == __root;
                 __y->__is_black_ = true;
             }
@@ -376,12 +385,12 @@ __tree_balance_after_insert(_NodePtr __root, _NodePtr __x) _NOEXCEPT
             {
                 if (__tree_is_left_child(__x))
                 {
-                    __x = __x->__parent_;
+                    __x = __x->__parent_as_base();
                     __tree_right_rotate(__x);
                 }
-                __x = __x->__parent_;
+                __x = __x->__parent_as_base();
                 __x->__is_black_ = true;
-                __x = __x->__parent_;
+                __x = __x->__parent_as_base();
                 __x->__is_black_ = false;
                 __tree_left_rotate(__x);
                 break;
@@ -416,17 +425,17 @@ __tree_remove(_NodePtr __root, _NodePtr __z) _NOEXCEPT
         __x->__parent_ = __y->__parent_;
     if (__tree_is_left_child(__y))
     {
-        __y->__parent_->__left_ = __x;
+        __y->__parent_left() = __x;
         if (__y != __root)
-            __w = __y->__parent_->__right_;
+            __w = __y->__parent_right();
         else
             __root = __x;  // __w == nullptr
     }
     else
     {
-        __y->__parent_->__right_ = __x;
+        __y->__parent_right() = __x;
         // __y can't be root if it is a right child
-        __w = __y->__parent_->__left_;
+        __w = __y->__parent_left();
     }
     bool __removed_black = __y->__is_black_;
     // If we didn't remove __z, do so now by splicing in __y for __z,
@@ -436,9 +445,9 @@ __tree_remove(_NodePtr __root, _NodePtr __z) _NOEXCEPT
         // __z->__left_ != nulptr but __z->__right_ might == __x == nullptr
         __y->__parent_ = __z->__parent_;
         if (__tree_is_left_child(__z))
-            __y->__parent_->__left_ = __y;
+            __y->__parent_left() = __y;
         else
-            __y->__parent_->__right_ = __y;
+            __y->__parent_right() = __y;
         __y->__left_ = __z->__left_;
         __y->__left_->__parent_ = __y;
         __y->__right_ = __z->__right_;
@@ -480,8 +489,8 @@ __tree_remove(_NodePtr __root, _NodePtr __z) _NOEXCEPT
                     if (!__w->__is_black_)
                     {
                         __w->__is_black_ = true;
-                        __w->__parent_->__is_black_ = false;
-                        __tree_left_rotate(__w->__parent_);
+                        __w->__parent_as_base()->__is_black_ = false;
+                        __tree_left_rotate(__w->__parent_as_base());
                         // __x is still valid
                         // reset __root only if necessary
                         if (__root == __w->__left_)
@@ -494,7 +503,7 @@ __tree_remove(_NodePtr __root, _NodePtr __z) _NOEXCEPT
                         (__w->__right_ == nullptr || __w->__right_->__is_black_))
                     {
                         __w->__is_black_ = false;
-                        __x = __w->__parent_;
+                        __x = __w->__parent_as_base();
                         // __x can no longer be null
                         if (__x == __root || !__x->__is_black_)
                         {
@@ -503,8 +512,8 @@ __tree_remove(_NodePtr __root, _NodePtr __z) _NOEXCEPT
                         }
                         // reset sibling, and it still can't be null
                         __w = __tree_is_left_child(__x) ?
-                                    __x->__parent_->__right_ :
-                                    __x->__parent_->__left_;
+                                    __x->__parent_right() :
+                                    __x->__parent_left();
                         // continue;
                     }
                     else  // __w has a red child
@@ -517,13 +526,13 @@ __tree_remove(_NodePtr __root, _NodePtr __z) _NOEXCEPT
                             __tree_right_rotate(__w);
                             // __w is known not to be root, so root hasn't changed
                             // reset sibling, and it still can't be null
-                            __w = __w->__parent_;
+                            __w = __w->__parent_as_base();
                         }
                         // __w has a right red child, left child may be null
-                        __w->__is_black_ = __w->__parent_->__is_black_;
-                        __w->__parent_->__is_black_ = true;
+                        __w->__is_black_ = __w->__parent_as_base()->__is_black_;
+                        __w->__parent_as_base()->__is_black_ = true;
                         __w->__right_->__is_black_ = true;
-                        __tree_left_rotate(__w->__parent_);
+                        __tree_left_rotate(__w->__parent_as_base());
                         break;
                     }
                 }
@@ -532,8 +541,8 @@ __tree_remove(_NodePtr __root, _NodePtr __z) _NOEXCEPT
                     if (!__w->__is_black_)
                     {
                         __w->__is_black_ = true;
-                        __w->__parent_->__is_black_ = false;
-                        __tree_right_rotate(__w->__parent_);
+                        __w->__parent_as_base()->__is_black_ = false;
+                        __tree_right_rotate(__w->__parent_as_base());
                         // __x is still valid
                         // reset __root only if necessary
                         if (__root == __w->__right_)
@@ -546,7 +555,7 @@ __tree_remove(_NodePtr __root, _NodePtr __z) _NOEXCEPT
                         (__w->__right_ == nullptr || __w->__right_->__is_black_))
                     {
                         __w->__is_black_ = false;
-                        __x = __w->__parent_;
+                        __x = __w->__parent_as_base();
                         // __x can no longer be null
                         if (!__x->__is_black_ || __x == __root)
                         {
@@ -555,8 +564,8 @@ __tree_remove(_NodePtr __root, _NodePtr __z) _NOEXCEPT
                         }
                         // reset sibling, and it still can't be null
                         __w = __tree_is_left_child(__x) ?
-                                    __x->__parent_->__right_ :
-                                    __x->__parent_->__left_;
+                                    __x->__parent_right() :
+                                    __x->__parent_left();
                         // continue;
                     }
                     else  // __w has a red child
@@ -569,13 +578,13 @@ __tree_remove(_NodePtr __root, _NodePtr __z) _NOEXCEPT
                             __tree_left_rotate(__w);
                             // __w is known not to be root, so root hasn't changed
                             // reset sibling, and it still can't be null
-                            __w = __w->__parent_;
+                            __w = __w->__parent_as_base();
                         }
                         // __w has a left red child, right child may be null
-                        __w->__is_black_ = __w->__parent_->__is_black_;
-                        __w->__parent_->__is_black_ = true;
+                        __w->__is_black_ = __w->__parent_as_base()->__is_black_;
+                        __w->__parent_as_base()->__is_black_ = true;
                         __w->__left_->__is_black_ = true;
-                        __tree_right_rotate(__w->__parent_);
+                        __tree_right_rotate(__w->__parent_as_base());
                         break;
                     }
                 }
@@ -646,10 +655,45 @@ class alignas(16) __tree_node_base
 public:
     typedef typename __rebind_pointer<_VoidPtr, __tree_node_base>::type pointer;
     typedef __tree_end_node<pointer> base;
+    typedef typename __rebind_pointer<_VoidPtr, base>::type __end_node_pointer;
+#if defined(_LIBCPP_ABI_TREE_REMOVE_NODE_POINTER_UB)
+    typedef __end_node_pointer __parent_pointer;
+#elif 0
+    typedef pointer __parent_pointer;
+#else
+    typedef typename conditional<
+            is_pointer<_VoidPtr>::value,
+            __end_node_pointer,
+            pointer
+        >::type __parent_pointer;
+#endif
 
-    pointer __right_;
-    pointer __parent_;
-    bool __is_black_;
+    pointer          __right_;
+    __parent_pointer __parent_;
+    bool             __is_black_;
+
+
+    __end_node_pointer __parent() const {
+        return __ptr_cast<__end_node_pointer>(__parent_);
+    }
+    pointer __parent_as_base() const {
+        return __ptr_cast<pointer>(__parent_);
+    }
+    pointer& __parent_left() const {
+        return __parent()->__left_;
+    }
+    pointer& __parent_right() const {
+        return __parent_as_base()->__right_;
+    }
+    void __set_parent(pointer __p) {
+        __parent_ = __ptr_cast<__parent_pointer>(__p);
+    }
+    void __set_parent(__end_node_pointer __p) {
+        __parent_ = __ptr_cast<__parent_pointer>(__p);
+    }
+    bool __parent_equals(pointer __p) const {
+      return __ptr_cast<__end_node_pointer>(__p) == __parent();
+    }
 
     _LIBCPP_INLINE_VISIBILITY
     __tree_node_base() _NOEXCEPT
@@ -930,6 +974,7 @@ private:
 
     void __set_begin_node_to_end()
         { __begin_node_ = _NodeTypes::__as_iter_node(__end_node()); }
+
 public:
     _LIBCPP_INLINE_VISIBILITY
     allocator_type __alloc() const _NOEXCEPT
@@ -1246,14 +1291,14 @@ __tree<_Tp, _Compare, _Allocator>::__detach(__node_pointer __cache)
         return nullptr;
     if (__tree_is_left_child(static_cast<__node_base_pointer>(__cache)))
     {
-        __cache->__parent_->__left_ = nullptr;
+        __cache->__parent_left() = nullptr;
         __cache = static_cast<__node_pointer>(__cache->__parent_);
         if (__cache->__right_ == nullptr)
             return __cache;
         return static_cast<__node_pointer>(__tree_leaf(__cache->__right_));
     }
     // __cache is right child
-    __cache->__parent_->__right_ = nullptr;
+    __cache->__parent_right() = nullptr;
     __cache = static_cast<__node_pointer>(__cache->__parent_);
     if (__cache->__left_ == nullptr)
         return __cache;
@@ -1377,7 +1422,7 @@ __tree<_Tp, _Compare, _Allocator>::__tree(__tree&& __t)
         __set_begin_node_to_end();
     else
     {
-        __end_node()->__left_->__parent_ = static_cast<__node_base_pointer>(__end_node());
+        __end_node()->__left_->__set_parent(__end_node());
         __t.__set_begin_node_to_end();
         __t.__end_node()->__left_ = nullptr;
         __t.size() = 0;
@@ -1397,7 +1442,7 @@ __tree<_Tp, _Compare, _Allocator>::__tree(__tree&& __t, const allocator_type& __
         {
             __set_begin_node(__t.__begin_node());
             __end_node()->__left_ = __t.__end_node()->__left_;
-            __end_node()->__left_->__parent_ = static_cast<__node_base_pointer>(__end_node());
+            __end_node()->__left_->__set_parent(__end_node());
             size() = __t.size();
             __t.__set_begin_node_to_end();
             __t.__end_node()->__left_ = nullptr;
@@ -1425,7 +1470,7 @@ __tree<_Tp, _Compare, _Allocator>::__move_assign(__tree& __t, true_type)
         __set_begin_node_to_end();
     else
     {
-        __end_node()->__left_->__parent_ = static_cast<__node_base_pointer>(__end_node());
+        __end_node()->__left_->__set_parent(__end_node());
         __t.__set_begin_node_to_end();
         __t.__end_node()->__left_ = nullptr;
         __t.size() = 0;
@@ -1533,11 +1578,11 @@ __tree<_Tp, _Compare, _Allocator>::swap(__tree& __t)
     if (size() == 0)
         __set_begin_node_to_end();
     else
-        __end_node()->__left_->__parent_ = static_cast<__node_base_pointer>(__end_node());
+        __end_node()->__left_->__set_parent(__end_node());
     if (__t.size() == 0)
         __t.__set_begin_node_to_end();
     else
-        __t.__end_node()->__left_->__parent_ = static_cast<__node_base_pointer>(__t.__end_node());
+        __t.__end_node()->__left_->__set_parent(__t.__end_node());
 }
 
 template <class _Tp, class _Compare, class _Allocator>
@@ -1624,8 +1669,8 @@ __tree<_Tp, _Compare, _Allocator>::__find_leaf_high(typename __node_base::pointe
             }
         }
     }
-    __parent = static_cast<__node_base_pointer>(__end_node());
-    return __parent->__left_;
+    __parent = __ptr_cast<__node_base_pointer>(__end_node());
+    return __end_node()->__left_;
 }
 
 // Find leaf place to insert closest to __hint
@@ -1649,8 +1694,8 @@ __tree<_Tp, _Compare, _Allocator>::__find_leaf(const_iterator __hint,
             // *prev(__hint) <= __v <= *__hint
             if (__hint.__get_as_end()->__left_ == nullptr)
             {
-                __parent = static_cast<__node_base_pointer>(__hint.__ptr_);
-                return __parent->__left_;
+                __parent = __ptr_cast<__node_base_pointer>(__hint.__ptr_);
+                return __hint.__get_as_end()->__left_;
             }
             else
             {
@@ -1707,8 +1752,8 @@ __tree<_Tp, _Compare, _Allocator>::__find_equal(typename __node_base::pointer& _
             }
         }
     }
-    __parent = static_cast<__node_base_pointer>(__end_node());
-    return __parent->__left_;
+    __parent = __ptr_cast<__node_base_pointer>(__end_node());
+    return __end_node()->__left_;
 }
 
 // Find place to insert if __v doesn't exist
@@ -1734,8 +1779,8 @@ __tree<_Tp, _Compare, _Allocator>::__find_equal(const_iterator __hint,
             // *prev(__hint) < __v < *__hint
             if (__hint.__get_as_end()->__left_ == nullptr)
             {
-                __parent = static_cast<__node_base_pointer>(__hint.__ptr_);
-                return __parent->__left_;
+                __parent = __ptr_cast<__node_base_pointer>(__hint.__ptr_);
+                return __hint.__get_as_end()->__left_;
             }
             else
             {
@@ -1780,7 +1825,7 @@ __tree<_Tp, _Compare, _Allocator>::__insert_node_at(__node_base_pointer __parent
 {
     __new_node->__left_   = nullptr;
     __new_node->__right_  = nullptr;
-    __new_node->__parent_ = __parent;
+    __new_node->__set_parent(__parent);
     __child = __new_node;
     if (__begin_node()->__left_ != nullptr)
         __set_begin_node(static_cast<__node_pointer>(__begin_node()->__left_));
@@ -2398,7 +2443,7 @@ __tree<_Tp, _Compare, _Allocator>::remove(const_iterator __p) _NOEXCEPT
         if (__nbp->__right_ != nullptr)
             __set_begin_node(static_cast<__iter_node_pointer>(__nbp->__right_));
         else
-            __set_begin_node(static_cast<__iter_node_pointer>(__nbp->__parent_));
+            __set_begin_node(__ptr_cast<__iter_node_pointer>(__nbp->__parent_));
     }
     --size();
     __tree_remove(__end_node()->__left_,

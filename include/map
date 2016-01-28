@@ -1397,8 +1397,8 @@ map<_Key, _Tp, _Compare, _Allocator>::__find_equal_key(__node_base_pointer& __pa
             }
         }
     }
-    __parent = static_cast<__node_base_pointer>(__tree_.__end_node());
-    return __parent->__left_;
+    __parent = __ptr_cast<__node_base_pointer>(__tree_.__end_node());
+    return __tree_.__end_node()->__left_;
 }
 
 // Find __k
@@ -1443,7 +1443,7 @@ map<_Key, _Tp, _Compare, _Allocator>::__find_equal_key(__node_base_const_pointer
         }
     }
     __parent = static_cast<__node_base_pointer>(__tree_.__end_node());
-    return const_cast<const __node_base_const_pointer&>(__parent->__left_);
+    return const_cast<const __node_base_const_pointer&>(__tree_.__end_node()->__left_);
 }
 
 #ifndef _LIBCPP_HAS_NO_RVALUE_REFERENCES
