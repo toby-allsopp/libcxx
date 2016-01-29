@@ -9,6 +9,8 @@ endmacro()
 set(LIBCXX_LIT_VARIANT "libcxx" CACHE STRING
     "Configuration variant to use for LIT.")
 
+include_directories(support)
+
 pythonize_bool(LIBCXX_ENABLE_EXCEPTIONS)
 pythonize_bool(LIBCXX_ENABLE_RTTI)
 pythonize_bool(LIBCXX_ENABLE_SHARED)
