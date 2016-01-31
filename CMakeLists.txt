@@ -123,6 +123,8 @@ option(LIBCXX_ENABLE_MONOTONIC_CLOCK
    This option may only be set to OFF when LIBCXX_ENABLE_THREADS=OFF." ON)
 option(LIBCXX_HAS_MUSL_LIBC "Build libc++ with support for the Musl C library" OFF)
 
+option(LIBCXX_ENABLE_FILESYSTEM "Build the C++ filesystem library." ON)
+
 # Misc options ----------------------------------------------------------------
 # FIXME: Turn -pedantic back ON. It is currently off because it warns
 # about #include_next which is used everywhere.
