@@ -291,6 +291,34 @@ enum class _LIBCPP_TYPE_VIS perms
     resolve_symlinks = 0x40000
 };
 
+_LIBCPP_INLINE_VISIBILITY
+inline _LIBCPP_CONSTEXPR perms operator&(perms _LHS, perms _RHS)
+{ return static_cast<perms>(static_cast<int>(_LHS) & static_cast<int>(_RHS)); }
+
+_LIBCPP_INLINE_VISIBILITY
+inline _LIBCPP_CONSTEXPR perms operator|(perms _LHS, perms _RHS)
+{ return static_cast<perms>(static_cast<int>(_LHS) | static_cast<int>(_RHS)); }
+
+_LIBCPP_INLINE_VISIBILITY
+inline _LIBCPP_CONSTEXPR perms operator^(perms _LHS, perms _RHS)
+{ return static_cast<perms>(static_cast<int>(_LHS) ^ static_cast<int>(_RHS)); }
+
+_LIBCPP_INLINE_VISIBILITY
+inline _LIBCPP_CONSTEXPR perms operator~(perms _LHS)
+{ return static_cast<perms>(~static_cast<int>(_LHS)); }
+
+_LIBCPP_INLINE_VISIBILITY
+inline perms& operator&=(perms& _LHS, perms _RHS)
+{ return _LHS = _LHS & _RHS; }
+
+_LIBCPP_INLINE_VISIBILITY
+inline perms& operator|=(perms& _LHS, perms _RHS)
+{ return _LHS = _LHS | _RHS; }
+
+_LIBCPP_INLINE_VISIBILITY
+inline perms& operator^=(perms& _LHS, perms _RHS)
+{ return _LHS = _LHS ^ _RHS; }
+
 enum class _LIBCPP_TYPE_VIS copy_options
 {
     none               = 0,
@@ -305,12 +333,70 @@ enum class _LIBCPP_TYPE_VIS copy_options
     create_hard_links  = 256
 };
 
+_LIBCPP_INLINE_VISIBILITY
+inline _LIBCPP_CONSTEXPR copy_options operator&(copy_options _LHS, copy_options _RHS)
+{ return static_cast<copy_options>(static_cast<int>(_LHS) & static_cast<int>(_RHS)); }
+
+_LIBCPP_INLINE_VISIBILITY
+inline _LIBCPP_CONSTEXPR copy_options operator|(copy_options _LHS, copy_options _RHS)
+{ return static_cast<copy_options>(static_cast<int>(_LHS) | static_cast<int>(_RHS)); }
+
+_LIBCPP_INLINE_VISIBILITY
+inline _LIBCPP_CONSTEXPR copy_options operator^(copy_options _LHS, copy_options _RHS)
+{ return static_cast<copy_options>(static_cast<int>(_LHS) ^ static_cast<int>(_RHS)); }
+
+_LIBCPP_INLINE_VISIBILITY
+inline _LIBCPP_CONSTEXPR copy_options operator~(copy_options _LHS)
+{ return static_cast<copy_options>(~static_cast<int>(_LHS)); }
+
+_LIBCPP_INLINE_VISIBILITY
+inline copy_options& operator&=(copy_options& _LHS, copy_options _RHS)
+{ return _LHS = _LHS & _RHS; }
+
+_LIBCPP_INLINE_VISIBILITY
+inline copy_options& operator|=(copy_options& _LHS, copy_options _RHS)
+{ return _LHS = _LHS | _RHS; }
+
+_LIBCPP_INLINE_VISIBILITY
+inline copy_options& operator^=(copy_options& _LHS, copy_options _RHS)
+{ return _LHS = _LHS ^ _RHS; }
+
+
 enum class directory_options
 {
     none                     = 0,
     follow_directory_symlink = 1,
     skip_permission_denied   = 2
 };
+
+
+_LIBCPP_INLINE_VISIBILITY
+inline _LIBCPP_CONSTEXPR directory_options operator&(directory_options _LHS, directory_options _RHS)
+{ return static_cast<directory_options>(static_cast<int>(_LHS) & static_cast<int>(_RHS)); }
+
+_LIBCPP_INLINE_VISIBILITY
+inline _LIBCPP_CONSTEXPR directory_options operator|(directory_options _LHS, directory_options _RHS)
+{ return static_cast<directory_options>(static_cast<int>(_LHS) | static_cast<int>(_RHS)); }
+
+_LIBCPP_INLINE_VISIBILITY
+inline _LIBCPP_CONSTEXPR directory_options operator^(directory_options _LHS, directory_options _RHS)
+{ return static_cast<directory_options>(static_cast<int>(_LHS) ^ static_cast<int>(_RHS)); }
+
+_LIBCPP_INLINE_VISIBILITY
+inline _LIBCPP_CONSTEXPR directory_options operator~(directory_options _LHS)
+{ return static_cast<directory_options>(~static_cast<int>(_LHS)); }
+
+_LIBCPP_INLINE_VISIBILITY
+inline directory_options& operator&=(directory_options& _LHS, directory_options _RHS)
+{ return _LHS = _LHS & _RHS; }
+
+_LIBCPP_INLINE_VISIBILITY
+inline directory_options& operator|=(directory_options& _LHS, directory_options _RHS)
+{ return _LHS = _LHS | _RHS; }
+
+_LIBCPP_INLINE_VISIBILITY
+inline directory_options& operator^=(directory_options& _LHS, directory_options _RHS)
+{ return _LHS = _LHS ^ _RHS; }
 
 class _LIBCPP_TYPE_VIS file_status
 {

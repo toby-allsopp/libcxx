@@ -91,7 +91,22 @@ template <bool> struct static_assert_incomplete_test;
 template <> struct static_assert_incomplete_test<true> {};
 template <unsigned> struct static_assert_check {};
 
+template <class T, class U> struct test_is_same { enum { value = false}; };
+template <class T> struct test_is_same<T, T> { enum { value = true}; };
+
+
 } // end namespace test_detail
+
+#define ASSERT_SAME_TYPE(...) \
+  static_assert(test_detail::test_is_same<__VA_ARGS__>::value, \
+    "Return type differs from expected type")
+
+#define ASSERT_NOEXCEPT(...)  \
+  static_assert(noexcept(__VA_ARGS__), "Expression expected to be noexcept")
+
+
+#define ASSERT_NOT_NOEXCEPT(...)  \
+  static_assert(noexcept(__VA_ARGS__) == false, "Expression expected NOT to be noexcept")
 
 
 #if !TEST_HAS_FEATURE(cxx_rtti) && !defined(__cxx_rtti)
@@ -106,5 +121,7 @@ template <unsigned> struct static_assert_check {};
     TEST_HAS_FEATURE(thread_sanitizer)
 #define TEST_HAS_SANITIZERS
 #endif
+
+
 
 #endif // SUPPORT_TEST_MACROS_HPP
