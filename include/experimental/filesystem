@@ -245,7 +245,7 @@ struct _LIBCPP_TYPE_VIS space_info
   uintmax_t available;
 };
 
-enum class _LIBCPP_TYPE_VIS file_type
+enum class _LIBCPP_TYPE_VIS file_type : signed char
 {
     none       = 0,
     not_found  = -1,
@@ -259,7 +259,7 @@ enum class _LIBCPP_TYPE_VIS file_type
     unknown    = 8
 };
 
-enum class _LIBCPP_TYPE_VIS perms
+enum class _LIBCPP_TYPE_VIS perms : unsigned
 {
     none         = 0,
 
@@ -293,19 +293,19 @@ enum class _LIBCPP_TYPE_VIS perms
 
 _LIBCPP_INLINE_VISIBILITY
 inline _LIBCPP_CONSTEXPR perms operator&(perms _LHS, perms _RHS)
-{ return static_cast<perms>(static_cast<int>(_LHS) & static_cast<int>(_RHS)); }
+{ return static_cast<perms>(static_cast<unsigned>(_LHS) & static_cast<unsigned>(_RHS)); }
 
 _LIBCPP_INLINE_VISIBILITY
 inline _LIBCPP_CONSTEXPR perms operator|(perms _LHS, perms _RHS)
-{ return static_cast<perms>(static_cast<int>(_LHS) | static_cast<int>(_RHS)); }
+{ return static_cast<perms>(static_cast<unsigned>(_LHS) | static_cast<unsigned>(_RHS)); }
 
 _LIBCPP_INLINE_VISIBILITY
 inline _LIBCPP_CONSTEXPR perms operator^(perms _LHS, perms _RHS)
-{ return static_cast<perms>(static_cast<int>(_LHS) ^ static_cast<int>(_RHS)); }
+{ return static_cast<perms>(static_cast<unsigned>(_LHS) ^ static_cast<unsigned>(_RHS)); }
 
 _LIBCPP_INLINE_VISIBILITY
 inline _LIBCPP_CONSTEXPR perms operator~(perms _LHS)
-{ return static_cast<perms>(~static_cast<int>(_LHS)); }
+{ return static_cast<perms>(~static_cast<unsigned>(_LHS)); }
 
 _LIBCPP_INLINE_VISIBILITY
 inline perms& operator&=(perms& _LHS, perms _RHS)
@@ -319,7 +319,7 @@ _LIBCPP_INLINE_VISIBILITY
 inline perms& operator^=(perms& _LHS, perms _RHS)
 { return _LHS = _LHS ^ _RHS; }
 
-enum class _LIBCPP_TYPE_VIS copy_options
+enum class _LIBCPP_TYPE_VIS copy_options : unsigned short
 {
     none               = 0,
     skip_existing      = 1,
@@ -335,19 +335,19 @@ enum class _LIBCPP_TYPE_VIS copy_options
 
 _LIBCPP_INLINE_VISIBILITY
 inline _LIBCPP_CONSTEXPR copy_options operator&(copy_options _LHS, copy_options _RHS)
-{ return static_cast<copy_options>(static_cast<int>(_LHS) & static_cast<int>(_RHS)); }
+{ return static_cast<copy_options>(static_cast<unsigned short>(_LHS) & static_cast<unsigned short>(_RHS)); }
 
 _LIBCPP_INLINE_VISIBILITY
 inline _LIBCPP_CONSTEXPR copy_options operator|(copy_options _LHS, copy_options _RHS)
-{ return static_cast<copy_options>(static_cast<int>(_LHS) | static_cast<int>(_RHS)); }
+{ return static_cast<copy_options>(static_cast<unsigned short>(_LHS) | static_cast<unsigned short>(_RHS)); }
 
 _LIBCPP_INLINE_VISIBILITY
 inline _LIBCPP_CONSTEXPR copy_options operator^(copy_options _LHS, copy_options _RHS)
-{ return static_cast<copy_options>(static_cast<int>(_LHS) ^ static_cast<int>(_RHS)); }
+{ return static_cast<copy_options>(static_cast<unsigned short>(_LHS) ^ static_cast<unsigned short>(_RHS)); }
 
 _LIBCPP_INLINE_VISIBILITY
 inline _LIBCPP_CONSTEXPR copy_options operator~(copy_options _LHS)
-{ return static_cast<copy_options>(~static_cast<int>(_LHS)); }
+{ return static_cast<copy_options>(~static_cast<unsigned short>(_LHS)); }
 
 _LIBCPP_INLINE_VISIBILITY
 inline copy_options& operator&=(copy_options& _LHS, copy_options _RHS)
@@ -362,7 +362,7 @@ inline copy_options& operator^=(copy_options& _LHS, copy_options _RHS)
 { return _LHS = _LHS ^ _RHS; }
 
 
-enum class directory_options
+enum class directory_options : unsigned char
 {
     none                     = 0,
     follow_directory_symlink = 1,
@@ -372,19 +372,19 @@ enum class directory_options
 
 _LIBCPP_INLINE_VISIBILITY
 inline _LIBCPP_CONSTEXPR directory_options operator&(directory_options _LHS, directory_options _RHS)
-{ return static_cast<directory_options>(static_cast<int>(_LHS) & static_cast<int>(_RHS)); }
+{ return static_cast<directory_options>(static_cast<unsigned char>(_LHS) & static_cast<unsigned char>(_RHS)); }
 
 _LIBCPP_INLINE_VISIBILITY
 inline _LIBCPP_CONSTEXPR directory_options operator|(directory_options _LHS, directory_options _RHS)
-{ return static_cast<directory_options>(static_cast<int>(_LHS) | static_cast<int>(_RHS)); }
+{ return static_cast<directory_options>(static_cast<unsigned char>(_LHS) | static_cast<unsigned char>(_RHS)); }
 
 _LIBCPP_INLINE_VISIBILITY
 inline _LIBCPP_CONSTEXPR directory_options operator^(directory_options _LHS, directory_options _RHS)
-{ return static_cast<directory_options>(static_cast<int>(_LHS) ^ static_cast<int>(_RHS)); }
+{ return static_cast<directory_options>(static_cast<unsigned char>(_LHS) ^ static_cast<unsigned char>(_RHS)); }
 
 _LIBCPP_INLINE_VISIBILITY
 inline _LIBCPP_CONSTEXPR directory_options operator~(directory_options _LHS)
-{ return static_cast<directory_options>(~static_cast<int>(_LHS)); }
+{ return static_cast<directory_options>(~static_cast<unsigned char>(_LHS)); }
 
 _LIBCPP_INLINE_VISIBILITY
 inline directory_options& operator&=(directory_options& _LHS, directory_options _RHS)

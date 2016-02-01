@@ -11,13 +11,13 @@ template <class EnumType, EnumType Val1, EnumType Val2,
           class UT = typename std::underlying_type<EnumType>::type,
           UT UVal1 = static_cast<UT>(Val1),
           UT UVal2 = static_cast<UT>(Val2),
-          UT UZero = 0,
+          UT UZero = static_cast<UT>(0),
           EnumType Zero = static_cast<EnumType>(0)
         >
 struct check_bitmask_type {
 
   static constexpr UT dcast(EnumType e) { return static_cast<UT>(e); }
-
+  static constexpr UT unpromote(decltype(~UZero) promoted) { return static_cast<UT>(promoted); }
   // We need two values that are non-zero and share at least one bit.
   static_assert(Val1 != Zero && Val2 != Zero, "");
   static_assert(Val1 != Val2, "");
@@ -47,8 +47,8 @@ struct check_bitmask_type {
     static_assert((Val1 ^ Zero) == Val1, "");
     static_assert(dcast(Val1 ^ Val2) == (UVal1 ^ UVal2), "");
 
-    static_assert(dcast(~Zero) == (~UZero), "");
-    static_assert(dcast(~Val1) == (~UVal1), "");
+    static_assert(dcast(~Zero) == unpromote(~UZero), "");
+    static_assert(dcast(~Val1) == unpromote(~UVal1), "");
 
     {
       EnumType e = Val1;
