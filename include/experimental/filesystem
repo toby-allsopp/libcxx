@@ -446,32 +446,94 @@ private:
 class _LIBCPP_TYPE_VIS directory_entry;
 
 template <class _Tp> struct __can_convert_char  : false_type {};
-template <> struct __can_convert_char<char>     : true_type {};
-template <> struct __can_convert_char<wchar_t>  : true_type {};
-template <> struct __can_convert_char<char16_t> : true_type {};
-template <> struct __can_convert_char<char32_t> : true_type {};
+template <> struct __can_convert_char<char>     : true_type {
+    static _LIBCPP_CONSTEXPR char preferred_separator = '/';
+    static _LIBCPP_CONSTEXPR char __other_separator = '\\';
+};
+template <> struct __can_convert_char<wchar_t>  : true_type {
+static _LIBCPP_CONSTEXPR wchar_t preferred_separator = L'/';
+    static _LIBCPP_CONSTEXPR wchar_t __other_separator = L'\\';
+};
+template <> struct __can_convert_char<char16_t> : true_type {
+    static _LIBCPP_CONSTEXPR char16_t preferred_separator = u'/';
+    static _LIBCPP_CONSTEXPR char16_t __other_separator = u'\\';
+};
+template <> struct __can_convert_char<char32_t> : true_type {
+    static _LIBCPP_CONSTEXPR char32_t preferred_separator = U'/';
+    static _LIBCPP_CONSTEXPR char32_t __other_separator = U'\\';
+};
 
-template <class _Tp, bool _IsArray = typename> struct __is_pathable_source_imp : false_type {};
+template <class _Tp> struct __is_pathable_source_imp : false_type {};
 
 template <class _ECharT, class _Traits, class _Alloc>
 struct __is_pathable_source_imp<basic_string<_ECharT, _Traits, _Alloc> >
         : __can_convert_char<_ECharT> {};
 
-template <class _Iter>
-struct __is_pathable_source
+template <class _ECharT>
+using _WidenFromNative = __widen_from_utf8<sizeof(_ECharT)*__CHAR_BIT__>;
+
+template <class _ECharT>
+using _NarrowToNative = __narrow_to_utf8<sizeof(_ECharT)*__CHAR_BIT__>;
+
+template <class _ECharT>
+struct _CodeCVT {
+    typedef _NarrowToNative<_ECharT> _Narrower;
+
+    template <class _Iter>
+    static void __append_range(string& __dest, _Iter __b, _Iter __e) {
+        static_assert(!is_same<_Iter, _ECharT*>::value, "Call const overload");
+        if (__b == __e) return;
+        basic_string<_ECharT> __tmp(__b, __e);
+        _Narrower()(back_inserter(__dest), __tmp.data(),
+                    __tmp.data() + __tmp.length());
+    }
+
+    static void __append_range(string& __dest, _ECharT const* __b, _ECharT const* __e)  {
+        _Narrower()(back_inserter(__dest), __b, __e);
+    }
+
+    template <class _Source>
+    static void __append_source(string& __dest, _Source const& __b);
+
+    template <class _Traits, class _Alloc>
+    static void __append_source(string& __dest, basic_string<_ECharT, _Traits, _Alloc> const& __s)
+    {
+        __append_range(__dest, __s.data(), __s.data() + __s.length());
+    }
+};
+
+
 
 
 template <class _Tp>
 struct __is_pathable_imp : public false_type {};
 
 template <>
-struct __is_pathable_imp<char*> : public true_type {};
+struct __is_pathable_imp<string> : true_type
+{
+    typedef char value_type;
+};
 
 template <>
-struct __is_pathable_imp<const char*> : public true_type { };
+struct __is_pathable_imp<char*> : public true_type
+{
+    typedef char value_type;
+};
+
+template <>
+struct __is_pathable_imp<const char*> : public true_type
+{
+    typedef char value_type;
+};
 
 template <class _Tp>
-struct __is_pathable : public __is_pathable_imp<typename decay<_Tp>::type>::type {};
+struct __is_pathable : public __is_pathable_imp<typename decay<_Tp>::type> {};
+
+template <class _Tp>
+using _SourceChar = typename __is_pathable<_Tp>::value_type;
+
+template <class _Tp>
+using _SourceCVT = _CodeCVT<_SourceChar<_Tp>>;
 
 template <typename _Ret>
 _LIBCPP_INLINE_VISIBILITY
@@ -487,7 +549,7 @@ template <typename _Ret>
 _LIBCPP_INLINE_VISIBILITY
 _Ret __pathable_dispatch(const char* __from)
 {
-    return string{__from};
+    return string(__from);
 }
 
 template <typename _Ret>
@@ -521,18 +583,15 @@ public:
                     __is_pathable<_Source>::value
                 >::type
         >
-    path(const _Source& __src)
-        : __pn_(__pathable_dispatch<string_type>(__src))
-    {}
+    path(const _Source& __src) {
+        _SourceCVT<_Source>::__append_source(__pn_, __src);
+    }
 
     template <class _InputIt>
     path(_InputIt __first, _InputIt __last)
     {
         typedef typename iterator_traits<_InputIt>::value_type _ItVal;
-        if (__first != __last) {
-            basic_string<_ItVal> __s(__first, __last);
-            __pn_ = __pathable_convert<string_type>(__s);
-        }
+        _CodeCVT<_ItVal>::__append_range(__pn_, __first, __last);
     }
 
     // TODO
@@ -569,7 +628,9 @@ public:
     typename enable_if<__is_pathable<_Source>::value, path&>::type
     assign(const _Source& __src)
     {
-        __pn_ = __pathable_dispatch<string_type>(__src);
+        using _Ap = _CodeCVT<_SourceChar<_Source>>;
+        __pn_.clear();
+        _Ap::__append_source(__pn_, __src);
         return *this;
     }
 
@@ -577,11 +638,19 @@ public:
     path& assign(_InputIt __first, _InputIt __last)
     {
         typedef typename iterator_traits<_InputIt>::value_type _ItVal;
+        using _Ap = _CodeCVT<_ItVal>;
         if (__first != __last) {
             basic_string<_ItVal> __s(__first, __last);
+            _Ap::__append_range(__pn_, __first, __last);
             __pn_ = __pathable_convert<string_type>(__s);
         }
         return *this;
+    }
+
+    bool __maybe_append_sep() const {
+        return ! empty() &&
+                __pn_.back() != preferred_separator &&
+                __pn_.back() != __other_separator;
     }
 
     // appends
@@ -655,7 +724,8 @@ public:
     typename enable_if<__is_pathable<_Source>::value, path&>::type
     operator+=(const _Source& __x)
     {
-        return this->operator+=(__pathable_dispatch<string_type>(__x));
+        _SourceCVT<_Source>::__append_source(__pn_, __x);
+        return *this;
     }
 
     template <class _EcharT>
@@ -664,7 +734,8 @@ public:
     {
         basic_string<_EcharT> __tmp;
         __tmp += __x;
-        return this->operator+=(__pathable_convert<string_type>(__tmp));
+        _CodeCVT<_EcharT>::__append_source(__pn_, __tmp);
+        return *this;
     }
 
     template <class _Source>
@@ -678,11 +749,7 @@ public:
     path& concat(_InputIt __first, _InputIt __last)
     {
         typedef typename iterator_traits<_InputIt>::value_type _ItVal;
-        if (__first != __last) {
-            basic_string<_ItVal> __s(__first, __last);
-            path __p = __pathable_convert<string_type>(__s);
-            this->operator+=(__p);
-        }
+        _CodeCVT<_ItVal>::__append_range(__pn_, __first, __last);
         return *this;
     }
 
@@ -717,41 +784,46 @@ public:
     }
 
     _LIBCPP_INLINE_VISIBILITY
-    const value_type*   c_str() const _NOEXCEPT {
+    const value_type*  c_str() const _NOEXCEPT {
         return __pn_.c_str();
     }
 
     _LIBCPP_INLINE_VISIBILITY
-    operator string_type() const {
-        return __pn_;
-    }
+    operator string_type() const { return __pn_;  }
 
-    // TODO
     template <class _EcharT, class _Traits = char_traits<_EcharT>,
               class _Allocator = allocator<_EcharT> >
     basic_string<_EcharT, _Traits, _Allocator>
-    string(const _Allocator& __a = _Allocator()) const;
+    string(const _Allocator& __a = _Allocator()) const {
+        return generic_string<_EcharT, _Traits, _Allocator>(__a);
+    };
 
     _LIBCPP_INLINE_VISIBILITY
-    std::string string() const {
-        return __pn_;
-    }
+    std::string string() const { return __pn_; }
 
-    std::wstring wstring() const; // TODO
-    std::string  u8string() const; // TODO
-    std::u16string u16string() const; // TODO
-    std::u32string u32string() const; // TODO
+    std::wstring wstring() const { return generic_wstring(); }
+    std::string  u8string() const { return __pn_; }
+    std::u16string u16string() const { return generic_u16string(); }
+    std::u32string u32string() const { return generic_u32string(); }
 
     // generic format observers
     template <class _EcharT, class _Traits = char_traits<_EcharT>,
               class _Allocator = allocator<_EcharT> >
     basic_string<_EcharT, _Traits, _Allocator>
-    generic_string(const _Allocator& __a = _Allocator()) const; // TODO
-    std::string    generic_string() const; // TODO
-    std::wstring   generic_wstring() const; // TODO
-    std::string    generic_u8string() const; // TODO
-    std::u16string generic_u16string() const; // TODO
-    std::u32string generic_u32string() const; // TODO
+    generic_string(const _Allocator& __a = _Allocator()) const {
+        using _Str = basic_string<_EcharT, _Traits, _Allocator>;
+        _Str __s(__a);
+        _WidenFromNative<_EcharT>()(
+            back_inserter(__s),
+            __pn_.data(), __pn_.data() + __pn_.length());
+        return __s;
+    }
+
+    std::string    generic_string() const { return __pn_; }
+    std::wstring   generic_wstring() const { return generic_string<wchar_t>(); }
+    std::string    generic_u8string() const { return __pn_; }
+    std::u16string generic_u16string() const { return generic_string<char16_t>(); }
+    std::u32string generic_u32string() const { return generic_string<char32_t>(); }
 
     // compare
     _LIBCPP_INLINE_VISIBILITY

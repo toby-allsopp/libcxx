@@ -14,12 +14,6 @@
 
 _LIBCPP_BEGIN_NAMESPACE_EXPERIMENTAL_FILESYSTEM
 
-template <>
-string __pathable_dispatch(directory_entry const & from)
-{
-    return from.path().string();
-}
-
 _LIBCPP_CONSTEXPR path::value_type path::preferred_separator;
 _LIBCPP_CONSTEXPR path::value_type path::__other_separator;
 
@@ -36,6 +30,7 @@ namespace { namespace parser
 
 using string_type = path::string_type;
 using value_type = path::value_type;
+
 using string_pair = pair<string_type, string_type>;
 
 // status reporting
@@ -310,7 +305,6 @@ path::iterator path::end() const
     return it;
 }
 
-
 path::iterator& path::iterator::__increment() {
     if (__pos_ == parser::npos) return *this;
     while (! __set_position(parser::end_of(__path_ptr_->native(), __pos_)+1))
@@ -352,10 +346,10 @@ bool path::iterator::__set_position(size_t pos) {
 
 bool path::iterator::__valid_iterator_position() const {
     if (__pos_ == parser::npos) return true; // end position is valid
-    return (!parser::is_separator(__path_ptr_->native(), __pos_) ||
-          parser::is_root_directory(__path_ptr_->native(), __pos_) ||
+    return (!parser::is_separator      (__path_ptr_->native(), __pos_) ||
+          parser::is_root_directory    (__path_ptr_->native(), __pos_) ||
           parser::is_trailing_separator(__path_ptr_->native(), __pos_) ||
-          parser::is_root_name(__path_ptr_->native(), __pos_));
+          parser::is_root_name         (__path_ptr_->native(), __pos_));
 }
 
 _LIBCPP_END_NAMESPACE_EXPERIMENTAL_FILESYSTEM
