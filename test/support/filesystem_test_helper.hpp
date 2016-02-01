@@ -33,6 +33,36 @@ inline fs::path make_static_env_path(fs::path const& p)
     return static_test_env_path() / p;
 }
 
+namespace StaticEnv {
+
+inline fs::path makePath(fs::path const& p) {
+    return static_test_env_path() / p;
+}
+
+static const fs::path EnvRoot = LIBCXX_FILESYSTEM_STATIC_TEST_ROOT;
+
+static const fs::path TestFileList[] = {
+        makePath("empty_file"),
+        makePath("non_empty_file"),
+        makePath("dir1/file1"),
+        makePath("dir1/file2")
+};
+const std::size_t TestFileListSize = sizeof(TestFileList) / sizeof(fs::path);
+
+static const fs::path TestDirList[] = {
+        makePath("dir1"),
+        makePath("dir1/dir2"),
+        makePath("dir1/dir2/dir3")
+};
+const std::size_t TestDirListSize = sizeof(TestDirList) / sizeof(fs::path);
+
+static const fs::path File          = TestFileList[0];
+static const fs::path Dir           = TestDirList[0];
+static const fs::path SymlinkToFile = makePath("symlink_to_empty_file");
+static const fs::path DNE           = makePath("DNE");
+
+} // namespace StaticEnv
+
 // dynamic test helpers
 
 

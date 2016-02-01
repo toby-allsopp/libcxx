@@ -947,6 +947,7 @@ private:
     shared_ptr<_Storage> __paths_;
 };
 
+
 // operational functions
 
 path absolute(const path&);
