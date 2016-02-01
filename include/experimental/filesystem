@@ -36,25 +36,25 @@
     basic_istream<charT, traits>&
     operator>>(basic_istream<charT, traits>& is, path& p);
 
-    template <class Source>  
+    template <class Source>
       path u8path(const Source& source);
     template <class InputIterator>
       path u8path(InputIterator first, InputIterator last);
 
-    class filesystem_error;      
+    class filesystem_error;
     class directory_entry;
 
     class directory_iterator;
 
     // enable directory_iterator range-based for statements
-    directory_iterator begin(directory_iterator iter) _NOEXCEPT;
-    directory_iterator end(const directory_iterator&) _NOEXCEPT;
+    directory_iterator begin(directory_iterator iter) noexcept;
+    directory_iterator end(const directory_iterator&) noexcept;
 
     class recursive_directory_iterator;
 
     // enable recursive_directory_iterator range-based for statements
-    recursive_directory_iterator begin(recursive_directory_iterator iter) _NOEXCEPT;
-    recursive_directory_iterator end(const recursive_directory_iterator&) _NOEXCEPT;
+    recursive_directory_iterator begin(recursive_directory_iterator iter) noexcept;
+    recursive_directory_iterator end(const recursive_directory_iterator&) noexcept;
 
     class file_status;
 
@@ -230,15 +230,11 @@
 
 #include <__debug>
 
-#include <vector> // TODO: remove this
-#include <list> // TODO: remove this
-
 #if !defined(_LIBCPP_HAS_NO_PRAGMA_SYSTEM_HEADER)
 #pragma GCC system_header
 #endif
 
 _LIBCPP_BEGIN_NAMESPACE_EXPERIMENTAL_FILESYSTEM
-
 
 typedef chrono::time_point<std::chrono::system_clock>  file_time_type;
 
@@ -251,21 +247,21 @@ struct _LIBCPP_TYPE_VIS space_info
 
 enum class _LIBCPP_TYPE_VIS file_type
 {
-    none = 0,
-    not_found = -1,
-    regular = 1,
-    directory = 2,
-    symlink = 3,
-    block = 4,
-    character = 5,
-    fifo = 6,
-    socket = 7,
-    unknown = 8
+    none       = 0,
+    not_found  = -1,
+    regular    = 1,
+    directory  = 2,
+    symlink    = 3,
+    block      = 4,
+    character  = 5,
+    fifo       = 6,
+    socket     = 7,
+    unknown    = 8
 };
 
 enum class _LIBCPP_TYPE_VIS perms
 {
-    none = 0,
+    none         = 0,
 
     owner_read   = 0400,
     owner_write  = 0200,
@@ -311,9 +307,9 @@ enum class _LIBCPP_TYPE_VIS copy_options
 
 enum class directory_options
 {
-    none = 0,
+    none                     = 0,
     follow_directory_symlink = 1,
-    skip_permission_denied = 2
+    skip_permission_denied   = 2
 };
 
 class _LIBCPP_TYPE_VIS file_status
@@ -376,12 +372,6 @@ template <>
 struct __is_pathable_imp<string> : public true_type { };
 
 template <>
-struct __is_pathable_imp<vector<char>> : public true_type { };
-
-template <>
-struct __is_pathable_imp<list<char>> : public true_type { };
-
-template <>
 struct __is_pathable_imp<directory_entry> : public true_type { };
 
 template <class _Tp>
@@ -411,19 +401,6 @@ _Ret __pathable_dispatch(const string& __from)
     return {__from};
 }
 
-template <typename _Ret>
-_LIBCPP_INLINE_VISIBILITY
-_Ret __pathable_dispatch(const vector<char>& __from)
-{
-    return {string{__from.begin(), __from.end()}};
-}
-
-template <typename _Ret>
-_LIBCPP_INLINE_VISIBILITY
-_Ret __pathable_dispatch(const list<char>& __from)
-{
-    return {__from.begin(), __from.end()};
-}
 
 template <typename _Ret>
 _LIBCPP_INLINE_VISIBILITY
