@@ -445,6 +445,22 @@ private:
 
 class _LIBCPP_TYPE_VIS directory_entry;
 
+template <class _Tp> struct __can_convert_char  : false_type {};
+template <> struct __can_convert_char<char>     : true_type {};
+template <> struct __can_convert_char<wchar_t>  : true_type {};
+template <> struct __can_convert_char<char16_t> : true_type {};
+template <> struct __can_convert_char<char32_t> : true_type {};
+
+template <class _Tp, bool _IsArray = typename> struct __is_pathable_source_imp : false_type {};
+
+template <class _ECharT, class _Traits, class _Alloc>
+struct __is_pathable_source_imp<basic_string<_ECharT, _Traits, _Alloc> >
+        : __can_convert_char<_ECharT> {};
+
+template <class _Iter>
+struct __is_pathable_source
+
+
 template <class _Tp>
 struct __is_pathable_imp : public false_type {};
 
@@ -453,12 +469,6 @@ struct __is_pathable_imp<char*> : public true_type {};
 
 template <>
 struct __is_pathable_imp<const char*> : public true_type { };
-
-template <>
-struct __is_pathable_imp<string> : public true_type { };
-
-template <>
-struct __is_pathable_imp<directory_entry> : public true_type { };
 
 template <class _Tp>
 struct __is_pathable : public __is_pathable_imp<typename decay<_Tp>::type>::type {};
@@ -477,7 +487,7 @@ template <typename _Ret>
 _LIBCPP_INLINE_VISIBILITY
 _Ret __pathable_dispatch(const char* __from)
 {
-    return {string{__from}};
+    return string{__from};
 }
 
 template <typename _Ret>
@@ -486,18 +496,6 @@ _Ret __pathable_dispatch(const string& __from)
 {
     return {__from};
 }
-
-
-template <typename _Ret>
-_LIBCPP_INLINE_VISIBILITY
-_Ret __pathable_dispatch(const directory_entry & __from)
-{
-    return __pathable_dispatch<_Ret>(__pathable_dispatch<string>(__from));
-}
-
-template <> string
-_LIBCPP_INLINE_VISIBILITY
-__pathable_dispatch(const directory_entry & __from);
 
 class _LIBCPP_TYPE_VIS path
 {
