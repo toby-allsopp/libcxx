@@ -39,7 +39,7 @@ int main() {
   {
     static_assert(std::is_nothrow_constructible<file_status, file_type>::value,
                   "This constructor must be noexcept");
-    static_assert(std::is_convertible<file_status, file_type>::value == false,
+    static_assert(std::is_convertible<file_type, file_status>::value == false,
                  "This constructor must be explicit");
 
     const file_status f(file_type::not_found);

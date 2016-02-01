@@ -1094,7 +1094,7 @@ public:
     directory_entry(directory_entry&&) _NOEXCEPT = default;
 
     _LIBCPP_INLINE_VISIBILITY
-    directory_entry(_Path const& __p) : __p_(__p) {}
+    explicit directory_entry(_Path const& __p) : __p_(__p) {}
 
     ~directory_entry() {}
 
