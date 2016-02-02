@@ -10,6 +10,7 @@ set(LIBCXX_LIT_VARIANT "libcxx" CACHE STRING
     "Configuration variant to use for LIT.")
 
 include_directories(support)
+add_executable(cxxdebug nothing_to_do.pass.cpp)
 
 pythonize_bool(LIBCXX_ENABLE_EXCEPTIONS)
 pythonize_bool(LIBCXX_ENABLE_RTTI)

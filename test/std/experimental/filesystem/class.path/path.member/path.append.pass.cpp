@@ -88,10 +88,9 @@ void doAppendSourceTest(AppendOperatorTestcase const& TC)
   using Ptr = CharT const*;
   using Str = std::basic_string<CharT>;
   using Iter = input_iterator<Ptr>;
-  Ptr L = TC.lhs;
-  Ptr R = TC.rhs;
-  Ptr REnd = StrEnd(R);
-  Ptr E = TC.expect;
+  const Ptr L = TC.lhs;
+  const Ptr R = TC.rhs;
+  const Ptr E = TC.expect;
   // basic_string
   {
     path LHS(L);
@@ -138,8 +137,7 @@ void doAppendSourceTest(AppendOperatorTestcase const& TC)
     assert(&Ref == &LHS);
   }
   {
-    path LHS(L);
-    Iter RHS(R);
+    path LHS(L); Iter RHS(R);
     path& Ref = LHS.append(RHS);
     assert(LHS == E);
     assert(&Ref == &LHS);
