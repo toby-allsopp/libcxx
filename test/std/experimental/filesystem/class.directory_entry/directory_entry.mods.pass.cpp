@@ -39,7 +39,7 @@ void test_copy_assign_operator()
     directory_entry e2;
     assert(e.path() == p && e2.path() == path());
     e2 = e;
-    assert(e.path() == p && e2.path == p);
+    assert(e.path() == p && e2.path() == p);
     directory_entry e3(p2);
     e2 = e3;
     assert(e2.path() == p2 && e3.path() == p2);
@@ -58,7 +58,7 @@ void test_move_assign_operator()
     const path p2("abc");
     directory_entry e(p);
     directory_entry e2(p2);
-    assert(e.path() == p && e2.path() == p2());
+    assert(e.path() == p && e2.path() == p2);
     e2 = std::move(e);
     assert(e2.path() == p);
     assert(e.path() != p); // testing moved from state
@@ -82,11 +82,6 @@ void test_path_assign_method()
     assert(e.path() == p2 && e.path() != p);
     e.assign(p);
     assert(e.path() == p && e.path() != p2);
-  }
-  {
-    static_assert(std::is_same<decltype(e.assign())
-    directory_entry e;
-    assert(e.path() == path());
   }
 }
 

@@ -194,4 +194,93 @@ struct scoped_test_env
     fs::path const test_root;
 };
 
+
+// Misc test types
+
+
+#define CONCAT2(LHS, RHS) LHS##RHS
+#define CONCAT(LHS, RHS) CONCAT2(LHS, RHS)
+#define MKSTR(Str) {Str, CONCAT(L, Str), CONCAT(u, Str), CONCAT(U, Str)}
+
+struct MultiStringType {
+  const char* s;
+  const wchar_t* w;
+  const char16_t* u16;
+  const char32_t* u32;
+
+  operator const char* () const { return s; }
+  operator const wchar_t* () const { return w; }
+  operator const char16_t* () const { return u16; }
+  operator const char32_t* () const { return u32; }
+};
+
+
+const MultiStringType PathList[] = {
+        MKSTR(""),
+        MKSTR(" "),
+        MKSTR("//"),
+        MKSTR("."),
+        MKSTR(".."),
+        MKSTR("foo"),
+        MKSTR("/"),
+        MKSTR("/foo"),
+        MKSTR("foo/"),
+        MKSTR("/foo/"),
+        MKSTR("foo/bar"),
+        MKSTR("/foo/bar"),
+        MKSTR("//net"),
+        MKSTR("//net/foo"),
+        MKSTR("///foo///"),
+        MKSTR("///foo///bar"),
+        MKSTR("/."),
+        MKSTR("./"),
+        MKSTR("/.."),
+        MKSTR("../"),
+        MKSTR("foo/."),
+        MKSTR("foo/.."),
+        MKSTR("foo/./"),
+        MKSTR("foo/./bar"),
+        MKSTR("foo/../"),
+        MKSTR("foo/../bar"),
+        MKSTR("c:"),
+        MKSTR("c:/"),
+        MKSTR("c:foo"),
+        MKSTR("c:/foo"),
+        MKSTR("c:foo/"),
+        MKSTR("c:/foo/"),
+        MKSTR("c:/foo/bar"),
+        MKSTR("prn:"),
+        MKSTR("c:\\"),
+        MKSTR("c:\\foo"),
+        MKSTR("c:foo\\"),
+        MKSTR("c:\\foo\\"),
+        MKSTR("c:\\foo/"),
+        MKSTR("c:/foo\\bar"),
+        MKSTR("//"),
+        MKSTR("/finally/we/need/one/really/really/really/really/really/really/really/long/string")
+};
+const unsigned PathListSize = sizeof(PathList) / sizeof(MultiStringType);
+
+template <class Iter>
+Iter IterEnd(Iter B) {
+  using VT = typename std::iterator_traits<Iter>::value_type;
+  for (; *B != VT{}; ++B)
+    ;
+  return B;
+}
+
+template <class CharT>
+const CharT* StrEnd(CharT const* P) {
+    return IterEnd(P);
+}
+
+// Testing the allocation behavior of the code_cvt functions requires
+// *knowning* that the allocation was not done by "path::__str_".
+// This hack forces path to allocate enough memory.
+void PathReserve(fs::path& p, std::size_t N) {
+  auto const& native_ref = p.native();
+  const_cast<std::string&>(native_ref).reserve(N);
+}
+
+
 #endif /* FILESYSTEM_TEST_HELPER_HPP */

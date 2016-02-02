@@ -369,7 +369,6 @@ enum class directory_options : unsigned char
     skip_permission_denied   = 2
 };
 
-
 _LIBCPP_INLINE_VISIBILITY
 inline _LIBCPP_CONSTEXPR directory_options operator&(directory_options _LHS, directory_options _RHS)
 { return static_cast<directory_options>(static_cast<unsigned char>(_LHS) & static_cast<unsigned char>(_RHS)); }
@@ -398,13 +397,14 @@ _LIBCPP_INLINE_VISIBILITY
 inline directory_options& operator^=(directory_options& _LHS, directory_options _RHS)
 { return _LHS = _LHS ^ _RHS; }
 
+
 class _LIBCPP_TYPE_VIS file_status
 {
 public:
     // constructors
     _LIBCPP_INLINE_VISIBILITY
     explicit file_status(file_type __ft = file_type::none,
-                         perms __prms = perms::unknown) _NOEXCEPT
+                         perms __prms   = perms::unknown) _NOEXCEPT
       : __ft_(__ft), __prms_(__prms)
     {}
 
@@ -445,29 +445,132 @@ private:
 
 class _LIBCPP_TYPE_VIS directory_entry;
 
-template <class _Tp> struct __can_convert_char  : false_type {};
-template <> struct __can_convert_char<char>     : true_type {
+template <class _Tp> struct __can_convert_char {
+  static const bool value = false;
+};
+template <> struct __can_convert_char<char> {
+    static const bool value = true;
+    using __char_type = char;
     static _LIBCPP_CONSTEXPR char preferred_separator = '/';
     static _LIBCPP_CONSTEXPR char __other_separator = '\\';
 };
-template <> struct __can_convert_char<wchar_t>  : true_type {
-static _LIBCPP_CONSTEXPR wchar_t preferred_separator = L'/';
+template <> struct __can_convert_char<wchar_t>  {
+    static const bool value = true;
+    using __char_type = wchar_t;
+    static _LIBCPP_CONSTEXPR wchar_t preferred_separator = L'/';
     static _LIBCPP_CONSTEXPR wchar_t __other_separator = L'\\';
 };
-template <> struct __can_convert_char<char16_t> : true_type {
+template <> struct __can_convert_char<char16_t> {
+    static const bool value = true;
+    using __char_type = char16_t;
     static _LIBCPP_CONSTEXPR char16_t preferred_separator = u'/';
     static _LIBCPP_CONSTEXPR char16_t __other_separator = u'\\';
 };
-template <> struct __can_convert_char<char32_t> : true_type {
+template <> struct __can_convert_char<char32_t> {
+    static const bool value = true;
+    using __char_type = char32_t;
     static _LIBCPP_CONSTEXPR char32_t preferred_separator = U'/';
     static _LIBCPP_CONSTEXPR char32_t __other_separator = U'\\';
 };
 
-template <class _Tp> struct __is_pathable_source_imp : false_type {};
+template <class _ECharT>
+typename enable_if<__can_convert_char<_ECharT>::value, bool>::type
+__is_separator(_ECharT __e) {
+    using _Traits = __can_convert_char<_ECharT>;
+    return __e == _Traits::preferred_separator ||
+           __e == _Traits::__other_separator;
+};
+
+struct _NullSentinal {};
+
+
+template <class _Tp>
+using _Void = void;
+
+template <class _Tp, class = void>
+struct __is_pathable_string : public false_type {};
 
 template <class _ECharT, class _Traits, class _Alloc>
-struct __is_pathable_source_imp<basic_string<_ECharT, _Traits, _Alloc> >
-        : __can_convert_char<_ECharT> {};
+struct __is_pathable_string<basic_string<_ECharT, _Traits, _Alloc>,
+                            _Void<typename __can_convert_char<_ECharT>::__char_type>>
+: public __can_convert_char<_ECharT>
+{
+    using _Str = basic_string<_ECharT, _Traits, _Alloc>;
+    using _Base = __can_convert_char<_ECharT>;
+    static _ECharT const* __range_begin(_Str const& __s) { return __s.data(); }
+    static _ECharT const* __range_end(_Str const& __s) { return __s.data() + __s.length(); }
+    static _ECharT __first_or_null(_Str const& __s) {
+        return __s.empty() ? _ECharT{} : __s[0];
+    }
+};
+
+template <class _Tp>
+using _UnqualPtrType = typename remove_const<typename remove_pointer<_Tp>::type>::type;
+
+template <class _Source,
+          class _DS = typename decay<_Source>::type,
+          bool _IsCharPtr = is_pointer<_DS>::value &&
+                            __can_convert_char<_UnqualPtrType<_DS>>::value
+        >
+struct __is_pathable_char_array : false_type {};
+
+template <class _Source, class _ECharT>
+struct __is_pathable_char_array<_Source, _ECharT*, true>
+        : __can_convert_char<typename remove_const<_ECharT>::type>
+{
+  using _Base = __can_convert_char<typename std::remove_const<_ECharT>::type>;
+
+  static _ECharT const* __range_begin(const _ECharT* __b) { return __b; }
+  static _ECharT const* __range_end(const _ECharT* __b)
+  {
+      using _Iter = const _ECharT*;
+      const _ECharT __sentinal = _ECharT{};
+      _Iter __e = __b;
+      for (; *__e != __sentinal; ++__e)
+          ;
+      return __e;
+  }
+
+  static _ECharT __first_or_null(const _ECharT* __b) { return *__b; }
+};
+
+template <class _Iter, bool _IsIt = __is_input_iterator<_Iter>::value, class = void>
+struct __is_pathable_iter : false_type {};
+
+template <class _Iter>
+struct __is_pathable_iter<_Iter, true,
+        _Void<typename __can_convert_char<typename iterator_traits<_Iter>::value_type>::__char_type>>
+        : __can_convert_char<typename iterator_traits<_Iter>::value_type>
+{
+  using _ECharT = typename iterator_traits<_Iter>::value_type;
+  using _Base = __can_convert_char<_ECharT>;
+
+  static _Iter         __range_begin(_Iter __b) { return __b; }
+  static _NullSentinal __range_end(_Iter)       { return _NullSentinal{}; }
+
+  static _ECharT __first_or_null(_Iter __b) { return *__b; }
+
+};
+
+template <class _Tp, bool _IsStringT =  __is_pathable_string<_Tp>::value,
+                     bool _IsCharIterT = __is_pathable_char_array<_Tp>::value,
+                     bool _IsIterT = !_IsCharIterT && __is_pathable_iter<_Tp>::value
+         >
+struct __is_pathable : false_type {
+  static_assert(!_IsStringT && !_IsCharIterT && !_IsIterT, "Must all be false");
+};
+
+template <class _Tp>
+struct __is_pathable<_Tp, true, false, false> : __is_pathable_string<_Tp> {};
+
+
+template <class _Tp>
+struct __is_pathable<_Tp, false, true, false> : __is_pathable_char_array<_Tp> {};
+
+
+template <class _Tp>
+struct __is_pathable<_Tp, false, false, true> : __is_pathable_iter<_Tp> {};
+
 
 template <class _ECharT>
 using _WidenFromNative = __widen_from_utf8<sizeof(_ECharT)*__CHAR_BIT__>;
@@ -476,8 +579,14 @@ template <class _ECharT>
 using _NarrowToNative = __narrow_to_utf8<sizeof(_ECharT)*__CHAR_BIT__>;
 
 template <class _ECharT>
-struct _CodeCVT {
+struct _PathCVT {
+    static_assert(__can_convert_char<_ECharT>::value, "Char type not convertible");
+
     typedef _NarrowToNative<_ECharT> _Narrower;
+
+    static void __append_range(string& __dest, _ECharT const* __b, _ECharT const* __e)  {
+        _Narrower()(back_inserter(__dest), __b, __e);
+    }
 
     template <class _Iter>
     static void __append_range(string& __dest, _Iter __b, _Iter __e) {
@@ -488,52 +597,31 @@ struct _CodeCVT {
                     __tmp.data() + __tmp.length());
     }
 
-    static void __append_range(string& __dest, _ECharT const* __b, _ECharT const* __e)  {
-        _Narrower()(back_inserter(__dest), __b, __e);
+    template <class _Iter>
+    static void __append_range(string& __dest, _Iter __b, _NullSentinal) {
+        static_assert(!is_same<_Iter, _ECharT*>::value, "Call const overload");
+        const _ECharT __sentinal = _ECharT{};
+        if (*__b == __sentinal) return;
+        basic_string<_ECharT> __tmp;
+        for (; *__b != __sentinal; ++__b)
+            __tmp.push_back(*__b);
+        _Narrower()(back_inserter(__dest), __tmp.data(),
+                    __tmp.data() + __tmp.length());
     }
 
     template <class _Source>
-    static void __append_source(string& __dest, _Source const& __b);
-
-    template <class _Traits, class _Alloc>
-    static void __append_source(string& __dest, basic_string<_ECharT, _Traits, _Alloc> const& __s)
+    static void __append_source(string& __dest, _Source const& __s)
     {
-        __append_range(__dest, __s.data(), __s.data() + __s.length());
+        using _Traits = __is_pathable<_Source>;
+        __append_range(__dest, _Traits::__range_begin(__s), _Traits::__range_end(__s));
     }
 };
 
-
-
+template <class _Tp>
+using _SourceChar = typename __is_pathable<_Tp>::__char_type;
 
 template <class _Tp>
-struct __is_pathable_imp : public false_type {};
-
-template <>
-struct __is_pathable_imp<string> : true_type
-{
-    typedef char value_type;
-};
-
-template <>
-struct __is_pathable_imp<char*> : public true_type
-{
-    typedef char value_type;
-};
-
-template <>
-struct __is_pathable_imp<const char*> : public true_type
-{
-    typedef char value_type;
-};
-
-template <class _Tp>
-struct __is_pathable : public __is_pathable_imp<typename decay<_Tp>::type> {};
-
-template <class _Tp>
-using _SourceChar = typename __is_pathable<_Tp>::value_type;
-
-template <class _Tp>
-using _SourceCVT = _CodeCVT<_SourceChar<_Tp>>;
+using _SourceCVT = _PathCVT<_SourceChar<_Tp>>;
 
 template <typename _Ret>
 _LIBCPP_INLINE_VISIBILITY
@@ -591,7 +679,7 @@ public:
     path(_InputIt __first, _InputIt __last)
     {
         typedef typename iterator_traits<_InputIt>::value_type _ItVal;
-        _CodeCVT<_ItVal>::__append_range(__pn_, __first, __last);
+        _PathCVT<_ItVal>::__append_range(__pn_, __first, __last);
     }
 
     // TODO
@@ -628,9 +716,9 @@ public:
     typename enable_if<__is_pathable<_Source>::value, path&>::type
     assign(const _Source& __src)
     {
-        using _Ap = _CodeCVT<_SourceChar<_Source>>;
+        using _CVT = _PathCVT<_SourceChar<_Source>>;
         __pn_.clear();
-        _Ap::__append_source(__pn_, __src);
+        _CVT::__append_source(__pn_, __src);
         return *this;
     }
 
@@ -638,31 +726,27 @@ public:
     path& assign(_InputIt __first, _InputIt __last)
     {
         typedef typename iterator_traits<_InputIt>::value_type _ItVal;
-        using _Ap = _CodeCVT<_ItVal>;
-        if (__first != __last) {
-            basic_string<_ItVal> __s(__first, __last);
-            _Ap::__append_range(__pn_, __first, __last);
-            __pn_ = __pathable_convert<string_type>(__s);
-        }
+        __pn_.clear();
+        _PathCVT<_ItVal>::__append_range(__pn_, __first, __last);
         return *this;
     }
 
-    bool __maybe_append_sep() const {
-        return ! empty() &&
-                __pn_.back() != preferred_separator &&
-                __pn_.back() != __other_separator;
+    template <class _ECharT>
+    void __append_sep_if_needed(_ECharT __first_or_null) {
+        const _ECharT __null_val = {};
+        bool __append_sep = !empty()                       &&
+                            !__is_separator(__pn_.back())  &&
+                            __first_or_null != __null_val  && // non-empty
+                            !__is_separator(__first_or_null);
+        if (__append_sep)
+            __pn_ += preferred_separator;
     }
+
 
     // appends
     path& operator/=(const path& __p)
     {
-        bool const __append_sep =
-            ! empty() && not __p.empty()
-                && __p.__pn_[0] != preferred_separator
-                && __p.__pn_[0] != __other_separator
-                && __pn_.back() != preferred_separator
-                && __pn_.back() != __other_separator;
-        if (__append_sep) __pn_ += preferred_separator;
+        __append_sep_if_needed(__p.empty() ? char{} : __p.__pn_[0]);
         __pn_ += __p.native();
         return *this;
     }
@@ -671,26 +755,29 @@ public:
     typename enable_if<__is_pathable<_Source>::value, path&>::type
     operator/=(const _Source& __src)
     {
-        path __p(__pathable_dispatch<string_type>(__src));
-        return this->operator/=(__p);
+        using _Traits = __is_pathable<_Source>;
+        using _CVT = _PathCVT<_SourceChar<_Source>>;
+        __append_sep_if_needed(_Traits::__first_or_null(__src));
+        _CVT::__append_source(__pn_, __src);
+        return *this;
     }
 
     template <class _Source>
     typename enable_if<__is_pathable<_Source>::value, path&>::type
     append(const _Source& __src)
     {
-        path __p(__pathable_dispatch<string_type>(__src));
-        return this->operator/=(__p);
+        return this->operator/=(__src);
     }
 
     template <class _InputIt>
     path& append(_InputIt __first, _InputIt __last)
     {
         typedef typename iterator_traits<_InputIt>::value_type _ItVal;
+
+        using _CVT = _PathCVT<_ItVal>;
         if (__first != __last) {
-            basic_string<_ItVal> __s(__first, __last);
-            path __p = __pathable_convert<string_type>(__s);
-            this->operator/=(__p);
+            __append_sep_if_needed(*__first);
+            _CVT::__append_range(__pn_, __first, __last);
         }
         return *this;
     }
@@ -728,13 +815,13 @@ public:
         return *this;
     }
 
-    template <class _EcharT>
-    typename enable_if<__is_pathable<basic_string<_EcharT>>::value, path&>::type
-    operator+=(_EcharT __x)
+    template <class _ECharT>
+    typename enable_if<__can_convert_char<_ECharT>::value, path&>::type
+    operator+=(_ECharT __x)
     {
-        basic_string<_EcharT> __tmp;
+        basic_string<_ECharT> __tmp;
         __tmp += __x;
-        _CodeCVT<_EcharT>::__append_source(__pn_, __tmp);
+        _PathCVT<_ECharT>::__append_source(__pn_, __tmp);
         return *this;
     }
 
@@ -749,7 +836,7 @@ public:
     path& concat(_InputIt __first, _InputIt __last)
     {
         typedef typename iterator_traits<_InputIt>::value_type _ItVal;
-        _CodeCVT<_ItVal>::__append_range(__pn_, __first, __last);
+        _PathCVT<_ItVal>::__append_range(__pn_, __first, __last);
         return *this;
     }
 

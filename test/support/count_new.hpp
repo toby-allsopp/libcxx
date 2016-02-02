@@ -24,6 +24,19 @@
 #define DISABLE_NEW_COUNT
 #endif
 
+struct NewCounts
+{
+    int outstanding_new;
+    int new_called;
+    int delete_called;
+    int last_new_size;
+
+    int outstanding_array_new;
+    int new_array_called;
+    int delete_array_called;
+    int last_new_array_size;
+};
+
 class MemCounter
 {
 public:
@@ -130,6 +143,11 @@ public:
     bool checkNewCalledNotEq(int n) const
     {
         return disable_checking || n != new_called;
+    }
+
+    bool checkNewCalledGreaterThan(int n) const
+    {
+        return disable_checking || new_called > n;
     }
 
     bool checkDeleteCalledEq(int n) const
@@ -253,6 +271,31 @@ private:
 
     DisableAllocationGuard(DisableAllocationGuard const&);
     DisableAllocationGuard& operator=(DisableAllocationGuard const&);
+};
+
+
+struct RequireAllocationGuard {
+    explicit RequireAllocationGuard(std::size_t RequireAtLeast = 1)
+            : m_req_alloc(RequireAtLeast),
+              m_new_count_on_init(globalMemCounter.new_called),
+              m_outstanding_new_on_init(globalMemCounter.outstanding_new)
+    {
+    }
+
+    ~RequireAllocationGuard() {
+        assert(globalMemCounter.checkOutstandingNewEq(m_outstanding_new_on_init));
+        std::size_t Expect = m_new_count_on_init + m_req_alloc;
+        assert(globalMemCounter.checkNewCalledEq(Expect) ||
+               globalMemCounter.checkNewCalledGreaterThan(Expect));
+    }
+
+private:
+    const std::size_t m_req_alloc;
+    const std::size_t m_new_count_on_init;
+    const std::size_t m_outstanding_new_on_init;
+
+    RequireAllocationGuard(RequireAllocationGuard const&);
+    RequireAllocationGuard& operator=(RequireAllocationGuard const&);
 };
 
 #endif /* COUNT_NEW_HPP */
