@@ -51,6 +51,17 @@ const AppendOperatorTestcase Cases[] =
       , {S("p1"),   S(""),      S("p1")}
       , {S(""),     S("p2"),    S("p2")}
     };
+
+const AppendOperatorTestcase LongLHSCases[] =
+    {
+      , {S("p1"),   S("p2"),    S("p1/p2")}
+      , {S("p1/"),  S("p2"),    S("p1/p2")}
+      , {S("p1"),   S("/p2"),   S("p1/p2")}
+      , {S("p1/"),  S("/p2"),   S("p1//p2")}
+      , {S("p1"),   S("\\p2"),  S("p1\\p2")}
+      , {S("p1"),   S(""),      S("p1")}
+      , {S(""),     S("p2"),    S("p2")}
+    };
 #undef S
 
 
