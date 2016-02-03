@@ -65,13 +65,18 @@ const AppendOperatorTestcase LongLHSCases[] =
 #undef S
 
 
-void doAppendPathTest(AppendOperatorTestcase const& TC)
+void doAppendSourceAllocTest(AppendOperatorTestcase const& TC)
 {
   using namespace fs;
-  using Ptr = char const*;
-  Ptr L = TC.lhs;
-  Ptr R = TC.rhs;
-  Ptr E = TC.expect;
+  using namespace fs;
+  using Ptr = CharT const*;
+  using Str = std::basic_string<CharT>;
+  using Iter = input_iterator<Ptr>;
+  const Ptr L = TC.lhs;
+  const Ptr R = TC.rhs;
+  const Ptr E = TC.expect;
+  // Test the allocation behavior of
+  assert(StrLen(R) >= 100);
   {
     path LHS(L);
     path RHS(R);

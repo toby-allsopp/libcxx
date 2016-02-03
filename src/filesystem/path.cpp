@@ -42,13 +42,8 @@ inline bool good(size_t pos)
 // lexical elements
 constexpr value_type preferred_separator = path::preferred_separator;
 constexpr value_type const * dot = ".";
-constexpr value_type const* double_dot = "..";
-
-// suppress unused warning for double_dot
-static constexpr struct ignore_double_dot_unused 
-{ 
-    explicit constexpr ignore_double_dot_unused(const char*) {}
-} ignore_double_dot_unused_obj { double_dot };
+// TODO(UNUSED)
+//constexpr value_type const* double_dot = "..";
 
 
 // forward //
