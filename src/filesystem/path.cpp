@@ -17,13 +17,6 @@ _LIBCPP_BEGIN_NAMESPACE_EXPERIMENTAL_FILESYSTEM
 _LIBCPP_CONSTEXPR path::value_type path::preferred_separator;
 _LIBCPP_CONSTEXPR path::value_type path::__other_separator;
 
-path& path::make_preferred() {
-    _VSTD::replace(
-        __pn_.begin(), __pn_.end(),
-        __other_separator, preferred_separator
-    );
-    return *this;
-}
 
 namespace { namespace parser
 {

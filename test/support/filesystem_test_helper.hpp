@@ -274,6 +274,11 @@ const CharT* StrEnd(CharT const* P) {
     return IterEnd(P);
 }
 
+template <class CharT>
+std::size_t StrLen(CharT const* P) {
+    return StrEnd(P) - P;
+}
+
 // Testing the allocation behavior of the code_cvt functions requires
 // *knowning* that the allocation was not done by "path::__str_".
 // This hack forces path to allocate enough memory.

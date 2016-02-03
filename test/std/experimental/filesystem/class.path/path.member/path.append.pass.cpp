@@ -47,42 +47,103 @@ const AppendOperatorTestcase Cases[] =
       , {S("p1/"),  S("p2"),    S("p1/p2")}
       , {S("p1"),   S("/p2"),   S("p1/p2")}
       , {S("p1/"),  S("/p2"),   S("p1//p2")}
-      , {S("p1"),   S("\\p2"),  S("p1\\p2")}
+      , {S("p1"),   S("\\p2"),  S("p1/\\p2")}
+      , {S("p1\\"), S("p2"),  S("p1\\/p2")}
+      , {S("p1\\"), S("\\p2"),  S("p1\\/\\p2")}
       , {S("p1"),   S(""),      S("p1")}
       , {S(""),     S("p2"),    S("p2")}
     };
 
+
 const AppendOperatorTestcase LongLHSCases[] =
     {
-      , {S("p1"),   S("p2"),    S("p1/p2")}
+        {S("p1"),   S("p2"),    S("p1/p2")}
       , {S("p1/"),  S("p2"),    S("p1/p2")}
       , {S("p1"),   S("/p2"),   S("p1/p2")}
-      , {S("p1/"),  S("/p2"),   S("p1//p2")}
-      , {S("p1"),   S("\\p2"),  S("p1\\p2")}
-      , {S("p1"),   S(""),      S("p1")}
-      , {S(""),     S("p2"),    S("p2")}
     };
 #undef S
 
 
+// The append operator may need to allocate a temporary buffer before a code_cvt
+// conversion. Test if this allocation occurs by:
+//   1. Create a path, `LHS`, and reserve enough space to append `RHS`.
+//      This prevents `LHS` from allocating during the actual appending.
+//   2. Create a `Source` object `RHS`, which represents a "large" string.
+//      (The string must not trigger the SSO)
+//   3. Append `RHS` to `LHS` and check for the expected allocation behavior.
+template <class CharT>
 void doAppendSourceAllocTest(AppendOperatorTestcase const& TC)
 {
   using namespace fs;
-  using namespace fs;
   using Ptr = CharT const*;
   using Str = std::basic_string<CharT>;
-  using Iter = input_iterator<Ptr>;
+  using InputIter = input_iterator<Ptr>;
+
   const Ptr L = TC.lhs;
-  const Ptr R = TC.rhs;
-  const Ptr E = TC.expect;
-  // Test the allocation behavior of
-  assert(StrLen(R) >= 100);
+  Str RShort = (Ptr)TC.rhs;
+  Str EShort = (Ptr)TC.expect;
+  assert(RShort.size() >= 2);
+  CharT c = RShort.back();
+  RShort.append(100, c);
+  EShort.append(100, c);
+  const Ptr R = RShort.data();
+  const Str& E = EShort;
+  std::size_t ReserveSize = StrLen(R) + 3;
+  // basic_string
   {
-    path LHS(L);
-    path RHS(R);
-    path& Ref = (LHS /= RHS);
+    path LHS(L); PathReserve(LHS, ReserveSize);
+    Str  RHS(R);
+    {
+      DisableAllocationGuard g;
+      LHS /= RHS;
+    }
     assert(LHS == E);
-    assert(&Ref == &LHS);
+  }
+  // CharT*
+  {
+    path LHS(L); PathReserve(LHS, ReserveSize);
+    Ptr RHS(R);
+    {
+      DisableAllocationGuard g;
+      LHS /= RHS;
+    }
+    assert(LHS == E);
+  }
+  {
+    path LHS(L); PathReserve(LHS, ReserveSize);
+    Ptr RHS(R);
+    {
+      DisableAllocationGuard g;
+      LHS.append(RHS, StrEnd(RHS));
+    }
+    assert(LHS == E);
+  }
+  // input iterator - For non-native char types, appends needs to copy the
+  // iterator range into a contigious block of memory before it can perform the
+  // code_cvt conversions.
+  // For "char" no allocations will be performed because no conversion is
+  // required.
+  bool DisableAllocations = std::is_same<CharT, char>::value;
+  {
+    path LHS(L); PathReserve(LHS, ReserveSize);
+    InputIter RHS(R);
+    {
+      RequireAllocationGuard  g; // requires 1 or more allocations occur by default
+      if (DisableAllocations) g.requireExactly(0);
+      LHS /= RHS;
+    }
+    assert(LHS == E);
+  }
+  {
+    path LHS(L); PathReserve(LHS, ReserveSize);
+    InputIter RHS(R);
+    InputIter REnd(StrEnd(R));
+    {
+      RequireAllocationGuard g;
+      if (DisableAllocations) g.requireExactly(0);
+      LHS.append(RHS, REnd);
+    }
+    assert(LHS == E);
   }
 }
 
@@ -92,7 +153,7 @@ void doAppendSourceTest(AppendOperatorTestcase const& TC)
   using namespace fs;
   using Ptr = CharT const*;
   using Str = std::basic_string<CharT>;
-  using Iter = input_iterator<Ptr>;
+  using InputIter = input_iterator<Ptr>;
   const Ptr L = TC.lhs;
   const Ptr R = TC.rhs;
   const Ptr E = TC.expect;
@@ -136,21 +197,22 @@ void doAppendSourceTest(AppendOperatorTestcase const& TC)
   // iterators
   {
     path LHS(L);
-    Iter RHS(R);
+    InputIter RHS(R);
     path& Ref = (LHS /= RHS);
     assert(LHS == E);
     assert(&Ref == &LHS);
   }
   {
-    path LHS(L); Iter RHS(R);
+    path LHS(L); InputIter RHS(R);
     path& Ref = LHS.append(RHS);
     assert(LHS == E);
     assert(&Ref == &LHS);
   }
   {
     path LHS(L);
-    Iter RHS(R);
-    path& Ref = LHS.append(RHS, IterEnd(RHS));
+    InputIter RHS(R);
+    InputIter REnd(StrEnd(R));
+    path& Ref = LHS.append(RHS, REnd);
     assert(LHS == E);
     assert(&Ref == &LHS);
   }
@@ -171,5 +233,9 @@ int main()
     doAppendSourceTest<wchar_t> (TC);
     doAppendSourceTest<char16_t>(TC);
     doAppendSourceTest<char32_t>(TC);
+  }
+  for (auto const & TC : LongLHSCases) {
+    doAppendSourceAllocTest<char>(TC);
+    doAppendSourceAllocTest<wchar_t>(TC);
   }
 }

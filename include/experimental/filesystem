@@ -477,8 +477,7 @@ template <class _ECharT>
 typename enable_if<__can_convert_char<_ECharT>::value, bool>::type
 __is_separator(_ECharT __e) {
     using _Traits = __can_convert_char<_ECharT>;
-    return __e == _Traits::preferred_separator ||
-           __e == _Traits::__other_separator;
+    return __e == _Traits::preferred_separator;
 };
 
 struct _NullSentinal {};
@@ -576,13 +575,10 @@ template <class _ECharT>
 using _WidenFromNative = __widen_from_utf8<sizeof(_ECharT)*__CHAR_BIT__>;
 
 template <class _ECharT>
-using _NarrowToNative = __narrow_to_utf8<sizeof(_ECharT)*__CHAR_BIT__>;
-
-template <class _ECharT>
 struct _PathCVT {
     static_assert(__can_convert_char<_ECharT>::value, "Char type not convertible");
 
-    typedef _NarrowToNative<_ECharT> _Narrower;
+    typedef __narrow_to_utf8<sizeof(_ECharT)*__CHAR_BIT__> _Narrower;
 
     static void __append_range(string& __dest, _ECharT const* __b, _ECharT const* __e)  {
         _Narrower()(back_inserter(__dest), __b, __e);
@@ -617,35 +613,39 @@ struct _PathCVT {
     }
 };
 
+
+template <>
+struct _PathCVT<char> {
+    template <class _Iter>
+    static void __append_range(string& __dest, _Iter __b, _Iter __e) {
+        // TODO(EricWF) We get better allocation behavior here if we don't
+        // provide the same exception safety guarantees as string.append.
+        // __dest.append(__b, __e);
+        for (; __b != __e; ++__b)
+            __dest.push_back(*__b);
+    }
+
+    template <class _Iter>
+    static void __append_range(string& __dest, _Iter __b, _NullSentinal) {
+        const char __sentinal = char{};
+        for (; *__b != __sentinal; ++__b)
+            __dest.push_back(*__b);
+    }
+
+    template <class _Source>
+    static void __append_source(string& __dest, _Source const& __s)
+    {
+        using _Traits = __is_pathable<_Source>;
+        __append_range(__dest, _Traits::__range_begin(__s), _Traits::__range_end(__s));
+    }
+};
+
+
 template <class _Tp>
 using _SourceChar = typename __is_pathable<_Tp>::__char_type;
 
 template <class _Tp>
 using _SourceCVT = _PathCVT<_SourceChar<_Tp>>;
-
-template <typename _Ret>
-_LIBCPP_INLINE_VISIBILITY
-_Ret __pathable_convert(const string&);
-
-template <>
-_LIBCPP_INLINE_VISIBILITY
-inline string
-__pathable_convert(const string& __s)
-{ return __s; }
-
-template <typename _Ret>
-_LIBCPP_INLINE_VISIBILITY
-_Ret __pathable_dispatch(const char* __from)
-{
-    return string(__from);
-}
-
-template <typename _Ret>
-_LIBCPP_INLINE_VISIBILITY
-_Ret __pathable_dispatch(const string& __from)
-{
-    return {__from};
-}
 
 class _LIBCPP_TYPE_VIS path
 {
@@ -773,7 +773,7 @@ public:
     path& append(_InputIt __first, _InputIt __last)
     {
         typedef typename iterator_traits<_InputIt>::value_type _ItVal;
-
+        static_assert(__can_convert_char<_ItVal>::value, "Must convertible");
         using _CVT = _PathCVT<_ItVal>;
         if (__first != __last) {
             __append_sep_if_needed(*__first);
@@ -846,11 +846,9 @@ public:
         __pn_.clear();
     }
 
-    path& make_preferred();
+    path& make_preferred() { return *this; }
 
-    path& remove_filename() {
-        return *this = parent_path();
-    }
+    path& remove_filename() { return *this = parent_path(); }
 
     path& replace_filename(const path& __replacement) {
         remove_filename();
@@ -894,21 +892,21 @@ public:
     std::u32string u32string() const { return generic_u32string(); }
 
     // generic format observers
-    template <class _EcharT, class _Traits = char_traits<_EcharT>,
-              class _Allocator = allocator<_EcharT> >
-    basic_string<_EcharT, _Traits, _Allocator>
+    template <class _ECharT, class _Traits = char_traits<_ECharT>,
+              class _Allocator = allocator<_ECharT> >
+    basic_string<_ECharT, _Traits, _Allocator>
     generic_string(const _Allocator& __a = _Allocator()) const {
-        using _Str = basic_string<_EcharT, _Traits, _Allocator>;
+        using _CVT = __widen_from_utf8<sizeof(_ECharT)*__CHAR_BIT__>;
+        using _Str = basic_string<_ECharT, _Traits, _Allocator>;
         _Str __s(__a);
-        _WidenFromNative<_EcharT>()(
-            back_inserter(__s),
-            __pn_.data(), __pn_.data() + __pn_.length());
+        __s.reserve(__pn_.size());
+        _CVT()(back_inserter(__s), __pn_.data(), __pn_.data() + __pn_.size());
         return __s;
     }
 
-    std::string    generic_string() const { return __pn_; }
-    std::wstring   generic_wstring() const { return generic_string<wchar_t>(); }
-    std::string    generic_u8string() const { return __pn_; }
+    std::string    generic_string() const    { return __pn_; }
+    std::wstring   generic_wstring() const   { return generic_string<wchar_t>(); }
+    std::string    generic_u8string() const  { return __pn_; }
     std::u16string generic_u16string() const { return generic_string<char16_t>(); }
     std::u32string generic_u32string() const { return generic_string<char32_t>(); }
 

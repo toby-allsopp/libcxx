@@ -13,63 +13,6 @@ using namespace std::experimental::filesystem;
 
 TEST_SUITE(std_filesystem_path_test_suite)
 
-TEST_CASE(append_operator_test)
-{
-    struct append_operator_testcase
-    {
-        std::string lhs;
-        std::string rhs;
-        std::string expect;
-    };
-
-    const std::vector<append_operator_testcase> testcases =
-    {
-        {"", "", ""}
-      , {"p1", "p2", "p1/p2"}
-      , {"p1/", "p2", "p1/p2"}
-      , {"p1", "/p2", "p1/p2"}
-      , {"p1/", "/p2", "p1//p2"}
-      , {"p1", "\\p2", "p1\\p2"}
-      , {"p1", "", "p1"}
-      , {"", "p2", "p2"}
-    };
-
-    for (auto const & testcase : testcases) {
-        path lhs(testcase.lhs);
-        path rhs(testcase.rhs);
-        lhs /= rhs;
-        if (lhs != testcase.expect)
-        TEST_CHECK(lhs == testcase.expect);
-    }
-}
-
-TEST_CASE(append_string_operator_test)
-{
-    std::string expect("p1/p2");
-    path p1("p1");
-    std::string p2("p2");
-    p1 /= p2;
-    TEST_CHECK(p1 == expect);
-}
-
-TEST_CASE(append_string_method_test)
-{
-    std::string expect("p1/p2");
-    path p1("p1");
-    std::string p2("p2");
-    p1.append(p2);
-    TEST_CHECK(p1 == expect);
-}
-
-TEST_CASE(append_iterator_method_test)
-{
-    std::string expect("p1/p2");
-    path p1("p1");
-    std::string p2("p2");
-    p1.append(p2.begin(), p2.end());
-    TEST_CHECK(p1 == expect);
-}
-
 TEST_CASE(concat_test)
 {
     const std::string expect("p1/p2");
