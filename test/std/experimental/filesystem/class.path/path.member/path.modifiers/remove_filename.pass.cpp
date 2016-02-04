@@ -24,6 +24,7 @@
 #include "count_new.hpp"
 #include "filesystem_test_helper.hpp"
 
+
 namespace fs = std::experimental::filesystem;
 
 struct RemoveFilenameTestcase {
@@ -62,6 +63,7 @@ int main()
     {
       const path parentp = p_orig.parent_path();
       if (parentp == p_orig.root_name()) {
+
         assert(p.empty());
       } else {
         assert(p == parentp);

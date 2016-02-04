@@ -13,20 +13,6 @@ using namespace std::experimental::filesystem;
 
 TEST_SUITE(std_filesystem_path_test_suite)
 
-TEST_CASE(swap_test)
-{
-    path p1("hello");
-    path p2("world");
-
-    p1.swap(p2);
-    TEST_CHECK(p1 == "world");
-    TEST_CHECK(p2 == "hello");
-
-    swap(p1, p2);
-    TEST_CHECK(p1 == "hello");
-    TEST_CHECK(p2 == "world");
-}
-
 TEST_CASE(to_string_converters_test)
 {
     const std::string expect("/foo/bar/baz");
