@@ -1125,8 +1125,6 @@ private:
     _LIBCPP_FUNC_VIS
     bool __set_position(size_t);
 
-    _LIBCPP_FUNC_VIS
-    bool __valid_iterator_position() const;
 private:
     friend class path;
     friend bool operator==(const iterator&, const iterator&);

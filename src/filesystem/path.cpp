@@ -27,7 +27,7 @@ namespace { namespace parser
 using string_type = path::string_type;
 using value_type = path::value_type;
 
-using string_pair = pair<string_view, string_view>;
+using string_view_pair = pair<string_view, string_view>;
 
 // status reporting
 constexpr size_t npos = static_cast<size_t>(-1);
@@ -180,7 +180,7 @@ string_view extract_raw(const string_type& s, size_t pos)
     string_view sv(s);
     sv.remove_prefix(pos);
     sv.remove_suffix(s.size() - (end_i - pos + 1));
-    return sv
+    return sv;
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -285,6 +285,41 @@ path path::extension() const
     return path{parser::separate_filename(filename().native()).second.to_string()};
 }
 
+
+bool __valid_iterator_position(path::string_type const& __s, size_t __pos)  {
+    if (__pos == parser::npos) return true; // end position is valid
+    return (!parser::is_separator      (__s, __pos) ||
+          parser::is_root_directory    (__s, __pos) ||
+          parser::is_trailing_separator(__s, __pos) ||
+          parser::is_root_name         (__s, __pos));
+}
+
+struct CompIter {
+    string_view __elem_;
+    const path* __path_ptr_;
+    size_t __pos_;
+  
+    void increment() {
+        if (__pos_ == parser::npos) return;
+        while (! __set_position(parser::end_of(__path_ptr_->native(), __pos_)+1))
+            ;
+    }
+  
+    bool __set_position(size_t pos) {
+        if (pos >= __path_ptr_->native().size()) {
+          __pos_ = parser::npos;
+          __elem_.clear();
+        }
+        else {
+          __pos_ = pos;
+          __elem_ = parser::extract_preferred(__path_ptr_->native(), __pos_);
+        }
+      return __valid_iterator_position(__path_ptr_->native(), __pos_);
+    }
+};
+
+
+
 ////////////////////////////////////////////////////////////////////////////
 path::iterator path::begin() const
 {
@@ -339,15 +374,8 @@ bool path::iterator::__set_position(size_t pos) {
         __pos_ = pos;
         __elem_ = path(parser::extract_preferred(__path_ptr_->native(), __pos_).to_string());
       }
-      return __valid_iterator_position();
+      return __valid_iterator_position(__path_ptr_->native(), __pos_);
 }
 
-bool path::iterator::__valid_iterator_position() const {
-    if (__pos_ == parser::npos) return true; // end position is valid
-    return (!parser::is_separator      (__path_ptr_->native(), __pos_) ||
-          parser::is_root_directory    (__path_ptr_->native(), __pos_) ||
-          parser::is_trailing_separator(__path_ptr_->native(), __pos_) ||
-          parser::is_root_name         (__path_ptr_->native(), __pos_));
-}
 
 _LIBCPP_END_NAMESPACE_EXPERIMENTAL_FILESYSTEM
