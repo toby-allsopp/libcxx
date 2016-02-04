@@ -6,11 +6,14 @@
 // Source Licenses. See LICENSE.TXT for details.
 //
 //===----------------------------------------------------------------------===//
-
+#ifdef NDEBUG
+#error SHIT!
+#endif
 #include "experimental/filesystem"
+#include "experimental/string_view"
 #include "algorithm"
 #include "utility"
-
+#include "cassert"
 
 _LIBCPP_BEGIN_NAMESPACE_EXPERIMENTAL_FILESYSTEM
 
@@ -24,7 +27,7 @@ namespace { namespace parser
 using string_type = path::string_type;
 using value_type = path::value_type;
 
-using string_pair = pair<string_type, string_type>;
+using string_pair = pair<string_view, string_view>;
 
 // status reporting
 constexpr size_t npos = static_cast<size_t>(-1);
@@ -34,6 +37,7 @@ inline bool good(size_t pos)
 
 // lexical elements
 constexpr value_type preferred_separator = path::preferred_separator;
+constexpr value_type const * preferred_separator_str = "/";
 constexpr value_type const * dot = ".";
 // TODO(UNUSED)
 //constexpr value_type const* double_dot = "..";
@@ -54,9 +58,9 @@ size_t root_name_end(const string_type&);
 size_t root_directory_start(string_type const &);
 size_t root_directory_end(string_type const &);
 
-string_pair separate_filename(string_type const &);
-string_type extract_raw(string_type const &, size_t);
-string_type extract_preferred(string_type const &, size_t);
+string_view_pair separate_filename(string_type const &);
+string_view extract_raw(string_type const &, size_t);
+string_view extract_preferred(string_type const &, size_t);
 
 ////////////////////////////////////////////////////////////////////////
 bool is_separator(const string_type& s, size_t pos)
@@ -157,30 +161,36 @@ size_t root_directory_end(const string& s)
 }
 
 ////////////////////////////////////////////////////////////////////////
-string_pair separate_filename(string_type const & s)
+string_view_pair separate_filename(string_type const & s)
 {
-    if (s == "." || s == ".." || s.empty()) return string_pair{s, ""};
+    if (s == "." || s == ".." || s.empty()) return string_view_pair{s, ""};
     auto pos = s.find_last_of('.');
-    if (pos == string_type::npos) return string_pair{s, string_type{}};
-    return string_pair{s.substr(0, pos), s.substr(pos)};
+    if (pos == string_type::npos) return string_view_pair{s, string_view{}};
+    string_view_pair p(s, s);
+    p.first.remove_suffix(s.size() - pos);
+    p.second.remove_prefix(pos);
+    return p;
 }
 
 ///////////////////////////////////////////////////////////////////////
-string_type extract_raw(const string_type& s, size_t pos)
+string_view extract_raw(const string_type& s, size_t pos)
 {
     size_t end_i = end_of(s, pos);
-    if (!good(end_i)) return string_type{};
-    return s.substr(pos, end_i - pos + 1);
+    if (!good(end_i)) return string_view{};
+    string_view sv(s);
+    sv.remove_prefix(pos);
+    sv.remove_suffix(s.size() - (end_i - pos + 1));
+    return sv
 }
 
 ////////////////////////////////////////////////////////////////////////
-string_type extract_preferred(const string_type& s, size_t pos)
+string_view extract_preferred(const string_type& s, size_t pos)
 {
-    string_type raw = extract_raw(s, pos);
+    string_view raw = extract_raw(s, pos);
     if (raw.empty()) return raw;
-    if (is_trailing_separator(s, pos)) return string_type{dot};
+    if (is_trailing_separator(s, pos)) return string_view{dot};
     if (is_separator(s, pos) && !is_root_name(s, pos))
-    return string_type{} += preferred_separator;
+        return string_view(preferred_separator_str);
     return raw;
 }
 
@@ -210,7 +220,7 @@ path & path::replace_extension(path const & replacement)
 path path::root_name() const
 {
     return parser::is_root_name(__pn_, 0) 
-      ? path{parser::extract_preferred(__pn_, 0)}
+      ? path{parser::extract_preferred(__pn_, 0).to_string()}
       : path{};
 }
 
@@ -227,7 +237,7 @@ path path::root_directory() const
     if(!parser::good(start_i)) {
         return path{};
     }
-    return path{parser::extract_preferred(__pn_, start_i)};
+    return path{parser::extract_preferred(__pn_, start_i).to_string()};
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -266,13 +276,13 @@ path path::filename() const
 ////////////////////////////////////////////////////////////////////////////
 path path::stem() const
 {
-    return path{parser::separate_filename(filename().native()).first};
+    return path{parser::separate_filename(filename().native()).first.to_string()};
 }
 
 ////////////////////////////////////////////////////////////////////////////
 path path::extension() const
 {
-    return path{parser::separate_filename(filename().native()).second};
+    return path{parser::separate_filename(filename().native()).second.to_string()};
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -327,7 +337,7 @@ bool path::iterator::__set_position(size_t pos) {
       }
       else {
         __pos_ = pos;
-        __elem_ = path(parser::extract_preferred(__path_ptr_->native(), __pos_));
+        __elem_ = path(parser::extract_preferred(__path_ptr_->native(), __pos_).to_string());
       }
       return __valid_iterator_position();
 }

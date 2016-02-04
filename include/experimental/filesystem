@@ -912,16 +912,16 @@ public:
     // compare - TODO
     _LIBCPP_INLINE_VISIBILITY
     int compare(const path& __p) const _NOEXCEPT {
-        return __pn_.compare(__p.__pn_);
+        return compare(__p.__pn_.c_str());
     }
 
     _LIBCPP_INLINE_VISIBILITY
     int compare(const string_type& __s) const {
-        return __pn_.compare(__s);
+        return compare(__s.c_str());
     }
 
-    _LIBCPP_INLINE_VISIBILITY
-    int compare(const value_type* __s) const {
+    _LIBCPP_FUNC_VIS
+    int compare(const value_type* __s) const{
         return __pn_.compare(__s);
     }
 
@@ -1066,27 +1066,30 @@ path u8path(_InputIt, _InputIt); // TODO
 
 
 class _LIBCPP_TYPE_VIS path::iterator
-    : public _VSTD::iterator<bidirectional_iterator_tag, path>
 {
+public:
+    typedef bidirectional_iterator_tag iterator_category;
+    typedef path                       value_type;
+    typedef std::ptrdiff_t             difference_type;
+    typedef const path*                pointer;
+    typedef const path&                reference;
 public:
     _LIBCPP_INLINE_VISIBILITY
     iterator() : __elem_(), __path_ptr_(nullptr), __pos_(0) {}
 
     iterator(const iterator&) = default;
-    iterator(iterator&&) = default;
     ~iterator() = default;
 
     iterator& operator=(const iterator&) = default;
-    iterator& operator=(iterator&&) = default;
 
     _LIBCPP_INLINE_VISIBILITY
-    const path& operator*() const {
+    reference operator*() const {
         return __elem_;
     }
 
     _LIBCPP_INLINE_VISIBILITY
-    const path& operator->() const {
-        return __elem_;
+    pointer operator->() const {
+        return &__elem_;
     }
 
     _LIBCPP_INLINE_VISIBILITY

@@ -284,10 +284,25 @@ std::size_t StrLen(CharT const* P) {
 // Testing the allocation behavior of the code_cvt functions requires
 // *knowning* that the allocation was not done by "path::__str_".
 // This hack forces path to allocate enough memory.
-void PathReserve(fs::path& p, std::size_t N) {
+inline void PathReserve(fs::path& p, std::size_t N) {
   auto const& native_ref = p.native();
   const_cast<std::string&>(native_ref).reserve(N);
 }
 
+
+template <class Iter1, class Iter2>
+bool checkCollectionsEqual(
+    Iter1 start1, Iter1 const end1
+  , Iter2 start2, Iter2 const end2
+  )
+{
+    while (start1 != end1 && start2 != end2) {
+        if (*start1 != *start2) {
+            return false;
+        }
+        ++start1; ++start2;
+    }
+    return (start1 == end1 && start2 == end2);
+}
 
 #endif /* FILESYSTEM_TEST_HELPER_HPP */

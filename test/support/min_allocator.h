@@ -11,6 +11,7 @@
 #define MIN_ALLOCATOR_H
 
 #include <cstddef>
+#include <cstdlib>
 
 #include "test_macros.h"
 

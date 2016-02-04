@@ -54,20 +54,11 @@
 #include "count_new.hpp"
 #include "filesystem_test_helper.hpp"
 
-template <class Iter1, class Iter2>
-bool checkCollectionsEqual(
-    Iter1 start1, Iter1 const end1
-  , Iter2 start2, Iter2 const end2
-  )
-{
-    while (start1 != end1 && start2 != end2) {
-        if (*start1 != *start2) {
-            return false;
-        }
-        ++start1; ++start2;
-    }
-    return (start1 == end1 && start2 == end2);
+template <class It>
+std::reverse_iterator<It> mkRev(It it) {
+  return std::reverse_iterator<It>(it);
 }
+
 
 namespace fs = std::experimental::filesystem;
 struct PathDecomposeTestcase
@@ -155,6 +146,9 @@ void decompPathTest()
 
     assert(checkCollectionsEqual(p.begin(), p.end(),
                                  TC.elements.begin(), TC.elements.end()));
+    // check backwards
+    assert(checkCollectionsEqual(mkRev(p.end()), mkRev(p.begin()),
+                                 TC.elements.rbegin(), TC.elements.rend()));
   }
 }
 
