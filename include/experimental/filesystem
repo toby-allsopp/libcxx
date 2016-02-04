@@ -912,18 +912,22 @@ public:
     // compare - TODO
     _LIBCPP_INLINE_VISIBILITY
     int compare(const path& __p) const _NOEXCEPT {
-        return compare(__p.__pn_.c_str());
+        return __pn_.compare(__p.native());
     }
 
     _LIBCPP_INLINE_VISIBILITY
     int compare(const string_type& __s) const {
-        return compare(__s.c_str());
+        return __pn_.compare(__s);
+    }
+
+    _LIBCPP_INLINE_VISIBILITY
+    int compare(const value_type* __s) const {
+        // TODO
+        return __pn_.compare(__s);
     }
 
     _LIBCPP_FUNC_VIS
-    int compare(const value_type* __s) const{
-        return __pn_.compare(__s);
-    }
+    int __compare(const value_type*) const;
 
     // decomposition
     path root_name() const;

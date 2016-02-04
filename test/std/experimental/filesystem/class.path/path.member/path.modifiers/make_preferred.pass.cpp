@@ -49,7 +49,7 @@ int main()
     path p(TC.value);
     assert(p == TC.value);
     path& Ref = (p.make_preferred());
-    assert(p == TC.value);
+    assert(p.native() == TC.value);
     assert(&Ref == &p);
   }
 }

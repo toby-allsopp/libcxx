@@ -24,7 +24,7 @@ _LIBCPP_CONSTEXPR path::value_type path::__other_separator;
 namespace { namespace parser
 {
 
-using string_type = path::string_type;
+using string_type = string_view;
 using value_type = path::value_type;
 
 using string_view_pair = pair<string_view, string_view>;
@@ -121,7 +121,7 @@ size_t root_name_start(const string_type& s)
 }
 
 ////////////////////////////////////////////////////////////////////////
-size_t root_name_end(const string& s)
+size_t root_name_end(const string_type& s)
 {
     if (s.size() < 2 || s[0] != preferred_separator
         || s[1] != preferred_separator) { 
@@ -150,7 +150,7 @@ size_t root_directory_start(const string_type& s)
 }
 
 ////////////////////////////////////////////////////////////////////////
-size_t root_directory_end(const string& s)
+size_t root_directory_end(const string_view& s)
 {
     auto st = root_directory_start(s);
     if (!good(st)) return npos;
@@ -286,7 +286,7 @@ path path::extension() const
 }
 
 
-bool __valid_iterator_position(path::string_type const& __s, size_t __pos)  {
+bool __valid_iterator_position(string_view const& __s, size_t __pos)  {
     if (__pos == parser::npos) return true; // end position is valid
     return (!parser::is_separator      (__s, __pos) ||
           parser::is_root_directory    (__s, __pos) ||
@@ -296,28 +296,64 @@ bool __valid_iterator_position(path::string_type const& __s, size_t __pos)  {
 
 struct CompIter {
     string_view __elem_;
-    const path* __path_ptr_;
+    const string_view __s_;
     size_t __pos_;
-  
+
+    CompIter() : __pos_(parser::npos) {}
+    CompIter(string_view const& __s) : __s_(__s), __pos_(0) {}
+
+    CompIter& operator++() {
+        increment();
+        return *this;
+    }
+
+    string_view const& operator*() const {
+        return __elem_;
+    }
+
     void increment() {
         if (__pos_ == parser::npos) return;
-        while (! __set_position(parser::end_of(__path_ptr_->native(), __pos_)+1))
+        while (! __set_position(parser::end_of(__s_, __pos_)+1))
             ;
+        return;
     }
   
     bool __set_position(size_t pos) {
-        if (pos >= __path_ptr_->native().size()) {
+        if (pos >= __s_.size()) {
           __pos_ = parser::npos;
           __elem_.clear();
         }
         else {
           __pos_ = pos;
-          __elem_ = parser::extract_preferred(__path_ptr_->native(), __pos_);
+          __elem_ = parser::extract_preferred(__s_, __pos_);
         }
-      return __valid_iterator_position(__path_ptr_->native(), __pos_);
+      return __valid_iterator_position(__s_, __pos_);
+    }
+
+    friend bool operator==(CompIter const& LHS, CompIter const& RHS) {
+        return LHS.__pos_ == RHS.__pos_;
+    }
+    friend bool operator!=(CompIter const& LHS, CompIter const& RHS) {
+        return LHS.__pos_ != RHS.__pos_;
     }
 };
 
+int path::__compare(const value_type* __s) const {
+    CompIter thisIter(string_view(this->native()));
+    CompIter thisEnd;
+    CompIter sIter(__s);
+    CompIter sEnd;
+    while (thisIter != thisEnd && sIter != sEnd) {
+        int res = thisIter.__elem_.compare(sIter.__elem_);
+        if (res != 0) return res;
+        ++thisIter; ++sIter;
+    }
+    if (thisIter == thisEnd && sIter == sEnd)
+        return 0;
+    if (thisIter == thisEnd)
+        return -1;
+    return 1;
+}
 
 
 ////////////////////////////////////////////////////////////////////////////
