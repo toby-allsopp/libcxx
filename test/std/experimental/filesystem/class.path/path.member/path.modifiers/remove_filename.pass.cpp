@@ -24,7 +24,6 @@
 #include "count_new.hpp"
 #include "filesystem_test_helper.hpp"
 
-
 namespace fs = std::experimental::filesystem;
 
 struct RemoveFilenameTestcase {

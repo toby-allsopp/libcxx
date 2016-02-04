@@ -39,6 +39,55 @@ public:
     friend bool operator!=(bare_allocator x, bare_allocator y) {return !(x == y);}
 };
 
+struct malloc_allocator_base {
+    static size_t alloc_count;
+    static size_t dealloc_count;
+    static size_t outstanding_alloc;
+    static bool disable_default_constructor;
+    
+    static void reset() {
+        assert(outstanding_alloc == 0);
+        disable_default_constructor = false;
+        alloc_count = 0;
+        dealloc_count = 0;
+        outstanding_alloc = 0;
+    }
+};
+
+
+size_t malloc_allocator_base::alloc_count = 0;
+size_t malloc_allocator_base::dealloc_count = 0;
+size_t malloc_allocator_base::outstanding_alloc = 0;
+bool malloc_allocator_base::disable_default_constructor = false;
+
+
+template <class T>
+class malloc_allocator : public malloc_allocator_base
+{
+public:
+    typedef T value_type;
+
+    malloc_allocator() TEST_NOEXCEPT { assert(!disable_default_constructor); }
+
+    template <class U>
+    malloc_allocator(malloc_allocator<U>) TEST_NOEXCEPT {}
+
+    T* allocate(std::size_t n)
+    {;
+        ++alloc_count; ++outstanding_alloc;
+        return static_cast<T*>(std::malloc(n*sizeof(T)));
+    }
+
+    void deallocate(T* p, std::size_t)
+    {
+        ++dealloc_count; --outstanding_alloc;
+        std::free(static_cast<void*>(p));
+    }
+  
+    friend bool operator==(malloc_allocator, malloc_allocator) {return true;}
+    friend bool operator!=(malloc_allocator x, malloc_allocator y) {return !(x == y);}
+};
+
 
 #if __cplusplus >= 201103L
 
