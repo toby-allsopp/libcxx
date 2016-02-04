@@ -909,7 +909,7 @@ public:
     std::u16string generic_u16string() const { return string<char16_t>(); }
     std::u32string generic_u32string() const { return string<char32_t>(); }
 
-    // compare
+    // compare - TODO
     _LIBCPP_INLINE_VISIBILITY
     int compare(const path& __p) const _NOEXCEPT {
         return __pn_.compare(__p.__pn_);

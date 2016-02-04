@@ -16,7 +16,7 @@
 // template <class ECharT, class Traits = char_traits<ECharT>,
 //           class Allocator = allocator<ECharT>>
 // basic_string<ECharT, Traits, Allocator>
-// string(const Allocator& a = Allocator()) const;
+// generic_string(const Allocator& a = Allocator()) const;
 
 #include <experimental/filesystem>
 #include <type_traits>
