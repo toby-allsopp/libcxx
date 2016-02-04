@@ -90,6 +90,7 @@ void doLongStringTest(MultiStringType const& MS) {
       assert(MAlloc::outstanding_alloc == 1);
   }
   MAlloc::reset();
+  /////////////////////////////////////////////////////////////////////////////
 }
 
 int main()

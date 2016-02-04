@@ -876,26 +876,10 @@ public:
     _LIBCPP_INLINE_VISIBILITY
     operator string_type() const { return __pn_;  }
 
-    template <class _EcharT, class _Traits = char_traits<_EcharT>,
-              class _Allocator = allocator<_EcharT> >
-    basic_string<_EcharT, _Traits, _Allocator>
-    string(const _Allocator& __a = _Allocator()) const {
-        return generic_string<_EcharT, _Traits, _Allocator>(__a);
-    };
-
-    _LIBCPP_INLINE_VISIBILITY
-    std::string string() const { return __pn_; }
-
-    std::wstring wstring() const { return generic_wstring(); }
-    std::string  u8string() const { return __pn_; }
-    std::u16string u16string() const { return generic_u16string(); }
-    std::u32string u32string() const { return generic_u32string(); }
-
-    // generic format observers
     template <class _ECharT, class _Traits = char_traits<_ECharT>,
               class _Allocator = allocator<_ECharT> >
     basic_string<_ECharT, _Traits, _Allocator>
-    generic_string(const _Allocator& __a = _Allocator()) const {
+    string(const _Allocator& __a = _Allocator()) const {
         using _CVT = __widen_from_utf8<sizeof(_ECharT)*__CHAR_BIT__>;
         using _Str = basic_string<_ECharT, _Traits, _Allocator>;
         _Str __s(__a);
@@ -904,11 +888,26 @@ public:
         return __s;
     }
 
+    _LIBCPP_INLINE_VISIBILITY
+    std::string    string() const { return __pn_; }
+    std::wstring   wstring() const { return string<wchar_t>(); }
+    std::string    u8string() const { return __pn_; }
+    std::u16string u16string() const { return string<char16_t>(); }
+    std::u32string u32string() const { return string<char32_t>(); }
+
+    // generic format observers
+    template <class _ECharT, class _Traits = char_traits<_ECharT>,
+              class _Allocator = allocator<_ECharT> >
+    basic_string<_ECharT, _Traits, _Allocator>
+    generic_string(const _Allocator& __a = _Allocator()) const {
+        return string<_ECharT, _Traits, _Allocator>(__a);
+    }
+
     std::string    generic_string() const    { return __pn_; }
-    std::wstring   generic_wstring() const   { return generic_string<wchar_t>(); }
+    std::wstring   generic_wstring() const   { return string<wchar_t>(); }
     std::string    generic_u8string() const  { return __pn_; }
-    std::u16string generic_u16string() const { return generic_string<char16_t>(); }
-    std::u32string generic_u32string() const { return generic_string<char32_t>(); }
+    std::u16string generic_u16string() const { return string<char16_t>(); }
+    std::u32string generic_u32string() const { return string<char32_t>(); }
 
     // compare
     _LIBCPP_INLINE_VISIBILITY
