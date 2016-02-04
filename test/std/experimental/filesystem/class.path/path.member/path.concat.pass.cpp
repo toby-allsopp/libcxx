@@ -13,13 +13,18 @@
 
 // class path
 
-// path& operator/=(path const&)
+// path& operator+=(const path& x);
+// path& operator+=(const string_type& x); // Implemented as Source template
+// path& operator+=(const value_type* x);  // Implemented as Source template
+// path& operator+=(value_type x);
 // template <class Source>
-//      path& operator/=(Source const&);
+//   path& operator+=(const Source& x);
+// template <class EcharT>
+//   path& operator+=(EcharT x);
 // template <class Source>
-//      path& append(Source const&);
+//   path& concat(const Source& x);
 // template <class InputIterator>
-//      path& append(InputIterator first, InputIterator last);
+//   path& concat(InputIterator first, InputIterator last);
 
 
 #include <experimental/filesystem>
@@ -33,46 +38,46 @@
 
 namespace fs = std::experimental::filesystem;
 
-struct AppendOperatorTestcase {
+struct ConcatOperatorTestcase {
   MultiStringType lhs;
   MultiStringType rhs;
   MultiStringType expect;
 };
 
+#define LONGSTR "LONGSTR_LONGSTR_LONGSTR_LONGSTR_LONGSTR_LONGSTR_LONGSTR_LONGSTR_LONGSTR_LONGSTR_LONGSTR_LONGSTR"
 #define S(Str) MKSTR(Str)
-const AppendOperatorTestcase Cases[] =
+const ConcatOperatorTestcase Cases[] =
     {
-        {S(""),     S(""),      S("")}
-      , {S("p1"),   S("p2"),    S("p1/p2")}
-      , {S("p1/"),  S("p2"),    S("p1/p2")}
-      , {S("p1"),   S("/p2"),   S("p1/p2")}
-      , {S("p1/"),  S("/p2"),   S("p1//p2")}
-      , {S("p1"),   S("\\p2"),  S("p1/\\p2")}
-      , {S("p1\\"), S("p2"),  S("p1\\/p2")}
-      , {S("p1\\"), S("\\p2"),  S("p1\\/\\p2")}
-      , {S("p1"),   S(""),      S("p1")}
-      , {S(""),     S("p2"),    S("p2")}
+        {S(""),         S(""),                  S("")}
+      , {S("p1"),       S("p2"),                S("p1p2")}
+      , {S("p1/"),      S("/p2"),               S("p1//p2")}
+      , {S(""),         S("\\foo/bar/baz"),     S("\\foo/bar/baz")}
+      , {S("c:\\foo"),  S(""),                  S("c:\\foo")}
+      , {S(LONGSTR),    S("foo"),               S(LONGSTR "foo")}
+      , {S("abcdefghijklmnopqrstuvwxyz/\\"), S("/\\123456789"), S("abcdefghijklmnopqrstuvwxyz/\\/\\123456789")}
     };
-
-
-const AppendOperatorTestcase LongLHSCases[] =
+const ConcatOperatorTestcase LongLHSCases[] =
     {
-        {S("p1"),   S("p2"),    S("p1/p2")}
-      , {S("p1/"),  S("p2"),    S("p1/p2")}
-      , {S("p1"),   S("/p2"),   S("p1/p2")}
+        {S(""),        S(LONGSTR),     S(LONGSTR)}
+      , {S("p1/"),     S(LONGSTR),      S("p1/" LONGSTR)}
+    };
+const ConcatOperatorTestcase CharTestCases[] =
+    {
+        {S(""),       S("P"), S("P")}
+      , {S("/fooba"), S("r"), S("/foobar")}
     };
 #undef S
+#undef LONGSTR
 
-
-// The append operator may need to allocate a temporary buffer before a code_cvt
+// The concat operator may need to allocate a temporary buffer before a code_cvt
 // conversion. Test if this allocation occurs by:
 //   1. Create a path, `LHS`, and reserve enough space to append `RHS`.
 //      This prevents `LHS` from allocating during the actual appending.
 //   2. Create a `Source` object `RHS`, which represents a "large" string.
 //      (The string must not trigger the SSO)
-//   3. Append `RHS` to `LHS` and check for the expected allocation behavior.
+//   3. Concat `RHS` to `LHS` and check for the expected allocation behavior.
 template <class CharT>
-void doAppendSourceAllocTest(AppendOperatorTestcase const& TC)
+void doConcatSourceAllocTest(ConcatOperatorTestcase const& TC)
 {
   using namespace fs;
   using Ptr = CharT const*;
@@ -80,22 +85,16 @@ void doAppendSourceAllocTest(AppendOperatorTestcase const& TC)
   using InputIter = input_iterator<Ptr>;
 
   const Ptr L = TC.lhs;
-  Str RShort = (Ptr)TC.rhs;
-  Str EShort = (Ptr)TC.expect;
-  assert(RShort.size() >= 2);
-  CharT c = RShort.back();
-  RShort.append(100, c);
-  EShort.append(100, c);
-  const Ptr R = RShort.data();
-  const Str& E = EShort;
-  std::size_t ReserveSize = E.size() + 3;
+  const Ptr R = TC.rhs;
+  const Ptr E =  TC.expect;
+  std::size_t ReserveSize = StrLen(E) + 1;
   // basic_string
   {
     path LHS(L); PathReserve(LHS, ReserveSize);
     Str  RHS(R);
     {
       DisableAllocationGuard g;
-      LHS /= RHS;
+      LHS += RHS;
     }
     assert(LHS == E);
   }
@@ -105,7 +104,7 @@ void doAppendSourceAllocTest(AppendOperatorTestcase const& TC)
     Ptr RHS(R);
     {
       DisableAllocationGuard g;
-      LHS /= RHS;
+      LHS += RHS;
     }
     assert(LHS == E);
   }
@@ -114,7 +113,7 @@ void doAppendSourceAllocTest(AppendOperatorTestcase const& TC)
     Ptr RHS(R);
     {
       DisableAllocationGuard g;
-      LHS.append(RHS, StrEnd(RHS));
+      LHS.concat(RHS, StrEnd(RHS));
     }
     assert(LHS == E);
   }
@@ -130,7 +129,7 @@ void doAppendSourceAllocTest(AppendOperatorTestcase const& TC)
     {
       RequireAllocationGuard  g; // requires 1 or more allocations occur by default
       if (DisableAllocations) g.requireExactly(0);
-      LHS /= RHS;
+      LHS += RHS;
     }
     assert(LHS == E);
   }
@@ -141,14 +140,14 @@ void doAppendSourceAllocTest(AppendOperatorTestcase const& TC)
     {
       RequireAllocationGuard g;
       if (DisableAllocations) g.requireExactly(0);
-      LHS.append(RHS, REnd);
+      LHS.concat(RHS, REnd);
     }
     assert(LHS == E);
   }
 }
 
 template <class CharT>
-void doAppendSourceTest(AppendOperatorTestcase const& TC)
+void doConcatSourceTest(ConcatOperatorTestcase const& TC)
 {
   using namespace fs;
   using Ptr = CharT const*;
@@ -161,14 +160,14 @@ void doAppendSourceTest(AppendOperatorTestcase const& TC)
   {
     path LHS(L);
     Str RHS(R);
-    path& Ref = (LHS /= RHS);
+    path& Ref = (LHS += RHS);
     assert(LHS == E);
     assert(&Ref == &LHS);
   }
   {
     path LHS(L);
     Str RHS(R);
-    path& Ref = LHS.append(RHS);
+    path& Ref = LHS.concat(RHS);
     assert(LHS == E);
     assert(&Ref == &LHS);
   }
@@ -176,21 +175,21 @@ void doAppendSourceTest(AppendOperatorTestcase const& TC)
   {
     path LHS(L);
     Str RHS(R);
-    path& Ref = (LHS /= RHS);
+    path& Ref = (LHS += RHS);
     assert(LHS == E);
     assert(&Ref == &LHS);
   }
   {
     path LHS(L);
     Ptr RHS(R);
-    path& Ref = LHS.append(RHS);
+    path& Ref = LHS.concat(RHS);
     assert(LHS == E);
     assert(&Ref == &LHS);
   }
   {
     path LHS(L);
     Ptr RHS(R);
-    path& Ref = LHS.append(RHS, StrEnd(RHS));
+    path& Ref = LHS.concat(RHS, StrEnd(RHS));
     assert(LHS == E);
     assert(&Ref == &LHS);
   }
@@ -198,13 +197,13 @@ void doAppendSourceTest(AppendOperatorTestcase const& TC)
   {
     path LHS(L);
     InputIter RHS(R);
-    path& Ref = (LHS /= RHS);
+    path& Ref = (LHS += RHS);
     assert(LHS == E);
     assert(&Ref == &LHS);
   }
   {
     path LHS(L); InputIter RHS(R);
-    path& Ref = LHS.append(RHS);
+    path& Ref = LHS.concat(RHS);
     assert(LHS == E);
     assert(&Ref == &LHS);
   }
@@ -212,7 +211,25 @@ void doAppendSourceTest(AppendOperatorTestcase const& TC)
     path LHS(L);
     InputIter RHS(R);
     InputIter REnd(StrEnd(R));
-    path& Ref = LHS.append(RHS, REnd);
+    path& Ref = LHS.concat(RHS, REnd);
+    assert(LHS == E);
+    assert(&Ref == &LHS);
+  }
+}
+
+template <class CharT>
+void doConcatECharTest(ConcatOperatorTestcase const& TC)
+{
+  using namespace fs;
+  using Ptr = CharT const*;
+  const Ptr RStr = TC.rhs;
+  assert(StrLen(RStr) == 1);
+  const Ptr L   = TC.lhs;
+  const CharT R = RStr[0];
+  const Ptr E   = TC.expect;
+  {
+    path LHS(L);
+    path& Ref = (LHS += R);
     assert(LHS == E);
     assert(&Ref == &LHS);
   }
@@ -225,17 +242,36 @@ int main()
     {
       path LHS((const char*)TC.lhs);
       path RHS((const char*)TC.rhs);
-      path& Ref = (LHS /= RHS);
+      path& Ref = (LHS += RHS);
       assert(LHS == (const char*)TC.expect);
       assert(&Ref == &LHS);
     }
-    doAppendSourceTest<char>    (TC);
-    doAppendSourceTest<wchar_t> (TC);
-    doAppendSourceTest<char16_t>(TC);
-    doAppendSourceTest<char32_t>(TC);
+    doConcatSourceTest<char>    (TC);
+    doConcatSourceTest<wchar_t> (TC);
+    doConcatSourceTest<char16_t>(TC);
+    doConcatSourceTest<char32_t>(TC);
   }
   for (auto const & TC : LongLHSCases) {
-    doAppendSourceAllocTest<char>(TC);
-    doAppendSourceAllocTest<wchar_t>(TC);
+    // Do path test
+    {
+      path LHS((const char*)TC.lhs);
+      path RHS((const char*)TC.rhs);
+      const char* E = TC.expect;
+      PathReserve(LHS, StrLen(E) + 5);
+      {
+        DisableAllocationGuard g;
+        path& Ref = (LHS += RHS);
+        assert(&Ref == &LHS);
+      }
+      assert(LHS == E);
+    }
+    doConcatSourceAllocTest<char>(TC);
+    doConcatSourceAllocTest<wchar_t>(TC);
+  }
+  for (auto const& TC : CharTestCases) {
+    doConcatECharTest<char>(TC);
+    doConcatECharTest<wchar_t>(TC);
+    doConcatECharTest<char16_t>(TC);
+    doConcatECharTest<char32_t>(TC);
   }
 }

@@ -6,21 +6,13 @@
 #include <cstdio> // for tempnam
 #include <string>
 
-#ifndef LIBCXX_FILESYSTEM_STATIC_TEST_ROOT
-#error LIBCXX_FILESYSTEM_STATIC_TEST_ROOT must be defined
-#endif
-
-#ifndef LIBCXX_FILESYSTEM_DYNAMIC_TEST_ROOT
-#error LIBCXX_FILESYSTEM_DYNAMIC_TEST_ROOT must be defined
-#endif
-
-#ifndef LIBCXX_FILESYSTEM_DYNAMIC_TEST_HELPER
-#error LIBCXX_FILESYSTEM_DYNAMIC_TEST_HELPER must be defined
-#endif
-
 namespace fs = std::experimental::filesystem;
 
 // static test helpers
+
+#ifndef LIBCXX_FILESYSTEM_STATIC_TEST_ROOT
+#warning "STATIC TESTS DISABLED"
+#else // LIBCXX_FILESYSTEM_STATIC_TEST_ROOT
 
 inline fs::path static_test_env_path()
 {
@@ -63,8 +55,17 @@ static const fs::path DNE           = makePath("DNE");
 
 } // namespace StaticEnv
 
-// dynamic test helpers
+#endif // LIBCXX_FILESYSTEM_STATIC_TEST_ROOT
 
+
+#ifndef LIBCXX_FILESYSTEM_DYNAMIC_TEST_ROOT
+#warning LIBCXX_FILESYSTEM_DYNAMIC_TEST_ROOT must be defined
+#else // LIBCXX_FILESYSTEM_DYNAMIC_TEST_ROOT
+
+#ifndef LIBCXX_FILESYSTEM_DYNAMIC_TEST_HELPER
+#error LIBCXX_FILESYSTEM_DYNAMIC_TEST_HELPER must be defined
+#endif
+// dynamic test helpers
 
 inline fs::path test_env_path()
 {
@@ -194,6 +195,7 @@ struct scoped_test_env
     fs::path const test_root;
 };
 
+#endif // LIBCXX_FILESYSTEM_DYNAMIC_TEST_ROOT
 
 // Misc test types
 

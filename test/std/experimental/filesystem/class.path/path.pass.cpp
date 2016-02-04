@@ -69,32 +69,6 @@ TEST_CASE(clear_test)
     TEST_CHECK(p1.empty());
 }
 
-TEST_CASE(make_preferred_test)
-{
-    struct make_preferred_testcase
-    {
-        std::string raw;
-        std::string expect;
-    };
-
-    const std::vector<make_preferred_testcase> testcases =
-    {
-        {"", ""}
-      , {"hello_world", "hello_world"}
-      , {"/", "/"}
-      , {"/foo/bar/baz/", "/foo/bar/baz/"}
-      , {"\\", "/"}
-      , {"\\foo\\bar\\baz\\", "/foo/bar/baz/"}
-      , {"\\foo/bar\\/baz\\", "/foo/bar//baz/"}
-    };
-
-    for (auto const & testcase : testcases) {
-        path p(testcase.raw);
-        p.make_preferred();
-        TEST_CHECK(p == testcase.expect);
-    }
-}
-
 TEST_CASE(remove_filename_test)
 {
     struct remove_filename_testcase
