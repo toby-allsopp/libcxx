@@ -13,7 +13,7 @@
 
 // class path
 
-// path& replace_extension(path const& p = path())
+// path& remove_filename()
 
 #include <experimental/filesystem>
 #include <type_traits>
@@ -26,48 +26,46 @@
 
 namespace fs = std::experimental::filesystem;
 
-struct ReplaceExtensionTestcase {
+struct RemoveFilenameTestcase {
   const char* value;
   const char* expect;
-  const char* extension;
 };
 
-const ReplaceExtensionTestcase TestCases[] =
-  {
-      {"", "", ""}
-    , {"foo.cpp", "foo", ""}
-    , {"foo.cpp", "foo.", "."}
-    , {"foo..cpp", "foo..txt", "txt"}
-    , {"", ".txt", "txt"}
-    , {"", ".txt", ".txt"}
-    , {"/foo", "/foo.txt", ".txt"}
-    , {"/foo", "/foo.txt", "txt"}
-    , {"/foo.cpp", "/foo.txt", ".txt"}
-    , {"/foo.cpp", "/foo.txt", "txt"}
-  };
-const ReplaceExtensionTestcase NoArgCases[] =
+const RemoveFilenameTestcase TestCases[] =
   {
       {"", ""}
-    , {"foo", "foo"}
-    , {"foo.cpp", "foo"}
-    , {"foo..cpp", "foo."}
-};
+    , {"/", ""}
+    , {"\\", ""}
+    , {".", ""}
+    , {"..", ""}
+    , {"/foo", "/"}
+    , {"/foo/", "/foo"}
+    , {"/foo/.", "/foo"}
+    , {"/foo/..", "/foo"}
+    , {"/foo/////", "/foo"}
+    , {"/foo\\\\", "/"}
+    , {"/foo//\\/", "/foo//\\"}
+    , {"file.txt", ""}
+    , {"bar/../baz/./file.txt", "bar/../baz/."}
+  };
 
 int main()
 {
   using namespace fs;
   for (auto const & TC : TestCases) {
-    path p(TC.value);
+    path const p_orig(TC.value);
+    path p(p_orig);
     assert(p == TC.value);
-    path& Ref = (p.replace_extension(TC.extension));
+    path& Ref = (p.remove_filename());
     assert(p == TC.expect);
     assert(&Ref == &p);
-  }
-  for (auto const& TC : NoArgCases) {
-    path p(TC.value);
-    assert(p == TC.value);
-    path& Ref = (p.replace_extension());
-    assert(p == TC.expect);
-    assert(&Ref == &p);
+    {
+      const path parentp = p_orig.parent_path();
+      if (parentp == p_orig.root_name()) {
+        assert(p.empty());
+      } else {
+        assert(p == parentp);
+      }
+    }
   }
 }
