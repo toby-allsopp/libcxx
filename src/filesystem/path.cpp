@@ -166,10 +166,7 @@ string_view_pair separate_filename(string_type const & s)
     if (s == "." || s == ".." || s.empty()) return string_view_pair{s, ""};
     auto pos = s.find_last_of('.');
     if (pos == string_type::npos) return string_view_pair{s, string_view{}};
-    string_view_pair p(s, s);
-    p.first.remove_suffix(s.size() - pos);
-    p.second.remove_prefix(pos);
-    return p;
+    return string_view_pair{s.substr(0, pos), s.substr(pos)};
 }
 
 ///////////////////////////////////////////////////////////////////////
