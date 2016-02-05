@@ -62,8 +62,8 @@ void test_path_conversion() {
     static_assert(!std::is_convertible<directory_entry &&,      path&>::value, "");
     static_assert(!std::is_convertible<directory_entry const&&, path&>::value, "");
     // conversions are noexcept
-    static_assert(noexcept(e.operator path const&()) &&
-                  noexcept(e.operator path const&()), "");
+    static_assert(noexcept(e.operator fs::path const&()) &&
+                  noexcept(e.operator fs::path const&()), "");
   }
   // const
   {

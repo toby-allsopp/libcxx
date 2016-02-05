@@ -912,18 +912,17 @@ public:
     // compare - TODO
     _LIBCPP_INLINE_VISIBILITY
     int compare(const path& __p) const _NOEXCEPT {
-        return __pn_.compare(__p.native());
+        return __compare(__p.c_str());
     }
 
     _LIBCPP_INLINE_VISIBILITY
     int compare(const string_type& __s) const {
-        return __pn_.compare(__s);
+        return __compare(__s.c_str());
     }
 
     _LIBCPP_INLINE_VISIBILITY
     int compare(const value_type* __s) const {
-        // TODO
-        return __pn_.compare(__s);
+        return __compare(__s);
     }
 
     _LIBCPP_FUNC_VIS

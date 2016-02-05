@@ -294,26 +294,21 @@ struct CompIter {
     const string_view __s_;
     size_t __pos_;
 
-    CompIter() : __pos_(parser::npos) {}
-    CompIter(string_view const& __s) : __s_(__s), __pos_(0) {}
+    CompIter(string_view const& __s) : __s_(__s), __pos_(0) {set_position(0);}
 
     CompIter& operator++() {
         increment();
         return *this;
     }
 
-    string_view const& operator*() const {
-        return __elem_;
-    }
-
     void increment() {
         if (__pos_ == parser::npos) return;
-        while (! __set_position(parser::end_of(__s_, __pos_)+1))
+        while (! set_position(parser::end_of(__s_, __pos_)+1))
             ;
         return;
     }
   
-    bool __set_position(size_t pos) {
+    bool set_position(size_t pos) {
         if (pos >= __s_.size()) {
           __pos_ = parser::npos;
           __elem_.clear();
@@ -325,27 +320,20 @@ struct CompIter {
       return __valid_iterator_position(__s_, __pos_);
     }
 
-    friend bool operator==(CompIter const& LHS, CompIter const& RHS) {
-        return LHS.__pos_ == RHS.__pos_;
-    }
-    friend bool operator!=(CompIter const& LHS, CompIter const& RHS) {
-        return LHS.__pos_ != RHS.__pos_;
-    }
+    bool is_end() const { return __pos_ == parser::npos; }
 };
 
 int path::__compare(const value_type* __s) const {
     CompIter thisIter(string_view(this->native()));
-    CompIter thisEnd;
     CompIter sIter(__s);
-    CompIter sEnd;
-    while (thisIter != thisEnd && sIter != sEnd) {
+    while (!thisIter.is_end() && !sIter.is_end()) {
         int res = thisIter.__elem_.compare(sIter.__elem_);
         if (res != 0) return res;
         ++thisIter; ++sIter;
     }
-    if (thisIter == thisEnd && sIter == sEnd)
+    if (thisIter.is_end() && sIter.is_end())
         return 0;
-    if (thisIter == thisEnd)
+    if (thisIter.is_end())
         return -1;
     return 1;
 }
