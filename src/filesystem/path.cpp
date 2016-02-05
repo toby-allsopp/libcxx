@@ -178,9 +178,7 @@ string_view extract_raw(const string_type& s, size_t pos)
     size_t end_i = end_of(s, pos);
     if (!good(end_i)) return string_view{};
     string_view sv(s);
-    sv.remove_prefix(pos);
-    sv.remove_suffix(s.size() - (end_i - pos + 1));
-    return sv;
+    return sv.substr(pos, end_i - pos + 1);
 }
 
 ////////////////////////////////////////////////////////////////////////
