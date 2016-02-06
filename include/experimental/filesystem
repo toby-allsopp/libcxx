@@ -1861,131 +1861,114 @@ directory_iterator end(const directory_iterator&) _NOEXCEPT
     return directory_iterator();
 }
 
-class recursive_directory_iterator
-    {
-    public:
-        using value_type = directory_entry;
-        using difference_type = std::ptrdiff_t;
-        using pointer = directory_entry const *;
-        using reference = directory_entry const &;
-        using iterator_category = std::input_iterator_tag;
+class recursive_directory_iterator {
+public:
+    using value_type = directory_entry;
+    using difference_type = std::ptrdiff_t;
+    using pointer = directory_entry const *;
+    using reference = directory_entry const &;
+    using iterator_category = std::input_iterator_tag;
 
-    public:
-        // constructors and destructor
-        recursive_directory_iterator() _NOEXCEPT
-        {}
+public:
+    // constructors and destructor
+    recursive_directory_iterator() _NOEXCEPT
+    {}
 
-        explicit recursive_directory_iterator(const path& p,
-                    directory_options xoptions = directory_options::none)
-            : recursive_directory_iterator(p, xoptions,  nullptr)
-        { }
+    explicit recursive_directory_iterator(const path& p,
+                directory_options xoptions = directory_options::none)
+        : recursive_directory_iterator(p, xoptions,  nullptr)
+    { }
 
-        recursive_directory_iterator(const path& p,
-            directory_options xoptions, error_code& ec) _NOEXCEPT
-            : recursive_directory_iterator(p, xoptions, &ec)
-        { }
+    recursive_directory_iterator(const path& p,
+        directory_options xoptions, error_code& ec) _NOEXCEPT
+        : recursive_directory_iterator(p, xoptions, &ec)
+    { }
 
-        recursive_directory_iterator(const path& p, error_code& ec) _NOEXCEPT
-            : recursive_directory_iterator(p, directory_options::none,  &ec)
-        { }
+    recursive_directory_iterator(const path& p, error_code& ec) _NOEXCEPT
+        : recursive_directory_iterator(p, directory_options::none,  &ec)
+    { }
 
-        recursive_directory_iterator(const recursive_directory_iterator&) = default;
-        recursive_directory_iterator(recursive_directory_iterator&&) = default;
+    recursive_directory_iterator(const recursive_directory_iterator&) = default;
+    recursive_directory_iterator(recursive_directory_iterator&&) = default;
 
-        recursive_directory_iterator & 
-        operator=(const recursive_directory_iterator&) = default;
+    recursive_directory_iterator & 
+    operator=(const recursive_directory_iterator&) = default;
 
-        recursive_directory_iterator & 
-        operator=(recursive_directory_iterator&&) = default;
+    recursive_directory_iterator & 
+    operator=(recursive_directory_iterator&&) = default;
 
-        ~recursive_directory_iterator() = default;
+    ~recursive_directory_iterator() = default;
 
-        ////////////////////////////////////////////////////////////////////////
-        //
-        const directory_entry& operator*() const
-        { return __entry_; }
+    const directory_entry& operator*() const
+    { return __entry_; }
 
-        const directory_entry* operator->() const
-        { return &__entry_; }
+    const directory_entry* operator->() const
+    { return &__entry_; }
 
-        ////////////////////////////////////////////////////////////////////////
-        recursive_directory_iterator& operator++()
-        { return __increment(); }
+    recursive_directory_iterator& operator++()
+    { return __increment(); }
 
-        recursive_directory_iterator operator++(int)
-        {
-            auto cp = *this;
-            __increment();
-            return cp;
-        }
-        
-        recursive_directory_iterator& increment(error_code& ec)
-        { return __increment(&ec); }
-
-        ////////////////////////////////////////////////////////////////////////
-        directory_options options() const _NOEXCEPT
-        { return __options_; }
-        
-        ////////////////////////////////////////////////////////////////////////
-        int depth() const
-        {
-            // __stack_ptr_ && __stack_ptr_->size() == 0 should
-            // never be true
-            return (__stack_ptr_ ? static_cast<int>(__stack_ptr_->size() - 1) : 0); 
-        }
-        
-        ////////////////////////////////////////////////////////////////////////
-        bool recursion_pending() const _NOEXCEPT
-        { return __rec_; }
-           
-        ////////////////////////////////////////////////////////////////////////
-        void pop()
-        {
-            if (!__stack_ptr_) return;
-            _LIBCPP_ASSERT(__stack_ptr_->size() > 0, "Popping an empty stack");
-            __stack_ptr_->top() = directory_iterator();
-            __increment();
-        }
-        
-        ////////////////////////////////////////////////////////////////////////
-        void disable_recursion_pending() _NOEXCEPT
-        { __rec_ = false; }
-        
-        ////////////////////////////////////////////////////////////////////////
-        bool operator==(const recursive_directory_iterator& other) const _NOEXCEPT
-        { return __stack_ptr_ == other.__stack_ptr_; }
-        
-        ////////////////////////////////////////////////////////////////////////
-        bool operator!=(const recursive_directory_iterator& other) const _NOEXCEPT
-        { return !(*this == other);}
+    recursive_directory_iterator operator++(int) {
+        auto __cp = *this;
+        __increment();
+        return __cp;
+    }
     
-    private:
-        recursive_directory_iterator(const path& __p, directory_options __opt,
-                                     error_code *__ec);
+    recursive_directory_iterator& increment(error_code& __ec)
+    { return __increment(&__ec); }
 
-        void __make_end();
-        bool __try_recursion(error_code *ec);
-        recursive_directory_iterator& __increment(error_code *__ec=nullptr);
+    directory_options options() const _NOEXCEPT
+    { return __options_; }
 
-        shared_ptr<stack<directory_iterator>> __stack_ptr_{nullptr};
-        directory_entry __entry_;
-        directory_options __options_{directory_options::none};
-        bool __rec_{true};
-    };                                     // class recursive_directory_iterator
+    int depth() const {
+        // __stack_ptr_ && __stack_ptr_->size() == 0 should
+        // never be true
+        return (__stack_ptr_ ? static_cast<int>(__stack_ptr_->size() - 1) : 0); 
+    }
+
+    bool recursion_pending() const _NOEXCEPT
+    { return __rec_; }
+
+    void pop() {
+        if (!__stack_ptr_) return;
+        _LIBCPP_ASSERT(__stack_ptr_->size() > 0, "Popping an empty stack");
+        __stack_ptr_->top() = directory_iterator();
+        __increment();
+    }
+
+    void disable_recursion_pending() _NOEXCEPT
+    { __rec_ = false; }
+
+    bool operator==(const recursive_directory_iterator& other) const _NOEXCEPT
+    { return __stack_ptr_ == other.__stack_ptr_; }
+
+    bool operator!=(const recursive_directory_iterator& other) const _NOEXCEPT
+    { return !(*this == other);}
+
+private:
+    recursive_directory_iterator(const path& __p, directory_options __opt,
+                                 error_code *__ec);
+
+    void __make_end();
+    bool __try_recursion(error_code *ec);
+    recursive_directory_iterator& __increment(error_code *__ec=nullptr);
+
+    shared_ptr<stack<directory_iterator>> __stack_ptr_{nullptr};
+    directory_entry __entry_;
+    directory_options __options_{directory_options::none};
+    bool __rec_{true};
+};                                     // class recursive_directory_iterator
 
 // enable recursive_directory_iterator range-based for statements
 inline _LIBCPP_INLINE_VISIBILITY
-recursive_directory_iterator begin(recursive_directory_iterator __iter) _NOEXCEPT
-{
+recursive_directory_iterator begin(recursive_directory_iterator __iter) _NOEXCEPT {
     return __iter;
 }
 
 inline _LIBCPP_INLINE_VISIBILITY
-recursive_directory_iterator end(const recursive_directory_iterator&) _NOEXCEPT
-{
+recursive_directory_iterator end(const recursive_directory_iterator&) _NOEXCEPT {
     return recursive_directory_iterator();
 }
-
 
 _LIBCPP_END_NAMESPACE_EXPERIMENTAL_FILESYSTEM
 
