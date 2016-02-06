@@ -84,7 +84,7 @@ const PathDecomposeTestcase PathTestCases[] =
     , {"foo/", {"foo", "."}, "", "", "", "foo/", "foo", "."}
     , {"/foo/", {"/", "foo", "."}, "/", "", "/", "foo/", "/foo", "."}
     , {"foo/bar", {"foo","bar"}, "",  "", "",  "foo/bar", "foo", "bar"}
-    , {"/foo/bar", {"/","foo","bar"}, "/", "", "/", "foo/bar", "/foo", "bar"}
+    , {"/foo//bar", {"/","foo","bar"}, "/", "", "/", "foo/bar", "/foo", "bar"}
     , {"//net", {"//net"}, "//net", "//net", "", "", "", "//net"}
     , {"//net/foo", {"//net", "/", "foo"}, "//net/", "//net", "/", "foo", "//net/", "foo"}
     , {"///foo///", {"/", "foo", "."}, "/", "", "/", "foo///", "///foo", "."}

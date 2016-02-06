@@ -29,6 +29,13 @@
 
 namespace fs = std::experimental::filesystem;
 
+
+template <class It>
+std::reverse_iterator<It> mkRev(It it) {
+  return std::reverse_iterator<It>(it);
+}
+
+
 void checkIteratorConcepts() {
   using namespace fs;
   using It = path::iterator;
@@ -77,14 +84,16 @@ void checkBeginEndBasic() {
     assert(default_constructed != p.begin());
   }
   {
-    path p("//root_name/first_dir/second_dir");
+    path p("//root_name//first_dir////second_dir");
     const path expect[] = {"//root_name", "/", "first_dir", "second_dir"};
     assert(checkCollectionsEqual(p.begin(), p.end(), std::begin(expect), std::end(expect)));
+    assert(checkCollectionsEqual(mkRev(p.end()), mkRev(p.begin()), mkRev(std::end(expect)), mkRev(std::begin(expect))));
   }
   {
-    path p("/foo//");
-    const path expect[] = {"/", "foo", "."};
+    path p("////foo/bar/baz///");
+    const path expect[] = {"/", "foo", "bar", "baz", "."};
     assert(checkCollectionsEqual(p.begin(), p.end(), std::begin(expect), std::end(expect)));
+    assert(checkCollectionsEqual(mkRev(p.end()), mkRev(p.begin()), mkRev(std::end(expect)), mkRev(std::begin(expect))));
   }
 }
 

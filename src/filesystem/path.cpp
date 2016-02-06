@@ -150,7 +150,7 @@ size_t root_directory_start(const string_type& s)
 }
 
 ////////////////////////////////////////////////////////////////////////
-size_t root_directory_end(const string_view& s)
+size_t root_directory_end(const string_type& s)
 {
     auto st = root_directory_start(s);
     if (!good(st)) return npos;
@@ -191,6 +191,89 @@ string_view extract_preferred(const string_type& s, size_t pos)
 
 }} // namespace parser
 
+
+////////////////////////////////////////////////////////////////////////////////
+//                            __path_iterator
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool valid_iterator_position(string_view const& __s, size_t __pos)  {
+    if (__pos == parser::npos) return true; // end position is valid
+    return (!parser::is_separator      (__s, __pos) ||
+          parser::is_root_directory    (__s, __pos) ||
+          parser::is_trailing_separator(__s, __pos) ||
+          parser::is_root_name         (__s, __pos));
+}
+
+struct __path_iterator {
+  const string_view __s_;
+  size_t __pos_;
+
+  explicit __path_iterator(string_view const& __s) : __s_(__s), __pos_(0) {}
+  
+  __path_iterator& operator++() {
+    increment();
+    return *this;
+  }
+  
+  __path_iterator& operator--() {
+      decrement();
+      return *this;
+  }
+  
+  string_view operator*() const {
+    return parser::extract_preferred(__s_, __pos_);
+  }
+
+  void increment() {
+    if (__pos_ == parser::npos) return;
+    while (! set_position(parser::end_of(__s_, __pos_)+1))
+        ;
+    return;
+  }
+
+  void decrement() {
+    if (__pos_ == 0) {
+      set_position(0);
+    }
+    else if (__pos_ == parser::npos) {
+      auto const str_size = __s_.size();
+      set_position(parser::start_of(
+          __s_, str_size != 0 ? str_size - 1 : str_size));
+    } else {
+      while (!set_position(parser::start_of(__s_, __pos_-1)))
+        ;
+    }
+  }
+
+  bool set_position(size_t pos) {
+    if (pos >= __s_.size()) {
+      __pos_ = parser::npos;
+    } else {
+      __pos_ = pos;
+    }
+    return valid_iterator_position(__s_, __pos_);
+  }
+
+  string_view get_elem() const {
+      return parser::extract_preferred(__s_, __pos_);
+  }
+  bool is_end() const { return __pos_ == parser::npos; }
+  inline bool operator==(__path_iterator const& __p) {
+      return __pos_ == __p.__pos_;
+  }
+};
+
+__path_iterator pbegin(path const& p) {
+    return __path_iterator(p.native());
+}
+
+__path_iterator pend(path const& p) {
+    __path_iterator __p(p.native());
+    __p.__pos_ = parser::npos;
+    return __p;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 //                            path definitions
 ////////////////////////////////////////////////////////////////////////////////
@@ -212,122 +295,73 @@ path & path::replace_extension(path const & replacement)
 }
 
 ////////////////////////////////////////////////////////////////////////////
-path path::root_name() const
+string_view path::__root_name() const
 {
     return parser::is_root_name(__pn_, 0) 
-      ? path{parser::extract_preferred(__pn_, 0).to_string()}
-      : path{};
+      ? parser::extract_preferred(__pn_, 0)
+      : string_view{};
 }
 
 ////////////////////////////////////////////////////////////////////////////
-path path::root_path() const
-{
-    return root_name() / root_directory();
-}
-
-////////////////////////////////////////////////////////////////////////////
-path path::root_directory() const
+string_view path::__root_directory() const
 {
     auto start_i = parser::root_directory_start(__pn_);
     if(!parser::good(start_i)) {
-        return path{};
+        return {};
     }
-    return path{parser::extract_preferred(__pn_, start_i).to_string()};
+    return parser::extract_preferred(__pn_, start_i);
 }
 
 ////////////////////////////////////////////////////////////////////////////
-path path::relative_path() const
+string_view path::__relative_path() const
 {
     if (empty()) {
-        return *this;
+        return {__pn_};
     }
     auto end_i = parser::root_directory_end(__pn_);
     if (not parser::good(end_i)) {
         end_i = parser::root_name_end(__pn_);
     }
     if (not parser::good(end_i)) {
-        return path{__pn_};
+        return {__pn_};
     }
-    return path{__pn_.substr(end_i+1)};
+    return string_view(__pn_).substr(end_i+1);
 }
 
 ////////////////////////////////////////////////////////////////////////////
-path path::parent_path() const
+string_view path::__parent_path() const
 {
-    if (empty() || begin() == --end()) {
-        return path{};
+    if (empty() || pbegin(*this) == --pend(*this)) {
+        return {};
     }
-    auto end_it = --(--end());
+    auto end_it = --(--pend(*this));
     auto end_i = parser::end_of(__pn_, end_it.__pos_);
-    return path{__pn_.substr(0, end_i+1)};
+    return string_view(__pn_).substr(0, end_i+1);
 }
 
 ////////////////////////////////////////////////////////////////////////////
-path path::filename() const
+string_view path::__filename() const
 {
-    return empty() ? path{} : *--end();
+    return empty() ? string_view{} : *--pend(*this);
 }
 
 ////////////////////////////////////////////////////////////////////////////
-path path::stem() const
+string_view path::__stem() const
 {
-    return path{parser::separate_filename(filename().native()).first.to_string()};
+    return parser::separate_filename(__filename()).first;
 }
 
 ////////////////////////////////////////////////////////////////////////////
-path path::extension() const
+string_view path::__extension() const
 {
-    return path{parser::separate_filename(filename().native()).second.to_string()};
+    return parser::separate_filename(__filename()).second;
 }
-
-
-bool __valid_iterator_position(string_view const& __s, size_t __pos)  {
-    if (__pos == parser::npos) return true; // end position is valid
-    return (!parser::is_separator      (__s, __pos) ||
-          parser::is_root_directory    (__s, __pos) ||
-          parser::is_trailing_separator(__s, __pos) ||
-          parser::is_root_name         (__s, __pos));
-}
-
-struct CompIter {
-    string_view __elem_;
-    const string_view __s_;
-    size_t __pos_;
-
-    CompIter(string_view const& __s) : __s_(__s), __pos_(0) {set_position(0);}
-
-    CompIter& operator++() {
-        increment();
-        return *this;
-    }
-
-    void increment() {
-        if (__pos_ == parser::npos) return;
-        while (! set_position(parser::end_of(__s_, __pos_)+1))
-            ;
-        return;
-    }
-  
-    bool set_position(size_t pos) {
-        if (pos >= __s_.size()) {
-          __pos_ = parser::npos;
-          __elem_.clear();
-        }
-        else {
-          __pos_ = pos;
-          __elem_ = parser::extract_preferred(__s_, __pos_);
-        }
-      return __valid_iterator_position(__s_, __pos_);
-    }
-
-    bool is_end() const { return __pos_ == parser::npos; }
-};
 
 int path::__compare(const value_type* __s) const {
-    CompIter thisIter(string_view(this->native()));
-    CompIter sIter(__s);
+    __path_iterator thisIter(string_view(this->native()));
+    __path_iterator sIter(__s);
     while (!thisIter.is_end() && !sIter.is_end()) {
-        int res = thisIter.__elem_.compare(sIter.__elem_);
+        int res = thisIter.get_elem().compare(sIter.get_elem());
         if (res != 0) return res;
         ++thisIter; ++sIter;
     }
@@ -358,6 +392,7 @@ path::iterator path::end() const
 }
 
 path::iterator& path::iterator::__increment() {
+
     if (__pos_ == parser::npos) return *this;
     while (! __set_position(parser::end_of(__path_ptr_->native(), __pos_)+1))
         ;
@@ -393,7 +428,7 @@ bool path::iterator::__set_position(size_t pos) {
         __pos_ = pos;
         __elem_ = path(parser::extract_preferred(__path_ptr_->native(), __pos_).to_string());
       }
-      return __valid_iterator_position(__path_ptr_->native(), __pos_);
+      return valid_iterator_position(__path_ptr_->native(), __pos_);
 }
 
 
