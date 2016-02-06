@@ -1033,10 +1033,22 @@ operator>>(basic_istream<_CharT, _Traits>& __is, path& __p)
 }
 
 template <class _Source>
-path u8path(const _Source&); // TODO
+_LIBCPP_INLINE_VISIBILITY
+typename enable_if<__is_pathable<_Source>::value, path>::type
+u8path(const _Source& __s){
+    static_assert(is_same<typename __is_pathable<_Source>::__char_type, char>::value,
+        "u8path(Source const&) requires Source have a character type of type 'char'");
+    return path(__s);
+}
 
 template <class _InputIt>
-path u8path(_InputIt, _InputIt); // TODO
+_LIBCPP_INLINE_VISIBILITY
+typename enable_if<__is_pathable<_InputIt>::value, path>::type
+u8path(_InputIt __f, _InputIt __l) {
+    static_assert(is_same<typename __is_pathable<_InputIt>::__char_type, char>::value,
+        "u8path(Iter, Iter) requires Iter have a value_type of type 'char'");
+    return path(__f, __l);
+}
 
 
 class _LIBCPP_TYPE_VIS path::iterator
