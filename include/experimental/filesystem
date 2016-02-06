@@ -804,7 +804,7 @@ public:
 
     template <class _Source>
     _EnableIfPathable<_Source>
-    concat(const _Source& __x){
+    concat(const _Source& __x) {
          _SourceCVT<_Source>::__append_source(__pn_, __x);
         return *this;
     }
@@ -818,7 +818,7 @@ public:
 
     // modifiers
     _LIBCPP_INLINE_VISIBILITY
-    void  clear() _NOEXCEPT {
+    void clear() _NOEXCEPT {
         __pn_.clear();
     }
 
@@ -844,7 +844,7 @@ public:
     }
 
     _LIBCPP_INLINE_VISIBILITY
-    const value_type*  c_str() const _NOEXCEPT { return __pn_.c_str(); }
+    const value_type* c_str() const _NOEXCEPT { return __pn_.c_str(); }
 
     _LIBCPP_INLINE_VISIBILITY operator string_type() const { return __pn_;  }
 

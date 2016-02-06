@@ -641,6 +641,7 @@ __quoted ( const basic_string <_CharT, _Traits, _Allocator> &__s, _CharT __delim
 }
 
 template <class _CharT, class _Traits, class _Allocator>
+_LIBCPP_INLINE_VISIBILITY
 __quoted_proxy<_CharT, _Traits, _Allocator>
 __quoted ( basic_string <_CharT, _Traits, _Allocator> &__s, _CharT __delim = _CharT('"'), _CharT __escape=_CharT('\\'))
 {
@@ -659,10 +660,11 @@ quoted ( const basic_string <_CharT, _Traits, _Allocator> &__s, _CharT __delim =
 }
 
 template <class _CharT, class _Traits, class _Allocator>
+_LIBCPP_INLINE_VISIBILITY
 __quoted_proxy<_CharT, _Traits, _Allocator>
 quoted ( basic_string <_CharT, _Traits, _Allocator> &__s, _CharT __delim = _CharT('"'), _CharT __escape=_CharT('\\'))
 {
-    return__quoted(__s, __delim, __escape);
+    return __quoted(__s, __delim, __escape);
 }
 #endif
 

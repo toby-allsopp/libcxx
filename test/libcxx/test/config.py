@@ -414,11 +414,12 @@ class Configuration(object):
           self.cxx.compile_flags += ['-D_LIBCPP_ABI_UNSTABLE']
 
     def configure_filesystem_compile_flags(self):
-        static_env = os.path.join(self.libcxx_src_root, 'test', 'std', 'experimental', 'filesystem', 'static_test_env')
+        static_env = os.path.join(self.libcxx_src_root, 'test', 'std',
+                                  'experimental', 'filesystem', 'Inputs', 'static_test_env')
         assert os.path.isdir(static_env)
         self.cxx.compile_flags += ['-DLIBCXX_FILESYSTEM_STATIC_TEST_ROOT="%s"' % static_env]
 
-        dynamic_env = os.path.join(self.libcxx_obj_root, 'test', 'filesystem', 'dynamic_env')
+        dynamic_env = os.path.join(self.libcxx_obj_root, 'test', 'filesystem', 'Output', 'dynamic_env')
         if not os.path.isdir(dynamic_env):
             os.makedirs(dynamic_env)
         self.cxx.compile_flags += ['-DLIBCXX_FILESYSTEM_DYNAMIC_TEST_ROOT="%s"' % dynamic_env]

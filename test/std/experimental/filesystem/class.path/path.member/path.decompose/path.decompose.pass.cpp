@@ -124,25 +124,25 @@ void decompPathTest()
     assert(p == TC.raw);
 
     assert(p.root_path() == TC.root_path);
-    assert(p.has_root_path() == not TC.root_path.empty());
+    assert(p.has_root_path() !=  TC.root_path.empty());
 
     assert(p.root_name() == TC.root_name);
-    assert(p.has_root_name() == not TC.root_name.empty());
+    assert(p.has_root_name() !=  TC.root_name.empty());
 
     assert(p.root_directory() == TC.root_directory);
-    assert(p.has_root_directory() == not TC.root_directory.empty());
+    assert(p.has_root_directory() !=  TC.root_directory.empty());
 
     assert(p.relative_path() == TC.relative_path);
-    assert(p.has_relative_path() == not TC.relative_path.empty());
+    assert(p.has_relative_path() !=  TC.relative_path.empty());
 
     assert(p.parent_path() == TC.parent_path);
-    assert(p.has_parent_path() == not TC.parent_path.empty());
+    assert(p.has_parent_path() !=  TC.parent_path.empty());
 
     assert(p.filename() == TC.filename);
-    assert(p.has_filename() == not TC.filename.empty());
+    assert(p.has_filename() !=  TC.filename.empty());
 
     assert(p.is_absolute() == p.has_root_directory());
-    assert(p.is_relative() == not p.is_absolute());
+    assert(p.is_relative() !=  p.is_absolute());
 
     assert(checkCollectionsEqual(p.begin(), p.end(),
                                  TC.elements.begin(), TC.elements.end()));
@@ -181,13 +181,13 @@ void decompFilenameTest()
     assert(p == TC.raw);
 
     assert(p.filename() == TC.filename);
-    assert(p.has_filename() == not TC.filename.empty());
+    assert(p.has_filename() != TC.filename.empty());
 
     assert(p.stem() == TC.stem);
-    assert(p.has_stem() == not TC.stem.empty());
+    assert(p.has_stem() != TC.stem.empty());
 
     assert(p.extension() == TC.extension);
-    assert(p.has_extension() == not TC.extension.empty());
+    assert(p.has_extension() != TC.extension.empty());
   }
 }
 

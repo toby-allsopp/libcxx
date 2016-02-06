@@ -282,7 +282,7 @@ std::size_t StrLen(CharT const* P) {
 }
 
 // Testing the allocation behavior of the code_cvt functions requires
-// *knowning* that the allocation was not done by "path::__str_".
+// *knowing* that the allocation was not done by "path::__str_".
 // This hack forces path to allocate enough memory.
 inline void PathReserve(fs::path& p, std::size_t N) {
   auto const& native_ref = p.native();

@@ -76,7 +76,7 @@ public:
     malloc_allocator(malloc_allocator<U>) TEST_NOEXCEPT {}
 
     T* allocate(std::size_t n)
-    {;
+    {
         ++alloc_count;
         return static_cast<T*>(std::malloc(n*sizeof(T)));
     }
