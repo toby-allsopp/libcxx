@@ -23,6 +23,8 @@
 // bool operator<=(path const&, path const&) noexcept;
 // bool operator> (path const&, path const&) noexcept;
 // bool operator>=(path const&, path const&) noexcept;
+//
+// size_t hash_value(path const&) noexcept;
 
 #include <experimental/filesystem>
 #include <type_traits>
@@ -56,6 +58,8 @@ const PathCompareTest CompareTestCases[] =
     {"a/b/c", "b/a/c", -1},
     {"a/b", "a/b/c", -1},
     {"a/b/c", "a/b", 1},
+    {"a/b/", "a/b/.", 0},
+    {"a/b//////", "a/b/////.", 0},
     {"a/.././b", "a///..//.////b", 0},
     {"//foo//bar///baz////", "//foo/bar/baz/", 0}, // duplicate separators
     {"///foo/bar", "/foo/bar", 0}, // "///" is not a root directory
@@ -109,6 +113,14 @@ int main()
       ASSERT_NOEXCEPT(p1 <= p2);
       ASSERT_NOEXCEPT(p1 >  p2);
       ASSERT_NOEXCEPT(p1 >= p2);
+    }
+    { // check hash values
+      auto h1 = hash_value(p1);
+      auto h2 = hash_value(p2);
+      assert((h1 == h2) == (p1 == p2));
+      // check signature
+      ASSERT_SAME_TYPE(size_t, decltype(hash_value(p1)));
+      ASSERT_NOEXCEPT(hash_value(p1));
     }
   }
 }

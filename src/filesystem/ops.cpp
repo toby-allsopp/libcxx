@@ -1,4 +1,4 @@
-//===----------------------------------------------------------------------===//
+//===--------------------- filesystem/ops.cpp -----------------------------===//
 //
 //                     The LLVM Compiler Infrastructure
 //
@@ -7,8 +7,10 @@
 //
 //===----------------------------------------------------------------------===//
 
-// UNSUPPORTED: c++98, c++03
+#include "experimental/filesystem"
 
-// The comparison operators are tested as part of [path.compare]
-// in class.path/path.members/path.compare.pass.cpp
-int main() {}
+_LIBCPP_BEGIN_NAMESPACE_EXPERIMENTAL_FILESYSTEM
+
+filesystem_error::~filesystem_error() {}
+
+_LIBCPP_END_NAMESPACE_EXPERIMENTAL_FILESYSTEM
