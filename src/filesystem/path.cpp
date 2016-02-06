@@ -169,8 +169,7 @@ string_view extract_raw(const string_type& s, size_t pos)
 {
     size_t end_i = end_of(s, pos);
     if (!good(end_i)) return string_view{};
-    string_view sv(s);
-    return sv.substr(pos, end_i - pos + 1);
+    return string_view(s).substr(pos, end_i - pos + 1);
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -250,14 +249,10 @@ struct path_view_iterator {
           parser::is_root_name         (__s_, __pos_));
   }
 
-
   bool is_end() const { return __pos_ == parser::npos; }
 
   inline bool operator==(path_view_iterator const& __p) {
       return __pos_ == __p.__pos_;
-  }
-  inline bool operator!=(path_view_iterator const& __p) {
-    return !(*this == __p);
   }
 };
 
@@ -355,7 +350,7 @@ int path::__compare(const value_type* __s) const {
     path_view_iterator thisIter(string_view(this->native()));
     path_view_iterator sIter(__s);
     while (!thisIter.is_end() && !sIter.is_end()) {
-        int res = ((*thisIter).compare(*sIter);
+        int res = (*thisIter).compare(*sIter);
         if (res != 0) return res;
         ++thisIter; ++sIter;
     }
