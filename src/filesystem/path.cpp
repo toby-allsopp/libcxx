@@ -372,6 +372,23 @@ int path::__compare(const value_type* __s) const {
     return 1;
 }
 
+///////////////////////////////////////////////////////////////////////////////
+size_t hash_value(const path& __p) _NOEXCEPT {
+  __path_iterator thisIter(string_view(__p.native()));
+  struct HashPairT {
+    size_t first;
+    size_t second;
+  };
+  HashPairT hp = {0, 0};
+  std::hash<string_view> hasher;
+  std::__scalar_hash<decltype(hp)> pair_hasher;
+  while (!thisIter.is_end()) {
+    hp.second = hasher(*thisIter);
+    hp.first = pair_hasher(hp);
+    ++thisIter;
+  }
+  return hp.first;
+}
 
 ////////////////////////////////////////////////////////////////////////////
 path::iterator path::begin() const

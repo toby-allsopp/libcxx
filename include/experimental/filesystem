@@ -959,12 +959,8 @@ void swap(path& __lhs, path& __rhs) _NOEXCEPT
     __lhs.swap(__rhs);
 }
 
-inline _LIBCPP_INLINE_VISIBILITY
-size_t hash_value(const path& __p) _NOEXCEPT
-{
-    hash<path::string_type> __h;
-    return __h(__p.native());
-}
+_LIBCPP_FUNC_VIS
+size_t hash_value(const path& __p) _NOEXCEPT;
 
 inline _LIBCPP_INLINE_VISIBILITY
 bool operator==(const path& __lhs, const path& __rhs) _NOEXCEPT
