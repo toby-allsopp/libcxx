@@ -52,6 +52,6 @@ int main()
     Str s = p.generic_string<wchar_t, Traits, Alloc>(a);
     assert(s == expect);
     assert(Alloc::alloc_count > 0);
-    assert(Alloc::outstanding_alloc == 1);
+    assert(Alloc::outstanding_alloc() == 1);
   }
 }

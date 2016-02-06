@@ -74,7 +74,7 @@ void doLongStringTest(MultiStringType const& MS) {
       AStr s = p.string<CharT, Traits, MAlloc>();
       assert(s == value);
       assert(MAlloc::alloc_count > 0);
-      assert(MAlloc::outstanding_alloc == 1);
+      assert(MAlloc::outstanding_alloc() == 1);
   }
   MAlloc::reset();
   { // Other allocator - provided copy
@@ -87,7 +87,7 @@ void doLongStringTest(MultiStringType const& MS) {
       AStr s = p.string<CharT, Traits, MAlloc>(a);
       assert(s == value);
       assert(MAlloc::alloc_count > 0);
-      assert(MAlloc::outstanding_alloc == 1);
+      assert(MAlloc::outstanding_alloc() == 1);
   }
   MAlloc::reset();
   /////////////////////////////////////////////////////////////////////////////
