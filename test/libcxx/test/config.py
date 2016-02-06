@@ -103,7 +103,6 @@ class Configuration(object):
         self.configure_compile_flags()
         self.configure_filesystem_compile_flags()
         self.configure_link_flags()
-        self.configure_filesystem_link_flags()
         self.configure_env()
         self.configure_color_diagnostics()
         self.configure_debug_mode()
@@ -429,23 +428,6 @@ class Configuration(object):
         assert os.path.isfile(dynamic_helper)
         self.cxx.compile_flags += ['-DLIBCXX_FILESYSTEM_DYNAMIC_TEST_HELPER="%s"' % dynamic_helper]
 
-
-    def configure_filesystem_compile_flags(self):
-        static_env = os.path.join(self.libcxx_src_root, 'test', 'std', 'experimental', 'filesystem', 'static_test_env')
-        assert os.path.isdir(static_env)
-        self.cxx.compile_flags += ['-DLIBCXX_FILESYSTEM_STATIC_TEST_ROOT="%s"' % static_env]
-
-        dynamic_env = os.path.join(self.libcxx_obj_root, 'test', 'filesystem', 'dynamic_env')
-        if not os.path.isdir(dynamic_env):
-            os.makedirs(dynamic_env)
-        self.cxx.compile_flags += ['-DLIBCXX_FILESYSTEM_DYNAMIC_TEST_ROOT="%s"' % dynamic_env]
-        self.env['LIBCXX_FILESYSTEM_DYNAMIC_TEST_ROOT'] = ("%s" % dynamic_env)
-
-        dynamic_helper = os.path.join(self.libcxx_src_root, 'test', 'support', 'filesystem_dynamic_test_helper.py')
-        assert os.path.isfile(dynamic_helper)
-        self.cxx.compile_flags += ['-DLIBCXX_FILESYSTEM_DYNAMIC_TEST_HELPER="%s"' % dynamic_helper]
-
-
     def configure_link_flags(self):
         no_default_flags = self.get_lit_bool('no_default_flags', False)
         if not no_default_flags:
@@ -456,6 +438,7 @@ class Configuration(object):
             self.configure_link_flags_abi_library_path()
 
             # Configure libraries
+            self.configure_filesystem_link_flags()
             self.configure_link_flags_cxx_library()
             self.configure_link_flags_abi_library()
             self.configure_extra_library_flags()
@@ -515,9 +498,6 @@ class Configuration(object):
 
     def configure_extra_library_flags(self):
         self.target_info.add_cxx_link_flags(self.cxx.link_flags)
-
-    def configure_filesystem_link_flags(self):
-        self.cxx.link_flags += ['-lc++filesystem']
 
     def configure_filesystem_link_flags(self):
         self.cxx.link_flags += ['-lc++filesystem']

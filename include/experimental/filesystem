@@ -454,37 +454,27 @@ template <class _Tp> struct __can_convert_char {
 template <> struct __can_convert_char<char> {
     static const bool value = true;
     using __char_type = char;
-    static _LIBCPP_CONSTEXPR char preferred_separator = '/';
-    static _LIBCPP_CONSTEXPR char __other_separator = '\\';
 };
 template <> struct __can_convert_char<wchar_t>  {
     static const bool value = true;
     using __char_type = wchar_t;
-    static _LIBCPP_CONSTEXPR wchar_t preferred_separator = L'/';
-    static _LIBCPP_CONSTEXPR wchar_t __other_separator = L'\\';
 };
 template <> struct __can_convert_char<char16_t> {
     static const bool value = true;
     using __char_type = char16_t;
-    static _LIBCPP_CONSTEXPR char16_t preferred_separator = u'/';
-    static _LIBCPP_CONSTEXPR char16_t __other_separator = u'\\';
 };
 template <> struct __can_convert_char<char32_t> {
     static const bool value = true;
     using __char_type = char32_t;
-    static _LIBCPP_CONSTEXPR char32_t preferred_separator = U'/';
-    static _LIBCPP_CONSTEXPR char32_t __other_separator = U'\\';
 };
 
 template <class _ECharT>
 typename enable_if<__can_convert_char<_ECharT>::value, bool>::type
 __is_separator(_ECharT __e) {
-    using _Traits = __can_convert_char<_ECharT>;
-    return __e == _Traits::preferred_separator;
+    return __e == _ECharT('/');
 };
 
 struct _NullSentinal {};
-
 
 template <class _Tp>
 using _Void = void;
@@ -551,7 +541,6 @@ struct __is_pathable_iter<_Iter, true,
   static _NullSentinal __range_end(_Iter)       { return _NullSentinal{}; }
 
   static _ECharT __first_or_null(_Iter __b) { return *__b; }
-
 };
 
 template <class _Tp, bool _IsStringT =  __is_pathable_string<_Tp>::value,
@@ -616,7 +605,6 @@ struct _PathCVT {
     }
 };
 
-
 template <>
 struct _PathCVT<char> {
     template <class _Iter>
@@ -644,19 +632,22 @@ struct _PathCVT<char> {
 };
 
 
-template <class _Tp>
-using _SourceChar = typename __is_pathable<_Tp>::__char_type;
-
-template <class _Tp>
-using _SourceCVT = _PathCVT<_SourceChar<_Tp>>;
-
 class _LIBCPP_TYPE_VIS path
 {
+    template <class _SourceOrIter, class _Tp = path&>
+    using _EnableIfPathable = typename
+        enable_if<__is_pathable<_SourceOrIter>::value, _Tp>::type;
+
+    template <class _Tp>
+    using _SourceChar = typename __is_pathable<_Tp>::__char_type;
+
+    template <class _Tp>
+    using _SourceCVT = _PathCVT<_SourceChar<_Tp>>;
+
 public:
     typedef char value_type;
     typedef basic_string<value_type> string_type;
     static _LIBCPP_CONSTEXPR value_type preferred_separator = '/';
-    static _LIBCPP_CONSTEXPR value_type __other_separator = '\\';
 
     // constructors and destructor
     _LIBCPP_INLINE_VISIBILITY path() _NOEXCEPT {}
@@ -665,23 +656,22 @@ public:
 
     template <
         class _Source,
-        class = typename enable_if<
-                    __is_pathable<_Source>::value
-                >::type
+        class = _EnableIfPathable<_Source, void>
         >
     path(const _Source& __src) {
         _SourceCVT<_Source>::__append_source(__pn_, __src);
     }
 
     template <class _InputIt>
-    path(_InputIt __first, _InputIt __last)
-    {
+    path(_InputIt __first, _InputIt __last) {
         typedef typename iterator_traits<_InputIt>::value_type _ItVal;
         _PathCVT<_ItVal>::__append_range(__pn_, __first, __last);
     }
 
     // TODO
-    template <class _Source>
+    template <class _Source,
+              class = _EnableIfPathable<_Source>
+             >
         path(const _Source& __src, const locale& __loc);
     template <class _InputIt>
         path(_InputIt __first, _InputIt _last, const locale& __loc);
@@ -703,15 +693,14 @@ public:
     }
 
     template <class _Source>
-    typename enable_if<__is_pathable<_Source>::value, path&>::type
+    _EnableIfPathable<_Source>
     operator=(const _Source& __src)
     { return this->assign(__src); }
 
 
     template <class _Source>
-    typename enable_if<__is_pathable<_Source>::value, path&>::type
-    assign(const _Source& __src)
-    {
+    _EnableIfPathable<_Source>
+    assign(const _Source& __src) {
         using _CVT = _PathCVT<_SourceChar<_Source>>;
         __pn_.clear();
         _CVT::__append_source(__pn_, __src);
@@ -719,8 +708,7 @@ public:
     }
 
     template <class _InputIt>
-    path& assign(_InputIt __first, _InputIt __last)
-    {
+    path& assign(_InputIt __first, _InputIt __last) {
         typedef typename iterator_traits<_InputIt>::value_type _ItVal;
         __pn_.clear();
         _PathCVT<_ItVal>::__append_range(__pn_, __first, __last);
@@ -738,7 +726,6 @@ public:
             __pn_ += preferred_separator;
     }
 
-
     // appends
     path& operator/=(const path& __p)
     {
@@ -748,9 +735,8 @@ public:
     }
 
     template <class _Source>
-    typename enable_if<__is_pathable<_Source>::value, path&>::type
-    operator/=(const _Source& __src)
-    {
+    _EnableIfPathable<_Source>
+    operator/=(const _Source& __src) {
         using _Traits = __is_pathable<_Source>;
         using _CVT = _PathCVT<_SourceChar<_Source>>;
         __append_sep_if_needed(_Traits::__first_or_null(__src));
@@ -759,15 +745,13 @@ public:
     }
 
     template <class _Source>
-    typename enable_if<__is_pathable<_Source>::value, path&>::type
-    append(const _Source& __src)
-    {
+    _EnableIfPathable<_Source>
+    append(const _Source& __src) {
         return this->operator/=(__src);
     }
 
     template <class _InputIt>
-    path& append(_InputIt __first, _InputIt __last)
-    {
+    path& append(_InputIt __first, _InputIt __last) {
         typedef typename iterator_traits<_InputIt>::value_type _ItVal;
         static_assert(__can_convert_char<_ItVal>::value, "Must convertible");
         using _CVT = _PathCVT<_ItVal>;
@@ -804,7 +788,7 @@ public:
     }
 
     template <class _Source>
-    typename enable_if<__is_pathable<_Source>::value, path&>::type
+    _EnableIfPathable<_Source>
     operator+=(const _Source& __x)
     {
         _SourceCVT<_Source>::__append_source(__pn_, __x);
@@ -822,7 +806,7 @@ public:
     }
 
     template <class _Source>
-    typename enable_if<__is_pathable<_Source>::value, path&>::type
+    _EnableIfPathable<_Source>
     concat(const _Source& __x)
     {
         return this->operator+=(__x);
@@ -1980,7 +1964,7 @@ class recursive_directory_iterator
                                      error_code *__ec);
 
         void __make_end();
-        bool ___try_recursion(error_code *ec);
+        bool __try_recursion(error_code *ec);
         recursive_directory_iterator& __increment(error_code *__ec=nullptr);
 
         shared_ptr<stack<directory_iterator>> __stack_ptr_{nullptr};

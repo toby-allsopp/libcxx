@@ -13,7 +13,6 @@
 _LIBCPP_BEGIN_NAMESPACE_EXPERIMENTAL_FILESYSTEM
 
 _LIBCPP_CONSTEXPR path::value_type path::preferred_separator;
-_LIBCPP_CONSTEXPR path::value_type path::__other_separator;
 
 
 namespace { namespace parser
@@ -27,16 +26,12 @@ using string_view_pair = pair<string_view, string_view>;
 // status reporting
 constexpr size_t npos = static_cast<size_t>(-1);
 
-inline bool good(size_t pos)
-{ return pos != npos; }
+inline bool good(size_t pos) { return pos != npos; }
 
 // lexical elements
 constexpr value_type preferred_separator = path::preferred_separator;
 constexpr value_type const * preferred_separator_str = "/";
 constexpr value_type const * dot = ".";
-// TODO(UNUSED)
-//constexpr value_type const* double_dot = "..";
-
 
 // forward //
 bool is_separator(string_type const &, size_t);
@@ -57,35 +52,25 @@ string_view_pair separate_filename(string_type const &);
 string_view extract_raw(string_type const &, size_t);
 string_view extract_preferred(string_type const &, size_t);
 
-////////////////////////////////////////////////////////////////////////
-bool is_separator(const string_type& s, size_t pos)
-{
+inline bool is_separator(const string_type& s, size_t pos) {
     return (pos < s.size() && s[pos] == preferred_separator);
 }
 
-////////////////////////////////////////////////////////////////////////
-bool is_root_name(const string_type& s, size_t pos)
-{
-        return good(pos) && pos == 0 ? root_name_start(s) == pos : false;
+inline bool is_root_name(const string_type& s, size_t pos) {
+  return good(pos) && pos == 0 ? root_name_start(s) == pos : false;
 }
 
-////////////////////////////////////////////////////////////////////////
-bool is_root_directory(const string_type& s, size_t pos)
-{
+inline bool is_root_directory(const string_type& s, size_t pos) {
     return good(pos) ? root_directory_start(s) == pos : false;
 }
 
-////////////////////////////////////////////////////////////////////////
-bool is_trailing_separator(const string_type& s, size_t pos)
-{
+inline bool is_trailing_separator(const string_type& s, size_t pos) {
     return (pos < s.size() && is_separator(s, pos) && 
             end_of(s, pos) == s.size()-1 &&
             !is_root_directory(s, pos) && !is_root_name(s, pos));
 }
 
-////////////////////////////////////////////////////////////////////////
-size_t start_of(const string_type& s, size_t pos)
-{
+size_t start_of(const string_type& s, size_t pos) {
     if (pos >= s.size()) return npos;
     bool in_sep = (s[pos] == preferred_separator);
     while (pos - 1 < s.size() && 
@@ -97,9 +82,7 @@ size_t start_of(const string_type& s, size_t pos)
     return pos;
 }
 
-////////////////////////////////////////////////////////////////////////
-size_t end_of(const string_type& s, size_t pos)
-{
+size_t end_of(const string_type& s, size_t pos) {
     if (pos >= s.size()) return npos;
     // special case for root name
     if (pos == 0 && is_root_name(s, pos)) return root_name_end(s);
@@ -109,15 +92,11 @@ size_t end_of(const string_type& s, size_t pos)
     return pos;
 }
 
-////////////////////////////////////////////////////////////////////////
-size_t root_name_start(const string_type& s)
-{
+inline size_t root_name_start(const string_type& s) {
     return good(root_name_end(s)) ? 0 : npos;
 }
 
-////////////////////////////////////////////////////////////////////////
-size_t root_name_end(const string_type& s)
-{
+size_t root_name_end(const string_type& s) {
     if (s.size() < 2 || s[0] != preferred_separator
         || s[1] != preferred_separator) { 
         return npos; 
@@ -135,49 +114,41 @@ size_t root_name_end(const string_type& s)
     return index;
 }
 
-////////////////////////////////////////////////////////////////////////
-size_t root_directory_start(const string_type& s)
-{
-    auto e = root_name_end(s);
+size_t root_directory_start(const string_type& s) {
+    size_t e = root_name_end(s);
     if (!good(e))
     return is_separator(s, 0) ? 0 : npos;
     return is_separator(s, e + 1) ? e + 1 : npos; 
 }
 
-////////////////////////////////////////////////////////////////////////
-size_t root_directory_end(const string_type& s)
-{
-    auto st = root_directory_start(s);
+size_t root_directory_end(const string_type& s) {
+    size_t st = root_directory_start(s);
     if (!good(st)) return npos;
     size_t index = st;
     while (index + 1 < s.size() && s[index + 1] == preferred_separator)
-    ++index;
+      { ++index; }
     return index;
 }
 
-////////////////////////////////////////////////////////////////////////
-string_view_pair separate_filename(string_type const & s)
-{
+string_view_pair separate_filename(string_type const & s) {
     if (s == "." || s == ".." || s.empty()) return string_view_pair{s, ""};
     auto pos = s.find_last_of('.');
     if (pos == string_type::npos) return string_view_pair{s, string_view{}};
     return string_view_pair{s.substr(0, pos), s.substr(pos)};
 }
 
-///////////////////////////////////////////////////////////////////////
-string_view extract_raw(const string_type& s, size_t pos)
-{
+inline string_view extract_raw(const string_type& s, size_t pos) {
     size_t end_i = end_of(s, pos);
     if (!good(end_i)) return string_view{};
     return string_view(s).substr(pos, end_i - pos + 1);
 }
 
-////////////////////////////////////////////////////////////////////////
-string_view extract_preferred(const string_type& s, size_t pos)
-{
+string_view extract_preferred(const string_type& s, size_t pos) {
     string_view raw = extract_raw(s, pos);
-    if (raw.empty()) return raw;
-    if (is_trailing_separator(s, pos)) return string_view{dot};
+    if (raw.empty())
+        return raw;
+    if (is_trailing_separator(s, pos))
+        return string_view{dot};
     if (is_separator(s, pos) && !is_root_name(s, pos))
         return string_view(preferred_separator_str);
     return raw;

@@ -18,10 +18,6 @@
 // file_status symlink_status() const;
 // file_status symlink_status(error_code&) const noexcept;
 
-// TODO(EricWF) Implement ::status(...) function
-// XFAIL: *
-
-
 #include <experimental/filesystem>
 #include <type_traits>
 #include <cassert>

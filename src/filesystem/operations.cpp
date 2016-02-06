@@ -727,7 +727,7 @@ void __last_write_time(
 }
 
 ////////////////////////////////////////////////////////////////////////////
-void permissions(const path& p, perms prms, std::error_code *ec)
+void __permissions(const path& p, perms prms, std::error_code *ec)
 {
     _LIBCPP_ASSERT(not (bool(perms::add_perms & prms) 
                  && bool(perms::remove_perms & prms)), "invalid perms mask");
@@ -772,7 +772,7 @@ void permissions(const path& p, perms prms, std::error_code *ec)
 }
 
 ////////////////////////////////////////////////////////////////////////////
-path read_symlink(const path& p, std::error_code *ec)
+path __read_symlink(const path& p, std::error_code *ec)
 {
     char buff[PATH_MAX + 1];
     std::error_code m_ec;
@@ -797,7 +797,7 @@ path read_symlink(const path& p, std::error_code *ec)
 }
 
 ////////////////////////////////////////////////////////////////////////////
-bool remove(const path& p, std::error_code *ec)
+bool __remove(const path& p, std::error_code *ec)
 {
     std::error_code m_ec;
     if (::remove(p.c_str()) == -1) {
