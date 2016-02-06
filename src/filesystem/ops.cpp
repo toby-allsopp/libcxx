@@ -976,37 +976,6 @@ path __temp_directory_path(std::error_code *ec)
     }
 }
 
-namespace 
-{
-    ////////////////////////////////////////////////////////////////////////
-    char to_hex(int ch) noexcept
-    {
-        if (ch < 10) {
-            return static_cast<char>('0' + ch);
-        } else {
-            return static_cast<char>('a' + (ch - 10));
-        }
-    }
-    
-    ////////////////////////////////////////////////////////////////////////
-    char random_hex_char()
-    {
-        static std::mt19937 rd { std::random_device{}() };
-        static std::uniform_int_distribution<int> mrand{0, 15};
-        return to_hex( mrand(rd) );
-    }  
-}                                                              // namespace 
-
-path __unique_path(const path& model, std::error_code *ec)
-{
-    std::string tmp_str = model.native();
-    for (auto & ch : tmp_str) {
-        if (ch == '%') ch = random_hex_char();
-    }
-    if (ec) ec->clear();
-    return tmp_str;
-}                                                     // unique_path
-
 ////////////////////////////////////////////////////////////////////////////////
 //                      OPERATORS DEFINITION                                                    
 ////////////////////////////////////////////////////////////////////////////////

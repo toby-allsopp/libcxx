@@ -1238,9 +1238,6 @@ _LIBCPP_FUNC_VIS
 path __system_complete(const path&, error_code *__ec=nullptr);
 _LIBCPP_FUNC_VIS
 path __temp_directory_path(error_code *__ec=nullptr);
-_LIBCPP_FUNC_VIS
-path __unique_path(const path& model, error_code *ec=nullptr);
-
 
 inline _LIBCPP_INLINE_VISIBILITY
 path current_path() {
