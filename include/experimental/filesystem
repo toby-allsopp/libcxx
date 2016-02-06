@@ -949,18 +949,19 @@ public:
     _LIBCPP_FUNC_VIS iterator end() const;
 
 private:
+    inline _LIBCPP_INLINE_VISIBILITY
+    path& __assign_view(string_view const& __s) noexcept { __pn_ = __s.to_string(); return *this; }
     string_type __pn_;
 };
 
 
 inline _LIBCPP_ALWAYS_INLINE
 void swap(path& __lhs, path& __rhs) _NOEXCEPT
-{
-    __lhs.swap(__rhs);
-}
+{ __lhs.swap(__rhs); }
 
-_LIBCPP_FUNC_VIS
-size_t hash_value(const path& __p) _NOEXCEPT;
+
+_LIBCPP_FUNC_VIS size_t hash_value(const path& __p) _NOEXCEPT;
+
 
 inline _LIBCPP_INLINE_VISIBILITY
 bool operator==(const path& __lhs, const path& __rhs) _NOEXCEPT
@@ -1097,19 +1098,13 @@ public:
         this->operator--();
         return __it;
     }
-private:
-    _LIBCPP_FUNC_VIS
-    iterator& __increment();
-
-    _LIBCPP_FUNC_VIS
-    iterator& __decrement();
-
-    _LIBCPP_FUNC_VIS
-    bool __set_position(size_t);
 
 private:
     friend class path;
     friend bool operator==(const iterator&, const iterator&);
+
+    _LIBCPP_FUNC_VIS iterator& __increment();
+    _LIBCPP_FUNC_VIS iterator& __decrement();
 
     path __elem_;
     const path* __path_ptr_;
@@ -1120,7 +1115,7 @@ inline _LIBCPP_INLINE_VISIBILITY
 bool operator==(const path::iterator& __lhs, const path::iterator& __rhs)
 {
     return __lhs.__path_ptr_ == __rhs.__path_ptr_ &&
-           __lhs.__pos_ == __rhs.__pos_;
+           __lhs.__pos_      == __rhs.__pos_;
 }
 
 inline _LIBCPP_INLINE_VISIBILITY
@@ -1161,6 +1156,9 @@ public:
     const path& path2() const _NOEXCEPT {
         return __paths_->second;
     }
+
+    _LIBCPP_FUNC_VIS
+    ~filesystem_error() override;
 
     // TODO(ericwf): Create a custom error message.
     //const char* what() const _NOEXCEPT;
