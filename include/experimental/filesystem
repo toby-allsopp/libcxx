@@ -1172,181 +1172,531 @@ private:
 
 // operational functions
 
-
-path __canonical(const path& p, const path& base, error_code *ec=nullptr);
-
-void __copy(const path& from, const path& to, copy_options opt,
-        error_code *ec=nullptr);
-bool __copy_file(const path& from, const path& to, copy_options option,
-        error_code *ec=nullptr);
-void __copy_symlink(const path& existing_symlink, const path& new_symlink,
-        error_code *ec=nullptr);
-
+_LIBCPP_FUNC_VIS
+path __canonical(const path&, const path&, error_code *__ec=nullptr);
+_LIBCPP_FUNC_VIS
+void __copy(const path& __from, const path& __to, copy_options __opt,
+        error_code *__ec=nullptr);
+_LIBCPP_FUNC_VIS
+bool __copy_file(const path& __from, const path& __to, copy_options __opt,
+        error_code *__ec=nullptr);
+_LIBCPP_FUNC_VIS
+void __copy_symlink(const path& __existing_symlink, const path& __new_symlink,
+        error_code *__ec=nullptr);
+_LIBCPP_FUNC_VIS
 bool __create_directories(const path& p, error_code *ec=nullptr);
+_LIBCPP_FUNC_VIS
 bool __create_directory(const path& p, error_code *ec=nullptr);
+_LIBCPP_FUNC_VIS
 bool __create_directory(const path& p, const path & attributes,
         error_code *ec=nullptr);
-void __create_directory_symlink(const path& to, const path& new_symlink,
-        error_code *ec=nullptr);
-void __create_hard_link(const path& to, const path& new_hard_link,
-        error_code *ec=nullptr);
-void __create_symlink(const path& to, const path& new_symlink,
-        error_code *ec=nullptr);
-path __current_path(error_code *ec=nullptr);
-void __current_path(const path& p, error_code *ec=nullptr);
-bool __equivalent(const path& p1, const path& p2,
-        error_code *ec=nullptr);
-uintmax_t __file_size(const path& p, error_code *ec=nullptr);
-uintmax_t __hard_link_count(const path& p, error_code *ec=nullptr);
+_LIBCPP_FUNC_VIS
+void __create_directory_symlink(const path& __to, const path& __new_symlink,
+        error_code *__ec=nullptr);
+_LIBCPP_FUNC_VIS
+void __create_hard_link(const path& __to, const path& __new_hard_link,
+        error_code *__ec=nullptr);
+_LIBCPP_FUNC_VIS
+void __create_symlink(const path& __to, const path& __new_symlink,
+        error_code *__ec=nullptr);
+_LIBCPP_FUNC_VIS
+path __current_path(error_code *__ec=nullptr);
+_LIBCPP_FUNC_VIS
+void __current_path(const path&, error_code *__ec=nullptr);
+_LIBCPP_FUNC_VIS
+bool __equivalent(const path&, const path&, error_code *__ec=nullptr);
+_LIBCPP_FUNC_VIS
+uintmax_t __file_size(const path&, error_code *__ec=nullptr);
+_LIBCPP_FUNC_VIS
+uintmax_t __hard_link_count(const path&, error_code *__ec=nullptr);
+_LIBCPP_FUNC_VIS
 bool __fs_is_empty(const path& p, error_code *ec=nullptr);
+_LIBCPP_FUNC_VIS
 file_time_type __last_write_time(const path& p, error_code *ec=nullptr);
+_LIBCPP_FUNC_VIS
 void __last_write_time(const path& p, file_time_type new_time,
         error_code *ec=nullptr);
+_LIBCPP_FUNC_VIS
 void __permissions(const path& p, perms prms, error_code *ec=nullptr);
+_LIBCPP_FUNC_VIS
 path __read_symlink(const path& p, error_code *ec=nullptr);
+_LIBCPP_FUNC_VIS
 bool __remove(const path& p, error_code *ec=nullptr);
+_LIBCPP_FUNC_VIS
 uintmax_t __remove_all(const path& p, error_code *ec=nullptr);
+_LIBCPP_FUNC_VIS
 void __rename(const path& from, const path& to, error_code *ec=nullptr);
+_LIBCPP_FUNC_VIS
 void __resize_file(const path& p, uintmax_t size, error_code *ec=nullptr);
-space_info __space(const path& p, error_code *ec=nullptr);
-file_status __status(const path& p, error_code *ec=nullptr);
-file_status __symlink_status(const path& p, error_code *ec=nullptr);
-path __system_complete(const path& p, error_code *ec=nullptr);
-path __temp_directory_path(error_code *ec=nullptr);
+_LIBCPP_FUNC_VIS
+space_info __space(const path&, error_code *__ec=nullptr);
+_LIBCPP_FUNC_VIS
+file_status __status(const path&, error_code *__ec=nullptr);
+_LIBCPP_FUNC_VIS
+file_status __symlink_status(const path&, error_code *__ec=nullptr);
+_LIBCPP_FUNC_VIS
+path __system_complete(const path&, error_code *__ec=nullptr);
+_LIBCPP_FUNC_VIS
+path __temp_directory_path(error_code *__ec=nullptr);
+_LIBCPP_FUNC_VIS
 path __unique_path(const path& model, error_code *ec=nullptr);
 
 
-path absolute(const path&);
-path absolute(const path&, const path&);
+inline _LIBCPP_INLINE_VISIBILITY
+path current_path() {
+    return __current_path();
+}
 
-path canonical(const path&);
-path canonical(const path&, const path&);
-path canonical(const path&, error_code&);
-path canonical(const path&, const path&, error_code&);
+inline _LIBCPP_INLINE_VISIBILITY
+path current_path(error_code& __ec) {
+    return __current_path(&__ec);
+}
 
-void copy(const path&, const path&);
-void copy(const path&, const path&, error_code&) _NOEXCEPT;
-void copy(const path&, const path&, copy_options);
-void copy(const path&, const path&, copy_options, error_code&) _NOEXCEPT;
+inline _LIBCPP_INLINE_VISIBILITY
+void current_path(const path& __p) {
+    __current_path(__p);
+}
 
-bool copy_file(const path&, const path&);
-bool copy_file(const path&, const path&, error_code&) _NOEXCEPT;
-bool copy_file(const path&, const path&, copy_options);
-bool copy_file(const path&, const path&, copy_options, error_code&) _NOEXCEPT;
+inline _LIBCPP_INLINE_VISIBILITY
+void current_path(const path& __p, error_code& __ec) _NOEXCEPT {
+    __current_path(__p, &__ec);
+}
 
-void copy_symlink(const path&, const path&);
-void copy_symlink(const path&, const path&, error_code&) _NOEXCEPT;
+_LIBCPP_FUNC_VIS
+path absolute(const path&, const path& __p2 = current_path());
 
-bool create_directories(const path&);
-bool create_directories(const path&, error_code&) _NOEXCEPT;
+inline _LIBCPP_INLINE_VISIBILITY
+path canonical(const path& __p, const path& __base = current_path()) {
+    return __canonical(__p, __base);
+}
 
-bool create_directory(const path&);
-bool create_directory(const path&, error_code&) _NOEXCEPT;
+inline _LIBCPP_INLINE_VISIBILITY
+path canonical(const path& __p, error_code& __ec) {
+    path __base = __current_path(&__ec);
+    if (__ec) return {};
+    return __canonical(__p, __base, &__ec);
+}
 
-bool create_directory(const path&, const path&);
-bool create_directory(const path&, const path&, error_code&) _NOEXCEPT;
+inline _LIBCPP_INLINE_VISIBILITY
+path canonical(const path& __p, const path& __base, error_code& __ec) {
+    return __canonical(__p, __base, &__ec);
+}
 
-void create_directory_symlink(const path&, const path&);
-void create_directory_symlink(const path&, const path&, error_code&) _NOEXCEPT;
+inline _LIBCPP_INLINE_VISIBILITY
+void copy(const path& __from, const path& __to) {
+    __copy(__from, __to, copy_options::none);
+}
 
-void create_hard_link(const path&, const path&);
-void create_hard_link(const path&, const path&, error_code&) _NOEXCEPT;
+inline _LIBCPP_INLINE_VISIBILITY
+void copy(const path& __from, const path& __to, error_code& __ec) _NOEXCEPT {
+    __copy(__from, __to, copy_options::none, &__ec);
+}
 
-void create_symlink(const path&, const path&);
-void create_symlink(const path&, const path&, error_code&) _NOEXCEPT;
+inline _LIBCPP_INLINE_VISIBILITY
+void copy(const path& __from, const path& __to, copy_options __opt) {
+    __copy(__from, __to, __opt);
+}
 
-path current_path();
-path current_path(error_code&);
-void current_path(const path&);
-void current_path(const path&, error_code&) _NOEXCEPT;
+inline _LIBCPP_INLINE_VISIBILITY
+void copy(const path& __from, const path& __to,
+          copy_options __opt, error_code& __ec) _NOEXCEPT {
+    __copy(__from, __to, __opt, &__ec);
+}
 
-bool exists(file_status) _NOEXCEPT;
-bool exists(const path&);
-bool exists(const path&, error_code&) _NOEXCEPT;
+inline _LIBCPP_INLINE_VISIBILITY
+bool copy_file(const path& __from, const path& __to) {
+    return __copy_file(__from, __to, copy_options::none);
+}
 
-bool equivalent(const path&, const path&);
-bool equivalent(const path&, const path&, error_code&) _NOEXCEPT;
+inline _LIBCPP_INLINE_VISIBILITY
+bool copy_file(const path& __from, const path& __to, error_code& __ec) _NOEXCEPT {
+    return __copy_file(__from, __to, copy_options::none, &__ec);
+}
 
-uintmax_t file_size(const path&);
-uintmax_t file_size(const path&, error_code&) _NOEXCEPT;
+inline _LIBCPP_INLINE_VISIBILITY
+bool copy_file(const path& __from, const path& __to, copy_options __opt) {
+    return __copy_file(__from, __to, __opt);
+}
 
-uintmax_t hard_link_count(const path&);
-uintmax_t hard_link_count(const path&, error_code&) _NOEXCEPT;
+inline _LIBCPP_INLINE_VISIBILITY
+bool copy_file(const path& __from, const path& __to,
+               copy_options __opt, error_code& __ec) _NOEXCEPT {
+    return __copy_file(__from, __to, __opt, &__ec);
+}
 
-bool is_block_file(file_status) _NOEXCEPT;
-bool is_block_file(const path&);
-bool is_block_file(const path&, error_code&) _NOEXCEPT;
+inline _LIBCPP_INLINE_VISIBILITY
+void copy_symlink(const path& __existing, const path& __new) {
+    __copy_symlink(__existing, __new);
+}
 
-bool is_character_file(file_status) _NOEXCEPT;
-bool is_character_file(const path&);
-bool is_character_file(const path&, error_code&) _NOEXCEPT;
+inline _LIBCPP_INLINE_VISIBILITY
+void copy_symlink(const path& __ext, const path& __new, error_code& __ec) _NOEXCEPT {
+    __copy_symlink(__ext, __new, &__ec);
+}
 
-bool is_directory(file_status) _NOEXCEPT;
-bool is_directory(const path&);
-bool is_directory(const path&, error_code&) _NOEXCEPT;
+inline _LIBCPP_INLINE_VISIBILITY
+bool create_directories(const path& __p) {
+    return __create_directories(__p);
+}
+
+inline _LIBCPP_INLINE_VISIBILITY
+bool create_directories(const path& __p, error_code& __ec) _NOEXCEPT {
+    return __create_directories(__p, &__ec);
+}
+
+inline _LIBCPP_INLINE_VISIBILITY
+bool create_directory(const path& __p) {
+    return __create_directory(__p);
+}
+
+inline _LIBCPP_INLINE_VISIBILITY
+bool create_directory(const path& __p, error_code& __ec) _NOEXCEPT {
+    return __create_directory(__p, &__ec);
+}
+
+inline _LIBCPP_INLINE_VISIBILITY
+bool create_directory(const path& __p, const path& __attrs) {
+    return __create_directory(__p, __attrs);
+}
+
+inline _LIBCPP_INLINE_VISIBILITY
+bool create_directory(const path& __p, const path& __attrs, error_code& __ec) _NOEXCEPT {
+    return __create_directory(__p, __attrs, &__ec);
+}
+
+inline _LIBCPP_INLINE_VISIBILITY
+void create_directory_symlink(const path& __to, const path& __new) {
+    __create_directory_symlink(__to, __new);
+}
+
+inline _LIBCPP_INLINE_VISIBILITY
+void create_directory_symlink(const path& __to, const path& __new,
+                              error_code& __ec) _NOEXCEPT {
+    __create_directory_symlink(__to, __new, &__ec);
+}
+
+inline _LIBCPP_INLINE_VISIBILITY
+void create_hard_link(const path& __to, const path& __new) {
+    __create_hard_link(__to, __new);
+}
+
+inline _LIBCPP_INLINE_VISIBILITY
+void create_hard_link(const path& __to, const path& __new, error_code& __ec) _NOEXCEPT {
+    __create_hard_link(__to, __new, &__ec);
+}
+
+inline _LIBCPP_INLINE_VISIBILITY
+void create_symlink(const path& __to, const path& __new) {
+    __create_symlink(__to, __new);
+}
+
+inline _LIBCPP_INLINE_VISIBILITY
+void create_symlink(const path& __to, const path& __new, error_code& __ec) _NOEXCEPT {
+    return __create_symlink(__to, __new, &__ec);
+}
+
+
+inline _LIBCPP_INLINE_VISIBILITY
+bool status_known(file_status __s) _NOEXCEPT {
+    return __s.type() != file_type::none;
+}
+
+inline _LIBCPP_INLINE_VISIBILITY
+bool exists(file_status __s) _NOEXCEPT {
+    return status_known(__s) && __s.type() != file_type::not_found;
+}
+
+inline _LIBCPP_INLINE_VISIBILITY
+bool exists(const path& __p) {
+    return exists(__status(__p));
+}
+
+inline _LIBCPP_INLINE_VISIBILITY
+bool exists(const path& __p, error_code& __ec) _NOEXCEPT {
+    return exists(__status(__p, &__ec));
+}
+
+inline _LIBCPP_INLINE_VISIBILITY
+bool equivalent(const path& __p1, const path& __p2) {
+    return __equivalent(__p1, __p2);
+}
+
+inline _LIBCPP_INLINE_VISIBILITY
+bool equivalent(const path& __p1, const path& __p2, error_code& __ec) _NOEXCEPT {
+    return __equivalent(__p1, __p2, &__ec);
+}
+
+inline _LIBCPP_INLINE_VISIBILITY
+uintmax_t file_size(const path& __p) {
+    return __file_size(__p);
+}
+
+inline _LIBCPP_INLINE_VISIBILITY
+uintmax_t file_size(const path& __p, error_code& __ec) _NOEXCEPT {
+    return __file_size(__p, &__ec);
+}
+
+inline _LIBCPP_INLINE_VISIBILITY
+uintmax_t hard_link_count(const path& __p) {
+    return __hard_link_count(__p);
+}
+
+inline _LIBCPP_INLINE_VISIBILITY
+uintmax_t hard_link_count(const path& __p, error_code& __ec) _NOEXCEPT {
+    return __hard_link_count(__p, &__ec);
+}
+
+inline _LIBCPP_INLINE_VISIBILITY
+bool is_block_file(file_status __s) _NOEXCEPT {
+    return __s.type() == file_type::block;
+}
+
+inline _LIBCPP_INLINE_VISIBILITY
+bool is_block_file(const path& __p) {
+    return is_block_file(__status(__p));
+}
+
+inline _LIBCPP_INLINE_VISIBILITY
+bool is_block_file(const path& __p, error_code& __ec) _NOEXCEPT {
+    return is_block_file(__status(__p, &__ec));
+}
+
+inline _LIBCPP_INLINE_VISIBILITY
+bool is_character_file(file_status __s) _NOEXCEPT {
+    return __s.type() != file_type::character;
+}
+
+inline _LIBCPP_INLINE_VISIBILITY
+bool is_character_file(const path& __p) {
+    return is_character_file(__status(__p));
+}
+
+inline _LIBCPP_INLINE_VISIBILITY
+bool is_character_file(const path& __p, error_code& __ec) _NOEXCEPT {
+    return is_character_file(__status(__p, &__ec));
+}
+
+inline _LIBCPP_INLINE_VISIBILITY
+bool is_directory(file_status __s) _NOEXCEPT {
+    return __s.type() != file_type::directory;
+}
+
+inline _LIBCPP_INLINE_VISIBILITY
+bool is_directory(const path& __p) {
+    return is_directory(__status(__p));
+}
+
+inline _LIBCPP_INLINE_VISIBILITY
+bool is_directory(const path& __p, error_code& __ec) _NOEXCEPT {
+    return is_directory(__status(__p, &__ec));
+}
 
 bool is_empty(const path&);
 bool is_empty(const path&, error_code&) _NOEXCEPT;
 
-bool is_fifo(file_status) _NOEXCEPT;
-bool is_fifo(const path&);
-bool is_fifo(const path&, error_code&) _NOEXCEPT;
+inline _LIBCPP_INLINE_VISIBILITY
+bool is_fifo(file_status __s) _NOEXCEPT {
+    return __s.type() != file_type::fifo;
+}
+inline _LIBCPP_INLINE_VISIBILITY
+bool is_fifo(const path& __p) {
+    return is_fifo(__status(__p));
+}
 
-bool is_other(file_status) _NOEXCEPT;
-bool is_other(const path&);
-bool is_other(const path&, error_code&) _NOEXCEPT;
+inline _LIBCPP_INLINE_VISIBILITY
+bool is_fifo(const path& __p, error_code& __ec) _NOEXCEPT {
+    return is_fifo(__status(__p, &__ec));
+}
 
-bool is_regular_file(file_status) _NOEXCEPT;
-bool is_regular_file(const path&);
-bool is_regular_file(const path&, error_code&) _NOEXCEPT;
+inline _LIBCPP_INLINE_VISIBILITY
+bool is_regular_file(file_status __s) _NOEXCEPT {
+    return __s.type() == file_type::regular;
+}
 
-bool is_socket(file_status) _NOEXCEPT;
-bool is_socket(const path&);
-bool is_socket(const path&, error_code&) _NOEXCEPT;
+inline _LIBCPP_INLINE_VISIBILITY
+bool is_regular_file(const path& __p) {
+    return is_regular_file(__status(__p));
+}
 
-bool is_symlink(file_status) _NOEXCEPT;
-bool is_symlink(const path&);
-bool is_symlink(const path&, error_code&) _NOEXCEPT;
+inline _LIBCPP_INLINE_VISIBILITY
+bool is_regular_file(const path& __p, error_code& __ec) _NOEXCEPT {
+    return is_regular_file(__status(__p, &__ec));
+}
 
-file_time_type last_write_time(const path&);
-file_time_type last_write_time(const path&, error_code&) _NOEXCEPT;
-void last_write_time(const path&, file_time_type);
-void last_write_time(const path&, file_time_type, error_code&) _NOEXCEPT;
+inline _LIBCPP_INLINE_VISIBILITY
+bool is_socket(file_status __s) _NOEXCEPT {
+    return __s.type() == file_type::socket;
+}
 
-void permissions(const path&, perms);
-void permissions(const path&, perms, error_code&) _NOEXCEPT;
+inline _LIBCPP_INLINE_VISIBILITY
+bool is_socket(const path& __p) {
+    return is_socket(__status(__p));
+}
 
-path read_symlink(const path&);
-path read_symlink(const path&, error_code&);
+inline _LIBCPP_INLINE_VISIBILITY
+bool is_socket(const path& __p, error_code& __ec) _NOEXCEPT {
+    return is_socket(__status(__p, &__ec));
+}
 
-bool remove(const path&);
-bool remove(const path&, error_code&) _NOEXCEPT;
+inline _LIBCPP_INLINE_VISIBILITY
+bool is_symlink(file_status __s) _NOEXCEPT {
+    return __s.type() == file_type::symlink;
+}
 
-uintmax_t remove_all(const path&);
-uintmax_t remove_all(const path&, error_code&) _NOEXCEPT;
+inline _LIBCPP_INLINE_VISIBILITY
+bool is_symlink(const path& __p) {
+    return is_symlink(__symlink_status(__p));
+}
 
-void rename(const path&, const path&);
-void rename(const path&, const path&, error_code&) _NOEXCEPT;
+inline _LIBCPP_INLINE_VISIBILITY
+bool is_symlink(const path& __p, error_code& __ec) _NOEXCEPT {
+    return is_symlink(__symlink_status(__p, &__ec));
+}
 
-void resize_file(const path&, uintmax_t);
-void resize_file(const path&, uintmax_t, error_code&) _NOEXCEPT;
+inline _LIBCPP_INLINE_VISIBILITY
+bool is_other(file_status __s) _NOEXCEPT {
+    return exists(__s) && ! is_regular_file(__s) && !is_symlink(__s);
+}
 
-space_info space(const path&);
-space_info space(const path&, error_code&) _NOEXCEPT;
+inline _LIBCPP_INLINE_VISIBILITY
+bool is_other(const path& __p) {
+    return is_other(__status(__p));
+}
 
-file_status status(const path&);
-file_status status(const path&, error_code&) _NOEXCEPT;
+inline _LIBCPP_INLINE_VISIBILITY
+bool is_other(const path& __p, error_code& __ec) _NOEXCEPT {
+    return is_other(__status(__p, &__ec));
+}
 
-bool status_known(file_status) _NOEXCEPT;
+inline _LIBCPP_INLINE_VISIBILITY
+file_time_type last_write_time(const path& __p) {
+    return __last_write_time(__p);
+}
 
-file_status symlink_status(const path&);
-file_status symlink_status(const path&, error_code&) _NOEXCEPT;
+inline _LIBCPP_INLINE_VISIBILITY
+file_time_type last_write_time(const path& __p, error_code& __ec) _NOEXCEPT {
+    return __last_write_time(__p, &__ec);
+}
 
-path system_complete(const path&);
-path system_complete(const path&, error_code&);
+inline _LIBCPP_INLINE_VISIBILITY
+void last_write_time(const path& __p, file_time_type __t) {
+    __last_write_time(__p, __t);
+}
 
-path temp_directory_path();
-path temp_directory_path(error_code&);
+inline _LIBCPP_INLINE_VISIBILITY
+void last_write_time(const path& __p, file_time_type __t, error_code& __ec) _NOEXCEPT {
+    __last_write_time(__p, __t, &__ec);
+}
+
+inline _LIBCPP_INLINE_VISIBILITY
+void permissions(const path& __p, perms __prms) {
+    __permissions(__p, __prms);
+}
+
+inline _LIBCPP_INLINE_VISIBILITY
+void permissions(const path& __p, perms __prms, error_code& __ec) _NOEXCEPT {
+    __permissions(__p, __prms, &__ec);
+}
+
+inline _LIBCPP_INLINE_VISIBILITY
+path read_symlink(const path& __p) {
+    return __read_symlink(__p);
+}
+
+inline _LIBCPP_INLINE_VISIBILITY
+path read_symlink(const path& __p, error_code& __ec) {
+    return __read_symlink(__p, &__ec);
+}
+
+inline _LIBCPP_INLINE_VISIBILITY
+bool remove(const path& __p) {
+    return __remove(__p);
+}
+
+inline _LIBCPP_INLINE_VISIBILITY
+bool remove(const path& __p, error_code& __ec) _NOEXCEPT {
+    return __remove(__p, &__ec);
+}
+
+inline _LIBCPP_INLINE_VISIBILITY
+uintmax_t remove_all(const path& __p) {
+    return __remove_all(__p);
+}
+
+inline _LIBCPP_INLINE_VISIBILITY
+uintmax_t remove_all(const path& __p, error_code& __ec) _NOEXCEPT {
+    return __remove_all(__p, &__ec);
+}
+
+inline _LIBCPP_INLINE_VISIBILITY
+void rename(const path& __from, const path& __to) {
+    return __rename(__from, __to);
+}
+
+inline _LIBCPP_INLINE_VISIBILITY
+void rename(const path& __from, const path& __to, error_code& __ec) _NOEXCEPT {
+    return __rename(__from, __to, &__ec);
+}
+
+inline _LIBCPP_INLINE_VISIBILITY
+void resize_file(const path& __p, uintmax_t __ns) {
+    return __resize_file(__p, __ns);
+}
+
+inline _LIBCPP_INLINE_VISIBILITY
+void resize_file(const path& __p, uintmax_t __ns, error_code& __ec) _NOEXCEPT {
+    return __resize_file(__p, __ns, &__ec);
+}
+
+inline _LIBCPP_INLINE_VISIBILITY
+space_info space(const path& __p) {
+    return __space(__p);
+}
+
+inline _LIBCPP_INLINE_VISIBILITY
+space_info space(const path& __p, error_code& __ec) _NOEXCEPT {
+    return __space(__p, &__ec);
+}
+
+inline _LIBCPP_INLINE_VISIBILITY
+file_status status(const path& __p) {
+    return __status(__p);
+}
+
+inline _LIBCPP_INLINE_VISIBILITY
+file_status status(const path& __p, error_code& __ec) _NOEXCEPT {
+    return __status(__p, &__ec);
+}
+
+inline _LIBCPP_INLINE_VISIBILITY
+file_status symlink_status(const path& __p) {
+    return __symlink_status(__p);
+}
+
+inline _LIBCPP_INLINE_VISIBILITY
+file_status symlink_status(const path& __p, error_code& __ec) _NOEXCEPT {
+    return __symlink_status(__p, &__ec);
+}
+
+inline _LIBCPP_INLINE_VISIBILITY
+path system_complete(const path& __p) {
+    return __system_complete(__p);
+}
+
+inline _LIBCPP_INLINE_VISIBILITY
+path system_complete(const path& __p, error_code& __ec) {
+    return __system_complete(__p, &__ec);
+}
+
+inline _LIBCPP_INLINE_VISIBILITY
+path temp_directory_path() {
+    return __temp_directory_path();
+}
+
+inline _LIBCPP_INLINE_VISIBILITY
+path temp_directory_path(error_code& __ec) {
+    return __temp_directory_path(&__ec);
+}
 
 
 class directory_entry
