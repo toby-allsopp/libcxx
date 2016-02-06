@@ -96,7 +96,7 @@ int main()
     const path p2(TC.RHS);
     const std::string R(TC.RHS);
     const int E = TC.expect;
-    {
+    { // compare(...) functions
       DisableAllocationGuard g; // none of these operations should allocate
       int ret1 = p1.compare(p2);
       int ret2 = p1.compare(R);
@@ -105,14 +105,22 @@ int main()
       int normalized_ret = ret1 < 0 ? -1 : (ret1 > 0 ? 1 : 0);
       assert(normalized_ret == E);
     }
-    {
+    { // comparison operators
       DisableAllocationGuard g; // none of these operations should allocate
+      // Check runtime result
       assert((p1 == p2) == (E == 0));
       assert((p1 != p2) == (E != 0));
       assert((p1 <  p2) == (E <  0));
       assert((p1 <= p2) == (E <= 0));
       assert((p1 >  p2) == (E >  0));
       assert((p1 >= p2) == (E >= 0));
+      // Check signatures
+      ASSERT_NOEXCEPT(p1 == p2);
+      ASSERT_NOEXCEPT(p1 != p2);
+      ASSERT_NOEXCEPT(p1 <  p2);
+      ASSERT_NOEXCEPT(p1 <= p2);
+      ASSERT_NOEXCEPT(p1 >  p2);
+      ASSERT_NOEXCEPT(p1 >= p2);
     }
   }
 }
