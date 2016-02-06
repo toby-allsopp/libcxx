@@ -320,7 +320,7 @@ string_view path::__extension() const
 ////////////////////////////////////////////////////////////////////////////
 // path.comparisons
 int path::__compare(const value_type* __s) const {
-    path_view_iterator thisIter(string_view(this->native()));
+    path_view_iterator thisIter(this->native());
     path_view_iterator sIter(__s);
     while (!thisIter.is_end() && !sIter.is_end()) {
         int res = (*thisIter).compare(*sIter);

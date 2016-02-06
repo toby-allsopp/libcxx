@@ -496,21 +496,20 @@ struct __is_pathable_string<basic_string<_ECharT, _Traits, _Alloc>,
     }
 };
 
-template <class _Tp>
-using _UnqualPtrType = typename remove_const<typename remove_pointer<_Tp>::type>::type;
-
 template <class _Source,
           class _DS = typename decay<_Source>::type,
+          class _UnqualPtrType = typename remove_const<
+              typename remove_pointer<_DS>::type>::type,
           bool _IsCharPtr = is_pointer<_DS>::value &&
-                            __can_convert_char<_UnqualPtrType<_DS>>::value
+                            __can_convert_char<_UnqualPtrType>::value
         >
 struct __is_pathable_char_array : false_type {};
 
-template <class _Source, class _ECharT>
-struct __is_pathable_char_array<_Source, _ECharT*, true>
+template <class _Source, class _ECharT, class _UPtr>
+struct __is_pathable_char_array<_Source, _ECharT*, _UPtr, true>
         : __can_convert_char<typename remove_const<_ECharT>::type>
 {
-  using _Base = __can_convert_char<typename std::remove_const<_ECharT>::type>;
+  using _Base = __can_convert_char<typename remove_const<_ECharT>::type>;
 
   static _ECharT const* __range_begin(const _ECharT* __b) { return __b; }
   static _ECharT const* __range_end(const _ECharT* __b)
@@ -562,9 +561,6 @@ struct __is_pathable<_Tp, false, true, false> : __is_pathable_char_array<_Tp> {}
 template <class _Tp>
 struct __is_pathable<_Tp, false, false, true> : __is_pathable_iter<_Tp> {};
 
-
-template <class _ECharT>
-using _WidenFromNative = __widen_from_utf8<sizeof(_ECharT)*__CHAR_BIT__>;
 
 template <class _ECharT>
 struct _PathCVT {
@@ -670,7 +666,7 @@ public:
 
     // TODO
     template <class _Source,
-              class = _EnableIfPathable<_Source>
+              class = _EnableIfPathable<_Source, void>
              >
         path(const _Source& __src, const locale& __loc);
     template <class _InputIt>
@@ -693,6 +689,7 @@ public:
     }
 
     template <class _Source>
+    _LIBCPP_INLINE_VISIBILITY
     _EnableIfPathable<_Source>
     operator=(const _Source& __src)
     { return this->assign(__src); }
@@ -701,9 +698,8 @@ public:
     template <class _Source>
     _EnableIfPathable<_Source>
     assign(const _Source& __src) {
-        using _CVT = _PathCVT<_SourceChar<_Source>>;
         __pn_.clear();
-        _CVT::__append_source(__pn_, __src);
+        _SourceCVT<_Source>::__append_source(__pn_, __src);
         return *this;
     }
 
@@ -715,6 +711,7 @@ public:
         return *this;
     }
 
+private:
     template <class _ECharT>
     void __append_sep_if_needed(_ECharT __first_or_null) {
         const _ECharT __null_val = {};
@@ -726,28 +723,29 @@ public:
             __pn_ += preferred_separator;
     }
 
+public:
     // appends
-    path& operator/=(const path& __p)
-    {
+    path& operator/=(const path& __p) {
         __append_sep_if_needed(__p.empty() ? char{} : __p.__pn_[0]);
         __pn_ += __p.native();
         return *this;
     }
 
     template <class _Source>
+    _LIBCPP_INLINE_VISIBILITY
     _EnableIfPathable<_Source>
     operator/=(const _Source& __src) {
-        using _Traits = __is_pathable<_Source>;
-        using _CVT = _PathCVT<_SourceChar<_Source>>;
-        __append_sep_if_needed(_Traits::__first_or_null(__src));
-        _CVT::__append_source(__pn_, __src);
-        return *this;
+        return this->append(__src);
     }
 
     template <class _Source>
     _EnableIfPathable<_Source>
     append(const _Source& __src) {
-        return this->operator/=(__src);
+        using _Traits = __is_pathable<_Source>;
+        using _CVT = _PathCVT<_SourceChar<_Source>>;
+        __append_sep_if_needed(_Traits::__first_or_null(__src));
+        _CVT::__append_source(__pn_, __src);
+        return *this;
     }
 
     template <class _InputIt>
@@ -787,13 +785,6 @@ public:
         return *this;
     }
 
-    template <class _Source>
-    _EnableIfPathable<_Source>
-    operator+=(const _Source& __x)
-    {
-        _SourceCVT<_Source>::__append_source(__pn_, __x);
-        return *this;
-    }
 
     template <class _ECharT>
     typename enable_if<__can_convert_char<_ECharT>::value, path&>::type
@@ -807,14 +798,19 @@ public:
 
     template <class _Source>
     _EnableIfPathable<_Source>
-    concat(const _Source& __x)
-    {
-        return this->operator+=(__x);
+    operator+=(const _Source& __x) {
+       return this->concat(__x);
+    }
+
+    template <class _Source>
+    _EnableIfPathable<_Source>
+    concat(const _Source& __x){
+         _SourceCVT<_Source>::__append_source(__pn_, __x);
+        return *this;
     }
 
     template <class _InputIt>
-    path& concat(_InputIt __first, _InputIt __last)
-    {
+    path& concat(_InputIt __first, _InputIt __last) {
         typedef typename iterator_traits<_InputIt>::value_type _ItVal;
         _PathCVT<_ItVal>::__append_range(__pn_, __first, __last);
         return *this;
@@ -939,14 +935,13 @@ private:
     string_type __pn_;
 };
 
-
 inline _LIBCPP_ALWAYS_INLINE
-void swap(path& __lhs, path& __rhs) _NOEXCEPT
-{ __lhs.swap(__rhs); }
+void swap(path& __lhs, path& __rhs) _NOEXCEPT {
+    __lhs.swap(__rhs);
+}
 
-
-_LIBCPP_FUNC_VIS size_t hash_value(const path& __p) _NOEXCEPT;
-
+_LIBCPP_FUNC_VIS
+size_t hash_value(const path& __p) _NOEXCEPT;
 
 inline _LIBCPP_INLINE_VISIBILITY
 bool operator==(const path& __lhs, const path& __rhs) _NOEXCEPT
@@ -973,8 +968,7 @@ bool operator>=(const path& __lhs, const path& __rhs) _NOEXCEPT
 { return __lhs.compare(__rhs) >= 0; }
 
 inline _LIBCPP_INLINE_VISIBILITY
-path operator/(const path& __lhs, const path& __rhs)
-{
+path operator/(const path& __lhs, const path& __rhs) {
     return path(__lhs) /= __rhs;
 }
 
@@ -984,12 +978,10 @@ typename enable_if<is_same<_CharT, char>::value &&
                    is_same<_Traits, char_traits<char>>::value,
                    basic_ostream<_CharT, _Traits>&
 >::type
-operator<<(basic_ostream<_CharT, _Traits>& __os, const path& __p)
-{
+operator<<(basic_ostream<_CharT, _Traits>& __os, const path& __p) {
     __os << std::__quoted(__p.native());
     return __os;
 }
-
 
 template <class _CharT, class _Traits>
 _LIBCPP_INLINE_VISIBILITY
@@ -997,8 +989,7 @@ typename enable_if<!is_same<_CharT, char>::value ||
                    !is_same<_Traits, char_traits<char>>::value,
                    basic_ostream<_CharT, _Traits>&
 >::type
-operator<<(basic_ostream<_CharT, _Traits>& __os, const path& __p)
-{
+operator<<(basic_ostream<_CharT, _Traits>& __os, const path& __p) {
     __os << std::__quoted(__p.string<_CharT, _Traits>());
     return __os;
 }
@@ -1031,7 +1022,6 @@ u8path(_InputIt __f, _InputIt __l) {
         "u8path(Iter, Iter) requires Iter have a value_type of type 'char'");
     return path(__f, __l);
 }
-
 
 class _LIBCPP_TYPE_VIS path::iterator
 {
@@ -1097,15 +1087,13 @@ private:
 };
 
 inline _LIBCPP_INLINE_VISIBILITY
-bool operator==(const path::iterator& __lhs, const path::iterator& __rhs)
-{
+bool operator==(const path::iterator& __lhs, const path::iterator& __rhs) {
     return __lhs.__path_ptr_ == __rhs.__path_ptr_ &&
            __lhs.__pos_      == __rhs.__pos_;
 }
 
 inline _LIBCPP_INLINE_VISIBILITY
-bool operator!=(const path::iterator& __lhs, const path::iterator& __rhs)
-{
+bool operator!=(const path::iterator& __lhs, const path::iterator& __rhs) {
     return !(__lhs == __rhs);
 }
 
@@ -1143,7 +1131,7 @@ public:
     }
 
     _LIBCPP_FUNC_VIS
-    ~filesystem_error() override;
+    ~filesystem_error() override; // key function
 
     // TODO(ericwf): Create a custom error message.
     //const char* what() const _NOEXCEPT;
@@ -1152,7 +1140,6 @@ private:
     typedef pair<path, path> _Storage;
     shared_ptr<_Storage> __paths_;
 };
-
 
 // operational functions
 
@@ -1376,7 +1363,6 @@ void create_symlink(const path& __to, const path& __new, error_code& __ec) _NOEX
     return __create_symlink(__to, __new, &__ec);
 }
 
-
 inline _LIBCPP_INLINE_VISIBILITY
 bool status_known(file_status __s) _NOEXCEPT {
     return __s.type() != file_type::none;
@@ -1472,8 +1458,15 @@ bool is_directory(const path& __p, error_code& __ec) _NOEXCEPT {
     return is_directory(__status(__p, &__ec));
 }
 
-bool is_empty(const path&);
-bool is_empty(const path&, error_code&) _NOEXCEPT;
+inline _LIBCPP_INLINE_VISIBILITY
+bool is_empty(const path& __p) {
+    return __fs_is_empty(__p);
+}
+
+inline _LIBCPP_INLINE_VISIBILITY
+bool is_empty(const path& __p, error_code& __ec) _NOEXCEPT {
+    return __fs_is_empty(__p, &__ec);
+}
 
 inline _LIBCPP_INLINE_VISIBILITY
 bool is_fifo(file_status __s) _NOEXCEPT {
@@ -1682,7 +1675,6 @@ path temp_directory_path(error_code& __ec) {
 
 class directory_entry
 {
-private:
     typedef _VSTD_FS::path _Path;
 
 public:
@@ -1837,9 +1829,12 @@ private:
     friend class recursive_directory_iterator;
 
     // construct the dir_stream
+    _LIBCPP_FUNC_VIS
     directory_iterator(const path&, error_code *);
+    _LIBCPP_FUNC_VIS
     directory_iterator& __increment(error_code * __ec = nullptr);
     // convert iterator into end iterator
+    _LIBCPP_FUNC_VIS
     void __make_end();
 
 private:
@@ -1850,14 +1845,12 @@ private:
 
 // enable directory_iterator range-based for statements
 inline _LIBCPP_INLINE_VISIBILITY
-directory_iterator begin(directory_iterator __iter) _NOEXCEPT
-{
+directory_iterator begin(directory_iterator __iter) _NOEXCEPT {
     return __iter;
 }
 
 inline _LIBCPP_INLINE_VISIBILITY
-directory_iterator end(const directory_iterator&) _NOEXCEPT
-{
+directory_iterator end(const directory_iterator&) _NOEXCEPT {
     return directory_iterator();
 }
 

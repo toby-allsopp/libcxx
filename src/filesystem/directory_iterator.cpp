@@ -5,7 +5,7 @@
 
 _LIBCPP_BEGIN_NAMESPACE_EXPERIMENTAL_FILESYSTEM
 
-namespace detail { namespace {
+namespace { namespace detail {
 
 inline error_code capture_errno() {
     _LIBCPP_ASSERT(errno, "Expected errno to be non-zero");
@@ -14,8 +14,7 @@ inline error_code capture_errno() {
 
 typedef path::string_type string_type;
 
-inline DIR *posix_opendir(const string_type& p, error_code *ec)
-{
+inline DIR *posix_opendir(const string_type& p, error_code *ec) {
     DIR *ret;
     if ((ret = ::opendir(p.c_str())) == nullptr) {
         error_code m_ec = capture_errno();
@@ -30,11 +29,9 @@ inline DIR *posix_opendir(const string_type& p, error_code *ec)
     return ret;
 }
 
-inline string_type posix_readdir_r(DIR *dir_stream, error_code *ec)
-{
+inline string_type posix_readdir_r(DIR *dir_stream, error_code *ec) {
     struct dirent dir_entry;
     struct dirent *dir_entry_ptr{nullptr};
-    
     int ret;
     if ((ret = ::readdir_r(dir_stream,  &dir_entry,  &dir_entry_ptr)) != 0)
     {
@@ -51,8 +48,7 @@ inline string_type posix_readdir_r(DIR *dir_stream, error_code *ec)
     return string_type{dir_entry.d_name};
 }
 
-inline void posix_closedir(DIR *dir_stream,  error_code *ec)
-{
+inline void posix_closedir(DIR *dir_stream,  error_code *ec) {
     if (::closedir(dir_stream) == -1) {
         error_code m_ec = capture_errno();
         if (ec) {
@@ -170,12 +166,9 @@ recursive_directory_iterator::recursive_directory_iterator(const path& p,
 {
     __options_ = opt;
     auto curr_iter = directory_iterator{p, ec};
-    if ((ec && *ec) || curr_iter == directory_iterator{}) return;
-        
-    __stack_ptr_ = std::make_shared<
-                    std::stack<directory_iterator> 
-                    >();
-
+    if ((ec && *ec) || curr_iter == directory_iterator{})
+        return;
+    __stack_ptr_ = std::make_shared<stack<directory_iterator> >();
     __stack_ptr_->push(curr_iter);
     __entry_ = *curr_iter;
 }
@@ -184,43 +177,40 @@ recursive_directory_iterator&
 recursive_directory_iterator::__increment(error_code *ec)
 {
     if (!__stack_ptr_) return *this;
-    
-    if (__try_recursion(ec) || (ec && *ec)) {
+    if (__try_recursion(ec) || (ec && *ec))
         return *this;
-    }
-        
+
     const directory_iterator end_it;
-    while (__stack_ptr_->size() > 0)
-    {
+    while (__stack_ptr_->size() > 0) {
         __stack_ptr_->top().__increment(ec);
         if ((ec && *ec) || __stack_ptr_->top() != end_it)
             break;
-        
         __stack_ptr_->pop();
     }
-    
-    if ((ec && *ec) || __stack_ptr_->size() == 0) {
+
+    if ((ec && *ec) || __stack_ptr_->size() == 0)
         __make_end();
-    } else {
+    else {
         _LIBCPP_ASSERT(__stack_ptr_->top() != directory_iterator{}, "Popping empty stack");
         __entry_ = *__stack_ptr_->top();
     }
-        
+
     __rec_ = true;
     return *this;
 }
 
 bool recursive_directory_iterator::__try_recursion(error_code *ec) {
-    if (!__stack_ptr_ || __stack_ptr_->size() == 0 
-        || __stack_ptr_->top() == directory_iterator{})
-    { return false; }
-    
+    if (!__stack_ptr_ ||
+        __stack_ptr_->size() == 0 ||
+        __stack_ptr_->top() == directory_iterator{})
+        return false;
+
     auto& curr_it = __stack_ptr_->top();
-    
+
     using under_t = typename std::underlying_type<directory_options>::type;
-    bool rec_sym = static_cast<under_t>(options()) 
-        & static_cast<under_t>(directory_options::follow_directory_symlink);
-        
+    bool rec_sym = static_cast<under_t>(options()) &
+          static_cast<under_t>(directory_options::follow_directory_symlink);
+
     if (recursion_pending() && is_directory(curr_it->status()) &&
         (!is_symlink(curr_it->symlink_status()) || rec_sym))
     {
@@ -233,12 +223,11 @@ bool recursive_directory_iterator::__try_recursion(error_code *ec) {
             return true;
         }
     }
-    
+
     return false;
 }
 
-void recursive_directory_iterator::__make_end()
-{
+void recursive_directory_iterator::__make_end() {
     __stack_ptr_.reset();
     __entry_ = directory_entry{};
 }
