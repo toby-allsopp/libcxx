@@ -13,35 +13,16 @@
 
 // class path
 
-// 8.4.9 path decomposition [path.decompose]
-//------------------------------------------
-// path root_name() const;
-// path root_directory() const;
-// path root_path() const;
-// path relative_path() const;
-// path parent_path() const;
-// path filename() const;
-// path stem() const;
-// path extension() const;
-//-------------------------------
-// 8.4.10 path query [path.query]
-//-------------------------------
-// bool empty() const noexcept;
-// bool has_root_path() const;
-// bool has_root_name() const;
-// bool has_root_directory() const;
-// bool has_relative_path() const;
-// bool has_parent_path() const;
-// bool has_filename() const;
-// bool has_stem() const;
-// bool has_extension() const;
-// bool is_absolute() const;
-// bool is_relative() const;
-//-------------------------------
-// 8.5 path iterators [path.itr]
-//-------------------------------
-// iterator begin() const;
-// iterator end() const;
+// int compare(path const&) const noexcept;
+// int compare(string_type const&) const;
+// int compare(value_type const*) const;
+//
+// bool operator==(path const&, path const&) noexcept;
+// bool operator!=(path const&, path const&) noexcept;
+// bool operator< (path const&, path const&) noexcept;
+// bool operator<=(path const&, path const&) noexcept;
+// bool operator> (path const&, path const&) noexcept;
+// bool operator>=(path const&, path const&) noexcept;
 
 #include <experimental/filesystem>
 #include <type_traits>
@@ -98,15 +79,21 @@ int main()
     const int E = TC.expect;
     { // compare(...) functions
       DisableAllocationGuard g; // none of these operations should allocate
+
+      // check runtime results
       int ret1 = p1.compare(p2);
       int ret2 = p1.compare(R);
       int ret3 = p1.compare(TC.RHS);
       assert(ret1 == ret2 && ret1 == ret3);
       int normalized_ret = ret1 < 0 ? -1 : (ret1 > 0 ? 1 : 0);
       assert(normalized_ret == E);
+
+      // check signatures
+      ASSERT_NOEXCEPT(p1.compare(p2));
     }
     { // comparison operators
       DisableAllocationGuard g; // none of these operations should allocate
+
       // Check runtime result
       assert((p1 == p2) == (E == 0));
       assert((p1 != p2) == (E != 0));
@@ -114,6 +101,7 @@ int main()
       assert((p1 <= p2) == (E <= 0));
       assert((p1 >  p2) == (E >  0));
       assert((p1 >= p2) == (E >= 0));
+
       // Check signatures
       ASSERT_NOEXCEPT(p1 == p2);
       ASSERT_NOEXCEPT(p1 != p2);
