@@ -189,6 +189,7 @@ string_view extract_preferred(const string_type& s, size_t pos)
 ////////////////////////////////////////////////////////////////////////////////
 //                            path_view_iterator
 ////////////////////////////////////////////////////////////////////////////////
+namespace {
 
 struct path_view_iterator {
   const string_view __s_;
@@ -207,8 +208,8 @@ struct path_view_iterator {
   }
 
   path_view_iterator& operator--() {
-      decrement();
-      return *this;
+    decrement();
+    return *this;
   }
 
   void increment() {
@@ -266,6 +267,7 @@ path_view_iterator pend(path const& p) {
     return __p;
 }
 
+} // end namespace
 ///////////////////////////////////////////////////////////////////////////////
 //                            path definitions
 ///////////////////////////////////////////////////////////////////////////////

@@ -332,7 +332,8 @@ enum class _LIBCPP_TYPE_VIS copy_options : unsigned short
     skip_symlinks      = 32,
     directories_only   = 64,
     create_symlinks    = 128,
-    create_hard_links  = 256
+    create_hard_links  = 256,
+    __in_recursive_copy = 512,
 };
 
 _LIBCPP_INLINE_VISIBILITY
@@ -1171,6 +1172,50 @@ private:
 
 // operational functions
 
+
+path __canonical(const path& p, const path& base, error_code *ec=nullptr);
+
+void __copy(const path& from, const path& to, copy_options opt,
+        error_code *ec=nullptr);
+bool __copy_file(const path& from, const path& to, copy_options option,
+        error_code *ec=nullptr);
+void __copy_symlink(const path& existing_symlink, const path& new_symlink,
+        error_code *ec=nullptr);
+
+bool __create_directories(const path& p, error_code *ec=nullptr);
+bool __create_directory(const path& p, error_code *ec=nullptr);
+bool __create_directory(const path& p, const path & attributes,
+        error_code *ec=nullptr);
+void __create_directory_symlink(const path& to, const path& new_symlink,
+        error_code *ec=nullptr);
+void __create_hard_link(const path& to, const path& new_hard_link,
+        error_code *ec=nullptr);
+void __create_symlink(const path& to, const path& new_symlink,
+        error_code *ec=nullptr);
+path __current_path(error_code *ec=nullptr);
+void __current_path(const path& p, error_code *ec=nullptr);
+bool __equivalent(const path& p1, const path& p2,
+        error_code *ec=nullptr);
+uintmax_t __file_size(const path& p, error_code *ec=nullptr);
+uintmax_t __hard_link_count(const path& p, error_code *ec=nullptr);
+bool __fs_is_empty(const path& p, error_code *ec=nullptr);
+file_time_type __last_write_time(const path& p, error_code *ec=nullptr);
+void __last_write_time(const path& p, file_time_type new_time,
+        error_code *ec=nullptr);
+void __permissions(const path& p, perms prms, error_code *ec=nullptr);
+path __read_symlink(const path& p, error_code *ec=nullptr);
+bool __remove(const path& p, error_code *ec=nullptr);
+uintmax_t __remove_all(const path& p, error_code *ec=nullptr);
+void __rename(const path& from, const path& to, error_code *ec=nullptr);
+void __resize_file(const path& p, uintmax_t size, error_code *ec=nullptr);
+space_info __space(const path& p, error_code *ec=nullptr);
+file_status __status(const path& p, error_code *ec=nullptr);
+file_status __symlink_status(const path& p, error_code *ec=nullptr);
+path __system_complete(const path& p, error_code *ec=nullptr);
+path __temp_directory_path(error_code *ec=nullptr);
+path __unique_path(const path& model, error_code *ec=nullptr);
+
+
 path absolute(const path&);
 path absolute(const path&, const path&);
 
@@ -1505,11 +1550,11 @@ class recursive_directory_iterator
         { }
 
         recursive_directory_iterator(const path& p,
-            directory_options xoptions, std::error_code& ec) _NOEXCEPT
+            directory_options xoptions, error_code& ec) _NOEXCEPT
             : recursive_directory_iterator(p, xoptions, &ec)
         { }
 
-        recursive_directory_iterator(const path& p, std::error_code& ec) _NOEXCEPT
+        recursive_directory_iterator(const path& p, error_code& ec) _NOEXCEPT
             : recursive_directory_iterator(p, directory_options::none,  &ec)
         { }
 
@@ -1543,7 +1588,7 @@ class recursive_directory_iterator
             return cp;
         }
         
-        recursive_directory_iterator& increment(std::error_code& ec)
+        recursive_directory_iterator& increment(error_code& ec)
         { return __increment(&ec); }
 
         ////////////////////////////////////////////////////////////////////////
