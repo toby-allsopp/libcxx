@@ -618,9 +618,9 @@ union __hash_value_type
         {__nc = _VSTD::move(__v.__nc); return *this;}
 
     _LIBCPP_INLINE_VISIBILITY
-    __hash_value_type& operator=(value_type const& __v)
-        { __nc = __v; return *this; }
-
+    __hash_value_type& operator=(value_type const& __v) {
+        __nc = __v; return *this;
+    }
     _LIBCPP_INLINE_VISIBILITY
     ~__hash_value_type() {__cc.~value_type();}
 };
@@ -792,6 +792,9 @@ private:
     typedef __hash_map_node_destructor<__node_allocator>   _Dp;
     typedef unique_ptr<__node, _Dp>                         __node_holder;
     typedef allocator_traits<allocator_type>               __alloc_traits;
+
+    static_assert((is_same<typename __table::__container_value_type, value_type>::value), "");
+    static_assert((is_same<typename __table::__node_value_type, __value_type>::value), "");
 public:
     typedef typename __alloc_traits::pointer         pointer;
     typedef typename __alloc_traits::const_pointer   const_pointer;

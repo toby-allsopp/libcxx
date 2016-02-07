@@ -23,6 +23,9 @@
 #include "../../../test_compare.h"
 #include "../../../test_hash.h"
 #include "min_allocator.h"
+#include "test_macros.h"
+#include "test_types.h"
+
 
 int main()
 {
@@ -59,7 +62,8 @@ int main()
         assert(fabs(c.load_factor() - (float)c.size()/c.bucket_count()) < FLT_EPSILON);
         assert(c.max_load_factor() == 1);
     }
-#if __cplusplus >= 201103L
+#endif // _LIBCPP_HAS_NO_GENERALIZED_INITIALIZERS
+#if TEST_STD_VER >= 11
     {
         typedef min_allocator<std::pair<const int, std::string> > A;
         typedef std::unordered_map<int, std::string,
@@ -92,6 +96,24 @@ int main()
         assert(fabs(c.load_factor() - (float)c.size()/c.bucket_count()) < FLT_EPSILON);
         assert(c.max_load_factor() == 1);
     }
+    {
+        typedef CountingType<0> Key;
+        typedef CountingType<1> Value;
+        typedef std::pair<const Key, Value> ValueTp;
+        typedef std::allocator<std::pair<const int, std::string> > A;
+        typedef std::unordered_map<Key, Value> C;
+
+        ValueTp p1;
+        p1.first.allow_copies = 2;
+        p1.second.allow_copies = 2;
+        C c = { p1 };
+
+        ValueTp p;
+        // one copy into the initializer list, one copy into the container.
+        p.first.allow_copies = 2;
+        p.second.allow_copies = 2;
+        c = { p };
+    }
 #endif
-#endif  // _LIBCPP_HAS_NO_GENERALIZED_INITIALIZERS
+
 }
