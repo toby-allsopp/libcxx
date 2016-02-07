@@ -115,5 +115,26 @@ int main()
             assert(!r.second);
         }
     }
-
+    {
+        typedef int Key;
+        typedef int Value;
+        typedef std::pair<const Key, Value> ValueTp;
+        typedef test_construct_allocator<ValueTp, ValueTp> Alloc;
+        typedef std::unordered_map<Key, Value, std::hash<Key>, std::equal_to<Key>, Alloc> C;
+        typedef std::pair<C::iterator, bool> R;
+        ConstructController cc;
+        Alloc a(&cc);
+        C c(a);
+        const ValueTp p(42, 43); // const lvalue
+        cc.expect(makeArgumentID<const ValueTp &>());
+        R r = c.insert(p);
+        cc.disable();
+        assert(r.second);
+        {
+            DisableAllocationGuard g;
+            ValueTp p1(42, 43);
+            r = c.insert(p1);
+            assert(!r.second);
+        }
+    }
 }
