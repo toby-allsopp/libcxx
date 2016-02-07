@@ -31,6 +31,37 @@
 
 _LIBCPP_BEGIN_NAMESPACE_STD
 
+
+#if __cplusplus >= 201103L
+template <class _Key, class _Tp>
+union __hash_value_type;
+#else
+template <class _Key, class _Tp>
+struct __hash_value_type;
+#endif
+
+template <class _Tp, class _Up>
+struct __is_same_decay : is_same<typename __uncvref<_Tp>::type,
+                                  typename __uncvref<_Up>::type> {};
+
+
+#ifndef _LIBCPP_CXX03_MODE
+
+template <class _Tp>
+struct __is_hash_value_type_imp : false_type {};
+
+template <class _Key, class _Value>
+struct __is_hash_value_type_imp<__hash_value_type<_Key, _Value>> : true_type {};
+
+template <class ..._Args>
+struct __is_hash_value_type : false_type {};
+
+template <class _One>
+struct __is_hash_value_type<_One> : __is_hash_value_type_imp<typename __uncvref<_One>::type> {};
+#endif
+
+
+
 _LIBCPP_FUNC_VIS
 size_t __next_prime(size_t __n);
 
@@ -87,14 +118,6 @@ template <class _ConstNodePtr> class _LIBCPP_TYPE_VIS_ONLY __hash_const_local_it
 template <class _HashIterator> class _LIBCPP_TYPE_VIS_ONLY __hash_map_iterator;
 template <class _HashIterator> class _LIBCPP_TYPE_VIS_ONLY __hash_map_const_iterator;
 
-#if __cplusplus >= 201103L
-template <class _Key, class _Tp>
-union __hash_value_type;
-#else
-template <class _Key, class _Tp>
-struct __hash_value_type;
-#endif
-
 template <class _Tp>
 struct __key_value_types {
   static_assert(!is_reference<_Tp>::value && !is_const<_Tp>::value, "");
@@ -106,7 +129,19 @@ struct __key_value_types {
   static key_type const& __get_key(_Tp const& __v) {
     return __v;
   }
+  static __container_value_type const& __get_value(__node_value_type const& __v) {
+    return __v;
+  }
 
+#ifndef _LIBCPP_CXX03_MODE
+  static  __container_value_type&& __move(__node_value_type& __v) {
+    return _VSTD::move(__v);
+  }
+#else
+  static  __container_value_type& __move(__node_value_type& __v) {
+    return __v;
+  }
+#endif
   static __container_value_type* __get_ptr(__node_value_type& __n) {
     return _VSTD::addressof(__n);
   }
@@ -118,17 +153,41 @@ struct __key_value_types<__hash_value_type<_Key, _Tp> > {
   typedef _Tp                                          mapped_type;
   typedef __hash_value_type<_Key, _Tp>                 __node_value_type;
   typedef pair<const _Key, _Tp>                        __container_value_type;
+  typedef pair<_Key, _Tp>                              __nc_value_type;
   typedef __container_value_type                       __map_value_type;
   static const bool __is_map = true;
 
   static key_type const& __get_key(__container_value_type const& __v) {
     return __v.first;
   }
+  static key_type const& __get_key(__nc_value_type const& __v) {
+    return __v.first;
+  }
   static key_type const& __get_key(__node_value_type const& __v) {
     assert(false);
     return __v.__cc.__first;
   }
-
+  template <class _Up>
+  static typename enable_if<__is_same_decay<_Up, __node_value_type>::value,
+      __container_value_type const&>::type
+  __get_value(_Up& __t) {
+    return __t.__cc;
+  }
+  template <class _Up>
+  static typename enable_if<__is_same_decay<_Up, __container_value_type>::value,
+      __container_value_type const&>::type
+  __get_value(_Up& __t) {
+    return __t;
+  }
+#ifndef _LIBCPP_CXX03_MODE
+  static __nc_value_type&& __move(__node_value_type& __v) {
+    return _VSTD::move(__v.__nc);
+  }
+#else
+  static __container_value_type& __move(__node_value_type& __v) {
+    return __v.__cc;
+  }
+#endif
   static __container_value_type* __get_ptr(__node_value_type& __n) {
     return _VSTD::addressof(__n.__cc);
   }
@@ -808,6 +867,7 @@ class __hash_node_destructor
 public:
     typedef typename __alloc_traits::pointer                pointer;
 private:
+    typedef __hash_node_types<pointer> _NodeTypes;
 
     allocator_type& __na_;
 
@@ -827,7 +887,7 @@ public:
     void operator()(pointer __p) _NOEXCEPT
     {
         if (__value_constructed)
-            __alloc_traits::destroy(__na_, _VSTD::addressof(__p->__value_));
+            __alloc_traits::destroy(__na_, _NodeTypes::__get_ptr(__p->__value_));
         if (__p)
             __alloc_traits::deallocate(__na_, __p, 1);
     }
@@ -850,6 +910,7 @@ private:
       __make_hash_node_types<value_type, typename __alloc_traits::void_pointer>::type
                                                                      _NodeTypes;
 public:
+
     typedef typename _NodeTypes::__node_value_type           __node_value_type;
     typedef typename _NodeTypes::__container_value_type      __container_value_type;
     typedef value_type&                              reference;
@@ -995,30 +1056,41 @@ public:
     template <class... _Args>
         iterator __emplace_hint_multi(const_iterator __p, _Args&&... __args);
 
-    template <class _Key, class _ValueTp>
+    template <class _Key, class ..._Args>
     _LIBCPP_INLINE_VISIBILITY
-    pair<iterator, bool> __insert_unique_key_value(_Key const& __k, _ValueTp&& __x);
+    pair<iterator, bool> __emplace_unique_key_args(_Key const& __k, _Args&&... __args);
 
-    pair<iterator, bool> __insert_unique(__container_value_type&& __x);
+    pair<iterator, bool> __insert_unique(__container_value_type&& __x) {
+      return __emplace_unique_key_args(_NodeTypes::__get_key(__x), _VSTD::move(__x));
+    }
+
     template <class _Pp, class = typename enable_if< !is_same<typename __uncvref<_Pp>::type,
-                                                              __container_value_type
-                                  >::value>::type
+                                                      __container_value_type>::value>::type
     >
-    pair<iterator, bool> __insert_unique(_Pp&& __x);
+    pair<iterator, bool> __insert_unique(_Pp&& __x) {
+      return __emplace_unique(_VSTD::forward<_Pp>(__x));
+    }
 
     template <class _Pp>
-        iterator __insert_multi(_Pp&& __x);
+    iterator __insert_multi(_Pp&& __x) {
+      return __emplace_multi(_VSTD::forward<_Pp>(__x));
+    }
+
     template <class _Pp>
-        iterator __insert_multi(const_iterator __p, _Pp&& __x);
+    iterator __insert_multi(const_iterator __p, _Pp&& __x) {
+        return __emplace_hint_multi(__p, _VSTD::forward<_Pp>(__x));
+    }
 #else  // !defined(_LIBCPP_CXX03_MODE)
-    template <class _Key>
+    template <class _Key, class _Args>
      _LIBCPP_INLINE_VISIBILITY
-    pair<iterator, bool> __insert_unique_key_value(_Key const&, const __container_value_type& __x);
-    iterator __insert_multi(const value_type& __x);
-    iterator __insert_multi(const_iterator __p, const value_type& __x);
+    pair<iterator, bool> __emplace_unique_key_args(_Key const&, _Args& __args);
+    iterator __insert_multi(const __container_value_type& __x);
+    iterator __insert_multi(const_iterator __p, const __container_value_type& __x);
 #endif
 
-    pair<iterator, bool> __insert_unique(const __container_value_type& __x);
+    pair<iterator, bool> __insert_unique(const __container_value_type& __x) {
+        return __emplace_unique_key_args(_NodeTypes::__get_key(__x), __x);
+    }
 
 
     void clear() _NOEXCEPT;
@@ -1181,13 +1253,15 @@ private:
 
 #ifndef _LIBCPP_CXX03_MODE
     template <class ..._Args>
-        __node_holder __construct_node(_Args&& ...__args);
-    template <class _ValueTp>
-    __node_holder __construct_node_hash(size_t __hash, _ValueTp&& __v);
+    __node_holder __construct_node(_Args&& ...__args);
+
+    template <class _First, class ..._Rest>
+    __node_holder __construct_node_hash(size_t __hash, _First&& __f, _Rest&&... __rest);
 #else // _LIBCPP_CXX03_MODE
     __node_holder __construct_node(const __container_value_type& __v);
-#endif
     __node_holder __construct_node_hash(size_t __hash, const __container_value_type& __v);
+#endif
+
 
     _LIBCPP_INLINE_VISIBILITY
     void __copy_assign_alloc(const __hash_table& __u)
@@ -1413,7 +1487,7 @@ __hash_table<_Tp, _Hash, _Equal, _Alloc>::__deallocate(__node_pointer __np)
         }
         __get_db()->unlock();
 #endif
-        __node_traits::destroy(__na, _VSTD::addressof(__np->__value_));
+        __node_traits::destroy(__na, _NodeTypes::__get_ptr(__np->__value_));
         __node_traits::deallocate(__na, __np, 1);
         __np = __next;
     }
@@ -1505,8 +1579,7 @@ __hash_table<_Tp, _Hash, _Equal, _Alloc>::__move_assign(
         const_iterator __i = __u.begin();
         while (__u.size() != 0)
         {
-            __node_holder __h =
-                    __construct_node(_VSTD::move(__u.remove(__i++)->__value_));
+            __node_holder __h = __construct_node(_NodeTypes::__move(__u.remove(__i++)->__value_));
             __node_insert_multi(__h.get());
             __h.release();
         }
@@ -1536,6 +1609,11 @@ void
 __hash_table<_Tp, _Hash, _Equal, _Alloc>::__assign_unique(_InputIterator __first,
                                                           _InputIterator __last)
 {
+    typedef iterator_traits<_InputIterator> _ITraits;
+    typedef typename _ITraits::value_type _ItValueType;
+    static_assert((is_same<_ItValueType, __container_value_type>::value),
+                  "__assign_unique may only be called with the containers value type");
+
     if (bucket_count() != 0)
     {
         __node_pointer __cache = __detach();
@@ -1570,6 +1648,12 @@ void
 __hash_table<_Tp, _Hash, _Equal, _Alloc>::__assign_multi(_InputIterator __first,
                                                          _InputIterator __last)
 {
+    typedef iterator_traits<_InputIterator> _ITraits;
+    typedef typename _ITraits::value_type _ItValueType;
+    static_assert((is_same<_ItValueType, __container_value_type>::value ||
+                  is_same<_ItValueType, __node_value_type>::value),
+                  "__assign_multi may only be called with the containers value type"
+                  " or the nodes value type");
     if (bucket_count() != 0)
     {
         __node_pointer __cache = __detach();
@@ -1595,7 +1679,7 @@ __hash_table<_Tp, _Hash, _Equal, _Alloc>::__assign_multi(_InputIterator __first,
         __deallocate(__cache);
     }
     for (; __first != __last; ++__first)
-        __insert_multi(*__first);
+        __insert_multi(_NodeTypes::__get_value(*__first));
 }
 
 template <class _Tp, class _Hash, class _Equal, class _Alloc>
@@ -1825,21 +1909,19 @@ __hash_table<_Tp, _Hash, _Equal, _Alloc>::__node_insert_multi(
 
 #ifndef _LIBCPP_CXX03_MODE
 template <class _Tp, class _Hash, class _Equal, class _Alloc>
-template <class _Key, class _ValueTp>
+template <class _Key, class ..._Args>
 _LIBCPP_INLINE_VISIBILITY
 pair<typename __hash_table<_Tp, _Hash, _Equal, _Alloc>::iterator, bool>
-__hash_table<_Tp, _Hash, _Equal, _Alloc>::__insert_unique_key_value(_Key const& __k, _ValueTp&& __x)
+__hash_table<_Tp, _Hash, _Equal, _Alloc>::__emplace_unique_key_args(_Key const& __k, _Args&&... __args)
 #else
 template <class _Tp, class _Hash, class _Equal, class _Alloc>
-template <class _Key>
+template <class _Key, class _Args>
 _LIBCPP_INLINE_VISIBILITY
 pair<typename __hash_table<_Tp, _Hash, _Equal, _Alloc>::iterator, bool>
-__hash_table<_Tp, _Hash, _Equal, _Alloc>::__insert_unique_key_value(_Key const& __k, const __container_value_type& __x)
+__hash_table<_Tp, _Hash, _Equal, _Alloc>::__emplace_unique_key_args(_Key const& __k, _Args& __args)
 #endif
 {
-#if defined(_LIBCPP_CXX03_MODE)
-    typedef const __container_value_type& _ValueTp;
-#endif
+
     size_t __hash = hash_function()(__k);
     size_type __bc = bucket_count();
     bool __inserted = false;
@@ -1861,7 +1943,11 @@ __hash_table<_Tp, _Hash, _Equal, _Alloc>::__insert_unique_key_value(_Key const& 
         }
     }
     {
-        __node_holder __h = __construct_node_hash(__hash, _VSTD::forward<_ValueTp>(__x));
+#ifndef _LIBCPP_CXX03_MODE
+        __node_holder __h = __construct_node_hash(__hash, _VSTD::forward<_Args>(__args)...);
+#else
+        __node_holder __h = __construct_node_hash(__hash, __args);
+#endif
         if (size()+1 > __bc * max_load_factor() || __bc == 0)
         {
             rehash(_VSTD::max<size_type>(2 * __bc + !__is_hash_power2(__bc),
@@ -1940,70 +2026,12 @@ __hash_table<_Tp, _Hash, _Equal, _Alloc>::__emplace_hint_multi(
     __h.release();
     return __r;
 }
-#endif // _LIBCPP_CXX03_MODE
 
-
-template <class _Tp, class _Hash, class _Equal, class _Alloc>
-pair<typename __hash_table<_Tp, _Hash, _Equal, _Alloc>::iterator, bool>
-__hash_table<_Tp, _Hash, _Equal, _Alloc>::__insert_unique(const __container_value_type& __x)
-{
-    return __insert_unique_key_value(_NodeTypes::__get_key(__x), __x);
-}
-
-#ifndef _LIBCPP_CXX03_MODE
-
-template <class _Tp, class _Hash, class _Equal, class _Alloc>
-pair<typename __hash_table<_Tp, _Hash, _Equal, _Alloc>::iterator, bool>
-__hash_table<_Tp, _Hash, _Equal, _Alloc>::__insert_unique(__container_value_type&& __x)
-{
-    return __insert_unique_key_value(_NodeTypes::__get_key(__x), _VSTD::move(__x));
-}
-
-template <class _Tp, class _Hash, class _Equal, class _Alloc>
-template <class _Pp, class>
-pair<typename __hash_table<_Tp, _Hash, _Equal, _Alloc>::iterator, bool>
-__hash_table<_Tp, _Hash, _Equal, _Alloc>::__insert_unique(_Pp&& __x)
-{
-    __node_holder __h = __construct_node(_VSTD::forward<_Pp>(__x));
-    pair<iterator, bool> __r = __node_insert_unique(__h.get());
-    if (__r.second)
-        __h.release();
-    return __r;
-}
-
-template <class _Tp, class _Hash, class _Equal, class _Alloc>
-template <class _Pp>
-typename __hash_table<_Tp, _Hash, _Equal, _Alloc>::iterator
-__hash_table<_Tp, _Hash, _Equal, _Alloc>::__insert_multi(_Pp&& __x)
-{
-    __node_holder __h = __construct_node(_VSTD::forward<_Pp>(__x));
-    iterator __r = __node_insert_multi(__h.get());
-    __h.release();
-    return __r;
-}
-
-template <class _Tp, class _Hash, class _Equal, class _Alloc>
-template <class _Pp>
-typename __hash_table<_Tp, _Hash, _Equal, _Alloc>::iterator
-__hash_table<_Tp, _Hash, _Equal, _Alloc>::__insert_multi(const_iterator __p,
-                                                         _Pp&& __x)
-{
-#if _LIBCPP_DEBUG_LEVEL >= 2
-    _LIBCPP_ASSERT(__get_const_db()->__find_c_from_i(&__p) == this,
-        "unordered container::insert(const_iterator, rvalue) called with an iterator not"
-        " referring to this unordered container");
-#endif
-    __node_holder __h = __construct_node(_VSTD::forward<_Pp>(__x));
-    iterator __r = __node_insert_multi(__p, __h.get());
-    __h.release();
-    return __r;
-}
-
-#else  // _LIBCPP_CXX03_MODE
+#else // _LIBCPP_CXX03_MODE
 
 template <class _Tp, class _Hash, class _Equal, class _Alloc>
 typename __hash_table<_Tp, _Hash, _Equal, _Alloc>::iterator
-__hash_table<_Tp, _Hash, _Equal, _Alloc>::__insert_multi(const value_type& __x)
+__hash_table<_Tp, _Hash, _Equal, _Alloc>::__insert_multi(const __container_value_type& __x)
 {
     __node_holder __h = __construct_node(__x);
     iterator __r = __node_insert_multi(__h.get());
@@ -2014,7 +2042,7 @@ __hash_table<_Tp, _Hash, _Equal, _Alloc>::__insert_multi(const value_type& __x)
 template <class _Tp, class _Hash, class _Equal, class _Alloc>
 typename __hash_table<_Tp, _Hash, _Equal, _Alloc>::iterator
 __hash_table<_Tp, _Hash, _Equal, _Alloc>::__insert_multi(const_iterator __p,
-                                                         const value_type& __x)
+                                                         const __container_value_type& __x)
 {
 #if _LIBCPP_DEBUG_LEVEL >= 2
     _LIBCPP_ASSERT(__get_const_db()->__find_c_from_i(&__p) == this,
@@ -2027,7 +2055,7 @@ __hash_table<_Tp, _Hash, _Equal, _Alloc>::__insert_multi(const_iterator __p,
     return __r;
 }
 
-#endif  // !_LIBCPP_CXX03_MODE
+#endif  // _LIBCPP_CXX03_MODE
 
 template <class _Tp, class _Hash, class _Equal, class _Alloc>
 void
@@ -2173,6 +2201,8 @@ template <class ..._Args>
 typename __hash_table<_Tp, _Hash, _Equal, _Alloc>::__node_holder
 __hash_table<_Tp, _Hash, _Equal, _Alloc>::__construct_node(_Args&& ...__args)
 {
+    static_assert(!__is_hash_value_type<_Args...>::value,
+                  "Construct cannot be called with a hash value type");
     __node_allocator& __na = __node_alloc();
     __node_holder __h(__node_traits::allocate(__na, 1), _Dp(__na));
     __node_traits::construct(__na, _NodeTypes::__get_ptr(__h->__value_), _VSTD::forward<_Args>(__args)...);
@@ -2183,13 +2213,18 @@ __hash_table<_Tp, _Hash, _Equal, _Alloc>::__construct_node(_Args&& ...__args)
 }
 
 template <class _Tp, class _Hash, class _Equal, class _Alloc>
-template <class _ValueTp>
+template <class _First, class ..._Rest>
 typename __hash_table<_Tp, _Hash, _Equal, _Alloc>::__node_holder
-__hash_table<_Tp, _Hash, _Equal, _Alloc>::__construct_node_hash(size_t __hash, _ValueTp&& __v)
+__hash_table<_Tp, _Hash, _Equal, _Alloc>::__construct_node_hash(
+    size_t __hash, _First&& __f, _Rest&& ...__rest)
 {
+    static_assert(!__is_hash_value_type<_First, _Rest...>::value,
+                  "Construct cannot be called with a hash value type");
     __node_allocator& __na = __node_alloc();
     __node_holder __h(__node_traits::allocate(__na, 1), _Dp(__na));
-    __node_traits::construct(__na, _NodeTypes::__get_ptr(__h->__value_), _VSTD::forward<_ValueTp>(__v));
+    __node_traits::construct(__na, _NodeTypes::__get_ptr(__h->__value_),
+                             _VSTD::forward<_First>(__f),
+                             _VSTD::forward<_Rest>(__rest)...);
     __h.get_deleter().__value_constructed = true;
     __h->__hash_ = __hash;
     __h->__next_ = nullptr;
@@ -2211,8 +2246,6 @@ __hash_table<_Tp, _Hash, _Equal, _Alloc>::__construct_node(const __container_val
     return _LIBCPP_EXPLICIT_MOVE(__h);  // explicitly moved for C++03
 }
 
-#endif  // _LIBCPP_CXX03_MODE
-
 template <class _Tp, class _Hash, class _Equal, class _Alloc>
 typename __hash_table<_Tp, _Hash, _Equal, _Alloc>::__node_holder
 __hash_table<_Tp, _Hash, _Equal, _Alloc>::__construct_node_hash(size_t __hash,
@@ -2226,6 +2259,8 @@ __hash_table<_Tp, _Hash, _Equal, _Alloc>::__construct_node_hash(size_t __hash,
     __h->__next_ = nullptr;
     return _LIBCPP_EXPLICIT_MOVE(__h);  // explicitly moved for C++03
 }
+
+#endif  // _LIBCPP_CXX03_MODE
 
 template <class _Tp, class _Hash, class _Equal, class _Alloc>
 typename __hash_table<_Tp, _Hash, _Equal, _Alloc>::iterator
