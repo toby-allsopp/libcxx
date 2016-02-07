@@ -829,6 +829,8 @@ private:
       __make_hash_node_types<value_type, typename __alloc_traits::void_pointer>::type
                                                                      _NodeTypes;
 public:
+    typedef typename _NodeTypes::__node_value_type           __node_value_type;
+    typedef typename _NodeTypes::__container_value_type      __container_value_type;
     typedef value_type&                              reference;
     typedef const value_type&                        const_reference;
     typedef typename __alloc_traits::pointer         pointer;
@@ -964,41 +966,35 @@ public:
     iterator             __node_insert_multi(const_iterator __p,
                                              __node_pointer __nd);
 
-#if !defined(_LIBCPP_HAS_NO_RVALUE_REFERENCES) && !defined(_LIBCPP_HAS_NO_VARIADICS)
+#ifndef _LIBCPP_CXX03_MODE
     template <class... _Args>
         pair<iterator, bool> __emplace_unique(_Args&&... __args);
     template <class... _Args>
         iterator __emplace_multi(_Args&&... __args);
     template <class... _Args>
         iterator __emplace_hint_multi(const_iterator __p, _Args&&... __args);
-#endif  // !defined(_LIBCPP_HAS_NO_RVALUE_REFERENCES) && !defined(_LIBCPP_HAS_NO_VARIADICS)
 
-#ifndef _LIBCPP_HAS_NO_RVALUE_REFERENCES
     template <class _ValueTp>
     _LIBCPP_INLINE_VISIBILITY
     pair<iterator, bool> __insert_unique_value(_ValueTp&& __x);
-#else
-    _LIBCPP_INLINE_VISIBILITY
-    pair<iterator, bool> __insert_unique_value(const value_type& __x);
-#endif
 
-    pair<iterator, bool> __insert_unique(const value_type& __x);
-
-#ifndef _LIBCPP_HAS_NO_RVALUE_REFERENCES
     pair<iterator, bool> __insert_unique(value_type&& __x);
     template <class _Pp>
     pair<iterator, bool> __insert_unique(_Pp&& __x);
-#endif  // _LIBCPP_HAS_NO_RVALUE_REFERENCES
 
-#ifndef _LIBCPP_HAS_NO_RVALUE_REFERENCES
     template <class _Pp>
         iterator __insert_multi(_Pp&& __x);
     template <class _Pp>
         iterator __insert_multi(const_iterator __p, _Pp&& __x);
-#else  // _LIBCPP_HAS_NO_RVALUE_REFERENCES
+#else  // !defined(_LIBCPP_CXX03_MODE)
+     _LIBCPP_INLINE_VISIBILITY
+    pair<iterator, bool> __insert_unique_value(const value_type& __x);
     iterator __insert_multi(const value_type& __x);
     iterator __insert_multi(const_iterator __p, const value_type& __x);
-#endif  // _LIBCPP_HAS_NO_RVALUE_REFERENCES
+#endif
+
+    pair<iterator, bool> __insert_unique(const value_type& __x);
+
 
     void clear() _NOEXCEPT;
     void rehash(size_type __n);
@@ -1810,7 +1806,7 @@ __hash_table<_Tp, _Hash, _Equal, _Alloc>::__insert_unique(const value_type& __x)
 }
 
 
-#ifndef _LIBCPP_HAS_NO_RVALUE_REFERENCES
+#ifndef _LIBCPP_CXX03_MODE
 template <class _Tp, class _Hash, class _Equal, class _Alloc>
 template <class _ValueTp>
 _LIBCPP_INLINE_VISIBILITY
@@ -1823,7 +1819,7 @@ pair<typename __hash_table<_Tp, _Hash, _Equal, _Alloc>::iterator, bool>
 __hash_table<_Tp, _Hash, _Equal, _Alloc>::__insert_unique_value(const value_type& __x)
 #endif
 {
-#if defined(_LIBCPP_HAS_NO_RVALUE_REFERENCES)
+#if defined(_LIBCPP_CXX03_MODE)
     typedef const value_type& _ValueTp;
 #endif
     size_t __hash = hash_function()(__x);
@@ -1885,8 +1881,7 @@ __done:
 #endif
 }
 
-#ifndef _LIBCPP_HAS_NO_RVALUE_REFERENCES
-#ifndef _LIBCPP_HAS_NO_VARIADICS
+#ifndef _LIBCPP_CXX03_MODE
 
 template <class _Tp, class _Hash, class _Equal, class _Alloc>
 template <class... _Args>
@@ -1928,8 +1923,6 @@ __hash_table<_Tp, _Hash, _Equal, _Alloc>::__emplace_hint_multi(
     return __r;
 }
 
-#endif  // _LIBCPP_HAS_NO_VARIADICS
-
 template <class _Tp, class _Hash, class _Equal, class _Alloc>
 pair<typename __hash_table<_Tp, _Hash, _Equal, _Alloc>::iterator, bool>
 __hash_table<_Tp, _Hash, _Equal, _Alloc>::__insert_unique(value_type&& __x)
@@ -1948,10 +1941,6 @@ __hash_table<_Tp, _Hash, _Equal, _Alloc>::__insert_unique(_Pp&& __x)
         __h.release();
     return __r;
 }
-
-#endif  // _LIBCPP_HAS_NO_RVALUE_REFERENCES
-
-#ifndef _LIBCPP_HAS_NO_RVALUE_REFERENCES
 
 template <class _Tp, class _Hash, class _Equal, class _Alloc>
 template <class _Pp>
@@ -1981,7 +1970,7 @@ __hash_table<_Tp, _Hash, _Equal, _Alloc>::__insert_multi(const_iterator __p,
     return __r;
 }
 
-#else  // _LIBCPP_HAS_NO_RVALUE_REFERENCES
+#else  // _LIBCPP_CXX03_MODE
 
 template <class _Tp, class _Hash, class _Equal, class _Alloc>
 typename __hash_table<_Tp, _Hash, _Equal, _Alloc>::iterator
@@ -2009,7 +1998,7 @@ __hash_table<_Tp, _Hash, _Equal, _Alloc>::__insert_multi(const_iterator __p,
     return __r;
 }
 
-#endif  // _LIBCPP_HAS_NO_RVALUE_REFERENCES
+#endif  // !_LIBCPP_CXX03_MODE
 
 template <class _Tp, class _Hash, class _Equal, class _Alloc>
 void

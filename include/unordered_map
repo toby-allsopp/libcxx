@@ -598,7 +598,7 @@ union __hash_value_type
 
     template <class ..._Args>
     _LIBCPP_INLINE_VISIBILITY
-    __hash_value_type(_Args&& ...__args)
+    explicit __hash_value_type(_Args&& ...__args)
         : __cc(std::forward<_Args>(__args)...) {}
 
     _LIBCPP_INLINE_VISIBILITY
@@ -616,6 +616,10 @@ union __hash_value_type
     _LIBCPP_INLINE_VISIBILITY
     __hash_value_type& operator=(__hash_value_type&& __v)
         {__nc = _VSTD::move(__v.__nc); return *this;}
+
+    _LIBCPP_INLINE_VISIBILITY
+    __hash_value_type& operator=(value_type const& __v)
+        { __nc = __v; return *this; }
 
     _LIBCPP_INLINE_VISIBILITY
     ~__hash_value_type() {__cc.~value_type();}

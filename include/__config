@@ -849,7 +849,15 @@ extern "C" void __sanitizer_annotate_contiguous_container(
 
 #ifndef _LIBCPP_DISABLE_UBSAN_UNSIGNED_INTEGER_CHECK
 #define _LIBCPP_DISABLE_UBSAN_UNSIGNED_INTEGER_CHECK
-#endif 
+#endif
+
+#if __cplusplus < 201103L
+#define _LIBCPP_CXX03_MODE
+#else
+#if defined(_LIBCPP_HAS_NO_VARIADIC_TEMPLATES) || defined(_LIBCPP_HAS_NO_RVALUE_REFERENCES)
+#error Compiler not supported!
+#endif
+#endif
 
 #endif // __cplusplus
 
