@@ -26,7 +26,144 @@
 #include "test_types.h"
 
 template <class Container>
-void testContainer()
+void testContainerInsert()
+{
+    typedef typename Container::value_type ValueTp;
+    typedef test_construct_allocator<ValueTp, ValueTp> Alloc;
+    typedef Container C;
+    typedef typename C::allocator_type Alloc;
+    typedef std::pair<typename C::iterator, bool> R;
+    ConstructController* cc = getGlobalController();
+    Alloc a(cc);
+    {
+        cc->reset();
+        C c(a);
+        int index = 1;
+        {
+          const int my_index = index++;
+          const ValueTp v(my_index, 1);
+          cc->expect<const ValueTp&>();
+          assert(c.insert(v).second);
+          assert(!cc->unchecked());
+          {
+            DisableAllocationGuard g;
+            const ValueTp v2(my_index, 1);
+            assert(c.insert(v2).second == false);
+          }
+        }
+        c.clear();
+
+        {
+          const int my_index = index++;
+          ValueTp v(my_index, 1);
+          cc->expect<const ValueTp&>();
+          assert(c.insert(v).second);
+          assert(!cc->unchecked());
+          {
+            DisableAllocationGuard g;
+            ValueTp v2(my_index, 1);
+            assert(c.insert(v2).second == false);
+          }
+        }
+        c.clear();
+
+        {
+          const int my_index = index++;
+          ValueTp v(my_index, 2);
+          cc->expect<ValueTp&&>();
+          assert(c.insert(std::move(v)).second);
+          assert(!cc->unchecked());
+          {
+            DisableAllocationGuard g;
+            ValueTp v2(my_index, 1);
+            assert(c.insert(std::move(v2)).second == false);
+          }
+        }
+        c.clear();
+
+        {
+          std::initializer_list<ValueTp> il = { {1, 1}, {2, 1} };
+          cc->expect<ValueTp const&>(2);
+          c.insert(il);
+          assert(!cc->unchecked());
+          {
+            DisableAllocationGuard g;
+            c.insert(il);
+          }
+        }
+        c.clear();
+        {
+          const ValueTp ValueList[] = { {1, 1}, {2, 1} , {3, 1} };
+          cc->expect<ValueTp const&>(3);
+          c.insert(std::begin(ValueList), std::end(ValueList));
+          assert(!cc->unchecked());
+          {
+            DisableAllocationGuard g;
+            c.insert(std::begin(ValueList), std::end(ValueList));
+          }
+        }
+        c.clear();
+        {
+          ValueTp ValueList[] = { {1, 1}, {2, 1} , {3, 1} };
+          cc->expect<ValueTp&&>(3);
+          c.insert(std::move_iterator<ValueTp*>(std::begin(ValueList)),
+                   std::move_iterator<ValueTp*>(std::end(ValueList)));
+          assert(!cc->unchecked());
+          {
+            //ValueTp ValueList[] = { {1, 1}, {2, 1} , {3, 1} };
+            DisableAllocationGuard g;
+            ValueTp ValueList2[] = { {1, 1}, {2, 1} , {3, 1} };
+            c.insert(std::move_iterator<ValueTp*>(std::begin(ValueList2)),
+                     std::move_iterator<ValueTp*>(std::end(ValueList2)));
+          }
+        }
+        c.clear();
+        {
+          ValueTp ValueList[] = { {1, 1}, {2, 1} , {3, 1} };
+          cc->expect<ValueTp const&>(3);
+          c.insert(std::begin(ValueList), std::end(ValueList));
+          assert(!cc->unchecked());
+          {
+            DisableAllocationGuard g;
+            c.insert(std::begin(ValueList), std::end(ValueList));
+          }
+        }
+        c.clear();
+        /*
+        {
+          const int my_index = index++;
+          ValueTp v(my_index, 2);
+          cc->expect<ValueTp&&>();
+          assert(c.emplace(std::move(v)).second);
+          assert(!cc->unchecked());
+          {
+            DisableAllocationGuard g;
+            ValueTp v2(my_index, 1);
+            assert(c.emplace(std::move(v2)).second == false);
+          }
+        }
+        c.clear();
+
+        {
+          const int my_index = index++;
+          ValueTp v(my_index, 2);
+          cc->expect<ValueTp&&>();
+          assert(c.emplace(std::move(v)).second);
+          assert(!cc->unchecked());
+          {
+            DisableAllocationGuard g;
+
+            ValueTp v2(my_index, 1);
+            assert(c.emplace(std::move(v2)).second == false);
+          }
+        }
+         */
+    }
+}
+
+
+template <class Container>
+void testContainerInsert()
 {
     typedef typename Container::value_type ValueTp;
     typedef test_construct_allocator<ValueTp, ValueTp> Alloc;
