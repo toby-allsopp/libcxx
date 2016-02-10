@@ -17,12 +17,25 @@
 
 #include <unordered_map>
 #include <unordered_set>
+#include <iostream>
 #include <cassert>
 
 #include "count_new.hpp"
 #include "min_allocator.h"
 #include "test_macros.h"
 #include "container_test_types.h"
+
+#if TEST_STD_VER >= 11
+template <class Arg>
+void PrintInfo(int line, Arg&& arg)
+#else
+template <class Arg>
+void PrintInfo(int line, Arg arg)
+#endif
+{
+  std::cout << "In " << __FILE__ << ":" << line << ":\n    " << arg << "\n" << std::endl;
+}
+#define PRINT(...) PrintInfo(__LINE__, __VA_ARGS__)
 
 template <class Container>
 void testContainerInsert()
@@ -35,6 +48,7 @@ void testContainerInsert()
     ConstructController* cc = getGlobalController();
     Alloc a(cc);
     {
+        PRINT("Testing C::insert(const value_type&)");
         cc->reset();
         C c(a);
         int index = 1;
@@ -51,8 +65,8 @@ void testContainerInsert()
           }
         }
         c.clear();
-
         {
+          PRINT("Testing C::insert(value_type&)");
           const int my_index = index++;
           ValueTp v(my_index, 1);
           cc->expect<const ValueTp&>();
@@ -67,6 +81,7 @@ void testContainerInsert()
         c.clear();
 
         {
+          PRINT("Testing C::insert(value_type&&)");
           const int my_index = index++;
           ValueTp v(my_index, 2);
           cc->expect<ValueTp&&>();
@@ -79,8 +94,8 @@ void testContainerInsert()
           }
         }
         c.clear();
-
         {
+          PRINT("Testing C::insert(std::initializer_list<ValueTp>)");
           std::initializer_list<ValueTp> il = { {1, 1}, {2, 1} };
           cc->expect<ValueTp const&>(2);
           c.insert(il);
@@ -92,6 +107,7 @@ void testContainerInsert()
         }
         c.clear();
         {
+          PRINT("Testing C::insert(Iter, Iter) for *Iter = value_type const&");
           const ValueTp ValueList[] = { {1, 1}, {2, 1} , {3, 1} };
           cc->expect<ValueTp const&>(3);
           c.insert(std::begin(ValueList), std::end(ValueList));
@@ -103,6 +119,7 @@ void testContainerInsert()
         }
         c.clear();
         {
+          PRINT("Testing C::insert(Iter, Iter) for *Iter = value_type&&");
           ValueTp ValueList[] = { {1, 1}, {2, 1} , {3, 1} };
           cc->expect<ValueTp&&>(3);
           c.insert(std::move_iterator<ValueTp*>(std::begin(ValueList)),
@@ -118,6 +135,7 @@ void testContainerInsert()
         }
         c.clear();
         {
+          PRINT("Testing C::insert(Iter, Iter) for *Iter = value_type&");
           ValueTp ValueList[] = { {1, 1}, {2, 1} , {3, 1} };
           cc->expect<ValueTp const&>(3);
           c.insert(std::begin(ValueList), std::end(ValueList));

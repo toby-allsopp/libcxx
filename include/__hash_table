@@ -1079,6 +1079,12 @@ public:
     template <class _Key, class _Args>
      _LIBCPP_INLINE_VISIBILITY
     pair<iterator, bool> __emplace_unique_key_args(_Key const&, _Args& __args);
+
+    _LIBCPP_INLINE_VISIBILITY
+    pair<iterator, bool> __emplace_unique(const __container_value_type& __x) {
+      return __emplace_unique_key_args(_NodeTypes::__get_key(__x), __x);
+    }
+
     iterator __insert_multi(const __container_value_type& __x);
     iterator __insert_multi(const_iterator __p, const __container_value_type& __x);
 #endif
@@ -1086,7 +1092,6 @@ public:
     pair<iterator, bool> __insert_unique(const __container_value_type& __x) {
         return __emplace_unique_key_args(_NodeTypes::__get_key(__x), __x);
     }
-
 
     void clear() _NOEXCEPT;
     void rehash(size_type __n);
