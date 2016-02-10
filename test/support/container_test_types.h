@@ -1,5 +1,5 @@
-#ifndef SUPPORT_TEST_TYPES_H
-#define SUPPORT_TEST_TYPES_H
+#ifndef SUPPORT_CONTAINER_TEST_TYPES_H
+#define SUPPORT_CONTAINER_TEST_TYPES_H
 
 #include <functional>
 #include <cassert>
@@ -382,4 +382,4 @@ bool operator!=(MoveInsertible<ID> const& L, MoveInsertible<ID> const& R) {
 
 #endif // TEST_STD_VER >= 11
 
-#endif // SUPPORT_TEST_TYPES_H
+#endif // SUPPORT_CONTAINER_TEST_TYPES_H
