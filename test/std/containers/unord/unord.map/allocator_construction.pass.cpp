@@ -17,13 +17,12 @@
 
 #include <unordered_map>
 #include <unordered_set>
-#include <map>
 #include <cassert>
 
 #include "count_new.hpp"
 #include "min_allocator.h"
 #include "test_macros.h"
-#include "test_types.h"
+#include "container_test_types.h"
 
 template <class Container>
 void testContainerInsert()
@@ -129,41 +128,13 @@ void testContainerInsert()
           }
         }
         c.clear();
-        /*
-        {
-          const int my_index = index++;
-          ValueTp v(my_index, 2);
-          cc->expect<ValueTp&&>();
-          assert(c.emplace(std::move(v)).second);
-          assert(!cc->unchecked());
-          {
-            DisableAllocationGuard g;
-            ValueTp v2(my_index, 1);
-            assert(c.emplace(std::move(v2)).second == false);
-          }
-        }
-        c.clear();
 
-        {
-          const int my_index = index++;
-          ValueTp v(my_index, 2);
-          cc->expect<ValueTp&&>();
-          assert(c.emplace(std::move(v)).second);
-          assert(!cc->unchecked());
-          {
-            DisableAllocationGuard g;
-
-            ValueTp v2(my_index, 1);
-            assert(c.emplace(std::move(v2)).second == false);
-          }
-        }
-         */
     }
 }
 
 
 template <class Container>
-void testContainerInsert()
+void testContainerEmplace()
 {
     typedef typename Container::value_type ValueTp;
     typedef test_construct_allocator<ValueTp, ValueTp> Alloc;
@@ -309,11 +280,8 @@ int main()
     typedef std::unordered_set<Value, DataHasher<Value>, std::equal_to<Value>,
                                 test_construct_allocator<Value, Value>
         > Container2;
-    typedef std::map<Key, Value, std::less<Key>,
-                                test_construct_allocator<ValueTp, ValueTp>
-        > Container3;
 
-    testContainer<Container>();
-    testContainer<Container2>();
+    testContainerInsert<Container>();
+    testContainerInsert<Container2>();
   }
 }
