@@ -583,8 +583,7 @@ public:
     }
 };
 
-#if __cplusplus >= 201103L
-
+#ifndef _LIBCPP_CXX03_MODE
 template <class _Key, class _Tp>
 union __hash_value_type
 {
