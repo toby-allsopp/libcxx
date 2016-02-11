@@ -1956,11 +1956,11 @@ __hash_table<_Tp, _Hash, _Equal, _Alloc>::__emplace_unique_key_args(_Key const& 
         __node_pointer __pn = __bucket_list_[__chash];
         if (__pn == nullptr)
         {
-            __pn = static_cast<__node_pointer>(static_cast<__void_pointer>(pointer_traits<__node_base_pointer>::pointer_to(__p1_.first())));
-            __h->__next_ = __pn->__next_;
-            __pn->__next_ = __h.get();
+            __node_base_pointer __pnb = pointer_traits<__node_base_pointer>::pointer_to(__p1_.first());
+            __h->__next_ = __pnb->__next_;
+            __pnb->__next_ = __h.get();
             // fix up __bucket_list_
-            __bucket_list_[__chash] = __pn;
+            __bucket_list_[__chash] = static_cast<__node_pointer>(static_cast<__void_pointer>(__pnb));
             if (__h->__next_ != nullptr)
                 __bucket_list_[__constrain_hash(__h->__next_->__hash_, __bc)] = __h.get();
         }
