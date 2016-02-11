@@ -852,7 +852,7 @@ extern "C" void __sanitizer_annotate_contiguous_container(
 #endif
 
 #if __cplusplus < 201103L
-#define _LIBCPP_CXX03_MODE
+#define _LIBCPP_CXX03_LANG
 #else
 #if defined(_LIBCPP_HAS_NO_VARIADIC_TEMPLATES) || defined(_LIBCPP_HAS_NO_RVALUE_REFERENCES)
 #error Compiler not supported!

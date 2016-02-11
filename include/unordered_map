@@ -583,7 +583,7 @@ public:
     }
 };
 
-#ifndef _LIBCPP_CXX03_MODE
+#ifndef _LIBCPP_CXX03_LANG
 template <class _Key, class _Tp>
 union __hash_value_type
 {
@@ -909,7 +909,7 @@ public:
     _LIBCPP_INLINE_VISIBILITY
     const_iterator cend()   const _NOEXCEPT {return __table_.end();}
 
-#ifndef _LIBCPP_CXX03_MODE
+#ifndef _LIBCPP_CXX03_LANG
     template <class... _Args>
     pair<iterator, bool> emplace(_Args&&... __args) {
         return __table_.__emplace_unique(_VSTD::forward<_Args>(__args)...);
@@ -926,7 +926,7 @@ public:
         return __table_.__emplace_unique(_VSTD::forward<_Args>(__args)...).first;
     }
 
-#endif // _LIBCPP_CXX03_MODE
+#endif // _LIBCPP_CXX03_LANG
 
     _LIBCPP_INLINE_VISIBILITY
     pair<iterator, bool> insert(const value_type& __x)
@@ -1184,9 +1184,9 @@ public:
 #endif  // _LIBCPP_DEBUG_LEVEL >= 2
 
 private:
-#ifndef _LIBCPP_CXX03_MODE
+#ifndef _LIBCPP_CXX03_LANG
     __node_holder __construct_node_with_key(key_type&& __k);
-#endif  // _LIBCPP_CXX03_MODE
+#endif  // _LIBCPP_CXX03_LANG
     __node_holder __construct_node_with_key(const key_type& __k);
 };
 
@@ -1395,7 +1395,7 @@ unordered_map<_Key, _Tp, _Hash, _Pred, _Alloc>::operator=(
 
 #endif  // _LIBCPP_HAS_NO_GENERALIZED_INITIALIZERS
 
-#ifndef _LIBCPP_CXX03_MODE
+#ifndef _LIBCPP_CXX03_LANG
 
 template <class _Key, class _Tp, class _Hash, class _Pred, class _Alloc>
 typename unordered_map<_Key, _Tp, _Hash, _Pred, _Alloc>::__node_holder
@@ -1694,7 +1694,7 @@ public:
     _LIBCPP_INLINE_VISIBILITY
     const_iterator cend()   const _NOEXCEPT {return __table_.end();}
 
-#ifndef _LIBCPP_CXX03_MODE
+#ifndef _LIBCPP_CXX03_LANG
     template <class... _Args>
     iterator emplace(_Args&&... __args) {
         return __table_.__emplace_multi(_VSTD::forward<_Args>(__args)...);
@@ -1704,7 +1704,7 @@ public:
     iterator emplace_hint(const_iterator __p, _Args&&... __args) {
         return __table_.__emplace_hint_multi(__p.__i_, _VSTD::forward<_Args>(__args)...);
     }
-#endif  // _LIBCPP_CXX03_MODE
+#endif  // _LIBCPP_CXX03_LANG
 
     _LIBCPP_INLINE_VISIBILITY
     iterator insert(const value_type& __x) {return __table_.__insert_multi(__x);}
