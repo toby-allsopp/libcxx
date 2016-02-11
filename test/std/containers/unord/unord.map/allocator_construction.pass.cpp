@@ -38,7 +38,7 @@ void PrintInfo(int line, Arg arg)
 #define PRINT(...) PrintInfo(__LINE__, __VA_ARGS__)
 
 template <class Container>
-void testContainerInsert()
+void testContainerInsertAndEmplaceValueType()
 {
     typedef typename Container::value_type ValueTp;
     typedef test_construct_allocator<ValueTp, ValueTp> Alloc;
@@ -79,7 +79,6 @@ void testContainerInsert()
           }
         }
         c.clear();
-
         {
           PRINT("Testing C::insert(value_type&&)");
           const int my_index = index++;
@@ -91,6 +90,76 @@ void testContainerInsert()
             DisableAllocationGuard g;
             ValueTp v2(my_index, 1);
             assert(c.insert(std::move(v2)).second == false);
+          }
+        }
+        c.clear();
+        {
+          PRINT("Testing C::insert(value_type const&&)");
+          const int my_index = index++;
+          const ValueTp v(my_index, 2);
+          cc->expect<ValueTp const&>();
+          assert(c.insert(std::move(v)).second);
+          assert(!cc->unchecked());
+          {
+            DisableAllocationGuard g;
+            const ValueTp v2(my_index, 1);
+            assert(c.insert(std::move(v2)).second == false);
+          }
+        }
+        c.clear();
+        {
+          PRINT("Testing C::emplace(const value_type&)");
+          const int my_index = index++;
+          const ValueTp v(my_index, 1);
+          cc->expect<const ValueTp&>();
+          assert(c.emplace(v).second);
+          assert(!cc->unchecked());
+          {
+            DisableAllocationGuard g;
+            const ValueTp v2(my_index, 1);
+            assert(c.emplace(v2).second == false);
+          }
+        }
+        c.clear();
+        {
+          PRINT("Testing C::emplace(value_type&)");
+          const int my_index = index++;
+          ValueTp v(my_index, 1);
+          cc->expect<ValueTp&>();
+          assert(c.emplace(v).second);
+          assert(!cc->unchecked());
+          {
+            DisableAllocationGuard g;
+            ValueTp v2(my_index, 1);
+            assert(c.emplace(v2).second == false);
+          }
+        }
+        c.clear();
+        {
+          PRINT("Testing C::emplace(value_type&&)");
+          const int my_index = index++;
+          ValueTp v(my_index, 2);
+          cc->expect<ValueTp&&>();
+          assert(c.emplace(std::move(v)).second);
+          assert(!cc->unchecked());
+          {
+            DisableAllocationGuard g;
+            ValueTp v2(my_index, 1);
+            assert(c.emplace(std::move(v2)).second == false);
+          }
+        }
+        c.clear();
+        {
+          PRINT("Testing C::emplace(value_type const&&)");
+          const int my_index = index++;
+          const ValueTp v(my_index, 2);
+          cc->expect<ValueTp const&&>();
+          assert(c.emplace(std::move(v)).second);
+          assert(!cc->unchecked());
+          {
+            DisableAllocationGuard g;
+            const ValueTp v2(my_index, 1);
+            assert(c.emplace(std::move(v2)).second == false);
           }
         }
         c.clear();
@@ -126,7 +195,6 @@ void testContainerInsert()
                    std::move_iterator<ValueTp*>(std::end(ValueList)));
           assert(!cc->unchecked());
           {
-            //ValueTp ValueList[] = { {1, 1}, {2, 1} , {3, 1} };
             DisableAllocationGuard g;
             ValueTp ValueList2[] = { {1, 1}, {2, 1} , {3, 1} };
             c.insert(std::move_iterator<ValueTp*>(std::begin(ValueList2)),
@@ -137,7 +205,7 @@ void testContainerInsert()
         {
           PRINT("Testing C::insert(Iter, Iter) for *Iter = value_type&");
           ValueTp ValueList[] = { {1, 1}, {2, 1} , {3, 1} };
-          cc->expect<ValueTp const&>(3);
+          cc->expect<ValueTp &>(3);
           c.insert(std::begin(ValueList), std::end(ValueList));
           assert(!cc->unchecked());
           {
@@ -146,16 +214,21 @@ void testContainerInsert()
           }
         }
         c.clear();
-
-    }
+      }
 }
 
 
-template <class Container>
-void testContainerEmplace()
+template <class Container, class ValueTp>
+void testMapInsertAndEmplaceOtherType()
 {
-    typedef typename Container::value_type ValueTp;
-    typedef test_construct_allocator<ValueTp, ValueTp> Alloc;
+    typedef typename Container::key_type key_type;
+    typedef typename Container::mapped_type mapped_type;
+    typedef typename Container::value_type ContainerValueTp;
+    static_assert((!std::is_same<ValueTp, ContainerValueTp>::value),
+                  "This test requires a different value type");
+    typedef typename ValueTp::first_type first_type;
+    typedef typename ValueTp::second_type second_type;
+    typedef test_construct_allocator<ContainerValueTp, ContainerValueTp> Alloc;
     typedef Container C;
     typedef typename C::allocator_type Alloc;
     typedef std::pair<typename C::iterator, bool> R;
@@ -166,98 +239,37 @@ void testContainerEmplace()
         C c(a);
         int index = 1;
         {
+          PRINT("Testing C::emplace(Pp&&) with Pp = const ValueTp&");
           const int my_index = index++;
           const ValueTp v(my_index, 1);
           cc->expect<const ValueTp&>();
-          assert(c.insert(v).second);
+          assert(c.emplace(v).second);
           assert(!cc->unchecked());
           {
             DisableAllocationGuard g;
             const ValueTp v2(my_index, 1);
-            assert(c.insert(v2).second == false);
+            assert(c.emplace(v2).second == false);
           }
         }
         c.clear();
-
         {
+          PRINT("Testing C::emplace(Pp&&) with Pp = ValueTp&");
           const int my_index = index++;
           ValueTp v(my_index, 1);
-          cc->expect<const ValueTp&>();
-          assert(c.insert(v).second);
+          cc->expect<ValueTp&>();
+          assert(c.emplace(v).second);
           assert(!cc->unchecked());
           {
             DisableAllocationGuard g;
             ValueTp v2(my_index, 1);
-            assert(c.insert(v2).second == false);
+            assert(c.emplace(v2).second == false);
           }
         }
         c.clear();
-
         {
+          PRINT("Testing C::emplace(Pp&&) with Pp = ValueTp&&");
           const int my_index = index++;
-          ValueTp v(my_index, 2);
-          cc->expect<ValueTp&&>();
-          assert(c.insert(std::move(v)).second);
-          assert(!cc->unchecked());
-          {
-            DisableAllocationGuard g;
-            ValueTp v2(my_index, 1);
-            assert(c.insert(std::move(v2)).second == false);
-          }
-        }
-        c.clear();
-
-        {
-          std::initializer_list<ValueTp> il = { {1, 1}, {2, 1} };
-          cc->expect<ValueTp const&>(2);
-          c.insert(il);
-          assert(!cc->unchecked());
-          {
-            DisableAllocationGuard g;
-            c.insert(il);
-          }
-        }
-        c.clear();
-        {
-          const ValueTp ValueList[] = { {1, 1}, {2, 1} , {3, 1} };
-          cc->expect<ValueTp const&>(3);
-          c.insert(std::begin(ValueList), std::end(ValueList));
-          assert(!cc->unchecked());
-          {
-            DisableAllocationGuard g;
-            c.insert(std::begin(ValueList), std::end(ValueList));
-          }
-        }
-        c.clear();
-        {
-          ValueTp ValueList[] = { {1, 1}, {2, 1} , {3, 1} };
-          cc->expect<ValueTp&&>(3);
-          c.insert(std::move_iterator<ValueTp*>(std::begin(ValueList)),
-                   std::move_iterator<ValueTp*>(std::end(ValueList)));
-          assert(!cc->unchecked());
-          {
-            //ValueTp ValueList[] = { {1, 1}, {2, 1} , {3, 1} };
-            DisableAllocationGuard g;
-            ValueTp ValueList2[] = { {1, 1}, {2, 1} , {3, 1} };
-            c.insert(std::move_iterator<ValueTp*>(std::begin(ValueList2)),
-                     std::move_iterator<ValueTp*>(std::end(ValueList2)));
-          }
-        }
-        c.clear();
-        {
-          ValueTp ValueList[] = { {1, 1}, {2, 1} , {3, 1} };
-          cc->expect<ValueTp const&>(3);
-          c.insert(std::begin(ValueList), std::end(ValueList));
-          assert(!cc->unchecked());
-          {
-            DisableAllocationGuard g;
-            c.insert(std::begin(ValueList), std::end(ValueList));
-          }
-        }
-        /*
-        {
-          const int my_index = index++;
-          ValueTp v(my_index, 2);
+          ValueTp v(my_index, 1);
           cc->expect<ValueTp&&>();
           assert(c.emplace(std::move(v)).second);
           assert(!cc->unchecked());
@@ -268,38 +280,88 @@ void testContainerEmplace()
           }
         }
         c.clear();
-
         {
+          PRINT("Testing C::emplace(Pp&&) with Pp = ValueTp const&&");
           const int my_index = index++;
-          ValueTp v(my_index, 2);
-          cc->expect<ValueTp&&>();
+          const ValueTp v(my_index, 1);
+          cc->expect<ValueTp const&&>();
           assert(c.emplace(std::move(v)).second);
           assert(!cc->unchecked());
           {
             DisableAllocationGuard g;
-
-            ValueTp v2(my_index, 1);
+            const ValueTp v2(my_index, 1);
             assert(c.emplace(std::move(v2)).second == false);
           }
         }
-         */
+        c.clear();
+        {
+          PRINT("Testing C::emplace(Args&&...) with Args = [First const&, Second const&]");
+          const int my_index = index++;
+          const ValueTp v(my_index, 1);
+          cc->expect<first_type const&, second_type const&>();
+          assert(c.emplace(v.first, v.second).second);
+          assert(!cc->unchecked());
+          {
+            DisableAllocationGuard g;
+            const ValueTp v2(my_index, 1);
+            assert(c.emplace(v2.first, v2.second).second == false);
+          }
+        }
+        c.clear();
+        {
+          PRINT("Testing C::emplace(Args&&...) with Args = [First&, Second&]");
+          const int my_index = index++;
+          ValueTp v(my_index, 1);
+          cc->expect<first_type&, second_type&>();
+          assert(c.emplace(v.first, v.second).second);
+          assert(!cc->unchecked());
+          {
+            DisableAllocationGuard g;
+            ValueTp v2(my_index, 1);
+            assert(c.emplace(v2.first, v2.second).second == false);
+          }
+        }
+        c.clear();
+        {
+          PRINT("Testing C::emplace(Args&&...) with Args = [First&&, Second&&]");
+          const int my_index = index++;
+          ValueTp v(my_index, 1);
+          cc->expect<first_type&&, second_type&&>();
+          assert(c.emplace(std::move(v.first), std::move(v.second)).second);
+          assert(!cc->unchecked());
+          {
+            DisableAllocationGuard g;
+            ValueTp v2(my_index, 1);
+            assert(c.emplace(std::move(v2.first), std::move(v2.second)).second == false);
+          }
+        }
     }
 }
+
 
 int main()
 {
   {
     typedef CopyInsertible<1> Key;
     typedef CopyInsertible<2> Value;
+    typedef EmplaceConstructible<3, int> Value2;
     typedef std::pair<const Key, Value> ValueTp;
+    typedef std::pair<const Key, Value2> ValueTp2;
     typedef std::unordered_map<Key, Value, DataHasher<Key>, std::equal_to<Key>,
                                 test_construct_allocator<ValueTp, ValueTp>
         > Container;
+
     typedef std::unordered_set<Value, DataHasher<Value>, std::equal_to<Value>,
                                 test_construct_allocator<Value, Value>
-        > Container2;
+        > Set1;
 
-    testContainerInsert<Container>();
-    testContainerInsert<Container2>();
+    PRINT("Testing Map");
+    testContainerInsertAndEmplaceValueType<Container>();
+    testMapInsertAndEmplaceOtherType<Container, std::pair<Key, Value> >();
+    testMapInsertAndEmplaceOtherType<Container, std::pair<Key, int> >();
+    testMapInsertAndEmplaceOtherType<Container, std::pair<const Key, int> >();
+
+    PRINT("Testing Set");
+    testContainerInsertAndEmplaceValueType<Set1>();
   }
 }

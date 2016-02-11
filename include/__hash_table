@@ -260,6 +260,92 @@ struct __make_hash_node_types {
   typedef __hash_node_types<_NodePtr> type;
 };
 
+#ifndef _LIBCPP_CXX03_LANG
+
+template <class ..._Args>
+struct __pack {};
+
+template <class _Tp, class _RawTp = typename __uncvref<_Tp>::type>
+struct __is_pair {
+  static const bool value = false;
+};
+
+template <class _Tp, class _First, class _Second>
+struct __is_pair<_Tp, pair<_First, _Second> > {
+  static const bool value = true;
+  typedef _Tp __pair_type;
+  typedef _First first_type;
+  typedef _Second second_type;
+  typedef pair<_First, _Second> value_type;
+};
+
+template <class _Key, class _Pack, class = void>
+struct __can_extract_key_set {
+    static const bool value = false;
+};
+
+template <class _Key, class _Arg>
+struct __can_extract_key_set<_Key, __pack<_Arg>,
+    typename enable_if<__is_same_decay<_Key, _Arg>::value>::type>
+{
+    static const bool value = true;
+
+    template <class _KeyArg>
+    static _Key const& __extract(_KeyArg&& __k) {
+      return __k;
+    }
+};
+
+
+template <class _Key, class _PairTp, class _RawPair = typename __uncvref<_PairTp>::type,
+          class = void>
+struct __can_extract_key_map_pair {
+  static const bool value = false;
+};
+
+template <class _Key, class _PairTp, class _First, class _Second>
+struct __can_extract_key_map_pair<_Key, _PairTp, pair<_First, _Second>,
+    typename enable_if<__is_same_decay<_Key, _First>::value>::type>
+{
+  static const bool value = true;
+
+  template <class _Arg>
+  static _Key const& __extract(_Arg&& __k) {
+    return __k.first;
+  }
+};
+
+template <class _Key, class _Pack, class = void>
+struct __can_extract_key_map {
+  static const bool value = false;
+};
+
+template <class _Key, class _Arg>
+struct __can_extract_key_map<_Key, __pack<_Arg>, typename enable_if<__is_pair<_Arg>::value>::type>
+  : __can_extract_key_map_pair<_Key, _Arg>
+{
+};
+
+template <class _Key, class _A0, class _A1>
+struct __can_extract_key_map<_Key, __pack<_A0, _A1>,
+    typename enable_if<__is_same_decay<_Key, _A0>::value>::type>
+{
+  static const bool value = true;
+
+  template <class _Arg0, class _Arg1>
+  static _Key const& __extract(_Arg0&& __a0, _Arg1&&) {
+    return __a0;
+  }
+};
+
+template <class _NodeValueTp, class ..._Args>
+struct __can_extract_key : __can_extract_key_set<_NodeValueTp, __pack<_Args...> > {};
+
+template <class _Key, class _Value, class ..._Args>
+struct __can_extract_key<__hash_value_type<_Key, _Value>, _Args...>
+  : __can_extract_key_map<_Key, __pack<_Args...> > {};
+
+#endif // _LIBCPP_CXX03_LANG
 
 template <class _NodePtr>
 class _LIBCPP_TYPE_VIS_ONLY __hash_iterator
@@ -1047,7 +1133,21 @@ public:
 
 #ifndef _LIBCPP_CXX03_LANG
     template <class... _Args>
-        pair<iterator, bool> __emplace_unique(_Args&&... __args);
+    pair<iterator, bool> __emplace_unique_try_extract(true_type, _Args&&... __args) {
+      typedef __can_extract_key<__node_value_type, _Args...> _Traits;
+      return __emplace_unique_key_args(_Traits::__extract(__args...), _VSTD::forward<_Args>(__args)...);
+    }
+
+    template <class... _Args>
+    pair<iterator, bool> __emplace_unique_try_extract(false_type, _Args&&...);
+
+    template <class... _Args>
+    pair<iterator, bool> __emplace_unique(_Args&&... __args) {
+        return __emplace_unique_try_extract(
+            integral_constant<bool, __can_extract_key<__node_value_type, _Args...>::value>{},
+            _VSTD::forward<_Args>(__args)...
+        );
+    }
     template <class... _Args>
         iterator __emplace_multi(_Args&&... __args);
     template <class... _Args>
@@ -1992,7 +2092,8 @@ __done:
 template <class _Tp, class _Hash, class _Equal, class _Alloc>
 template <class... _Args>
 pair<typename __hash_table<_Tp, _Hash, _Equal, _Alloc>::iterator, bool>
-__hash_table<_Tp, _Hash, _Equal, _Alloc>::__emplace_unique(_Args&&... __args)
+__hash_table<_Tp, _Hash, _Equal, _Alloc>::__emplace_unique_try_extract(
+    false_type, _Args&&... __args)
 {
     __node_holder __h = __construct_node(_VSTD::forward<_Args>(__args)...);
     pair<iterator, bool> __r = __node_insert_unique(__h.get());

@@ -69,6 +69,22 @@ inline TypeID const& makeArgumentID() {
 }
 #endif
 
+template <int ID>
+struct Arg {
+  int data;
+  Arg(int x) : data(x) {}
+
+private:
+    Arg(Arg const&);
+    Arg& operator=(Arg const&);
+
+
+    template <int xID>
+    friend Arg<xID> makeArg(int xdata) {
+      return Arg<xID>(xdata);
+    }
+};
+
 
 struct AllocatorConstructController {
   const TypeID* m_expected_args;
@@ -250,7 +266,9 @@ struct CopyInsertible {
   bool constructed_under_allocator;
 
   explicit CopyInsertible(int val) : data(val), copied_once(false),
-                                     constructed_under_allocator(false) {}
+                                     constructed_under_allocator(false) {
+    assert(getGlobalController()->isEnabled() == false);
+  }
 
   CopyInsertible(int val, int) : data(val), copied_once(false),
                                  constructed_under_allocator(false) {}
@@ -306,27 +324,16 @@ bool operator==(CopyInsertible<ID> const& L, CopyInsertible<ID> const& R) {
   return L.data == R.data;
 }
 
-
 template <int ID>
 bool operator!=(CopyInsertible<ID> const& L, CopyInsertible<ID> const& R) {
   return L.data != R.data;
 }
-
 
 template <int ID>
 bool operator <(CopyInsertible<ID> const& L, CopyInsertible<ID> const& R) {
   return L.data < R.data;
 }
 
-template <class T>
-struct DataHasher {
-  typedef size_t result_type;
-  typedef T const& argument_type;
-  template <class U>
-  size_t operator()(U const& t) const {
-    return t.data;
-  }
-};
 
 #if TEST_STD_VER >= 11
 
@@ -355,7 +362,6 @@ struct MoveInsertible {
     assert(false);
   }
 
-
   ~MoveInsertible() {
     if (constructed_under_allocator) {
       assert(getGlobalController()->isEnabled());
@@ -380,6 +386,58 @@ bool operator!=(MoveInsertible<ID> const& L, MoveInsertible<ID> const& R) {
   return L.data != R.data;
 }
 
+
+template <int ID, class First>
+struct EmplaceConstructible {
+  int data;
+
+  EmplaceConstructible(First f) : data(f) {
+    assert(getGlobalController()->isEnabled());
+  }
+
+  EmplaceConstructible(EmplaceConstructible const& other) = delete;
+  EmplaceConstructible(EmplaceConstructible&& other) = delete;
+
+  template <class ...Args>
+  EmplaceConstructible(Args&&... args) {
+    assert(false);
+  }
+
+  ~EmplaceConstructible() {
+    assert(getGlobalController()->isEnabled());
+  }
+
+  void reset(int value) {
+    data = value;
+  }
+};
+
+template <int ID, class ...Args>
+bool operator==(EmplaceConstructible<ID, Args...> const& L, EmplaceConstructible<ID, Args...> const& R) {
+  return L.data == R.data;
+}
+
+template <int ID, class ...Args>
+bool operator!=(EmplaceConstructible<ID, Args...> const& L, EmplaceConstructible<ID, Args...> const& R) {
+  return L.data != R.data;
+}
+
+template <int ID, class ...Args>
+bool operator <(EmplaceConstructible<ID, Args...> const& L, EmplaceConstructible<ID, Args...> const& R) {
+  return L.data < R.data;
+}
+
 #endif // TEST_STD_VER >= 11
+
+
+template <class T>
+struct DataHasher {
+  typedef size_t result_type;
+  typedef T const& argument_type;
+  template <class U>
+  size_t operator()(U const& t) const {
+    return t.data;
+  }
+};
 
 #endif // SUPPORT_CONTAINER_TEST_TYPES_H
