@@ -41,11 +41,11 @@ template <class Container>
 void testContainerInsertAndEmplaceValueType()
 {
     typedef typename Container::value_type ValueTp;
-    typedef test_construct_allocator<ValueTp, ValueTp> Alloc;
+
     typedef Container C;
     typedef typename C::allocator_type Alloc;
     typedef std::pair<typename C::iterator, bool> R;
-    ConstructController* cc = getGlobalController();
+    ConstructController* cc = getConstructController();
     Alloc a(cc);
     {
         PRINT("Testing C::insert(const value_type&)");
@@ -228,11 +228,10 @@ void testMapInsertAndEmplaceOtherType()
                   "This test requires a different value type");
     typedef typename ValueTp::first_type first_type;
     typedef typename ValueTp::second_type second_type;
-    typedef test_construct_allocator<ContainerValueTp, ContainerValueTp> Alloc;
     typedef Container C;
     typedef typename C::allocator_type Alloc;
     typedef std::pair<typename C::iterator, bool> R;
-    ConstructController* cc = getGlobalController();
+    ConstructController* cc = getConstructController();
     Alloc a(cc);
     {
         cc->reset();
@@ -342,17 +341,15 @@ void testMapInsertAndEmplaceOtherType()
 int main()
 {
   {
-    typedef CopyInsertible<1> Key;
-    typedef CopyInsertible<2> Value;
-    typedef EmplaceConstructible<3, int> Value2;
+    typedef CopyInsertable<1> Key;
+    typedef CopyInsertable<2> Value;
     typedef std::pair<const Key, Value> ValueTp;
-    typedef std::pair<const Key, Value2> ValueTp2;
-    typedef std::unordered_map<Key, Value, DataHasher<Key>, std::equal_to<Key>,
-                                test_construct_allocator<ValueTp, ValueTp>
+    typedef std::unordered_map<Key, Value, std::hash<Key>, std::equal_to<Key>,
+                                ContainerTestAllocator<ValueTp, ValueTp>
         > Container;
 
-    typedef std::unordered_set<Value, DataHasher<Value>, std::equal_to<Value>,
-                                test_construct_allocator<Value, Value>
+    typedef std::unordered_set<Value, std::hash<Value>, std::equal_to<Value>,
+                                ContainerTestAllocator<Value, Value>
         > Set1;
 
     PRINT("Testing Map");
