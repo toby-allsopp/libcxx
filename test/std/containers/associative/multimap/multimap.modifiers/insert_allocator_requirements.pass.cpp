@@ -7,16 +7,22 @@
 //
 //===----------------------------------------------------------------------===//
 
-// <vector>
+// <map>
 
-// vector<const int> v;  // an extension
+// class multimap
 
-#include <vector>
-#include <type_traits>
+// insert(...)
+
+// UNSUPPORTED: c++98, c++03
+
+#include <map>
+
+#include "container_test_types.h"
+#include "../../../map_allocator_requirement_test_templates.h"
+
 
 int main()
 {
-#ifndef _LIBCPP_HAS_NO_GENERALIZED_INITIALIZERS
-    std::vector<const int> v = {1, 2, 3};
-#endif
+  testMultimapInsert<TCT::multimap<> >();
+  testMultimapInsertHint<TCT::multimap<> >();
 }
