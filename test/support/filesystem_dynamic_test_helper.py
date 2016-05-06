@@ -16,7 +16,7 @@ def env_path():
     assert ep is not None
     ep = os.path.realpath(ep)
     assert os.path.isdir(ep)
-    ep
+    return ep
 
 # Make sure we don't try and write outside of env_path.
 # All paths used should be sanitized

@@ -440,9 +440,12 @@ class Configuration(object):
         self.cxx.compile_flags += ['-DLIBCXX_FILESYSTEM_DYNAMIC_TEST_ROOT="%s"' % dynamic_env]
         self.env['LIBCXX_FILESYSTEM_DYNAMIC_TEST_ROOT'] = ("%s" % dynamic_env)
 
-        dynamic_helper = os.path.join(self.libcxx_src_root, 'test', 'support', 'filesystem_dynamic_test_helper.py')
+        dynamic_helper = os.path.join(self.libcxx_src_root, 'test', 'support',
+                                      'filesystem_dynamic_test_helper.py')
         assert os.path.isfile(dynamic_helper)
-        self.cxx.compile_flags += ['-DLIBCXX_FILESYSTEM_DYNAMIC_TEST_HELPER="%s"' % dynamic_helper]
+
+        self.cxx.compile_flags += ['-DLIBCXX_FILESYSTEM_DYNAMIC_TEST_HELPER="%s %s"'
+                                   % (sys.executable, dynamic_helper)]
 
 
     def configure_link_flags(self):
