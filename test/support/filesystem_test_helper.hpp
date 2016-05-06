@@ -216,7 +216,6 @@ struct MultiStringType {
   operator const char32_t* () const { return u32; }
 };
 
-
 const MultiStringType PathList[] = {
         MKSTR(""),
         MKSTR(" "),
