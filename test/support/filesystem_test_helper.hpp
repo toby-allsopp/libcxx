@@ -117,7 +117,7 @@ inline void fs_helper_run(std::string const& raw_cmd) {
     assert(std::string(fs_root) == LIBCXX_FILESYSTEM_DYNAMIC_TEST_ROOT);
 
     std::string cmd = LIBCXX_FILESYSTEM_DYNAMIC_TEST_HELPER;
-    cmd += "\"";
+    cmd += " \"";
     cmd += raw_cmd;
     cmd += "\"";
     int ret = std::system(cmd.c_str());

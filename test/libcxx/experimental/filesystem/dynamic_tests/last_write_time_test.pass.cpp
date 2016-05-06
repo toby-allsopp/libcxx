@@ -1,4 +1,4 @@
-// REQUIRES: ELIB_FILESYSTEM, ELIB_PYTHON_EXECUTABLE
+
 #include <elib/config.hpp>
 #include <experimental/filesystem>
 #include <chrono>

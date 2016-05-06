@@ -1,4 +1,4 @@
-// REQUIRES: ELIB_FILESYSTEM, ELIB_PYTHON_EXECUTABLE
+
 #include "filesystem_test_helper.hpp"
 #include "rapid-cxx-test.hpp"
 
