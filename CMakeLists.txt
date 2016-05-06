@@ -51,7 +51,6 @@ MACRO_ENSURE_OUT_OF_SOURCE_BUILD(
 
 # Basic options ---------------------------------------------------------------
 option(LIBCXX_ENABLE_ASSERTIONS "Enable assertions independent of build mode." ON)
-option(LIBCXX_ENABLE_FILESYSTEM "Build the C++ filesystem library." ON)
 option(LIBCXX_ENABLE_SHARED "Build libc++ as a shared library." ON)
 option(LIBCXX_ENABLE_EXPERIMENTAL_LIBRARY "Build libc++experimental.a" ON)
 option(LIBCXX_INCLUDE_TESTS "Build the libc++ tests." ${LLVM_INCLUDE_TESTS})
@@ -126,8 +125,6 @@ option(LIBCXX_ENABLE_MONOTONIC_CLOCK
   "Build libc++ with support for a monotonic clock.
    This option may only be set to OFF when LIBCXX_ENABLE_THREADS=OFF." ON)
 option(LIBCXX_HAS_MUSL_LIBC "Build libc++ with support for the Musl C library" OFF)
-
-option(LIBCXX_ENABLE_FILESYSTEM "Build the C++ filesystem library." ON)
 
 # Misc options ----------------------------------------------------------------
 # FIXME: Turn -pedantic back ON. It is currently off because it warns
@@ -401,9 +398,6 @@ endif()
 include_directories(include)
 add_subdirectory(include)
 add_subdirectory(lib)
-if (LIBCXX_ENABLE_FILESYSTEM)
-  add_subdirectory(lib/filesystem)
-endif()
 
 if (LIBCXX_INCLUDE_TESTS)
   add_subdirectory(test)
