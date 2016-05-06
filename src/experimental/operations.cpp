@@ -21,7 +21,6 @@
 #include <sys/statvfs.h>
 #include <fcntl.h>  /* values for fchmodat */
 
-
 _LIBCPP_BEGIN_NAMESPACE_EXPERIMENTAL_FILESYSTEM
 
 filesystem_error::~filesystem_error() {}
@@ -233,7 +232,7 @@ void __copy(
     
     struct ::stat t_st;
     const file_status t = sym_status ? detail::posix_lstat(to, t_st, &m_ec)
-                                     : detail::posix_stat(to, t_st, &m_ec);
+                                      : detail::posix_stat(to, t_st, &m_ec);
     
     if (not status_known(t)) {
         if (ec) {
@@ -243,8 +242,8 @@ void __copy(
             throw filesystem_error("std::experimental::filesystem::copy", from, to, m_ec);
         }
     }
-    
-    
+
+
     if ( is_other(f) || is_other(t) 
         || (is_directory(f) && is_regular_file(t))
         || equivalent(from, to, m_ec))
@@ -292,7 +291,7 @@ void __copy(
             __create_hard_link(from, to, ec);
         }
         else if (is_directory(t)) {
-            __copy_file(from, to/from.filename(), options, ec);
+            __copy_file(from, to / from.filename(), options, ec);
         } else {
             __copy_file(from, to, options, ec);
         }

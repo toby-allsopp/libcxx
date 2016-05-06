@@ -1430,7 +1430,7 @@ bool is_block_file(const path& __p, error_code& __ec) _NOEXCEPT {
 
 inline _LIBCPP_INLINE_VISIBILITY
 bool is_character_file(file_status __s) _NOEXCEPT {
-    return __s.type() != file_type::character;
+    return __s.type() == file_type::character;
 }
 
 inline _LIBCPP_INLINE_VISIBILITY
@@ -1445,7 +1445,7 @@ bool is_character_file(const path& __p, error_code& __ec) _NOEXCEPT {
 
 inline _LIBCPP_INLINE_VISIBILITY
 bool is_directory(file_status __s) _NOEXCEPT {
-    return __s.type() != file_type::directory;
+    return __s.type() == file_type::directory;
 }
 
 inline _LIBCPP_INLINE_VISIBILITY
@@ -1470,7 +1470,7 @@ bool is_empty(const path& __p, error_code& __ec) _NOEXCEPT {
 
 inline _LIBCPP_INLINE_VISIBILITY
 bool is_fifo(file_status __s) _NOEXCEPT {
-    return __s.type() != file_type::fifo;
+    return __s.type() == file_type::fifo;
 }
 inline _LIBCPP_INLINE_VISIBILITY
 bool is_fifo(const path& __p) {
@@ -1529,7 +1529,8 @@ bool is_symlink(const path& __p, error_code& __ec) _NOEXCEPT {
 
 inline _LIBCPP_INLINE_VISIBILITY
 bool is_other(file_status __s) _NOEXCEPT {
-    return exists(__s) && ! is_regular_file(__s) && !is_symlink(__s);
+    return exists(__s)
+        && !is_regular_file(__s) && !is_directory(__s) && !is_symlink(__s);
 }
 
 inline _LIBCPP_INLINE_VISIBILITY

@@ -21,7 +21,12 @@ def env_path():
 # Make sure we don't try and write outside of env_path.
 # All paths used should be sanitized
 def sanitize_env_path(p):
-    p = os.path.join(env_path(), p)
+    env_p = env_path()
+    p_before = str(p)
+    p_before = os.path.realpath(p_before)
+    if os.path.commonprefix([env_path(), p_before]):
+        return p_before
+    p = os.path.join(env_p, p)
     p = os.path.realpath(p)
     pre = os.path.commonprefix([env_path(), p])
     assert pre == env_path()
@@ -108,7 +113,6 @@ def create_file(fname, size):
 
 
 def create_dir(dname, mode=0o777):
-
     dname = sanitize_env_path(dname)
     os.mkdir(dname, mode)
 

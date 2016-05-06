@@ -1,5 +1,3 @@
-
-#include <elib/config.hpp>
 #include <experimental/filesystem>
 #include <chrono>
 #include <system_error>

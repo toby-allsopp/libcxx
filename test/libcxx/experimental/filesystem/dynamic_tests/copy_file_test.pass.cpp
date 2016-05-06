@@ -36,6 +36,8 @@ TEST_CASE(directory_test)
     path const to = env.make_env_path("file2");
     
     env.create_dir(file);
+    std::cout << file << std::endl;
+    TEST_REQUIRE(exists(file));
     TEST_REQUIRE(is_directory(file));
     
     {

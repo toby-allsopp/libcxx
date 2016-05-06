@@ -5,6 +5,7 @@
 #include <cassert>
 #include <cstdio> // for tempnam
 #include <string>
+#include <iostream>
 
 namespace fs = std::experimental::filesystem;
 
@@ -120,6 +121,7 @@ inline void fs_helper_run(std::string const& raw_cmd) {
     cmd += " \"";
     cmd += raw_cmd;
     cmd += "\"";
+    //std::cout << "Running: " << cmd << std::endl;
     int ret = std::system(cmd.c_str());
     assert(ret == 0);
 }

@@ -1,5 +1,3 @@
-
-#include <elib/config.hpp>
 #include <experimental/filesystem>
 #include <system_error>
 #include <sys/stat.h>

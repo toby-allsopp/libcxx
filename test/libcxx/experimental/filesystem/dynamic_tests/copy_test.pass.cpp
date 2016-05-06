@@ -3,6 +3,7 @@
 #include <system_error>
 #include "filesystem_test_helper.hpp"
 #include "rapid-cxx-test.hpp"
+#include <iostream>
 using namespace std::experimental::filesystem;
 
 TEST_SUITE(elib_filesystem_dynamic_copy_test_test_suite)
@@ -187,11 +188,18 @@ TEST_CASE(regular_file_copy_to_dir)
     
     
     env.create_file(file, 42);
+    TEST_REQUIRE(is_regular_file(file));
     create_directory(to_dir);
     TEST_REQUIRE(is_directory(to_dir));
     
     std::error_code ec;
-    copy(file, to_dir);
+    try {
+        copy(file, to_dir);
+    } catch (filesystem_error const& err) {
+        std::cout << err.what() << "\n"
+                   << err.path1() << err.path2() << "\n";
+    }
+    std::cout << ec.message() << std::endl;
     TEST_CHECK(not ec);
     TEST_CHECK(is_regular_file(to));
 }
