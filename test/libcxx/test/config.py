@@ -61,6 +61,7 @@ class Configuration(object):
         self.libcxx_src_root = None
         self.libcxx_obj_root = None
         self.cxx_library_root = None
+        self.cxx_runtime_root = None
         self.abi_library_root = None
         self.env = {}
         self.use_target = False
@@ -196,6 +197,8 @@ class Configuration(object):
     def configure_cxx_library_root(self):
         self.cxx_library_root = self.get_lit_conf('cxx_library_root',
                                                   self.libcxx_obj_root)
+        self.cxx_runtime_root = self.get_lit_conf('cxx_runtime_root',
+                                                   self.cxx_library_root)
 
     def configure_use_system_cxx_lib(self):
         # This test suite supports testing against either the system library or
@@ -291,6 +294,10 @@ class Configuration(object):
         no_default_flags = self.get_lit_bool('no_default_flags', False)
         if not no_default_flags:
             self.configure_default_compile_flags()
+        # This include is always needed so add so add it regardless of
+        # 'no_default_flags'.
+        support_path = os.path.join(self.libcxx_src_root, 'test/support')
+        self.cxx.compile_flags += ['-I' + support_path]
         # Configure extra flags
         compile_flags_str = self.get_lit_conf('compile_flags', '')
         self.cxx.compile_flags += shlex.split(compile_flags_str)
@@ -339,7 +346,6 @@ class Configuration(object):
 
     def configure_compile_flags_header_includes(self):
         support_path = os.path.join(self.libcxx_src_root, 'test/support')
-        self.cxx.compile_flags += ['-I' + support_path]
         self.cxx.compile_flags += ['-include', os.path.join(support_path, 'nasty_macros.hpp')]
         self.configure_config_site_header()
         libcxx_headers = self.get_lit_conf(
@@ -457,23 +463,11 @@ class Configuration(object):
         self.cxx.link_flags += shlex.split(link_flags_str)
 
     def configure_link_flags_cxx_library_path(self):
-        libcxx_library = self.get_lit_conf('libcxx_library')
-        # Configure libc++ library paths.
-        if libcxx_library is not None:
-            # Check that the given value for libcxx_library is valid.
-            if not os.path.isfile(libcxx_library):
-                self.lit_config.fatal(
-                    "libcxx_library='%s' is not a valid file." %
-                    libcxx_library)
-            if self.use_system_cxx_lib:
-                self.lit_config.fatal(
-                    "Conflicting options: 'libcxx_library' cannot be used "
-                    "with 'use_system_cxx_lib=true'")
-            self.cxx.link_flags += ['-Wl,-rpath,' +
-                                    os.path.dirname(libcxx_library)]
-        elif not self.use_system_cxx_lib and self.cxx_library_root:
-            self.cxx.link_flags += ['-L' + self.cxx_library_root,
-                                    '-Wl,-rpath,' + self.cxx_library_root]
+        if not self.use_system_cxx_lib:
+            if self.cxx_library_root:
+                self.cxx.link_flags += ['-L' + self.cxx_library_root]
+            if self.cxx_runtime_root:
+                self.cxx.link_flags += ['-Wl,-rpath,' + self.cxx_runtime_root]
 
     def configure_link_flags_abi_library_path(self):
         # Configure ABI library paths.
@@ -483,11 +477,20 @@ class Configuration(object):
                                     '-Wl,-rpath,' + self.abi_library_root]
 
     def configure_link_flags_cxx_library(self):
-        libcxx_library = self.get_lit_conf('libcxx_library')
-        if libcxx_library:
-            self.cxx.link_flags += [libcxx_library]
-        else:
+        libcxx_experimental = self.get_lit_bool('enable_experimental', default=False)
+        if libcxx_experimental:
+            self.config.available_features.add('c++experimental')
+            self.cxx.link_flags += ['-lc++experimental']
+        libcxx_shared = self.get_lit_bool('enable_shared', default=True)
+        if libcxx_shared:
             self.cxx.link_flags += ['-lc++']
+        else:
+            cxx_library_root = self.get_lit_conf('cxx_library_root')
+            if cxx_library_root:
+                abs_path = os.path.join(cxx_library_root, 'libc++.a')
+                self.cxx.link_flags += [abs_path]
+            else:
+                self.cxx.link_flags += ['-lc++']
 
     def configure_link_flags_abi_library(self):
         cxx_abi = self.get_lit_conf('cxx_abi', 'libcxxabi')
@@ -497,7 +500,16 @@ class Configuration(object):
             self.cxx.link_flags += ['-lsupc++']
         elif cxx_abi == 'libcxxabi':
             if self.target_info.allow_cxxabi_link():
-                self.cxx.link_flags += ['-lc++abi']
+                libcxxabi_shared = self.get_lit_bool('libcxxabi_shared', default=True)
+                if libcxxabi_shared:
+                    self.cxx.link_flags += ['-lc++abi']
+                else:
+                    cxxabi_library_root = self.get_lit_conf('abi_library_path')
+                    if cxxabi_library_root:
+                        abs_path = os.path.join(cxxabi_library_root, 'libc++abi.a')
+                        self.cxx.link_flags += [abs_path]
+                    else:
+                        self.cxx.link_flags += ['-lc++abi']
         elif cxx_abi == 'libcxxrt':
             self.cxx.link_flags += ['-lcxxrt']
         elif cxx_abi == 'none':
