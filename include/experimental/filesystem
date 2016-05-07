@@ -1827,7 +1827,7 @@ public:
     { return __increment(&__ec); }
 
     bool operator==(const directory_iterator& __rhs) const _NOEXCEPT
-    { return __stream_.get() == __rhs.__stream_.get(); }
+    { return __imp_.get() == __rhs.__imp_.get(); }
 
     bool operator!=(const directory_iterator& __rhs) const _NOEXCEPT
     { return !(*this == __rhs); }
@@ -1843,15 +1843,10 @@ private:
     directory_iterator(const path&, error_code *, directory_options = directory_options::none);
     _LIBCPP_FUNC_VIS
     directory_iterator& __increment(error_code * __ec = nullptr);
-    // convert iterator into end iterator
-    _LIBCPP_FUNC_VIS
-    void __make_end();
 
 private:
-    shared_ptr<__dir_stream> __stream_;
-    path __root_path_;
+    shared_ptr<__dir_stream> __imp_;
     directory_entry __elem_;
-    directory_options __options_{directory_options::none};
 };
 
 // enable directory_iterator range-based for statements
