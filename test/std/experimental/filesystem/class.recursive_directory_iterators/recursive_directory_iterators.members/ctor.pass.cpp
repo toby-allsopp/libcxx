@@ -197,26 +197,6 @@ TEST_CASE(test_open_on_file_fails)
     }
 }
 
-TEST_CASE(test_open_on_empty_string)
-{
-    const path testPath = "";
-    const directory_iterator endIt{};
-
-    std::error_code ec;
-    directory_iterator it(testPath, ec);
-    TEST_CHECK(ec);
-    TEST_CHECK(it == endIt);
-}
-
-TEST_CASE(test_open_on_dot_dir)
-{
-    const path testPath = ".";
-
-    std::error_code ec;
-    directory_iterator it(testPath, ec);
-    TEST_CHECK(!ec);
-}
-
 TEST_CASE(test_open_on_symlink)
 {
     const path symlinkToDir = StaticEnv::SymlinkToDir;
@@ -227,9 +207,8 @@ TEST_CASE(test_open_on_symlink)
     {
         std::error_code ec;
         directory_iterator it(symlinkToDir, ec);
-        TEST_REQUIRE(!ec);
-        TEST_CHECK(it != endIt);
-        TEST_CHECK(dir_contents.count(*it));
+        TEST_REQUIRE(ec);
+        TEST_CHECK(it == endIt);
     }
     {
         std::error_code ec;
@@ -241,4 +220,42 @@ TEST_CASE(test_open_on_symlink)
     }
 }
 
+TEST_CASE(test_options_post_conditions)
+{
+    const path goodDir = StaticEnv::Dir;
+    const path badDir = staticEnv::DNE;
+
+    {
+        std::error_code ec;
+
+        directory_iterator it1(goodDir, ec);
+        TEST_REQUIRE(!ec);
+        TEST_CHECK(it1.options() == directory_options::none);
+
+        directory_iterator it2(badDir, ec);
+        TEST_REQUIRE(ec);
+        TEST_CHECK(it2.options() == directory_options::none);
+    }
+    {
+        std::error_code ec;
+        const directory_options opts = directory_options::skip_permission_denied;
+
+        directory_iterator it1(goodDir, opts, ec);
+        TEST_REQUIRE(!ec);
+        TEST_CHECK(it1.options() == opts);
+
+        directory_iterator it2(badDir, opts, ec);
+        TEST_REQUIRE(ec);
+        TEST_CHECK(it2.options() == opts);
+    }
+    {
+        directory_iterator it(goodDir);
+        TEST_CHECK(it.options() == directory_options::none);
+    }
+    {
+        const directory_options opts = directory_options::follow_directory_symlink;
+        directory_iterator it(goodDir, opts);
+        TEST_CHECK(it.options() == opts);
+    }
+}
 TEST_SUITE_END()
