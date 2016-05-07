@@ -5,8 +5,6 @@
 #include "filesystem_test_helper.hpp"
 #include "rapid-cxx-test.hpp"
 
-
-
 using namespace std::experimental::filesystem;
 
 TEST_SUITE(elib_filesystem_dynamic_permission_test_suite)
@@ -96,7 +94,7 @@ TEST_CASE(remove_permissions_test)
 
 // linux doesn't support permissions on symlinks
 #if defined(AT_SYMLINK_NOFOLLOW) && defined(AT_FDCWD) && \
-   !defined(ELIB_CONFIG_LINUX) && !defined(ELIB_CONFIG_CYGWIN)
+   !defined(__linux__)
 TEST_CASE(not_follow_symlink_test)
 {
     scoped_test_env env;
@@ -131,7 +129,7 @@ TEST_CASE(follow_symlink_test)
     
     TEST_REQUIRE_NO_THROW(permissions(real_file, perms::group_all|perms::owner_all));
     
-#if !defined(ELIB_CONFIG_LINUX)
+#if !defined(__linux__)
     auto before_lst = symlink_status(file);
 #endif
     
@@ -139,13 +137,13 @@ TEST_CASE(follow_symlink_test)
     std::error_code ec;
     permissions(file, pm|perms::resolve_symlinks, ec);
     TEST_REQUIRE(not ec);
-        
+
     auto rst = status(real_file);
     auto lst = symlink_status(file);
     TEST_CHECK(rst.permissions() == pm);
-    
+
 /// On linux a symlinks permissions are always 0777 (perms::all)
-#if !defined(ELIB_CONFIG_LINUX)
+#if !defined(__linux__)
     TEST_CHECK(lst.permissions() == before_lst.permissions());
 # else /* LINUX */
     TEST_CHECK(lst.permissions() == perms::all);
