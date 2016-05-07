@@ -13,11 +13,10 @@
 
 // class directory_iterator
 
-// typedef ... value_type;
-// typedef ... difference_type;
-// typedef ... pointer;
-// typedef ... reference;
-// typedef ... iterator_category
+// explicit directory_iterator(const path& p);
+// directory_iterator(const path& p, directory_options options);
+// directory_iterator(const path& p, error_code& ec) noexcept;
+// directory_iterator(const path& p, directory_options options, error_code& ec) noexcept;
 
 #include <experimental/filesystem>
 #include <type_traits>
@@ -27,6 +26,7 @@
 #include "test_macros.h"
 #include "rapid-cxx-test.hpp"
 #include "filesystem_test_helper.hpp"
+#include <iostream>
 
 using namespace std::experimental::filesystem;
 
@@ -220,8 +220,10 @@ TEST_CASE(test_open_on_dot_dir)
 TEST_CASE(test_open_on_symlink)
 {
     const path symlinkToDir = StaticEnv::SymlinkToDir;
-    std::set<path> dir_contents(std::begin(StaticEnv::DirIterationList),
-                                std::end(  StaticEnv::DirIterationList));
+    std::set<path> dir_contents;
+    for (path const& p : StaticEnv::DirIterationList) {
+        dir_contents.insert(p.filename());
+    }
     const directory_iterator endIt{};
 
     {
@@ -229,7 +231,8 @@ TEST_CASE(test_open_on_symlink)
         directory_iterator it(symlinkToDir, ec);
         TEST_REQUIRE(!ec);
         TEST_CHECK(it != endIt);
-        TEST_CHECK(dir_contents.count(*it));
+        path const& entry = *it;
+        TEST_CHECK(dir_contents.count(entry.filename()));
     }
     {
         std::error_code ec;
@@ -237,7 +240,8 @@ TEST_CASE(test_open_on_symlink)
                               directory_options::follow_directory_symlink, ec);
         TEST_REQUIRE(!ec);
         TEST_CHECK(it != endIt);
-        TEST_CHECK(dir_contents.count(*it));
+        path const& entry = *it;
+        TEST_CHECK(dir_contents.count(entry.filename()));
     }
 }
 
