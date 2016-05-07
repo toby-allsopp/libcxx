@@ -52,8 +52,16 @@ const std::size_t TestDirListSize = sizeof(TestDirList) / sizeof(fs::path);
 static const fs::path File          = TestFileList[0];
 static const fs::path Dir           = TestDirList[0];
 static const fs::path SymlinkToFile = makePath("symlink_to_empty_file");
+static const fs::path BadSymlink    = makePath("bad_symlink");
 static const fs::path DNE           = makePath("DNE");
-static const fs::path EmptyDir      = TestDirList[2];
+
+static const fs::path DirIterationList[] = {
+    makePath("dir1/dir2"),
+    makePath("dir1/file1"),
+    makePath("dir1/file2")
+};
+const std::size_t DirIterationListSize = sizeof(DirIterationList)
+                                        / sizeof(fs::path);
 
 } // namespace StaticEnv
 

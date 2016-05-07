@@ -127,7 +127,8 @@ TEST_CASE(follow_symlink_test)
     env.create_file(real_file, 42);
     env.create_symlink(real_file, file);
     
-    TEST_REQUIRE_NO_THROW(permissions(real_file, perms::group_all|perms::owner_all));
+    TEST_REQUIRE_NO_THROW(permissions(real_file,
+                                      perms::group_all|perms::owner_all));
     
 #if !defined(__linux__)
     auto before_lst = symlink_status(file);

@@ -10,8 +10,10 @@ if (LIBCXX_CONFIGURE_IDE)
   include_directories(support)
   file(GLOB_RECURSE LIBCXX_TESTS ${CMAKE_CURRENT_SOURCE_DIR}/*.pass.cpp)
   file(GLOB LIBCXX_TEST_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/support/*)
-  add_library(libcxx_test_objects OBJECT EXCLUDE_FROM_ALL ${LIBCXX_TESTS} ${LIBCXX_TEST_HEADERS})
-  #target_link_libraries(libcxx_test_objects cxx cxx_experimental)
+  file(GLOB_RECURSE LIBCXX_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/../include/*)
+  add_executable(libcxx_test_objects EXCLUDE_FROM_ALL
+          ${LIBCXX_TESTS} ${LIBCXX_TEST_HEADERS} ${LIBCXX_HEADERS})
+  target_link_libraries(libcxx_test_objects cxx cxx_experimental)
 
   set(STATIC_ROOT ${LIBCXX_SOURCE_DIR}/test/std/experimental/filesystem/Inputs/static_test_env)
   add_definitions(-DLIBCXX_FILESYSTEM_STATIC_TEST_ROOT="${STATIC_ROOT}")

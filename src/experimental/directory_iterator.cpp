@@ -9,23 +9,26 @@ namespace { namespace detail {
 
 inline error_code capture_errno() {
     _LIBCPP_ASSERT(errno, "Expected errno to be non-zero");
-    return error_code{errno, std::system_category()};
+    return error_code{errno, std::generic_category()};
+}
+
+inline bool set_error_or_throw(std::error_code& my_ec, std::error_code* user_ec,
+                               const char* msg, const path& p)
+{
+    if (user_ec) {
+        *user_ec = my_ec;
+        return true;
+    }
+    throw filesystem_error(msg, p, my_ec);
 }
 
 typedef path::string_type string_type;
 
-inline DIR *posix_opendir(const string_type& p, error_code *ec) {
+inline DIR *posix_opendir(const string_type& p, error_code& ec) {
     DIR *ret;
-    if ((ret = ::opendir(p.c_str())) == nullptr) {
-        error_code m_ec = capture_errno();
-        if (ec) {
-            *ec = m_ec;
-            return nullptr;
-        } else {
-            throw filesystem_error("fs::posix_opendir", path(p), m_ec);
-        }
-    }
-    if (ec) ec->clear();
+    ec.clear();
+    if ((ret = ::opendir(p.c_str())) == nullptr)
+        ec = capture_errno();
     return ret;
 }
 
@@ -63,10 +66,12 @@ inline void posix_closedir(DIR *dir_stream,  error_code *ec) {
 
 }}                                                       // namespace detail
 
+using detail::set_error_or_throw;
+
 class __dir_stream {
 public:
     __dir_stream() noexcept = default;
-    __dir_stream(const path& root, error_code *ec=nullptr);
+    __dir_stream(const path& root, error_code& ec);
 
     __dir_stream(__dir_stream&&) noexcept;
     __dir_stream& operator=(__dir_stream&&) noexcept;
@@ -88,7 +93,7 @@ private:
     DIR *__stream_{nullptr};
 };
 
-__dir_stream::__dir_stream(const path& p, error_code *ec) {
+__dir_stream::__dir_stream(const path& p, error_code & ec) {
     __stream_ = detail::posix_opendir(p.native(),  ec);
 }
 
@@ -124,11 +129,18 @@ void __dir_stream::close(error_code *ec) {
 directory_iterator::directory_iterator(const path& p, error_code *ec, directory_options opts)
   : __options_(opts)
 {
-    __stream_ = ec ? std::make_shared<__dir_stream>(p, ec)
-                    : std::make_shared<__dir_stream>(p);
-    if (ec && *ec) {
+    std::error_code m_ec;
+    __stream_ = std::make_shared<__dir_stream>(p, m_ec);
+    if (m_ec) {
         __make_end();
-        return;
+        const bool allow_eacess =
+            bool(__options_ & directory_options::skip_permission_denied);
+        const std::error_code eaccess_cond = std::make_error_code(std::errc::permission_denied);
+        if (allow_eacess && m_ec == eaccess_cond)
+            return;
+        if (set_error_or_throw(m_ec, ec, "directory_iterator could not be "
+                                         " constructed from path", p))
+            return;
     }
     __root_path_ = p;
     // we "increment" the iterator to set it to the first value
