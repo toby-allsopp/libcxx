@@ -126,24 +126,28 @@ void __dir_stream::close(error_code *ec) {
 
 // directory_iterator
 
-directory_iterator::directory_iterator(const path& p, error_code *ec, directory_options opts)
+directory_iterator::directory_iterator(const path& p, error_code *ec,
+                                       directory_options opts)
   : __options_(opts)
 {
     std::error_code m_ec;
     __stream_ = std::make_shared<__dir_stream>(p, m_ec);
     if (m_ec) {
         __make_end();
+
         const bool allow_eacess =
             bool(__options_ & directory_options::skip_permission_denied);
-        const std::error_code eaccess_cond = std::make_error_code(std::errc::permission_denied);
+        const std::error_code eaccess_cond =
+            std::make_error_code(std::errc::permission_denied);
+
         if (allow_eacess && m_ec == eaccess_cond)
             return;
+
         if (set_error_or_throw(m_ec, ec, "directory_iterator could not be "
                                          " constructed from path", p))
             return;
     }
     __root_path_ = p;
-    // we "increment" the iterator to set it to the first value
     __increment(ec);
 }
 
