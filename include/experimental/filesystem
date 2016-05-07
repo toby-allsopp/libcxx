@@ -1788,8 +1788,17 @@ public:
         : directory_iterator(__p, nullptr)
     { }
 
+    directory_iterator(const path& __p, directory_options __opts)
+        : directory_iterator(__p, nullptr, __opts)
+    { }
+
     directory_iterator(const path& __p, error_code& __ec) _NOEXCEPT
         : directory_iterator(__p, &__ec)
+    { }
+
+    directory_iterator(const path& __p, directory_options __opts,
+                       error_code& __ec) _NOEXCEPT
+        : directory_iterator(__p, &__ec, __opts)
     { }
 
     directory_iterator(const directory_iterator&) = default;
@@ -1831,7 +1840,7 @@ private:
 
     // construct the dir_stream
     _LIBCPP_FUNC_VIS
-    directory_iterator(const path&, error_code *);
+    directory_iterator(const path&, error_code *, directory_options = directory_options::none);
     _LIBCPP_FUNC_VIS
     directory_iterator& __increment(error_code * __ec = nullptr);
     // convert iterator into end iterator
@@ -1842,6 +1851,7 @@ private:
     shared_ptr<__dir_stream> __stream_;
     path __root_path_;
     directory_entry __elem_;
+    directory_options __options_{directory_options::none};
 };
 
 // enable directory_iterator range-based for statements

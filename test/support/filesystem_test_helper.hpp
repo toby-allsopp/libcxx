@@ -53,6 +53,7 @@ static const fs::path File          = TestFileList[0];
 static const fs::path Dir           = TestDirList[0];
 static const fs::path SymlinkToFile = makePath("symlink_to_empty_file");
 static const fs::path DNE           = makePath("DNE");
+static const fs::path EmptyDir      = TestDirList[2];
 
 } // namespace StaticEnv
 

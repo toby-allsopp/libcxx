@@ -56,7 +56,7 @@ inline void posix_closedir(DIR *dir_stream,  error_code *ec) {
             return;
         } else {
             throw filesystem_error("fs::posix_closedir", m_ec);
-        }            
+        }
     }
     if (ec) ec->clear();
 }
@@ -121,8 +121,8 @@ void __dir_stream::close(error_code *ec) {
 
 // directory_iterator
 
-directory_iterator::directory_iterator(const path& p, error_code *ec)
-  : directory_iterator()
+directory_iterator::directory_iterator(const path& p, error_code *ec, directory_options opts)
+  : __options_(opts)
 {
     __stream_ = ec ? std::make_shared<__dir_stream>(p, ec)
                     : std::make_shared<__dir_stream>(p);
