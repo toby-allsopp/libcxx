@@ -13,7 +13,7 @@
 
 // class directory_iterator
 
-// directory_iterator(directory_iterator const&);
+// directory_iterator(directory_iterator&&) noexcept;
 
 #include <experimental/filesystem>
 #include <type_traits>
