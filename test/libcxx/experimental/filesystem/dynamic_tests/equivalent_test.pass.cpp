@@ -12,7 +12,7 @@ TEST_CASE(both_dne_test)
     scoped_test_env env;
     path const p1 = env.make_env_path("dne1");
     path const p2 = env.make_env_path("dne2");
-    
+
     {
         std::error_code ec;
         TEST_REQUIRE(not equivalent(p1, p2, ec));

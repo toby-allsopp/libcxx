@@ -6,6 +6,32 @@ macro(pythonize_bool var)
   endif()
 endmacro()
 
+if (LIBCXX_CONFIGURE_IDE)
+  include_directories(support)
+  file(GLOB_RECURSE LIBCXX_TESTS ${CMAKE_CURRENT_SOURCE_DIR}/*.pass.cpp)
+  file(GLOB LIBCXX_TEST_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/support/*)
+  add_library(libcxx_test_objects OBJECT EXCLUDE_FROM_ALL ${LIBCXX_TESTS} ${LIBCXX_TEST_HEADERS})
+  #target_link_libraries(libcxx_test_objects cxx cxx_experimental)
+
+  set(STATIC_ROOT ${LIBCXX_SOURCE_DIR}/test/std/experimental/filesystem/Inputs/static_test_env)
+  add_definitions(-DLIBCXX_FILESYSTEM_STATIC_TEST_ROOT="${STATIC_ROOT}")
+
+  set(DYNAMIC_ROOT ${LIBCXX_BINARY_DIR}/test/filesystem/Output/dynamic_env)
+  add_definitions(-DLIBCXX_FILESYSTEM_DYNAMIC_TEST_ROOT="${DYNAMIC_ROOT}")
+
+  set(DYNAMIC_HELPER "python ${LIBCXX_SOURCE_DIR}/test/support/filesystem_dynamic_test_helper.py ")
+  add_definitions(-DLIBCXX_FILESYSTEM_DYNAMIC_TEST_HELPER="${DYNAMIC_HELPER}")
+
+  split_list(LIBCXX_COMPILE_FLAGS)
+  split_list(LIBCXX_LINK_FLAGS)
+
+  set_target_properties(libcxx_test_objects
+          PROPERTIES
+            COMPILE_FLAGS "${LIBCXX_COMPILE_FLAGS}"
+            LINK_FLAGS "${LIBCXX_LINK_FLAGS}"
+  )
+endif()
+
 set(LIBCXX_LIT_VARIANT "libcxx" CACHE STRING
     "Configuration variant to use for LIT.")
 

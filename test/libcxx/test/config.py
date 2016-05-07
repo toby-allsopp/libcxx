@@ -434,7 +434,8 @@ class Configuration(object):
         assert os.path.isdir(static_env)
         self.cxx.compile_flags += ['-DLIBCXX_FILESYSTEM_STATIC_TEST_ROOT="%s"' % static_env]
 
-        dynamic_env = os.path.join(self.libcxx_obj_root, 'test', 'filesystem', 'Output', 'dynamic_env')
+        dynamic_env = os.path.join(self.libcxx_obj_root, 'test',
+                                   'filesystem', 'Output', 'dynamic_env')
         if not os.path.isdir(dynamic_env):
             os.makedirs(dynamic_env)
         self.cxx.compile_flags += ['-DLIBCXX_FILESYSTEM_DYNAMIC_TEST_ROOT="%s"' % dynamic_env]

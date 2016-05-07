@@ -13,12 +13,12 @@ TEST_CASE(dne_test)
 {
     scoped_test_env env;
     const path file = env.make_env_path("dne");
-    
+
     {
         std::error_code ec;
         permissions(file, perms::none, ec);
         TEST_REQUIRE(ec);
-        
+
         ec.clear();
         permissions(file, perms::none, ec);
         TEST_REQUIRE(ec);
