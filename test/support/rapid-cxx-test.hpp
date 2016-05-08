@@ -100,6 +100,8 @@ namespace Name                                                      \
 
 # define TEST_SET_CHECKPOINT() ::rapid_cxx_test::set_checkpoint(__FILE__, TEST_FUNC_NAME(), __LINE__)
 
+#define RAPID_CXX_TEST_OUTCOME()
+
 ////////////////////////////////////////////////////////////////////////////////
 //                              TEST_UNSUPPORTED
 ////////////////////////////////////////////////////////////////////////////////

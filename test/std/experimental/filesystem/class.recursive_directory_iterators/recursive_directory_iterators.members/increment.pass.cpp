@@ -130,6 +130,7 @@ TEST_CASE(test_follow_symlinks)
     while (!unseen_entries.empty()) {
         TEST_REQUIRE(it != endIt);
         const path entry = *it;
+
         TEST_REQUIRE(unseen_entries.erase(entry) == 1);
         recursive_directory_iterator& it_ref = it.increment(ec);
         TEST_REQUIRE(!ec);

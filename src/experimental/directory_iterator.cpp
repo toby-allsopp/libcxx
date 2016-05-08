@@ -168,9 +168,9 @@ recursive_directory_iterator::recursive_directory_iterator(const path& p,
     if ((ec && *ec) || new_it == directory_iterator{}) {
         return;
     }
+    __rec_ = true;
     __imp_ = _VSTD::make_shared<__shared_imp>();
     __imp_->__options_ = opt;
-    __imp_->__rec_ = true;
     __imp_->__stack_.push(_VSTD::move(new_it));
 }
 
@@ -187,7 +187,7 @@ recursive_directory_iterator::__increment(error_code *ec)
         else if (m_ec)
             goto handle_failure;
     }
-    __imp_->__rec_ = true;
+    __rec_ = true;
 
     while (stack.size() > 0) {
         stack.top().__increment(&m_ec);
@@ -216,10 +216,10 @@ bool recursive_directory_iterator::__try_recursion(error_code &ec) {
         (!is_symlink(curr_it->symlink_status()) || rec_sym))
     {
         directory_iterator new_it(curr_it->path(), &ec, __imp_->__options_);
-        if (ec || new_it == directory_iterator{})
-            return false;
-        __imp_->__stack_.push(_VSTD::move(new_it));
-        return true;
+        if (!ec && new_it != directory_iterator{}) {
+            __imp_->__stack_.push(_VSTD::move(new_it));
+            return true;
+        }
     }
     return false;
 }

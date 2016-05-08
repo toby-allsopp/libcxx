@@ -81,17 +81,17 @@ static const fs::path RecDirFollowSymlinksIterationList[] = {
     makePath("dir1/dir2"),
     makePath("dir1/file1"),
     makePath("dir1/file2"),
-    makePath("dir1/dir2/file3"),
+    makePath("dir1/dir2/afile3"),
     makePath("dir1/dir2/dir3"),
+    makePath("dir1/dir2/file4"),
+    makePath("dir1/dir2/dir3/file5"),
     makePath("dir1/dir2/symlink_to_dir3"),
-    makePath("dir1/dir2/dir3/file4"),
-    makePath("dir1/dir2/symlink_to_dir3/file4")
+    makePath("dir1/dir2/symlink_to_dir3/file5"),
 };
 
 } // namespace StaticEnv
 
 #endif // LIBCXX_FILESYSTEM_STATIC_TEST_ROOT
-
 
 #ifndef LIBCXX_FILESYSTEM_DYNAMIC_TEST_ROOT
 #warning LIBCXX_FILESYSTEM_DYNAMIC_TEST_ROOT must be defined
@@ -100,10 +100,8 @@ static const fs::path RecDirFollowSymlinksIterationList[] = {
 #ifndef LIBCXX_FILESYSTEM_DYNAMIC_TEST_HELPER
 #error LIBCXX_FILESYSTEM_DYNAMIC_TEST_HELPER must be defined
 #endif
-// dynamic test helpers
 
-inline fs::path test_env_path()
-{
+inline fs::path test_env_path() {
     static const fs::path env_path = LIBCXX_FILESYSTEM_DYNAMIC_TEST_ROOT;
     return env_path;
 }
@@ -171,8 +169,7 @@ struct scoped_test_env
     scoped_test_env(scoped_test_env const &) = delete;
     scoped_test_env & operator=(scoped_test_env const &) = delete;
 
-    ~scoped_test_env()
-    {
+    ~scoped_test_env() {
         fs_helper_run(fs_make_cmd("clean", test_root));
     }
 
@@ -181,8 +178,7 @@ struct scoped_test_env
         return test_root / p;
     }
 
-    std::string sanitize_path(std::string const & raw)
-    {
+    std::string sanitize_path(std::string const & raw) {
         if (raw.substr(0, test_root.native().size()) == test_root) {
             return raw;
         } else {
@@ -190,43 +186,37 @@ struct scoped_test_env
         }
     }
 
-    std::string create_file(std::string filename, std::size_t size = 0)
-    {
+    std::string create_file(std::string filename, std::size_t size = 0) {
         filename = sanitize_path(filename);
         fs_helper_run(fs_make_cmd("create_file", filename, size));
         return filename;
     }
 
-    std::string create_dir(std::string filename)
-    {
+    std::string create_dir(std::string filename) {
         filename = sanitize_path(filename);
         fs_helper_run(fs_make_cmd("create_dir", filename));
         return filename;
     }
 
-    std::string create_symlink(std::string source, std::string to)
-    {
+    std::string create_symlink(std::string source, std::string to) {
         source = sanitize_path(source);
         to = sanitize_path(to);
         fs_helper_run(fs_make_cmd("create_symlink", source, to));
         return to;
     }
 
-    void create_hardlink(std::string source, std::string to)
-    {
+    void create_hardlink(std::string source, std::string to) {
         source = sanitize_path(source);
         to = sanitize_path(to);
         fs_helper_run(fs_make_cmd("create_hardlink", source, to));
     }
 
-    void create_fifo(std::string file)
-    {
+    void create_fifo(std::string file) {
         file = sanitize_path(file);
         fs_helper_run(fs_make_cmd("create_fifo", file));
     }
 
-    void create_socket(std::string file)
-    {
+    void create_socket(std::string file) {
         file = sanitize_path(file);
         fs_helper_run(fs_make_cmd("create_socket", file));
     }

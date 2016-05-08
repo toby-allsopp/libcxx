@@ -72,9 +72,7 @@ recursive_directory_iterator createDifferentInterestingIterator()
     return it;
 }
 
-
-TEST_CASE(test_assignment_signature)
-{
+TEST_CASE(test_assignment_signature) {
     using D = recursive_directory_iterator;
     static_assert(std::is_copy_assignable<D>::value, "");
 }
@@ -114,18 +112,18 @@ TEST_CASE(test_copy_valid_iterator)
     const path entry = *it;
 
     recursive_directory_iterator it2 = createDifferentInterestingIterator();
-    TEST_REQUIRE(it2 != it);
-    TEST_CHECK(it2.options() != it.options());
-    TEST_CHECK(it2.depth() != it.depth());
+    TEST_REQUIRE(it2                   != it);
+    TEST_CHECK(it2.options()           != it.options());
+    TEST_CHECK(it2.depth()             != it.depth());
     TEST_CHECK(it2.recursion_pending() != it.recursion_pending());
-    TEST_CHECK(*it2 != entry);
+    TEST_CHECK(*it2                    != entry);
 
     it2 = it;
-    TEST_REQUIRE(it2 == it);
-    TEST_CHECK(it2.options() == it.options());
-    TEST_CHECK(it2.depth() == it.depth());
+    TEST_REQUIRE(it2                   == it);
+    TEST_CHECK(it2.options()           == it.options());
+    TEST_CHECK(it2.depth()             == it.depth());
     TEST_CHECK(it2.recursion_pending() == it.recursion_pending());
-    TEST_CHECK(*it2 == entry);
+    TEST_CHECK(*it2                    == entry);
 }
 
 TEST_CASE(test_returns_reference_to_self)

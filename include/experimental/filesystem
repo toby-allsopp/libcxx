@@ -1923,6 +1923,7 @@ public:
         // non-default implementation provided to support self-move assign.
         if (this != &__o) {
             __imp_ = _VSTD::move(__o.__imp_);
+            __rec_ = __o.__rec_;
         }
         return *this;
     }
@@ -1954,7 +1955,7 @@ public:
     { return __imp_->__stack_.size() - 1; }
 
     bool recursion_pending() const
-    { return __imp_->__rec_; }
+    { return __rec_; }
 
     void pop() {
         _LIBCPP_ASSERT(__imp_, "Popping the end iterator");
@@ -1968,7 +1969,7 @@ public:
     }
 
     void disable_recursion_pending()
-    { __imp_->__rec_ = false; }
+    { __rec_ = false; }
 
     bool operator==(const recursive_directory_iterator& other) const _NOEXCEPT
     { return __imp_ == other.__imp_; }
@@ -1986,9 +1987,9 @@ private:
     struct __shared_imp {
       stack<directory_iterator> __stack_;
       directory_options __options_;
-      bool __rec_;
     };
     shared_ptr<__shared_imp> __imp_;
+    bool __rec_;
 };                                     // class recursive_directory_iterator
 
 // enable recursive_directory_iterator range-based for statements

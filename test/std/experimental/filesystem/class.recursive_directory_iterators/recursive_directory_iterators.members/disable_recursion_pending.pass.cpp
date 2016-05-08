@@ -39,7 +39,7 @@ TEST_CASE(basic_test)
     it.disable_recursion_pending();
     recursive_directory_iterator it2(it);
     TEST_CHECK(it.recursion_pending() == false);
-    TEST_CHECK(it2.recursion_pending() == true);
+    TEST_CHECK(it2.recursion_pending() == false);
 }
 
 TEST_SUITE_END()
