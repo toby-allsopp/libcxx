@@ -1,6 +1,7 @@
 #include "experimental/filesystem"
 
 #include <dirent.h>
+#include <experimental/filesystem>
 
 
 _LIBCPP_BEGIN_NAMESPACE_EXPERIMENTAL_FILESYSTEM
@@ -87,16 +88,18 @@ public:
 
     bool good() const noexcept { return __stream_ != nullptr; }
 
-    path advance(error_code &ec) {
+    bool advance(error_code &ec) {
         while (true) {
             auto str = detail::posix_readdir_r(__stream_,  ec);
-            if (str == "." || str == "..")
+            if (str == "." || str == "..") {
                 continue;
-            if (ec || str.empty()) {
+            } else if (ec || str.empty()) {
                 close();
-                return str;
+                __entry_ = {};
+                return false;
             } else {
-                return __root_ / str;
+                __entry_.assign(__root_ / str);
+                return true;
             }
         }
     }
@@ -110,6 +113,7 @@ private:
     DIR * __stream_{nullptr};
 public:
     path __root_;
+    directory_entry __entry_;
 };
 
 // directory_iterator
@@ -141,8 +145,8 @@ directory_iterator& directory_iterator::__increment(error_code *ec)
 {
     _LIBCPP_ASSERT(__stream_, "Attempting to increment an invalid iterator");
     std::error_code m_ec;
-    __elem_.assign(__imp_->advance(m_ec));
-    if (!__imp_->good()) {
+
+    if (!__imp_->advance(m_ec)) {
         __imp_.reset();
         if (m_ec)
             set_error_or_throw(m_ec, ec, "directory_iterator::operator++()");
@@ -153,77 +157,73 @@ directory_iterator& directory_iterator::__increment(error_code *ec)
 
 }
 
+directory_entry const& directory_iterator::__deref() const {
+    return __imp_->__entry_;
+}
+
 // recursive_directory_iterator
 
 recursive_directory_iterator::recursive_directory_iterator(const path& p, 
     directory_options opt, error_code *ec)
 {
-    __options_ = opt;
-    auto curr_iter = directory_iterator{p, ec, opt};
-    if ((ec && *ec) || curr_iter == directory_iterator{})
+    directory_iterator new_it(p, ec, opt);
+    if ((ec && *ec) || new_it == directory_iterator{}) {
         return;
-    __stack_ptr_ = std::make_shared<stack<directory_iterator> >();
-    __stack_ptr_->push(std::move(curr_iter));
-    __entry_ = *(__stack_ptr_->top());
+    }
+    __imp_ = _VSTD::make_shared<__shared_imp>();
+    __imp_->__options_ = opt;
+    __imp_->__rec_ = true;
+    __imp_->__stack_.push(_VSTD::move(new_it));
 }
 
 recursive_directory_iterator& 
 recursive_directory_iterator::__increment(error_code *ec)
 {
-    if (!__stack_ptr_) return *this;
-    if (__try_recursion(ec) || (ec && *ec))
-        return *this;
-
+    std::error_code m_ec;
     const directory_iterator end_it;
-    while (__stack_ptr_->size() > 0) {
-        __stack_ptr_->top().__increment(ec);
-        if ((ec && *ec) || __stack_ptr_->top() != end_it)
-            break;
-        __stack_ptr_->pop();
-    }
+    auto& stack = __imp_->__stack_;
 
-    if ((ec && *ec) || __stack_ptr_->size() == 0)
-        __make_end();
-    else {
-        _LIBCPP_ASSERT(__stack_ptr_->top() != directory_iterator{}, "Popping empty stack");
-        __entry_ = *__stack_ptr_->top();
+    if (__try_recursion(m_ec))
+        return *this;
+    else if (m_ec) {
+        goto handle_failure;
     }
+    __imp_->__rec_ = true;
 
-    __rec_ = true;
+    while (stack.size() > 0) {
+        stack.top().__increment(&m_ec);
+        if (m_ec) goto handle_failure;
+        if (stack.top() != end_it) break;
+        stack.pop();
+    }
+    if (stack.size() == 0)
+        __imp_.reset();
+    return *this;
+
+handle_failure:
+    __imp_.reset();
+    set_error_or_throw(m_ec, ec, "recursive_directory_iterator::operator++() failed");
     return *this;
 }
 
-bool recursive_directory_iterator::__try_recursion(error_code *ec) {
-    if (!__stack_ptr_ ||
-        __stack_ptr_->size() == 0 ||
-        __stack_ptr_->top() == directory_iterator{})
-        return false;
-
-    auto& curr_it = __stack_ptr_->top();
-
+bool recursive_directory_iterator::__try_recursion(error_code &ec) {
     using under_t = typename std::underlying_type<directory_options>::type;
     bool rec_sym = static_cast<under_t>(options()) &
           static_cast<under_t>(directory_options::follow_directory_symlink);
 
+    auto& curr_it = __imp_->__stack_.top();
+
     if (recursion_pending() && is_directory(curr_it->status()) &&
         (!is_symlink(curr_it->symlink_status()) || rec_sym))
     {
-        auto tmp = directory_iterator(curr_it->path(), ec);
-        if ((ec && *ec) || tmp == directory_iterator{}) {
+        directory_iterator new_it(curr_it->path(), &ec, __imp_->__options_);
+        if (ec || new_it == directory_iterator{})
             return false;
-        } else {
-            __stack_ptr_->push(tmp);
-            __entry_ = *tmp;
-            return true;
-        }
+        __imp_->__stack_.push(_VSTD::move(new_it));
+        return true;
     }
-
     return false;
 }
 
-void recursive_directory_iterator::__make_end() {
-    __stack_ptr_.reset();
-    __entry_ = directory_entry{};
-}
 
 _LIBCPP_END_NAMESPACE_EXPERIMENTAL_FILESYSTEM

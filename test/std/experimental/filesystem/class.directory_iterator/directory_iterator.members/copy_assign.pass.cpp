@@ -32,7 +32,6 @@ TEST_CASE(test_assignment_signature)
 {
     using D = directory_iterator;
     static_assert(std::is_copy_assignable<D>::value, "");
-    static_assert(!std::is_nothrow_copy_assignable<D>::value, "");
 }
 
 TEST_CASE(test_copy_to_end_iterator)
@@ -94,5 +93,6 @@ TEST_CASE(test_returns_reference_to_self)
     directory_iterator& ref = (it2 = it);
     TEST_CHECK(&ref == &it2);
 }
+
 
 TEST_SUITE_END()

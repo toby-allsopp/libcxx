@@ -4,6 +4,7 @@
 # include <cstddef>
 # include <cstdlib>
 # include <cstdio>
+# include <cstring>
 # include <cassert>
 
 #if !defined(RAPID_CXX_TEST_NO_SYSTEM_HEADER) || !defined(__GNUC__)

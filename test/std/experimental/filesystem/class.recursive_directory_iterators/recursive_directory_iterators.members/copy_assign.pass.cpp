@@ -77,7 +77,6 @@ TEST_CASE(test_assignment_signature)
 {
     using D = recursive_directory_iterator;
     static_assert(std::is_copy_assignable<D>::value, "");
-    static_assert(!std::is_nothrow_copy_assignable<D>::value, "");
 }
 
 TEST_CASE(test_copy_to_end_iterator)

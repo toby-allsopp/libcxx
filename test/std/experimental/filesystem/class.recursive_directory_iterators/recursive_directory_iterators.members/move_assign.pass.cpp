@@ -150,15 +150,6 @@ TEST_CASE(test_self_move)
     TEST_CHECK(it2.options()           == it.options());
     TEST_CHECK(it2.depth()             == it.depth());
     TEST_CHECK(it2.recursion_pending() == it.recursion_pending());
-    const path entry = *it;
-    const path entry2 = *it2;
-    const std::string& n = entry.native();
-    const std::string& n2 = entry2.native();
-    TEST_CHECK(n == n2);
-    TEST_CHECK(n.size() == n2.size());
-    std::cout << "IT2: " << entry << std::endl;
-    std::cout << "IT: " << entry2 << std::endl;
-
     TEST_CHECK(*it2 == *it);
 
     it = std::move(it);

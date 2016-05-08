@@ -188,23 +188,26 @@ struct scoped_test_env
         }
     }
 
-    void create_file(std::string filename, std::size_t size = 0)
+    std::string create_file(std::string filename, std::size_t size = 0)
     {
         filename = sanitize_path(filename);
         fs_helper_run(fs_make_cmd("create_file", filename, size));
+        return filename;
     }
 
-    void create_dir(std::string filename)
+    std::string create_dir(std::string filename)
     {
         filename = sanitize_path(filename);
         fs_helper_run(fs_make_cmd("create_dir", filename));
+        return filename;
     }
 
-    void create_symlink(std::string source, std::string to)
+    std::string create_symlink(std::string source, std::string to)
     {
         source = sanitize_path(source);
         to = sanitize_path(to);
         fs_helper_run(fs_make_cmd("create_symlink", source, to));
+        return to;
     }
 
     void create_hardlink(std::string source, std::string to)

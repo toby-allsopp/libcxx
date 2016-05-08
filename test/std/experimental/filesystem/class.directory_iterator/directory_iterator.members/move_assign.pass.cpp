@@ -92,4 +92,19 @@ TEST_CASE(test_returns_reference_to_self)
     TEST_CHECK(&ref == &it2);
 }
 
+
+TEST_CASE(test_self_move)
+{
+    // Create two non-equal iterators that have exactly the same state.
+    directory_iterator it(StaticEnv::Dir);
+    directory_iterator it2(StaticEnv::Dir);
+    ++it; ++it2;
+    TEST_CHECK(it != it2);
+    TEST_CHECK(*it2 == *it);
+
+    it = std::move(it);
+    TEST_CHECK(*it2 == *it);
+}
+
+
 TEST_SUITE_END()

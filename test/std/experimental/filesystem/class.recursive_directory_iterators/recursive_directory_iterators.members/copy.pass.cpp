@@ -32,7 +32,7 @@ TEST_CASE(test_constructor_signature)
 {
     using D = recursive_directory_iterator;
     static_assert(std::is_copy_constructible<D>::value, "");
-    static_assert(!std::is_nothrow_copy_constructible<D>::value, "");
+    //static_assert(!std::is_nothrow_copy_constructible<D>::value, "");
 }
 
 TEST_CASE(test_copy_end_iterator)

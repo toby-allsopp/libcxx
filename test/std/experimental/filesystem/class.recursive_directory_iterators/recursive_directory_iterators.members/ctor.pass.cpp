@@ -213,7 +213,7 @@ TEST_CASE(test_options_post_conditions)
 
         RDI it2(badDir, ec);
         TEST_REQUIRE(ec);
-        TEST_CHECK(it2.options() == directory_options::none);
+        TEST_REQUIRE(it2 == RDI{});
     }
     {
         std::error_code ec;
@@ -225,7 +225,7 @@ TEST_CASE(test_options_post_conditions)
 
         RDI it2(badDir, opts, ec);
         TEST_REQUIRE(ec);
-        TEST_CHECK(it2.options() == opts);
+        TEST_REQUIRE(it2 == RDI{});
     }
     {
         RDI it(goodDir);
