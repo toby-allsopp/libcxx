@@ -469,7 +469,10 @@ namespace rapid_cxx_test
                      const char* message1)
             : type(type1), file(file1), func(func1), line(line1),
               expression(expression1), message(message1)
-        {}
+        {
+            //trim_file_string();
+            trim_func_string();
+        }
 
         failure_type_t type;
         const char *file;
@@ -477,6 +480,32 @@ namespace rapid_cxx_test
         std::size_t line;
         const char *expression;
         const char *message;
+
+    private:
+        void trim_file_string() {
+            const char* f_start  = file;
+            const char* prev_start = f_start;
+            const char* last_start = f_start;
+            char last;
+            while ((last = *f_start) != '\0') {
+                ++f_start;
+                if (last == '/' && *f_start) {
+                    prev_start = last_start;
+                    last_start = f_start;
+                }
+            }
+            file = prev_start;
+        }
+      void trim_func_string() {
+          const char* void_loc = ::strstr(func, "void ");
+          if (void_loc == func) {
+              func += strlen("void ");
+          }
+          const char* namespace_loc = ::strstr(func, "::");
+          if (namespace_loc) {
+              func = namespace_loc + 2;
+          }
+      }
     };
 
     ////////////////////////////////////////////////////////////////////////////
@@ -703,8 +732,8 @@ namespace rapid_cxx_test
 
         void report_error(test_outcome o) const
         {
-            std::fprintf(stderr, "%s:%lu Assertion %s failed.\n    in function: %s\n    %s\n"
-                , o.file, o.line, o.expression, o.func,  o.message ? o.message : ""
+            std::fprintf(stderr, "In %s:%lu Assertion %s failed.\n    in file: %s\n    %s\n"
+                , o.func, o.line, o.expression, o.file,  o.message ? o.message : ""
               );
         }
 
