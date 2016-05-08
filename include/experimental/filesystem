@@ -1894,7 +1894,16 @@ public:
     operator=(const recursive_directory_iterator&) = default;
 
     recursive_directory_iterator & 
-    operator=(recursive_directory_iterator&&) = default;
+    operator=(recursive_directory_iterator&& __o) noexcept {
+        // non-default implementation provided to support self-move assign.
+        if (this != &__o) {
+            __entry_ = _VSTD::move(__o.__entry_);
+            __stack_ptr_ = _VSTD::move(__o.__stack_ptr_);
+            __options_ = __o.__options_;
+            __rec_ = __o.__rec_;
+        }
+        return *this;
+    }
 
     ~recursive_directory_iterator() = default;
 

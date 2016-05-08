@@ -64,6 +64,28 @@ static const fs::path DirIterationList[] = {
 const std::size_t DirIterationListSize = sizeof(DirIterationList)
                                         / sizeof(fs::path);
 
+
+static const fs::path RecDirIterationList[] = {
+    makePath("dir1/dir2"),
+    makePath("dir1/file1"),
+    makePath("dir1/file2"),
+    makePath("dir1/dir2/file3"),
+    makePath("dir1/dir2/dir3"),
+    makePath("dir1/dir2/symlink_to_dir3"),
+    makePath("dir1/dir2/dir3/file4")
+};
+
+static const fs::path RecDirFollowSymlinksIterationList[] = {
+    makePath("dir1/dir2"),
+    makePath("dir1/file1"),
+    makePath("dir1/file2"),
+    makePath("dir1/dir2/file3"),
+    makePath("dir1/dir2/dir3"),
+    makePath("dir1/dir2/symlink_to_dir3"),
+    makePath("dir1/dir2/dir3/file4"),
+    makePath("dir1/dir2/symlink_to_dir3/file4")
+};
+
 } // namespace StaticEnv
 
 #endif // LIBCXX_FILESYSTEM_STATIC_TEST_ROOT
