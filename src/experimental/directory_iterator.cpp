@@ -1,8 +1,6 @@
 #include "experimental/filesystem"
-
 #include <dirent.h>
-#include <experimental/filesystem>
-
+#include <errno.h>
 
 _LIBCPP_BEGIN_NAMESPACE_EXPERIMENTAL_FILESYSTEM
 
@@ -95,7 +93,7 @@ public:
                 continue;
             } else if (ec || str.empty()) {
                 close();
-                __entry_ = {};
+                //__entry_ = {};
                 return false;
             } else {
                 __entry_.assign(__root_ / str);
@@ -122,7 +120,7 @@ directory_iterator::directory_iterator(const path& p, error_code *ec,
                                        directory_options opts)
 {
     std::error_code m_ec;
-    __imp_ = std::make_shared<__dir_stream>(p, m_ec);
+    __imp_ = make_shared<__dir_stream>(p, m_ec);
     if (m_ec) {
         __imp_.reset();
 
@@ -183,10 +181,11 @@ recursive_directory_iterator::__increment(error_code *ec)
     const directory_iterator end_it;
     auto& stack = __imp_->__stack_;
 
-    if (__try_recursion(m_ec))
-        return *this;
-    else if (m_ec) {
-        goto handle_failure;
+    if (recursion_pending()) {
+        if (__try_recursion(m_ec))
+            return *this;
+        else if (m_ec)
+            goto handle_failure;
     }
     __imp_->__rec_ = true;
 
@@ -202,18 +201,18 @@ recursive_directory_iterator::__increment(error_code *ec)
 
 handle_failure:
     __imp_.reset();
-    set_error_or_throw(m_ec, ec, "recursive_directory_iterator::operator++() failed");
+    set_error_or_throw(
+        m_ec, ec, "recursive_directory_iterator::operator++() failed");
     return *this;
 }
 
 bool recursive_directory_iterator::__try_recursion(error_code &ec) {
-    using under_t = typename std::underlying_type<directory_options>::type;
-    bool rec_sym = static_cast<under_t>(options()) &
-          static_cast<under_t>(directory_options::follow_directory_symlink);
 
+    bool rec_sym =
+        bool(options() & directory_options::follow_directory_symlink);
     auto& curr_it = __imp_->__stack_.top();
 
-    if (recursion_pending() && is_directory(curr_it->status()) &&
+    if (is_directory(curr_it->status()) &&
         (!is_symlink(curr_it->symlink_status()) || rec_sym))
     {
         directory_iterator new_it(curr_it->path(), &ec, __imp_->__options_);

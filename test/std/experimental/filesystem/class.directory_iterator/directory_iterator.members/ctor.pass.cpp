@@ -64,6 +64,7 @@ TEST_CASE(test_construction_from_bad_path)
             directory_iterator it(testPath, ec);
             TEST_CHECK(ec);
             TEST_CHECK(it == endIt);
+            ++it;
         }
         {
             directory_iterator it(testPath, opts, ec);
