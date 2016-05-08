@@ -26,7 +26,6 @@
 #include "test_macros.h"
 #include "rapid-cxx-test.hpp"
 #include "filesystem_test_helper.hpp"
-#include <iostream>
 
 using namespace std::experimental::filesystem;
 

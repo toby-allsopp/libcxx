@@ -13,11 +13,12 @@
 
 // class directory_iterator
 
-// typedef ... value_type;
-// typedef ... difference_type;
-// typedef ... pointer;
-// typedef ... reference;
-// typedef ... iterator_category
+//
+// explicit recursive_directory_iterator(const path& p);
+// recursive_directory_iterator(const path& p, directory_options options);
+// recursive_directory_iterator(const path& p, error_code& ec) noexcept;
+// recursive_directory_iterator(const path& p, directory_options options, error_code& ec) noexcept;
+
 
 #include <experimental/filesystem>
 #include <type_traits>
@@ -30,11 +31,13 @@
 
 using namespace std::experimental::filesystem;
 
-TEST_SUITE(directory_iterator_constructor_tests)
+using RDI = recursive_directory_iterator;
+
+TEST_SUITE(recursive_directory_iterator_constructor_tests)
 
 TEST_CASE(test_constructor_signatures)
 {
-    using D = directory_iterator;
+    using D = recursive_directory_iterator;
 
     // explicit directory_iterator(path const&);
     static_assert(!std::is_convertible<path, D>::value, "");
@@ -56,24 +59,24 @@ TEST_CASE(test_construction_from_bad_path)
 {
     std::error_code ec;
     directory_options opts = directory_options::none;
-    const directory_iterator endIt;
+    const RDI endIt;
 
     const path testPaths[] = { StaticEnv::DNE, StaticEnv::BadSymlink };
     for (path const& testPath : testPaths)
     {
         {
-            directory_iterator it(testPath, ec);
+            RDI it(testPath, ec);
             TEST_CHECK(ec);
             TEST_CHECK(it == endIt);
         }
         {
-            directory_iterator it(testPath, opts, ec);
+            RDI it(testPath, opts, ec);
             TEST_CHECK(ec);
             TEST_CHECK(it == endIt);
         }
         {
-            TEST_CHECK_THROW(filesystem_error, directory_iterator(testPath));
-            TEST_CHECK_THROW(filesystem_error, directory_iterator(testPath, opts));
+            TEST_CHECK_THROW(filesystem_error, RDI(testPath));
+            TEST_CHECK_THROW(filesystem_error, RDI(testPath, opts));
         }
     }
 }
@@ -88,8 +91,8 @@ TEST_CASE(access_denied_test_case)
     env.create_file(testFile, 42);
 
     // Test that we can iterator over the directory before changing the perms
-    directory_iterator it(testDir);
-    TEST_REQUIRE(it != directory_iterator{});
+    RDI it(testDir);
+    TEST_REQUIRE(it != RDI{});
 
     // Change the permissions so we can no longer iterate
     permissions(testDir, perms::none);
@@ -98,17 +101,17 @@ TEST_CASE(access_denied_test_case)
     // not given.
     {
         std::error_code ec;
-        directory_iterator it(testDir, ec);
+        RDI it(testDir, ec);
         TEST_REQUIRE(ec);
-        TEST_CHECK(it == directory_iterator{});
+        TEST_CHECK(it == RDI{});
     }
     // Check that construction does not report an error when
     // 'skip_permissions_denied' is given.
     {
         std::error_code ec;
-        directory_iterator it(testDir, directory_options::skip_permission_denied, ec);
+        RDI it(testDir, directory_options::skip_permission_denied, ec);
         TEST_REQUIRE(!ec);
-        TEST_CHECK(it == directory_iterator{});
+        TEST_CHECK(it == RDI{});
     }
 }
 
@@ -127,17 +130,17 @@ TEST_CASE(access_denied_to_file_test_case)
     // not given.
     {
         std::error_code ec;
-        directory_iterator it(testFile, ec);
+        RDI it(testFile, ec);
         TEST_REQUIRE(ec);
-        TEST_CHECK(it == directory_iterator{});
+        TEST_CHECK(it == RDI{});
     }
     // Check that construction still fails when 'skip_permissions_denied' is given
     // because we tried to open a file and not a directory.
     {
         std::error_code ec;
-        directory_iterator it(testFile, directory_options::skip_permission_denied, ec);
+        RDI it(testFile, directory_options::skip_permission_denied, ec);
         TEST_REQUIRE(ec);
-        TEST_CHECK(it == directory_iterator{});
+        TEST_CHECK(it == RDI{});
     }
 }
 
@@ -147,15 +150,15 @@ TEST_CASE(test_open_on_empty_directory_equals_end)
     const path testDir = env.make_env_path("dir1");
     env.create_dir(testDir);
 
-    const directory_iterator endIt;
+    const RDI endIt;
     {
         std::error_code ec;
-        directory_iterator it(testDir, ec);
+        RDI it(testDir, ec);
         TEST_CHECK(!ec);
         TEST_CHECK(it == endIt);
     }
     {
-        directory_iterator it(testDir);
+        RDI it(testDir);
         TEST_CHECK(it == endIt);
     }
 }
@@ -165,17 +168,17 @@ TEST_CASE(test_open_on_directory_succeeds)
     const path testDir = StaticEnv::Dir;
     std::set<path> dir_contents(std::begin(StaticEnv::DirIterationList),
                                 std::end(  StaticEnv::DirIterationList));
-    const directory_iterator endIt{};
+    const RDI endIt{};
 
     {
         std::error_code ec;
-        directory_iterator it(testDir, ec);
+        RDI it(testDir, ec);
         TEST_REQUIRE(!ec);
         TEST_CHECK(it != endIt);
         TEST_CHECK(dir_contents.count(*it));
     }
     {
-        directory_iterator it(testDir);
+        RDI it(testDir);
         TEST_CHECK(it != endIt);
         TEST_CHECK(dir_contents.count(*it));
     }
@@ -184,55 +187,31 @@ TEST_CASE(test_open_on_directory_succeeds)
 TEST_CASE(test_open_on_file_fails)
 {
     const path testFile = StaticEnv::File;
-    const directory_iterator endIt{};
+    const RDI endIt{};
     {
         std::error_code ec;
-        directory_iterator it(testFile, ec);
+        RDI it(testFile, ec);
         TEST_REQUIRE(ec);
         TEST_CHECK(it == endIt);
     }
     {
-        directory_iterator it(testFile);
-        TEST_CHECK(it == endIt);
-    }
-}
-
-TEST_CASE(test_open_on_symlink)
-{
-    const path symlinkToDir = StaticEnv::SymlinkToDir;
-    std::set<path> dir_contents(std::begin(StaticEnv::DirIterationList),
-                                std::end(  StaticEnv::DirIterationList));
-    const directory_iterator endIt{};
-
-    {
-        std::error_code ec;
-        directory_iterator it(symlinkToDir, ec);
-        TEST_REQUIRE(ec);
-        TEST_CHECK(it == endIt);
-    }
-    {
-        std::error_code ec;
-        directory_iterator it(symlinkToDir,
-                              directory_options::follow_directory_symlink, ec);
-        TEST_REQUIRE(!ec);
-        TEST_CHECK(it != endIt);
-        TEST_CHECK(dir_contents.count(*it));
+        TEST_CHECK_THROW(filesystem_error, RDI(testFile));
     }
 }
 
 TEST_CASE(test_options_post_conditions)
 {
     const path goodDir = StaticEnv::Dir;
-    const path badDir = staticEnv::DNE;
+    const path badDir = StaticEnv::DNE;
 
     {
         std::error_code ec;
 
-        directory_iterator it1(goodDir, ec);
+        RDI it1(goodDir, ec);
         TEST_REQUIRE(!ec);
         TEST_CHECK(it1.options() == directory_options::none);
 
-        directory_iterator it2(badDir, ec);
+        RDI it2(badDir, ec);
         TEST_REQUIRE(ec);
         TEST_CHECK(it2.options() == directory_options::none);
     }
@@ -240,21 +219,21 @@ TEST_CASE(test_options_post_conditions)
         std::error_code ec;
         const directory_options opts = directory_options::skip_permission_denied;
 
-        directory_iterator it1(goodDir, opts, ec);
+        RDI it1(goodDir, opts, ec);
         TEST_REQUIRE(!ec);
         TEST_CHECK(it1.options() == opts);
 
-        directory_iterator it2(badDir, opts, ec);
+        RDI it2(badDir, opts, ec);
         TEST_REQUIRE(ec);
         TEST_CHECK(it2.options() == opts);
     }
     {
-        directory_iterator it(goodDir);
+        RDI it(goodDir);
         TEST_CHECK(it.options() == directory_options::none);
     }
     {
         const directory_options opts = directory_options::follow_directory_symlink;
-        directory_iterator it(goodDir, opts);
+        RDI it(goodDir, opts);
         TEST_CHECK(it.options() == opts);
     }
 }

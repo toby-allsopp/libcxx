@@ -157,15 +157,14 @@ directory_iterator& directory_iterator::__increment(error_code *ec)
 
 recursive_directory_iterator::recursive_directory_iterator(const path& p, 
     directory_options opt, error_code *ec)
-  : recursive_directory_iterator()
 {
     __options_ = opt;
-    auto curr_iter = directory_iterator{p, ec};
+    auto curr_iter = directory_iterator{p, ec, opt};
     if ((ec && *ec) || curr_iter == directory_iterator{})
         return;
     __stack_ptr_ = std::make_shared<stack<directory_iterator> >();
-    __stack_ptr_->push(curr_iter);
-    __entry_ = *curr_iter;
+    __stack_ptr_->push(std::move(curr_iter));
+    __entry_ = *(__stack_ptr_->top());
 }
 
 recursive_directory_iterator& 
