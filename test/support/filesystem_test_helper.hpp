@@ -173,6 +173,10 @@ struct scoped_test_env
         fs_helper_run(fs_make_cmd("clean", test_root));
     }
 
+    const fs::path& root() const {
+        return test_root;
+    }
+
     fs::path make_env_path(fs::path const & p)
     {
         return test_root / p;
@@ -211,9 +215,10 @@ struct scoped_test_env
         fs_helper_run(fs_make_cmd("create_hardlink", source, to));
     }
 
-    void create_fifo(std::string file) {
+    std::string create_fifo(std::string file) {
         file = sanitize_path(file);
         fs_helper_run(fs_make_cmd("create_fifo", file));
+        return file;
     }
 
     void create_socket(std::string file) {

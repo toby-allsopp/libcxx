@@ -216,17 +216,21 @@ void __copy(
 {
     const bool sym_status = bool(options & 
         (copy_options::create_symlinks | copy_options::skip_symlinks));
-    
+
+    const bool sym_status2 = bool(options &
+        copy_options::copy_symlinks);
+
     std::error_code m_ec;
     struct ::stat f_st;
-    const file_status f = sym_status ? detail::posix_lstat(from, f_st, &m_ec)
+    const file_status f = sym_status || sym_status2
+                                     ? detail::posix_lstat(from, f_st, &m_ec)
                                      : detail::posix_stat(from, f_st, &m_ec);
     
     if (m_ec && ec) {
         *ec = m_ec;
         return;
     } else if (m_ec) {
-        throw filesystem_error("std::experimental::filesystem::copy", from, m_ec);
+        throw filesystem_error("std::experimental::filesystem::copy", from, to, m_ec);
     }
     
     

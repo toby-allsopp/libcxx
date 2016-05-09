@@ -27,6 +27,16 @@ using namespace std::experimental::filesystem;
 
 TEST_SUITE(filesystem_canonical_path_test_suite)
 
+TEST_CASE(signature_test)
+{
+    const path p; ((void)p);
+    std::error_code ec; ((void)ec);
+    ASSERT_NOT_NOEXCEPT(canonical(p));
+    ASSERT_NOT_NOEXCEPT(canonical(p, p));
+    ASSERT_NOT_NOEXCEPT(canonical(p, ec));
+    ASSERT_NOT_NOEXCEPT(canonical(p, p, ec));
+}
+
 // There are 4 cases is the proposal for absolute path.
 // Each scope tests one of the cases.
 TEST_CASE(test_canonical)

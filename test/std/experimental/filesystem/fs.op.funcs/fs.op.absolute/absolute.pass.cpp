@@ -25,6 +25,13 @@ using namespace std::experimental::filesystem;
 
 TEST_SUITE(filesystem_absolute_path_test_suite)
 
+TEST_CASE(absolute_signature_test)
+{
+    const path p; ((void)p);
+    ASSERT_NOT_NOEXCEPT(absolute(p));
+    ASSERT_NOT_NOEXCEPT(absolute(p, p));
+}
+
 // There are 4 cases is the proposal for absolute path.
 // Each scope tests one of the cases.
 TEST_CASE(absolute_path_test)
