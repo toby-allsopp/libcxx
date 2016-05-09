@@ -1959,7 +1959,7 @@ public:
         __increment();
         return __p;
     }
-    
+
     recursive_directory_iterator& increment(error_code& __ec) _NOEXCEPT
     { return __increment(&__ec); }
 
