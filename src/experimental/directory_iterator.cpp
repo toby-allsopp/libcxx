@@ -177,36 +177,32 @@ recursive_directory_iterator::recursive_directory_iterator(const path& p,
 recursive_directory_iterator& 
 recursive_directory_iterator::__increment(error_code *ec)
 {
-    std::error_code m_ec;
-    const directory_iterator end_it;
-    auto& stack = __imp_->__stack_;
-
+    if (ec) ec->clear();
     if (recursion_pending()) {
-        if (__try_recursion(m_ec))
+        if (__try_recursion(ec) || (ec && *ec))
             return *this;
-        else if (m_ec)
-            goto handle_failure;
     }
     __rec_ = true;
-
-    while (stack.size() > 0) {
-        stack.top().__increment(&m_ec);
-        if (m_ec) goto handle_failure;
-        if (stack.top() != end_it) break;
-        stack.pop();
-    }
-    if (stack.size() == 0)
-        __imp_.reset();
-    return *this;
-
-handle_failure:
-    __imp_.reset();
-    set_error_or_throw(
-        m_ec, ec, "recursive_directory_iterator::operator++() failed");
+    __advance(ec);
     return *this;
 }
 
-bool recursive_directory_iterator::__try_recursion(error_code &ec) {
+void recursive_directory_iterator::__advance(error_code* ec) {
+    const directory_iterator end_it;
+    auto& stack = __imp_->__stack_;
+    std::error_code m_ec;
+    while (stack.size() > 0) {
+        stack.top().increment(m_ec);
+        if (stack.top() != end_it) return;
+        if (m_ec) break;
+        stack.pop();
+    }
+    __imp_.reset();
+    if (m_ec)
+        set_error_or_throw(m_ec, ec, "recursive_directory_iterator::operator++()");
+}
+
+bool recursive_directory_iterator::__try_recursion(error_code *ec) {
 
     bool rec_sym =
         bool(options() & directory_options::follow_directory_symlink);
@@ -215,10 +211,16 @@ bool recursive_directory_iterator::__try_recursion(error_code &ec) {
     if (is_directory(curr_it->status()) &&
         (!is_symlink(curr_it->symlink_status()) || rec_sym))
     {
-        directory_iterator new_it(curr_it->path(), &ec, __imp_->__options_);
-        if (!ec && new_it != directory_iterator{}) {
+        std::error_code m_ec;
+        directory_iterator new_it(curr_it->path(), &m_ec, __imp_->__options_);
+        if (new_it != directory_iterator{}) {
             __imp_->__stack_.push(_VSTD::move(new_it));
             return true;
+        } else if (m_ec) {
+            __imp_.reset();
+            set_error_or_throw(m_ec, ec,
+                               "recursive_directory_iterator::operator++()");
+            return false;
         }
     }
     return false;

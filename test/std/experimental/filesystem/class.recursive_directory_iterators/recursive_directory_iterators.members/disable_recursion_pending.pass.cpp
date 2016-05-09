@@ -13,7 +13,7 @@
 
 // class recursive_directory_iterator
 
-// void pop()
+// void disable_recursion_pending();
 
 #include <experimental/filesystem>
 #include <type_traits>
@@ -28,18 +28,16 @@ using namespace std::experimental::filesystem;
 
 TEST_SUITE(recursive_directory_iterator_disable_recursion_pending_tests)
 
+// NOTE: The main semantics of disable_recursion_pending are tested
+// in the 'recursion_pending()' tests.
 TEST_CASE(basic_test)
 {
     recursive_directory_iterator it(StaticEnv::Dir);
     TEST_REQUIRE(it.recursion_pending() == true);
     it.disable_recursion_pending();
     TEST_CHECK(it.recursion_pending() == false);
-    ++it;
-    TEST_CHECK(it.recursion_pending() == true);
     it.disable_recursion_pending();
-    recursive_directory_iterator it2(it);
     TEST_CHECK(it.recursion_pending() == false);
-    TEST_CHECK(it2.recursion_pending() == false);
 }
 
 TEST_SUITE_END()
