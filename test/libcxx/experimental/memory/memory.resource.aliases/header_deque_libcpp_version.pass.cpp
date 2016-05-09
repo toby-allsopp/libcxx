@@ -6,20 +6,17 @@
 // Source Licenses. See LICENSE.TXT for details.
 //
 //===----------------------------------------------------------------------===//
-//
-// UNSUPPORTED: libcpp-has-no-threads
 
-// <atomic>
+// UNSUPPORTED: c++98, c++03
 
-// struct atomic_flag
+// <experimental/deque>
 
-// TESTING EXTENSION atomic_flag(bool)
+#include <experimental/deque>
 
-#include <atomic>
-#include <cassert>
+#ifndef _LIBCPP_VERSION
+#error header must provide _LIBCPP_VERSION
+#endif
 
 int main()
 {
-    std::atomic_flag f(false);
-    assert(f.test_and_set() == 0);
 }

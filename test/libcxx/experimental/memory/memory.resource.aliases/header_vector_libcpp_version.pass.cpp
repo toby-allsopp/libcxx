@@ -7,16 +7,16 @@
 //
 //===----------------------------------------------------------------------===//
 
-// <vector>
+// UNSUPPORTED: c++98, c++03
 
-// vector<const int> v;  // an extension
+// <experimental/vector>
 
-#include <vector>
-#include <type_traits>
+#include <experimental/vector>
+
+#ifndef _LIBCPP_VERSION
+#error header must provide _LIBCPP_VERSION
+#endif
 
 int main()
 {
-#ifndef _LIBCPP_HAS_NO_GENERALIZED_INITIALIZERS
-    std::vector<const int> v = {1, 2, 3};
-#endif
 }
