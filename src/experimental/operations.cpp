@@ -142,8 +142,9 @@ file_status posix_lstat(
  
 ////////////////////////////////////////////////////////////////////////
 bool copy_file_impl(
-    const path& from, const path& to
-  , std::error_code *ec
+    const path& from, const path& to,
+    perms from_perms,
+    std::error_code *ec
   )
 {
     if (ec) { ec->clear(); }
@@ -173,6 +174,7 @@ bool copy_file_impl(
             throw filesystem_error("std::experimental::filesystem::copy_file_impl", from, to, m_ec);
         }
     }
+    permissions(to, from_perms);
     return true;
 }
 
@@ -333,9 +335,11 @@ bool __copy_file(
   )
 {
     if (ec) ec->clear();
-        
+
     std::error_code m_ec;
-    const bool good_from = is_regular_file(from, m_ec);
+    struct ::stat t_st;
+    const file_status from_st = detail::posix_stat(from, t_st, &m_ec);
+    const bool good_from = is_regular_file(from_st);
     if (not good_from) {
         if (not m_ec) {
             m_ec = std::error_code(
@@ -343,7 +347,6 @@ bool __copy_file(
                 , std::system_category()
                 );
         }
-            
         if (ec) {
             *ec = m_ec;
             return false;
@@ -385,7 +388,7 @@ bool __copy_file(
             return false;
         }
     }
-    return detail::copy_file_impl(from, to, ec);
+    return detail::copy_file_impl(from, to, from_st.permissions(), ec);
 }
     
 
