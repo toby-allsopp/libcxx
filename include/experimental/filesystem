@@ -673,7 +673,7 @@ public:
         path(_InputIt __first, _InputIt _last, const locale& __loc);
 
     _LIBCPP_INLINE_VISIBILITY
-    ~path() {}
+    ~path() = default;
 
     // assignments
     _LIBCPP_INLINE_VISIBILITY
