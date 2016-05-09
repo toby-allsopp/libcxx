@@ -32,7 +32,7 @@ inline fs::path makePath(fs::path const& p) {
     return static_test_env_path() / p;
 }
 
-static const fs::path EnvRoot = LIBCXX_FILESYSTEM_STATIC_TEST_ROOT;
+static const fs::path Root = LIBCXX_FILESYSTEM_STATIC_TEST_ROOT;
 
 static const fs::path TestFileList[] = {
         makePath("empty_file"),

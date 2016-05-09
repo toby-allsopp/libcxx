@@ -198,7 +198,7 @@ path __canonical(path const & orig_p, const path& base, std::error_code *ec)
     if (ec) *ec = m_ec;
             
     if (m_ec && not ec) { 
-        throw filesystem_error("std::experimental::filesystem::canonical", orig_p, m_ec);
+        throw filesystem_error("std::experimental::filesystem::canonical", orig_p, base, m_ec);
     }
     else if (m_ec) {
         return {};
