@@ -41,6 +41,7 @@ struct NoDefault { NoDefault() = delete; };
 // the constructor would fail.
 void test_default_constructible_extension_sfinae()
 {
+#if defined(_LIBCPP_VERSION)
     {
         typedef std::tuple<MoveOnly, NoDefault> Tuple;
 
@@ -96,6 +97,7 @@ void test_default_constructible_extension_sfinae()
             MoveOnly, Tuple, MoveOnly, MoveOnly
         >::value, "");
     }
+#endif
 }
 
 int main()
@@ -117,6 +119,7 @@ int main()
         assert(std::get<1>(t) == 1);
         assert(std::get<2>(t) == 2);
     }
+#if defined(_LIBCPP_VERSION)
     // extensions
     {
         std::tuple<MoveOnly, MoveOnly, MoveOnly> t(MoveOnly(0),
@@ -143,4 +146,5 @@ int main()
     // Check that SFINAE is properly applied with the default reduced arity
     // constructor extensions.
     test_default_constructible_extension_sfinae();
+#endif
 }

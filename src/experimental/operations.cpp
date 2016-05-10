@@ -190,7 +190,7 @@ void __copy(const path& from, const path& to, copy_options options,
 
     struct ::stat t_st = {};
     const file_status t = sym_status ? detail::posix_lstat(to, t_st, &m_ec)
-                                      : detail::posix_stat(to, t_st, &m_ec);
+                                     : detail::posix_stat(to, t_st, &m_ec);
 
     if (not status_known(t))
         return set_or_throw(m_ec, ec, "copy", from, to);
@@ -347,7 +347,6 @@ bool __create_directories(const path& p, std::error_code *ec)
     return __create_directory(p, ec);
 }
 
-
 bool __create_directory(const path& p, std::error_code *ec)
 {
     if (ec) ec->clear();
@@ -412,14 +411,12 @@ path __current_path(std::error_code *ec) {
     return {buff.get()};
 }
 
-
 void __current_path(const path& p, std::error_code *ec) {
     if (::chdir(p.c_str()) == -1)
         set_or_throw(ec, "current_path", p);
     else if (ec)
         ec->clear();
 }
-
 
 bool __equivalent(const path& p1, const path& p2, std::error_code *ec)
 {
