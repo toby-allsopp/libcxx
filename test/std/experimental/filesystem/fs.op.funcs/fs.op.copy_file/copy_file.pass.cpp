@@ -11,10 +11,10 @@
 
 // <experimental/filesystem>
 
-// void copy_file(const path& from, const path& to);
-// void copy_file(const path& from, const path& to, error_code& ec) noexcept;
-// void copy_file(const path& from, const path& to, copy_options options);
-// void copy_file(const path& from, const path& to, copy_options options,
+// bool copy_file(const path& from, const path& to);
+// bool copy_file(const path& from, const path& to, error_code& ec) noexcept;
+// bool copy_file(const path& from, const path& to, copy_options options);
+// bool copy_file(const path& from, const path& to, copy_options options,
 //           error_code& ec) noexcept;
 
 #include <experimental/filesystem>
@@ -33,6 +33,21 @@ namespace fs = std::experimental::filesystem;
 using CO = fs::copy_options;
 
 TEST_SUITE(filesystem_copy_file_test_suite)
+
+TEST_CASE(test_signatures)
+{
+    const path p; ((void)p);
+    const copy_options opts{}; ((void)opts);
+    std::error_code ec; ((void)ec);
+    ASSERT_SAME_TYPE(decltype(fs::copy_file(p, p)), bool);
+    ASSERT_SAME_TYPE(decltype(fs::copy_file(p, p, opts)), bool);
+    ASSERT_SAME_TYPE(decltype(fs::copy_file(p, p, ec)), bool);
+    ASSERT_SAME_TYPE(decltype(fs::copy_file(p, p, opts, ec)), bool);
+    ASSERT_NOT_NOEXCEPT(fs::copy_file(p, p));
+    ASSERT_NOT_NOEXCEPT(fs::copy_file(p, p, opts));
+    ASSERT_NOEXCEPT(fs::copy_file(p, p, ec));
+    ASSERT_NOEXCEPT(fs::copy_file(p, p, opts, ec));
+}
 
 TEST_CASE(test_error_reporting)
 {

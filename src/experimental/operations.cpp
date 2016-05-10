@@ -441,7 +441,7 @@ bool __create_directories(const path& p, std::error_code *ec)
 bool __create_directory(const path& p, std::error_code *ec)
 {
     std::error_code m_ec;
-    if (::mkdir(p.c_str(), S_IRWXU|S_IRWXG|S_IRWXO) == -1) {
+    if (::mkdir(p.c_str(), static_cast<int>(perms::all)) == -1) {
         m_ec = detail::capture_errno();
     }
     if (ec) *ec = m_ec;
@@ -545,7 +545,8 @@ void __create_symlink(
     if (ec) *ec = m_ec;
             
     if (m_ec && not ec) {
-        throw filesystem_error("std::experimental::filesystem::create_symlink", from, to, m_ec);
+        throw filesystem_error("std::experimental::filesystem::create_symlink",
+                               from, to, m_ec);
     }
 }
 
