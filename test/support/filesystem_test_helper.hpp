@@ -109,51 +109,54 @@ struct scoped_test_env
 
     const fs::path& root() const { return test_root; }
 
-    fs::path make_env_path(fs::path const & p) { return sanitize_path(p); }
+    fs::path make_env_path(std::string p) { return sanitize_path(p); }
 
-    std::string sanitize_path(std::string const & raw) {
+    std::string sanitize_path(std::string raw) {
         assert(raw.find("..") == std::string::npos);
-        const std::string& root = test_root.native();
-        if (root.compare(0, root.size(), raw) == 0) {
-            return raw;
-        } else {
-            return test_root / fs::path(raw);
+        std::string const& n = root().native();
+        if (n.compare(0, n.size(), raw, 0, n.size()) != 0) {
+            assert(raw.front() != '\\');
+            fs::path tmp(test_root);
+            tmp /= raw;
+            return std::move(const_cast<std::string&>(tmp.native()));
         }
+        return raw;
     }
+
     std::string create_file(std::string filename, std::size_t size = 0) {
-        filename = sanitize_path(filename);
+        filename = sanitize_path(std::move(filename));
         fs_helper_run(fs_make_cmd("create_file", filename, size));
         return filename;
     }
 
     std::string create_dir(std::string filename) {
-        filename = sanitize_path(filename);
+        filename = sanitize_path(std::move(filename));
         fs_helper_run(fs_make_cmd("create_dir", filename));
         return filename;
     }
 
     std::string create_symlink(std::string source, std::string to) {
-        source = sanitize_path(source);
-        to = sanitize_path(to);
+        source = sanitize_path(std::move(source));
+        to = sanitize_path(std::move(to));
         fs_helper_run(fs_make_cmd("create_symlink", source, to));
         return to;
     }
 
     std::string create_hardlink(std::string source, std::string to) {
-        source = sanitize_path(source);
-        to = sanitize_path(to);
+        source = sanitize_path(std::move(source));
+        to = sanitize_path(std::move(to));
         fs_helper_run(fs_make_cmd("create_hardlink", source, to));
         return to;
     }
 
     std::string create_fifo(std::string file) {
-        file = sanitize_path(file);
+        file = sanitize_path(std::move(file));
         fs_helper_run(fs_make_cmd("create_fifo", file));
         return file;
     }
 
     std::string create_socket(std::string file) {
-        file = sanitize_path(file);
+        file = sanitize_path(std::move(file));
         fs_helper_run(fs_make_cmd("create_socket", file));
         return file;
     }
