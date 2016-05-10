@@ -1946,15 +1946,15 @@ public:
     ~recursive_directory_iterator() = default;
 
     const directory_entry& operator*() const
-    { return *(__imp_->__stack_.top()); }
+    { return __deref(); }
 
     const directory_entry* operator->() const
-    { return &**this; }
+    { return &__deref(); }
 
     recursive_directory_iterator& operator++()
     { return __increment(); }
 
-    __dir_element_proxy operator++(int) {
+        __dir_element_proxy operator++(int) {
         __dir_element_proxy __p(**this);
         __increment();
         return __p;
@@ -1963,23 +1963,14 @@ public:
     recursive_directory_iterator& increment(error_code& __ec) _NOEXCEPT
     { return __increment(&__ec); }
 
-    directory_options options() const
-    { return __imp_->__options_; }
+    directory_options options() const;
 
-    int depth() const
-    { return __imp_->__stack_.size() - 1; }
+    int depth() const;
+
+    void pop();
 
     bool recursion_pending() const
     { return __rec_; }
-
-    void pop() {
-        _LIBCPP_ASSERT(__imp_, "Popping the end iterator");
-        __imp_->__stack_.pop();
-        if (__imp_->__stack_.size() == 0)
-            __imp_.reset();
-        else
-            __advance();
-    }
 
     void disable_recursion_pending()
     { __rec_ = false; }
@@ -1994,14 +1985,12 @@ private:
     recursive_directory_iterator(const path& __p, directory_options __opt,
                                  error_code *__ec);
 
+    const directory_entry& __deref() const;
     bool __try_recursion(error_code* __ec);
     void __advance(error_code* __ec=nullptr);
     recursive_directory_iterator& __increment(error_code *__ec=nullptr);
 
-    struct __shared_imp {
-      stack<directory_iterator> __stack_;
-      directory_options __options_;
-    };
+    struct __shared_imp;
     shared_ptr<__shared_imp> __imp_;
     bool __rec_;
 };                                     // class recursive_directory_iterator

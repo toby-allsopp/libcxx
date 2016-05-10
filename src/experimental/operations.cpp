@@ -35,10 +35,9 @@ using string_type = path::string_type;
 
 
 
-inline std::error_code capture_errno(std::error_code* ec = nullptr) {
+inline std::error_code capture_errno() {
     _LIBCPP_ASSERT(errno, "Expected errno to be non-zero");
     std::error_code m_ec(errno, std::generic_category());
-    if (ec) *ec = m_ec;
     return m_ec;
 }
 
@@ -53,7 +52,6 @@ void set_or_throw(std::error_code const& m_ec, std::error_code* ec,
         throw filesystem_error(msg_s, p, p2, m_ec);
     }
 }
-
 
 void set_or_throw(std::error_code* ec, const char* msg,
                   path const& p = {}, path const& p2 = {})
@@ -111,7 +109,6 @@ file_status posix_stat(path const & p, std::error_code* ec) {
     return posix_stat(p, path_stat, ec);
 }
 
-
 file_status posix_lstat(path const & p, struct ::stat & path_stat,
                         std::error_code* ec)
 {
@@ -132,7 +129,6 @@ bool stat_equivalent(struct ::stat& st1, struct ::stat& st2) {
 
 
 //                           DETAIL::MISC
-
 
 
 bool copy_file_impl(const path& from, const path& to, perms from_perms,
@@ -163,7 +159,6 @@ bool copy_file_impl(const path& from, const path& to, perms from_perms,
 
 using detail::set_or_throw;
 
-
 path __canonical(path const & orig_p, const path& base, std::error_code *ec)
 {
     path p = absolute(orig_p, base);
@@ -191,7 +186,7 @@ void __copy(const path& from, const path& to, copy_options options,
     const file_status f = sym_status || sym_status2
                                      ? detail::posix_lstat(from, f_st, &m_ec)
                                      : detail::posix_stat(from,  f_st, &m_ec);
-    if (not status_known(f)) {
+    if (m_ec) {
         set_or_throw(m_ec, ec, "copy", from, to);
         return;
     }
@@ -209,12 +204,12 @@ void __copy(const path& from, const path& to, copy_options options,
         || (is_directory(f) && is_regular_file(t))
         || detail::stat_equivalent(f_st, t_st))
     {
-        const std::error_code mec = make_error_code(errc::function_not_supported);
-        set_or_throw(mec, ec, "copy", from, to);
+        set_or_throw(make_error_code(errc::function_not_supported),
+                     ec, "copy", from, to);
         return;
     }
 
-    if (ec) { ec->clear(); }
+    if (ec) ec->clear();
 
     if (is_symlink(f)) {
         if (bool(copy_options::skip_symlinks & options)) {
@@ -223,9 +218,10 @@ void __copy(const path& from, const path& to, copy_options options,
         else if (not exists(t)) {
             __copy_symlink(from, to, ec);
         } else {
-            set_or_throw(make_error_code(errc::file_exists), ec, "copy", from, to);
-            return;
+            set_or_throw(make_error_code(errc::file_exists),
+                         ec, "copy", from, to);
         }
+        return;
     }
     else if (is_regular_file(f)) {
         if (bool(copy_options::directories_only & options)) {
@@ -242,6 +238,7 @@ void __copy(const path& from, const path& to, copy_options options,
         } else {
             __copy_file(from, to, options, ec);
         }
+        return;
     }
     else if (is_directory(f)) {
         if (not bool(copy_options::recursive & options) &&
@@ -258,11 +255,14 @@ void __copy(const path& from, const path& to, copy_options options,
         directory_iterator it = ec ? directory_iterator(from, *ec)
                                    : directory_iterator(from);
         if (ec && *ec) { return; }
-        for (; it != directory_iterator(); ++it) {
-            __copy(it->path(), to / it->path().filename()
-              , options | copy_options::__in_recursive_copy
-              , ec
-              );
+        std::error_code m_ec;
+        for (; it != directory_iterator(); it.increment(m_ec)) {
+            if (m_ec) {
+                set_or_throw(m_ec, ec, "copy", from, to);
+                return;
+            }
+            __copy(it->path(), to / it->path().filename(),
+                   options | copy_options::__in_recursive_copy, ec);
             if (ec && *ec) { return; }
         }
     }
@@ -433,7 +433,7 @@ path __current_path(std::error_code *ec)
     char* ret;
 
     if ((ret = ::getcwd(buff.get(), static_cast<size_t>(size))) == nullptr) {
-        set_or_throw(detail::capture_errno(), ec, "current_path");
+        set_or_throw(ec, "current_path");
         return {};
     }
     if (ec) ec->clear();

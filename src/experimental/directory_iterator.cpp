@@ -24,7 +24,7 @@ inline bool capture_error_or_throw(std::error_code* user_ec,
 }
 
 template <class ...Args>
-inline bool set_error_or_throw(std::error_code& my_ec,
+inline bool set_or_throw(std::error_code& my_ec,
                                std::error_code* user_ec,
                                const char* msg, Args&&... args)
 {
@@ -32,18 +32,12 @@ inline bool set_error_or_throw(std::error_code& my_ec,
         *user_ec = my_ec;
         return true;
     }
-    throw filesystem_error(msg, std::forward<Args>(args)..., my_ec);
+    __libcpp_throw(filesystem_error(msg, std::forward<Args>(args)..., my_ec));
+    return false;
 }
 
 typedef path::string_type string_type;
 
-inline DIR *posix_opendir(const string_type& p, error_code& ec) {
-    DIR *ret;
-    ec.clear();
-    if ((ret = ::opendir(p.c_str())) == nullptr)
-        ec = capture_errno();
-    return ret;
-}
 
 inline string_type posix_readdir_r(DIR *dir_stream, error_code& ec) {
     struct dirent dir_entry;
@@ -58,28 +52,37 @@ inline string_type posix_readdir_r(DIR *dir_stream, error_code& ec) {
     return dir_entry_ptr ? dir_entry.d_name : string_type{};
 }
 
-inline std::error_code posix_closedir(DIR *dir_stream) {
-    if (::closedir(dir_stream) == -1) {
-        return capture_errno();
-    }
-    return {};
-}
-
 }}                                                       // namespace detail
 
-using detail::set_error_or_throw;
-using detail::capture_error_or_throw;
+using detail::set_or_throw;
 
 class __dir_stream {
 public:
     __dir_stream() = delete;
-    __dir_stream(const __dir_stream&) = delete;
     __dir_stream& operator=(const __dir_stream&) = delete;
 
-    __dir_stream(const path& root, error_code& ec)
-        : __stream_(detail::posix_opendir(root.native(),  ec)),
+    __dir_stream(__dir_stream&& other) noexcept
+        : __stream_(other.__stream_), __root_(std::move(other.__root_)),
+          __entry_(std::move(other.__entry_))
+    {
+        other.__stream_ = nullptr;
+    }
+
+
+    __dir_stream(const path& root, directory_options opts, error_code& ec)
+        : __stream_(nullptr),
           __root_(root)
-    {}
+    {
+        if ((__stream_ = ::opendir(root.c_str())) == nullptr) {
+            ec = detail::capture_errno();
+            const bool allow_eacess =
+                bool(opts & directory_options::skip_permission_denied);
+            if (allow_eacess && ec.value() == EACCES)
+                ec.clear();
+            return;
+        }
+        advance(ec);
+    }
 
     ~__dir_stream() noexcept
       { if (__stream_) close(); }
@@ -103,9 +106,11 @@ public:
     }
 private:
     std::error_code close() noexcept {
-        std::error_code ec = detail::posix_closedir(__stream_);
+        std::error_code m_ec;
+        if (::closedir(__stream_) == -1)
+           m_ec = detail::capture_errno();
         __stream_ = nullptr;
-        return ec;
+        return m_ec;
     }
 
     DIR * __stream_{nullptr};
@@ -120,34 +125,24 @@ directory_iterator::directory_iterator(const path& p, error_code *ec,
                                        directory_options opts)
 {
     std::error_code m_ec;
-    __imp_ = make_shared<__dir_stream>(p, m_ec);
-    if (m_ec) {
+    __imp_ = make_shared<__dir_stream>(p, opts, m_ec);
+    if (ec) *ec = m_ec;
+    if (!__imp_->good()) {
         __imp_.reset();
-
-        const bool allow_eacess =
-            bool(opts & directory_options::skip_permission_denied);
-        const std::error_code eaccess_cond =
-            std::make_error_code(std::errc::permission_denied);
-
-        if (allow_eacess && m_ec == eaccess_cond)
-            return;
-
-        set_error_or_throw(m_ec, ec, "directory_iterator could not be "
-                                        " constructed from path", p);
-        return;
+        if (m_ec)
+            set_or_throw(m_ec, ec,
+                         "directory_iterator::directory_iterator(...)", p);
     }
-    __increment(ec);
 }
 
 directory_iterator& directory_iterator::__increment(error_code *ec)
 {
     _LIBCPP_ASSERT(__imp_, "Attempting to increment an invalid iterator");
     std::error_code m_ec;
-
     if (!__imp_->advance(m_ec)) {
         __imp_.reset();
         if (m_ec)
-            set_error_or_throw(m_ec, ec, "directory_iterator::operator++()");
+            set_or_throw(m_ec, ec, "directory_iterator::operator++()");
     } else {
         if (ec) ec->clear();
     }
@@ -156,22 +151,51 @@ directory_iterator& directory_iterator::__increment(error_code *ec)
 }
 
 directory_entry const& directory_iterator::__deref() const {
+    _LIBCPP_ASSERT(__imp_, "Attempting to dereference an invalid iterator");
     return __imp_->__entry_;
 }
 
 // recursive_directory_iterator
 
+struct recursive_directory_iterator::__shared_imp {
+  stack<__dir_stream> __stack_;
+  directory_options   __options_;
+};
+
 recursive_directory_iterator::recursive_directory_iterator(const path& p, 
     directory_options opt, error_code *ec)
+    : __imp_(nullptr), __rec_(true)
 {
-    directory_iterator new_it(p, ec, opt);
-    if ((ec && *ec) || new_it == directory_iterator{}) {
-        return;
-    }
-    __rec_ = true;
+    std::error_code m_ec;
+    __dir_stream new_s(p, opt, m_ec);
+    if (m_ec) set_or_throw(m_ec, ec, "recursive_directory_iterator", p);
+    if (m_ec || !new_s.good()) return;
+
     __imp_ = _VSTD::make_shared<__shared_imp>();
     __imp_->__options_ = opt;
-    __imp_->__stack_.push(_VSTD::move(new_it));
+    __imp_->__stack_.push(_VSTD::move(new_s));
+}
+
+void recursive_directory_iterator::pop()
+{
+    _LIBCPP_ASSERT(__imp_, "Popping the end iterator");
+    __imp_->__stack_.pop();
+    if (__imp_->__stack_.size() == 0)
+        __imp_.reset();
+    else
+        __advance();
+}
+
+directory_options recursive_directory_iterator::options() const {
+    return __imp_->__options_;
+}
+
+int recursive_directory_iterator::depth() const {
+    return __imp_->__stack_.size() - 1;
+}
+
+const directory_entry& recursive_directory_iterator::__deref() const {
+    return __imp_->__stack_.top().__entry_;
 }
 
 recursive_directory_iterator& 
@@ -192,14 +216,13 @@ void recursive_directory_iterator::__advance(error_code* ec) {
     auto& stack = __imp_->__stack_;
     std::error_code m_ec;
     while (stack.size() > 0) {
-        stack.top().increment(m_ec);
-        if (stack.top() != end_it) return;
+        if (stack.top().advance(m_ec)) return;
         if (m_ec) break;
         stack.pop();
     }
     __imp_.reset();
     if (m_ec)
-        set_error_or_throw(m_ec, ec, "recursive_directory_iterator::operator++()");
+        set_or_throw(m_ec, ec, "recursive_directory_iterator::operator++()");
 }
 
 bool recursive_directory_iterator::__try_recursion(error_code *ec) {
@@ -208,19 +231,19 @@ bool recursive_directory_iterator::__try_recursion(error_code *ec) {
         bool(options() & directory_options::follow_directory_symlink);
     auto& curr_it = __imp_->__stack_.top();
 
-    if (is_directory(curr_it->status()) &&
-        (!is_symlink(curr_it->symlink_status()) || rec_sym))
+    if (is_directory(curr_it.__entry_.status()) &&
+        (!is_symlink(curr_it.__entry_.symlink_status()) || rec_sym))
     {
         std::error_code m_ec;
-        directory_iterator new_it(curr_it->path(), &m_ec, __imp_->__options_);
-        if (new_it != directory_iterator{}) {
+        __dir_stream new_it(curr_it.__entry_.path(), __imp_->__options_, m_ec);
+        if (new_it.good()) {
             __imp_->__stack_.push(_VSTD::move(new_it));
             return true;
-        } else if (m_ec) {
+        }
+        if (m_ec) {
             __imp_.reset();
-            set_error_or_throw(m_ec, ec,
+            set_or_throw(m_ec, ec,
                                "recursive_directory_iterator::operator++()");
-            return false;
         }
     }
     return false;
