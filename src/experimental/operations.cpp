@@ -721,6 +721,7 @@ void __last_write_time(
         m_ec = detail::capture_errno();
     }
 #else
+    using Clock = file_time_type::clock;
     struct ::stat st;
     detail::posix_stat(p, st, &m_ec);
     if (ec) *ec = m_ec;
