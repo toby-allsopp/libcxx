@@ -57,6 +57,7 @@ static const fs::path SymlinkToFile = makePath("symlink_to_empty_file");
 static const fs::path SymlinkToDir  = makePath("symlink_to_dir");
 static const fs::path BadSymlink    = makePath("bad_symlink");
 static const fs::path DNE           = makePath("DNE");
+static const fs::path EmptyFile     = TestFileList[0];
 
 static const fs::path DirIterationList[] = {
     makePath("dir1/dir2"),
