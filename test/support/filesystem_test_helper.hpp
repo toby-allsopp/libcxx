@@ -112,10 +112,11 @@ inline fs::path random_env_path()
 {
     // assert that tmpdir is not set.
     char* tmpdir = std::getenv("TMPDIR");
-    assert(!tmpdir);
+    //assert(!tmpdir);
     char* s = ::tempnam(test_env_path().c_str(), "test.");
     fs::path p(s);
     std::free(s);
+    assert(p.parent_path() == test_env_path());
     return p;
 }
 
