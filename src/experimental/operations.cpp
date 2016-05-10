@@ -706,7 +706,7 @@ void __last_write_time(
   )
 {
     std::error_code m_ec;
-#ifndef FALLBACK
+#if !defined(__APPLE__)
     using namespace std::chrono;
     auto dur_since_epoch = new_time.time_since_epoch();
     auto sec_since_epoch = duration_cast<seconds>(dur_since_epoch);
