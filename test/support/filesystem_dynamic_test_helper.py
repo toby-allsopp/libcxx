@@ -18,19 +18,16 @@ def env_path():
     assert os.path.isdir(ep)
     return ep
 
+env_path_global = env_path()
+
 # Make sure we don't try and write outside of env_path.
 # All paths used should be sanitized
-def sanitize_env_path(p):
-    env_p = env_path()
-    p_before = str(p)
-    p_before = os.path.realpath(p_before)
-    if os.path.commonprefix([env_path(), p_before]):
-        return p_before
-    p = os.path.join(env_p, p)
+def sanitize(p):
     p = os.path.realpath(p)
-    pre = os.path.commonprefix([env_path(), p])
-    assert pre == env_path()
-    return p
+    if os.path.commonprefix([env_path_global, p]):
+        return p
+    assert False
+
 
 
 """
@@ -39,7 +36,7 @@ Before we delete the test enviroment, we have to walk it and re-raise the
 permissions.
 """
 def set_env_perms(root_p):
-    root_p = sanitize_env_path(root_p)
+    root_p = sanitize(root_p)
     for root, dirs, files in os.walk(root_p):
         for d in dirs:
             d = os.path.join(root, d)
@@ -88,14 +85,14 @@ Symlinks don't get removed the first time. Sometimes we have to make a second
 pass to actually delete the directory.
 """
 def remove_all(root_p):
-    root_p = sanitize_env_path(root_p)
+    root_p = sanitize(root_p)
     remove_all_impl_1(root_p)
     if os.path.exists(root_p):
         remove_all_impl_2(root_p)
 
 
 def init(root_p):
-    root_p = sanitize_env_path(root_p)
+    root_p = sanitize(root_p)
     assert not os.path.exists(root_p)
     os.makedirs(root_p)
 
@@ -106,42 +103,33 @@ def clean(root_p):
 
 
 def create_file(fname, size):
-    fname = sanitize_env_path(fname)
-    with open(fname, 'w') as f:
+    with open(sanitize(fname), 'w') as f:
         for c in ['a'] * size:
             f.write(c)
 
 
 def create_dir(dname, mode=0o777):
-    dname = sanitize_env_path(dname)
-    os.mkdir(dname, mode)
+    os.mkdir(sanitize(dname), mode)
 
 
 def create_symlink(source, link):
-    source = sanitize_env_path(source)
-    link = sanitize_env_path(link)
-    os.symlink(source, link)
+    os.symlink(sanitize(source), sanitize(link))
 
 
 def create_hardlink(source, link):
-    source = sanitize_env_path(source)
-    link = sanitize_env_path(link)
-    os.link(source, link)
+    os.link(sanitize(source), sanitize(link))
 
 
 def create_fifo(source, mode=0o666):
-    source = sanitize_env_path(source)
-    os.mkfifo(source, mode)
+    os.mkfifo(sanitize(source), mode)
 
 
 def create_socket(source):
-    source = sanitize_env_path(source)
     mode = 0600|stat.S_IFSOCK
-    os.mknod(source, mode)
+    os.mknod(sanitize(source), mode)
 
 
 if __name__ == '__main__':
     command = " ".join(sys.argv[1:])
     eval(command)
     sys.exit(0)
-

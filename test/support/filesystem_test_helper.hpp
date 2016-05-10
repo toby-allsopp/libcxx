@@ -15,21 +15,11 @@ namespace fs = std::experimental::filesystem;
 #warning "STATIC TESTS DISABLED"
 #else // LIBCXX_FILESYSTEM_STATIC_TEST_ROOT
 
-inline fs::path static_test_env_path()
-{
-    static const fs::path env_path = LIBCXX_FILESYSTEM_STATIC_TEST_ROOT;
-    return env_path;
-}
-
-inline fs::path make_static_env_path(fs::path const& p)
-{
-    return static_test_env_path() / p;
-}
-
 namespace StaticEnv {
 
 inline fs::path makePath(fs::path const& p) {
-    return static_test_env_path() / p;
+    static const fs::path env_path = LIBCXX_FILESYSTEM_STATIC_TEST_ROOT;
+    return env_path / p;
 }
 
 static const fs::path Root = LIBCXX_FILESYSTEM_STATIC_TEST_ROOT;
@@ -108,11 +98,8 @@ inline fs::path test_env_path() {
     return env_path;
 }
 
-inline fs::path random_env_path()
-{
+inline fs::path random_env_path() {
     // assert that tmpdir is not set.
-    char* tmpdir = std::getenv("TMPDIR");
-    //assert(!tmpdir);
     char* s = ::tempnam(test_env_path().c_str(), "test.");
     fs::path p(s);
     std::free(s);
@@ -121,15 +108,14 @@ inline fs::path random_env_path()
 }
 
 inline std::string
-fs_make_cmd(std::string const& cmd_name, std::string const& arg)
-{
+fs_make_cmd(std::string const& cmd_name, std::string const& arg) {
     std::string cmd = cmd_name + "('" + arg + "')";
     return cmd;
 }
 
 inline std::string
-fs_make_cmd(std::string const& cmd_name,std::string const& arg1, std::string const& arg2)
-{
+fs_make_cmd(std::string const& cmd_name,
+            std::string const& arg1, std::string const& arg2) {
     std::string cmd = cmd_name + "('";
     cmd += arg1 + "', '";
     cmd += arg2 + "')";
@@ -137,8 +123,8 @@ fs_make_cmd(std::string const& cmd_name,std::string const& arg1, std::string con
 }
 
 inline std::string
-fs_make_cmd(std::string const& cmd_name, std::string const& arg1, std::size_t const& arg2)
-{
+fs_make_cmd(std::string const& cmd_name,
+            std::string const& arg1, std::size_t arg2) {
     std::string cmd = cmd_name + "('";
     cmd += arg1 + "', ";
     cmd += std::to_string(arg2) + ")";
@@ -325,7 +311,6 @@ inline void PathReserve(fs::path& p, std::size_t N) {
   auto const& native_ref = p.native();
   const_cast<std::string&>(native_ref).reserve(N);
 }
-
 
 template <class Iter1, class Iter2>
 bool checkCollectionsEqual(
