@@ -38,17 +38,28 @@ TEST_CASE(signature_test)
 
 TEST_CASE(hard_link_count_for_file)
 {
-    const path p = StaticEnv::File;
     TEST_CHECK(hard_link_count(StaticEnv::File) == 1);
-    TEST_CHECK(hard_link_count(StaticEnv::Dir) == 3);
-    TEST_CHECK(hard_link_count(StaticEnv::Dir3) == 2);
-
     std::error_code ec;
     TEST_CHECK(hard_link_count(StaticEnv::File, ec) == 1);
-    TEST_CHECK(hard_link_count(StaticEnv::Dir, ec) == 3);
-    TEST_CHECK(hard_link_count(StaticEnv::Dir3) == 2);
 }
 
+TEST_CASE(hard_link_count_for_directory)
+{
+    std::cout << hard_link_count(StaticEnv::Dir) << std::endl;
+    std::cout << hard_link_count(StaticEnv::Dir3) << std::endl;
+    uintmax_t DirExpect = 3;
+    uintmax_t Dir3Expect = 2;
+#if defined(__APPLE__)
+    DirExpect += 2;
+    Dir3Expect += 1;
+#endif
+    TEST_CHECK(hard_link_count(StaticEnv::Dir) == DirExpect);
+    TEST_CHECK(hard_link_count(StaticEnv::Dir3) == Dir3Expect);
+
+    std::error_code ec;
+    TEST_CHECK(hard_link_count(StaticEnv::Dir, ec) == DirExpect);
+    TEST_CHECK(hard_link_count(StaticEnv::Dir3, ec) == Dir3Expect);
+}
 TEST_CASE(hard_link_count_increments_test)
 {
     scoped_test_env env;
