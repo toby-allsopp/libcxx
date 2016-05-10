@@ -93,64 +93,9 @@ static const fs::path RecDirFollowSymlinksIterationList[] = {
 #error LIBCXX_FILESYSTEM_DYNAMIC_TEST_HELPER must be defined
 #endif
 
-inline fs::path test_env_path() {
-    static const fs::path env_path = LIBCXX_FILESYSTEM_DYNAMIC_TEST_ROOT;
-    return env_path;
-}
-
-inline fs::path random_env_path() {
-    // assert that tmpdir is not set.
-    char* s = ::tempnam(test_env_path().c_str(), "test.");
-    fs::path p(s);
-    std::free(s);
-    assert(p.parent_path() == test_env_path());
-    return p;
-}
-
-inline std::string
-fs_make_cmd(std::string const& cmd_name, std::string const& arg) {
-    std::string cmd = cmd_name + "('" + arg + "')";
-    return cmd;
-}
-
-inline std::string
-fs_make_cmd(std::string const& cmd_name,
-            std::string const& arg1, std::string const& arg2) {
-    std::string cmd = cmd_name + "('";
-    cmd += arg1 + "', '";
-    cmd += arg2 + "')";
-    return cmd;
-}
-
-inline std::string
-fs_make_cmd(std::string const& cmd_name,
-            std::string const& arg1, std::size_t arg2) {
-    std::string cmd = cmd_name + "('";
-    cmd += arg1 + "', ";
-    cmd += std::to_string(arg2) + ")";
-    return cmd;
-}
-
-inline void fs_helper_run(std::string const& raw_cmd) {
-    // check that the fs test root in the enviroment matches what we were 
-    // compiled with.
-    char* fs_root = std::getenv("LIBCXX_FILESYSTEM_DYNAMIC_TEST_ROOT");
-    assert(fs_root);
-    assert(std::string(fs_root) == LIBCXX_FILESYSTEM_DYNAMIC_TEST_ROOT);
-
-    std::string cmd = LIBCXX_FILESYSTEM_DYNAMIC_TEST_HELPER;
-    cmd += " \"";
-    cmd += raw_cmd;
-    cmd += "\"";
-    //std::cout << "Running: " << cmd << std::endl;
-    int ret = std::system(cmd.c_str());
-    assert(ret == 0);
-}
-
 struct scoped_test_env
 {
-    scoped_test_env()
-      : test_root(random_env_path())
+    scoped_test_env() : test_root(random_env_path())
     {
         fs_helper_run(fs_make_cmd("init", test_root));
     }
@@ -162,23 +107,19 @@ struct scoped_test_env
         fs_helper_run(fs_make_cmd("clean", test_root));
     }
 
-    const fs::path& root() const {
-        return test_root;
-    }
+    const fs::path& root() const { return test_root; }
 
-    fs::path make_env_path(fs::path const & p)
-    {
-        return test_root / p;
-    }
+    fs::path make_env_path(fs::path const & p) { return sanitize_path(p); }
 
     std::string sanitize_path(std::string const & raw) {
-        if (raw.substr(0, test_root.native().size()) == test_root) {
+        assert(raw.find("..") == std::string::npos);
+        const std::string& root = test_root.native();
+        if (root.compare(0, root.size(), raw) == 0) {
             return raw;
         } else {
             return test_root / fs::path(raw);
         }
     }
-
     std::string create_file(std::string filename, std::size_t size = 0) {
         filename = sanitize_path(filename);
         fs_helper_run(fs_make_cmd("create_file", filename, size));
@@ -211,18 +152,67 @@ struct scoped_test_env
         return file;
     }
 
-    void create_socket(std::string file) {
+    std::string create_socket(std::string file) {
         file = sanitize_path(file);
         fs_helper_run(fs_make_cmd("create_socket", file));
+        return file;
     }
 
     fs::path const test_root;
+
+private:
+    static inline fs::path random_env_path() {
+        static const char* env_path = LIBCXX_FILESYSTEM_DYNAMIC_TEST_ROOT;
+        // assert that tmpdir is not set.
+        char* s = ::tempnam(env_path, "test.");
+        fs::path p(s);
+        std::free(s);
+        assert(p.parent_path() == env_path);
+        return p;
+    }
+
+    static inline std::string make_arg(std::string const& arg) {
+        return "'" + arg + "'";
+    }
+
+    static inline std::string make_arg(std::size_t arg) {
+        return std::to_string(arg);
+    }
+
+    template <class T>
+    static inline std::string
+    fs_make_cmd(std::string const& cmd_name, T const& arg) {
+        return cmd_name + "(" + make_arg(arg) + ")";
+    }
+
+    template <class T, class U>
+    static inline std::string
+    fs_make_cmd(std::string const& cmd_name, T const& arg1, U const& arg2) {
+        return cmd_name + "(" + make_arg(arg1) + ", " + make_arg(arg2) + ")";
+    }
+
+    static inline void fs_helper_run(std::string const& raw_cmd) {
+        // check that the fs test root in the enviroment matches what we were
+        // compiled with.
+        static bool checked = checkDynamicTestRoot();
+        std::string cmd = LIBCXX_FILESYSTEM_DYNAMIC_TEST_HELPER;
+        cmd += " \"" + raw_cmd + "\"";
+        int ret = std::system(cmd.c_str());
+        assert(ret == 0);
+    }
+
+    static bool checkDynamicTestRoot() {
+        char* fs_root = std::getenv("LIBCXX_FILESYSTEM_DYNAMIC_TEST_ROOT");
+        assert(fs_root);
+        assert(std::string(fs_root) == LIBCXX_FILESYSTEM_DYNAMIC_TEST_ROOT);
+        return true;
+    }
+
 };
 
 #endif // LIBCXX_FILESYSTEM_DYNAMIC_TEST_ROOT
 
 // Misc test types
-
 
 #define CONCAT2(LHS, RHS) LHS##RHS
 #define CONCAT(LHS, RHS) CONCAT2(LHS, RHS)
