@@ -25,101 +25,64 @@ _LIBCPP_BEGIN_NAMESPACE_EXPERIMENTAL_FILESYSTEM
 
 filesystem_error::~filesystem_error() {}
 
-////////////////////////////////////////////////////////////////////////////////
-//                       POSIX HELPERS                                                 
-////////////////////////////////////////////////////////////////////////////////
+
+//                       POSIX HELPERS
+
 namespace detail { namespace  {
 
 using value_type = path::value_type;
 using string_type = path::string_type;
 
-////////////////////////////////////////////////////////////////////////
-inline std::error_code capture_errno() {
+
+
+inline std::error_code capture_errno(std::error_code* ec = nullptr) {
     _LIBCPP_ASSERT(errno, "Expected errno to be non-zero");
-    return std::error_code{errno, std::system_category()};
+    std::error_code m_ec(errno, std::generic_category());
+    if (ec) *ec = m_ec;
+    return m_ec;
 }
 
-////////////////////////////////////////////////////////////////////////
-// set the permissions as described in stat
-perms posix_get_perms(const struct ::stat & st) noexcept
+void set_or_throw(std::error_code const& m_ec, std::error_code* ec,
+                  const char* msg, path const& p = {}, path const& p2 = {})
 {
+    if (ec) {
+        *ec = m_ec;
+    } else {
+        string msg_s("std::experimental::filesystem::");
+        msg_s += msg;
+        throw filesystem_error(msg_s, p, p2, m_ec);
+    }
+}
+
+
+void set_or_throw(std::error_code* ec, const char* msg,
+                  path const& p = {}, path const& p2 = {})
+{
+    return set_or_throw(capture_errno(), ec, msg, p, p2);
+}
+
+perms posix_get_perms(const struct ::stat & st) noexcept {
     return static_cast<perms>(st.st_mode) & perms::mask;
 }
 
-////////////////////////////////////////////////////////////////////////
-::mode_t posix_convert_perms(perms prms)
-{
-    return static_cast< ::mode_t>(
-        prms & perms::mask
-      );
+::mode_t posix_convert_perms(perms prms) {
+    return static_cast< ::mode_t>(prms & perms::mask);
 }
 
-////////////////////////////////////////////////////////////////////////
-file_status posix_stat(
-    path const & p
-  , struct ::stat & path_stat
-  , std::error_code* ec
-  )
+file_status create_file_status(std::error_code& m_ec, path const& p,
+                               struct ::stat& path_stat,
+                               std::error_code* ec)
 {
-    std::error_code m_ec;
-    
-    if (::stat(p.c_str(), &path_stat) == -1) {
-        m_ec = detail::capture_errno();
-    }
-    
     if (ec) *ec = m_ec;
-        
-    if (m_ec && (m_ec.value() == ENOENT || m_ec.value() == ENOTDIR)) {
-        return file_status(file_type::not_found);
-    } 
-    else if (m_ec && not ec) {
-        throw filesystem_error("std::experimental::filesystem::posix_stat", p, m_ec);
-    }
-    else if (m_ec) {
-        return file_status(file_type::none);
-    }
-    // else
-    
-    file_status fs_tmp;
-    auto const mode = path_stat.st_mode;
-    if      (S_ISREG(mode))  fs_tmp.type(file_type::regular);
-    else if (S_ISDIR(mode))  fs_tmp.type(file_type::directory);
-    else if (S_ISBLK(mode))  fs_tmp.type(file_type::block);
-    else if (S_ISCHR(mode))  fs_tmp.type(file_type::character);
-    else if (S_ISFIFO(mode)) fs_tmp.type(file_type::fifo);
-    else if (S_ISSOCK(mode)) fs_tmp.type(file_type::socket);
-    else                     fs_tmp.type(file_type::unknown);
-    
-    fs_tmp.permissions(detail::posix_get_perms(path_stat));
-    
-    return fs_tmp;
-}
-            
-////////////////////////////////////////////////////////////////////////
-file_status posix_lstat(
-    path const & p
-  , struct ::stat & path_stat
-  , std::error_code* ec
-  )
-{
-    std::error_code m_ec;
-    
-    if (::lstat(p.c_str(), &path_stat) == -1) {
-        m_ec = detail::capture_errno();
-    }
-    if (ec) *ec = m_ec;
-    
     if (m_ec && (m_ec.value() == ENOENT || m_ec.value() == ENOTDIR)) {
         return file_status(file_type::not_found);
     }
-    else if (m_ec && not ec) {
-        throw filesystem_error("std::experimental::filesystem::posix_lstat", p, m_ec);
-    }
     else if (m_ec) {
+        set_or_throw(m_ec, ec, "posix_stat", p);
         return file_status(file_type::none);
     }
     // else
-    
+
     file_status fs_tmp;
     auto const mode = path_stat.st_mode;
     if      (S_ISLNK(mode))  fs_tmp.type(file_type::symlink);
@@ -130,28 +93,54 @@ file_status posix_lstat(
     else if (S_ISFIFO(mode)) fs_tmp.type(file_type::fifo);
     else if (S_ISSOCK(mode)) fs_tmp.type(file_type::socket);
     else                     fs_tmp.type(file_type::unknown);
-    
-    // TODO symbolic link
+
     fs_tmp.permissions(detail::posix_get_perms(path_stat));
     return fs_tmp;
 }
 
-////////////////////////////////////////////////////////////////////////////////
-//                           DETAIL::MISC                                           
-////////////////////////////////////////////////////////////////////////////////
- 
-////////////////////////////////////////////////////////////////////////
-bool copy_file_impl(
-    const path& from, const path& to,
-    perms from_perms,
-    std::error_code *ec
-  )
+file_status posix_stat(path const & p, struct ::stat& path_stat, std::error_code* ec)
 {
-    if (ec) { ec->clear(); }
-        
+    std::error_code m_ec;
+    if (::stat(p.c_str(), &path_stat) == -1)
+        m_ec = detail::capture_errno();
+    return create_file_status(m_ec, p, path_stat, ec);
+}
+
+file_status posix_stat(path const & p, std::error_code* ec) {
+    struct ::stat path_stat;
+    return posix_stat(p, path_stat, ec);
+}
+
+
+file_status posix_lstat(path const & p, struct ::stat & path_stat,
+                        std::error_code* ec)
+{
+    std::error_code m_ec;
+    if (::lstat(p.c_str(), &path_stat) == -1)
+        m_ec = detail::capture_errno();
+    return create_file_status(m_ec, p, path_stat, ec);
+}
+
+file_status posix_lstat(path const & p, std::error_code* ec) {
+    struct ::stat path_stat;
+    return posix_lstat(p, path_stat, ec);
+}
+
+bool stat_equivalent(struct ::stat& st1, struct ::stat& st2) {
+    return (st1.st_dev == st2.st_dev && st1.st_ino == st2.st_ino);
+}
+
+
+//                           DETAIL::MISC
+
+
+
+bool copy_file_impl(const path& from, const path& to, perms from_perms,
+                    std::error_code *ec)
+{
     std::ifstream in(from.c_str(), std::ios::binary);
     std::ofstream out(to.c_str(),  std::ios::binary);
-    
+
     if (in.good() && out.good()) {
         using InIt = std::istreambuf_iterator<char>;
         using OutIt = std::ostreambuf_iterator<char>;
@@ -160,114 +149,73 @@ bool copy_file_impl(
         OutIt bout(out);
         std::copy(bin, ein, bout);
     }
-    
     if (out.fail() || in.fail()) {
-        std::error_code m_ec(
-            static_cast<int>(std::errc::operation_not_permitted)
-          , std::system_category()
-          );
-   
-        if (ec) {
-            *ec = m_ec;
-            return false;
-        } else {
-            throw filesystem_error("std::experimental::filesystem::copy_file_impl", from, to, m_ec);
-        }
+        std::error_code m_ec = make_error_code(errc::operation_not_permitted);
+        set_or_throw(m_ec, ec, "std::experimental::filesystem::copy_file", from, to);
+        return false;
     }
-    permissions(to, from_perms);
+    __permissions(to, from_perms, ec);
+    // TODO what if permissions fails?
     return true;
 }
 
 }} // end namespace detail
 
-////////////////////////////////////////////////////////////////////////////////
-//                        DETAIL::OPERATORS DEFINITIONS                                                        
-////////////////////////////////////////////////////////////////////////////////
+using detail::set_or_throw;
 
-////////////////////////////////////////////////////////////////////////////
+
 path __canonical(path const & orig_p, const path& base, std::error_code *ec)
 {
     path p = absolute(orig_p, base);
-    
     char buff[PATH_MAX + 1];
-    char *ret = ::realpath(p.c_str(), buff);
-        
-    std::error_code m_ec;
-    if (not ret) {
-        m_ec = detail::capture_errno();
-        _LIBCPP_ASSERT(m_ec, "Expected error code");
-    }
-    if (ec) *ec = m_ec;
-            
-    if (m_ec && not ec) { 
-        throw filesystem_error("std::experimental::filesystem::canonical", orig_p, base, m_ec);
-    }
-    else if (m_ec) {
+    char *ret;
+    if ((ret = ::realpath(p.c_str(), buff)) == nullptr) {
+        set_or_throw(ec, "canonical", orig_p, base);
         return {};
-    } else {
-        return {ret};
     }
+    if (ec) ec->clear();
+    return {ret};
 }
 
-////////////////////////////////////////////////////////////////////////////
-void __copy(
-    const path& from, const path& to
-  , copy_options options
-  , std::error_code *ec
-  )
+void __copy(const path& from, const path& to, copy_options options,
+            std::error_code *ec)
 {
-    const bool sym_status = bool(options & 
+    const bool sym_status = bool(options &
         (copy_options::create_symlinks | copy_options::skip_symlinks));
 
     const bool sym_status2 = bool(options &
         copy_options::copy_symlinks);
 
     std::error_code m_ec;
-    struct ::stat f_st;
+    struct ::stat f_st = {};
     const file_status f = sym_status || sym_status2
                                      ? detail::posix_lstat(from, f_st, &m_ec)
-                                     : detail::posix_stat(from, f_st, &m_ec);
-    
-    if (m_ec && ec) {
-        *ec = m_ec;
+                                     : detail::posix_stat(from,  f_st, &m_ec);
+    if (not status_known(f)) {
+        set_or_throw(m_ec, ec, "copy", from, to);
         return;
-    } else if (m_ec) {
-        throw filesystem_error("std::experimental::filesystem::copy", from, to, m_ec);
     }
-    
-    
-    struct ::stat t_st;
+
+    struct ::stat t_st = {};
     const file_status t = sym_status ? detail::posix_lstat(to, t_st, &m_ec)
                                       : detail::posix_stat(to, t_st, &m_ec);
-    
+
     if (not status_known(t)) {
-        if (ec) {
-            *ec = m_ec;
-            return;
-        } else {
-            throw filesystem_error("std::experimental::filesystem::copy", from, to, m_ec);
-        }
+        set_or_throw(m_ec, ec, "copy", from, to);
+        return;
     }
 
-
-    if ( is_other(f) || is_other(t) 
+    if (!exists(f) || is_other(f) || is_other(t)
         || (is_directory(f) && is_regular_file(t))
-        || equivalent(from, to, m_ec))
+        || detail::stat_equivalent(f_st, t_st))
     {
-        const std::error_code mec(
-            static_cast<int>(std::errc::function_not_supported)
-          , std::system_category()
-          );
-        if (ec) {
-            *ec = mec;
-            return;
-        } else {
-            throw filesystem_error("std::experimental::filesystem::copy", from, to, mec);
-        }
+        const std::error_code mec = make_error_code(errc::function_not_supported);
+        set_or_throw(mec, ec, "copy", from, to);
+        return;
     }
-    
+
     if (ec) { ec->clear(); }
-        
+
     if (is_symlink(f)) {
         if (bool(copy_options::skip_symlinks & options)) {
             // do nothing
@@ -275,15 +223,8 @@ void __copy(
         else if (not exists(t)) {
             __copy_symlink(from, to, ec);
         } else {
-            const std::error_code mec(
-                static_cast<int>(std::errc::file_exists)
-              , std::system_category()
-              );
-            if (ec) {
-                *ec = mec;
-            } else {
-                throw filesystem_error("std::experimental::filesystem::copy", from, to, mec);
-            }
+            set_or_throw(make_error_code(errc::file_exists), ec, "copy", from, to);
+            return;
         }
     }
     else if (is_regular_file(f)) {
@@ -308,13 +249,13 @@ void __copy(
         {
             return;
         }
-        
+
         if (!exists(t)) {
             // create directory to with attributes from 'from'.
             __create_directory(to, from, ec);
             if (ec && *ec) { return; }
         }
-        directory_iterator it = ec ? directory_iterator(from, *ec) 
+        directory_iterator it = ec ? directory_iterator(from, *ec)
                                    : directory_iterator(from);
         if (ec && *ec) { return; }
         for (; it != directory_iterator(); ++it) {
@@ -328,55 +269,29 @@ void __copy(
 }
 
 
-////////////////////////////////////////////////////////////////////////////
-bool __copy_file(
-    const path& from, const path& to
-  , copy_options options, std::error_code *ec
-  )
+
+bool __copy_file(const path& from, const path& to, copy_options options,
+                 std::error_code *ec)
 {
     if (ec) ec->clear();
 
     std::error_code m_ec;
-    struct ::stat t_st;
-    const file_status from_st = detail::posix_stat(from, t_st, &m_ec);
-    const bool good_from = is_regular_file(from_st);
-    if (not good_from) {
-        if (not m_ec) {
-            m_ec = std::error_code(
-                static_cast<int>(std::errc::no_such_file_or_directory)
-                , std::system_category()
-                );
-        }
-        if (ec) {
-            *ec = m_ec;
-            return false;
-        } else {
-            throw filesystem_error(
-                "std::experimental::filesystem::copy_file source file is not a regular file"
-            , from, to, m_ec
-            );
-        }
+    auto from_st = detail::posix_stat(from, &m_ec);
+    if (not is_regular_file(from_st)) {
+        if (not m_ec)
+            m_ec = make_error_code(errc::no_such_file_or_directory);
+        set_or_throw(m_ec, ec, "copy_file", from, to);
+        return false;
     }
-    
-    const bool to_exists = exists(to, m_ec);
-    
-    if (to_exists && not bool(options & 
-        (copy_options::skip_existing 
-        | copy_options::update_existing 
-        | copy_options::overwrite_existing))) 
-    {
-        const std::error_code mec(
-            static_cast<int>(std::errc::file_exists)
-          , std::system_category()
-          );
-        if (ec) {
-            *ec = mec;
-            return false;
-        } else {
-            throw filesystem_error("std::experimental::filesystem::copy_file", from, to, mec);
-        }
+
+    auto to_st = detail::posix_stat(to, &m_ec);
+    if (!status_known(to_st)) {
+        set_or_throw(m_ec, ec, "copy_file", from, to);
+        return false;
     }
-    else if (to_exists && bool(copy_options::skip_existing & options)) {
+
+    const bool to_exists = exists(to_st);
+    if (to_exists && bool(copy_options::skip_existing & options)) {
         return false;
     }
     else if (to_exists && bool(copy_options::update_existing & options)) {
@@ -387,18 +302,22 @@ bool __copy_file(
         if (from_time <= to_time) {
             return false;
         }
+        return detail::copy_file_impl(from, to, from_st.permissions(), ec);
     }
-    return detail::copy_file_impl(from, to, from_st.permissions(), ec);
+    else if (!to_exists || bool(copy_options::overwrite_existing & options)) {
+        return detail::copy_file_impl(from, to, from_st.permissions(), ec);
+    }
+    else {
+        set_or_throw(make_error_code(errc::file_exists), ec, "copy", from, to);
+        return false;
+    }
 }
-    
 
-void __copy_symlink(
-    const path& existing_symlink, const path& new_symlink
-  , std::error_code *ec)
+void __copy_symlink(const path& existing_symlink, const path& new_symlink,
+                    std::error_code *ec)
 {
     const path real_path(__read_symlink(existing_symlink, ec));
     if (ec && *ec) { return; }
-    // TODO
     // NOTE: proposal says you should detect if you should call
     // create_symlink or create_directory_symlink. I don't think this
     // is needed with POSIX
@@ -409,54 +328,45 @@ void __copy_symlink(
 bool __create_directories(const path& p, std::error_code *ec)
 {
     std::error_code m_ec;
-    auto const st = status(p, m_ec);
-    
-    if (is_directory(st)) {
+    auto const st = detail::posix_stat(p, &m_ec);
+    if (!status_known(st)) {
+        set_or_throw(m_ec, ec, "create_directories", p);
+        return false;
+    }
+    else if (is_directory(st)) {
         if (ec) ec->clear();
         return false;
     }
-    
+    else if (exists(st)) {
+        set_or_throw(make_error_code(errc::file_exists),
+                     ec, "create_directories", p);
+        return false;
+    }
+
     const path parent = p.parent_path();
     if (!parent.empty()) {
         const file_status parent_st = status(parent, m_ec);
         if (not status_known(parent_st)) {
-            _LIBCPP_ASSERT(m_ec, "Expected error code");
-            if (ec) {
-                *ec = m_ec;
-                return false;
-            } else {
-                throw filesystem_error("std::experimental::filesystem::create_directories", p, m_ec);
-            }
+            set_or_throw(m_ec, ec, "create_directories", p);
+            return false;
         }
         if (not exists(parent_st)) {
             __create_directories(parent, ec);
             if (ec && *ec) { return false; }
         }
     }
-    
     return __create_directory(p, ec);
 }
 
 
 bool __create_directory(const path& p, std::error_code *ec)
 {
-    std::error_code m_ec;
-    if (::mkdir(p.c_str(), static_cast<int>(perms::all)) == -1) {
-        m_ec = detail::capture_errno();
-    }
-    if (ec) *ec = m_ec;
-    
-    if (not m_ec) return true;
-        
-    if (m_ec.value() == EEXIST && is_directory(p)) {
-        if (ec) ec->clear();
-        return false;
-    }
-    else if (not ec) {
-        throw filesystem_error("std::experimental::filesystem::create_directory", p, m_ec);
-    } else {
-        return false;
-    }
+    if (ec) ec->clear();
+    if (::mkdir(p.c_str(), static_cast<int>(perms::all)) == 0)
+        return true;
+    if (errno != EEXIST || !is_directory(p))
+        set_or_throw(ec, "create_directory", p);
+    return false;
 }
 
 
@@ -467,243 +377,162 @@ bool __create_directory(
 {
     struct ::stat attr_stat;
     std::error_code mec;
-    detail::posix_stat(attributes, attr_stat, &mec);
-    if (mec && ec) {
-        *ec = mec;
+    auto st = detail::posix_stat(attributes, attr_stat, &mec);
+    if (!status_known(st)) {
+        set_or_throw(mec, ec, "create_directory", p, attributes);
         return false;
     }
-    else if (mec) {
-        throw filesystem_error("std::experimental::filesystem::create_directory", p, attributes, mec);
-    }
-
     if (ec) ec->clear();
-        
-    if (::mkdir(p.c_str(), attr_stat.st_mode) == -1) {
-        mec = std::error_code(errno, std::system_category());
-        if (mec.value() == EEXIST && is_directory(p)) {
-            return false;
-        }
-        else if (ec) {
-            *ec = mec;
-            return false;
-        } else {
-            throw filesystem_error("std::experimental::filesystem::create_directory", p, attributes, mec);
-        }
-    }
-    return true;
+    if (::mkdir(p.c_str(), attr_stat.st_mode) == 0)
+        return true;
+
+    if (errno != EEXIST || !is_directory(p))
+        set_or_throw(ec, "create_directory", p, attributes);
+    return false;
 }
 
-////////////////////////////////////////////////////////////////////////////
+
 void __create_directory_symlink(
     path const & from, path const & to
   , std::error_code *ec
   )
 {
-    std::error_code m_ec;
     if (::symlink(from.c_str(), to.c_str()) != 0) {
-        m_ec = detail::capture_errno();
-        _LIBCPP_ASSERT(m_ec, "Expected error code");
+        set_or_throw(ec, "create_directory_symlink", from, to);
+        return;
     }
-    if (ec) *ec = m_ec;
-            
-    if (m_ec && not ec) {
-        throw filesystem_error(
-            "std::experimental::filesystem::create_directory_symlink"
-          , from, to, m_ec
-          );
-    }
+    if (ec) ec->clear();
 }
 
-////////////////////////////////////////////////////////////////////////////
-void __create_hard_link(
-    const path& from, const path& to,
-    std::error_code *ec
-  )
+void __create_hard_link(const path& from, const path& to, std::error_code *ec)
 {
-    std::error_code m_ec;
     if (::link(from.c_str(), to.c_str()) == -1) {
-        m_ec = detail::capture_errno();
+        set_or_throw(ec, "create_hard_link", from, to);
+        return;
     }
-    if (ec) *ec = m_ec;
-        
-    if (m_ec && not ec) {
-        throw filesystem_error("std::experimental::filesystem::create_hard_link", from, to, m_ec);
-    }
+    if (ec) ec->clear();
 }
 
-////////////////////////////////////////////////////////////////////////////
-void __create_symlink(
-    path const & from, path const & to
-  , std::error_code *ec
-  )
+
+void __create_symlink(path const & from, path const & to, std::error_code *ec)
 {
-    std::error_code m_ec;
     if (::symlink(from.c_str(), to.c_str()) != 0) {
-        m_ec = detail::capture_errno();
-        _LIBCPP_ASSERT(m_ec, "Expected error code");
+        set_or_throw(ec, "create_symlink", from, to);
+        return;
     }
-    if (ec) *ec = m_ec;
-            
-    if (m_ec && not ec) {
-        throw filesystem_error("std::experimental::filesystem::create_symlink",
-                               from, to, m_ec);
-    }
+    if (ec) ec->clear();
 }
 
-////////////////////////////////////////////////////////////////////////////
+
 path __current_path(std::error_code *ec)
 {
     auto size = ::pathconf(".", _PC_PATH_MAX);
     _LIBCPP_ASSERT(size >= 0, "pathconf returned a 0 as max size");
 
     auto buff = std::unique_ptr<char[]>(new char[size + 1]);
-        
-    char* ret = ::getcwd(buff.get(), static_cast<size_t>(size));
-        
-    std::error_code m_ec;
-    if (not ret) {
-            m_ec = detail::capture_errno();
-    }
-    if (ec) *ec = m_ec;
-        
-    if (m_ec && not ec) {
-        throw filesystem_error("std::experimental::filesystem::current_path", m_ec);
-    }
-    else if (m_ec) {
+    char* ret;
+
+    if ((ret = ::getcwd(buff.get(), static_cast<size_t>(size))) == nullptr) {
+        set_or_throw(detail::capture_errno(), ec, "current_path");
         return {};
-    } else {
-        return {buff.get()};
     }
+    if (ec) ec->clear();
+    return {buff.get()};
 }
 
-////////////////////////////////////////////////////////////////////////////
+
 void __current_path(const path& p, std::error_code *ec)
 {
-    std::error_code m_ec;
     if (::chdir(p.c_str()) == -1) {
-        m_ec = detail::capture_errno();
+        set_or_throw(ec, "current_path", p);
+        return;
     }
-    if (ec) *ec = m_ec;
-            
-    if (m_ec && not ec) {
-        throw filesystem_error("std::experimental::filesystem::current_path", p, m_ec);
-    }
-
+    if (ec) ec->clear();
 }
 
-////////////////////////////////////////////////////////////////////////////
-bool __equivalent(
-    const path& p1, const path& p2, 
-    std::error_code *ec)
+
+bool __equivalent(const path& p1, const path& p2, std::error_code *ec)
 {
     std::error_code ec1, ec2;
-    struct ::stat st1, st2;
-    detail::posix_stat(p1.native(), st1, &ec1);
-    detail::posix_stat(p2.native(), st2, &ec2);
-    
-    if (ec1 && ec2) {
-        if (ec) ec->clear();
+    struct ::stat st1 = {};
+    struct ::stat st2 = {};
+    auto s1 = detail::posix_stat(p1.native(), st1, &ec1);
+    auto s2 = detail::posix_stat(p2.native(), st2, &ec2);
+
+    if ((!exists(s1) && !exists(s2)) || (is_other(s1) && is_other(s2))) {
+        set_or_throw(make_error_code(errc::not_supported), ec, "equivalent", p1, p2);
         return false;
     }
-    else if (ec1 || ec2) {
-        if (ec) {
-            *ec = ec1 ? ec1 : ec2;
-            return false;
-        } else {
-            throw filesystem_error(
-              "std::experimental::filesystem::equivalent"
-            , p1, p2
-            , ec1 ? ec1 : ec2
-            );
-        }
-    } else {
-        if (ec) ec->clear();
-        return (st1.st_dev == st2.st_dev && st1.st_ino == st2.st_ino);
-    }
+    if (ec) ec->clear();
+    return (st1.st_dev == st2.st_dev && st1.st_ino == st2.st_ino);
 }
 
-////////////////////////////////////////////////////////////////////////////
+
 std::uintmax_t __file_size(const path& p, std::error_code *ec)
 {
     std::error_code m_ec;
     struct ::stat st;
     file_status fst = detail::posix_stat(p, st, &m_ec);
-    if (is_regular_file(fst)) {
-        _LIBCPP_ASSERT(not m_ec, "expected no error code");
-        if (ec) ec->clear();
-        return static_cast<std::uintmax_t>(st.st_size);
+    if (!exists(fst) || !is_regular_file(fst)) {
+        if (!m_ec)
+            m_ec = make_error_code(errc::function_not_supported);
+        set_or_throw(m_ec, ec, "file_size", p);
+        return static_cast<uintmax_t>(-1);
     }
-    else if (m_ec && not ec) {
-        throw filesystem_error("std::experimental::filesystem::file_size", p, m_ec);
-    }
-    else if (m_ec) {
-        *ec = m_ec;
-        return static_cast<std::uintmax_t>(-1);
-    // else !is_regular_file(fst)
-    } else {
-        std::error_code tmp_ec(EPERM, std::system_category());
-        if (ec) {
-            *ec = tmp_ec;
-            return static_cast<std::uintmax_t>(-1);
-        } else {
-            throw filesystem_error("std::experimental::filesystem::file_size", p, tmp_ec);
-        }
-    } 
+    // is_regular_file(p) == true
+    if (ec) ec->clear();
+    return static_cast<std::uintmax_t>(st.st_size);
 }
 
-////////////////////////////////////////////////////////////////////////////
 std::uintmax_t __hard_link_count(const path& p, std::error_code *ec)
 {
     std::error_code m_ec;
     struct ::stat st;
     detail::posix_stat(p, st, &m_ec);
-    if (ec) *ec = m_ec;
-    if (m_ec && not ec) {
-        throw filesystem_error("std::experimental::filesystem::hard_link_count", p, m_ec);
-    } 
-    else if (m_ec && ec) {
+    if (m_ec) {
+        set_or_throw(m_ec, ec, "hard_link_count", p);
         return static_cast<std::uintmax_t>(-1);
+    }
+    if (ec) ec->clear();
+    return static_cast<std::uintmax_t>(st.st_nlink);
+}
+
+
+bool __fs_is_empty(const path& p, std::error_code *ec)
+{
+    if (ec) ec->clear();
+    std::error_code m_ec;
+    struct ::stat pst;
+    auto st = detail::posix_stat(p, pst, &m_ec);
+    if (is_directory(st)) {
+        return directory_iterator(p) == directory_iterator{};
+    }
+    else if (is_regular_file(st)) {
+        return static_cast<std::uintmax_t>(pst.st_size) == 0;
     } else {
-        return static_cast<std::uintmax_t>(st.st_nlink);
+        set_or_throw(m_ec, ec, "is_empty", p);
+        return false;
     }
 }
 
-////////////////////////////////////////////////////////////////////////////
-bool __fs_is_empty(const path& p, std::error_code *ec)
-{
-    auto is_dir = is_directory(__status(p, ec));
-    return (is_dir ? directory_iterator(p) == directory_iterator()
-      : __file_size(p, ec) == 0);
-}
 
-////////////////////////////////////////////////////////////////////////////
 file_time_type __last_write_time(const path& p, std::error_code *ec)
 {
-    using Clock = std::chrono::system_clock;
-    
+    using Clock = file_time_type::clock;
     std::error_code m_ec;
     struct ::stat st;
     detail::posix_stat(p, st, &m_ec);
-    if (ec) *ec = m_ec;
-        
-    if (m_ec && not ec) {
-        throw filesystem_error("std::experimental::filesystem::last_write_time", p, m_ec);
-    } 
-    else if (m_ec) {
+    if (m_ec) {
+        set_or_throw(m_ec, ec, "last_write_time", p);
         return file_time_type::min();
-    } else {
-        return Clock::from_time_t(
-            static_cast<std::time_t>(st.st_mtime)
-          );
     }
+    if (ec) ec->clear();
+    return Clock::from_time_t(static_cast<std::time_t>(st.st_mtime));
 }
 
-////////////////////////////////////////////////////////////////////////////
-void __last_write_time(
-    const path& p
-  , file_time_type new_time
-  , std::error_code *ec
-  )
+
+void __last_write_time(const path& p, file_time_type new_time,
+                       std::error_code *ec)
 {
     std::error_code m_ec;
 #if !defined(__APPLE__)
@@ -724,315 +553,217 @@ void __last_write_time(
     using Clock = file_time_type::clock;
     struct ::stat st;
     detail::posix_stat(p, st, &m_ec);
-    if (ec) *ec = m_ec;
-    if (m_ec && not ec) {
-        throw filesystem_error("std::experimental::filesystem::last_write_time", p, m_ec);
-    }
-    else if (m_ec) {
-         return;
-    }
-
-    ::utimbuf tbuf;
-    tbuf.actime = st.st_atime;
-    tbuf.modtime = Clock::to_time_t(new_time);
-    if (::utime(p.c_str(), &tbuf) == -1) {
-        m_ec = detail::capture_errno();
+    if (!m_ec) {
+        ::utimbuf tbuf;
+        tbuf.actime = st.st_atime;
+        tbuf.modtime = Clock::to_time_t(new_time);
+        if (::utime(p.c_str(), &tbuf) == -1) {
+            m_ec = detail::capture_errno();
+        }
     }
 #endif
-    if (ec) *ec = m_ec;
-    if (m_ec && not ec) {
-        throw filesystem_error("std::experimental::filesystem::last_write_time", p, m_ec);
-    }
+    if (m_ec) set_or_throw(m_ec, ec, "last_write_time", p);
+    else if (ec) ec->clear();
 }
 
-////////////////////////////////////////////////////////////////////////////
+
 void __permissions(const path& p, perms prms, std::error_code *ec)
 {
-    _LIBCPP_ASSERT(not (bool(perms::add_perms & prms) 
+    _LIBCPP_ASSERT(not (bool(perms::add_perms & prms)
                  && bool(perms::remove_perms & prms)), "invalid perms mask");
-      
-    file_status st = __status(p, ec);
-    if (!exists(st)) {
-        if (ec && *ec) { return; }
-        std::error_code m_ec(
-            static_cast<int>(std::errc::no_such_file_or_directory)
-          , std::system_category()
-          );
-        throw filesystem_error("std::experimental::filesystem::permissions", p, m_ec);
+
+    std::error_code m_ec;
+    file_status st = detail::posix_stat(p, &m_ec);
+    if (m_ec) {
+        set_or_throw(m_ec, ec, "permissions", p);
+        return;
     }
-      
-    if (bool(perms::add_perms & prms)) {
-        prms |= st.permissions();
-    }
-    else if (bool(perms::remove_perms & prms)) {
-        prms = st.permissions() & ~prms;
-    }
-    
-    auto const real_perms = detail::posix_convert_perms(prms);
-    
+
+    if (bool(perms::add_perms & prms))
+        prms |= st.permissions() & perms::mask;
+    else if (bool(perms::remove_perms & prms))
+        prms = st.permissions() & ~(prms & perms::mask);
+    auto real_perms = detail::posix_convert_perms(prms);
+
 # if defined(AT_SYMLINK_NOFOLLOW) && defined(AT_FDCWD) \
   && !defined(__linux__)
     const int flags = bool(perms::resolve_symlinks & prms)
                    ? 0 : AT_SYMLINK_NOFOLLOW;
-                   
     if (::fchmodat(AT_FDCWD, p.c_str(), real_perms, flags) == -1) {
 # else
     if (::chmod(p.c_str(), real_perms) == -1) {
 # endif
-        std::error_code m_ec = detail::capture_errno();
-        if (ec) {
-            *ec = m_ec;
-            return;
-        } else {
-            throw filesystem_error("std::experimental::filesystem::permissions", p, m_ec);
-        }
-    } 
+        set_or_throw(ec, "permissions", p);
+        return;
+    }
     if (ec) ec->clear();
 }
 
-////////////////////////////////////////////////////////////////////////////
-path __read_symlink(const path& p, std::error_code *ec)
-{
+
+path __read_symlink(const path& p, std::error_code *ec) {
     char buff[PATH_MAX + 1];
     std::error_code m_ec;
     ::ssize_t ret;
     if ((ret = ::readlink(p.c_str(), buff, PATH_MAX)) == -1) {
-        m_ec = detail::capture_errno();
-    } else {
-        _LIBCPP_ASSERT(ret <= PATH_MAX, "TODO");
-        _LIBCPP_ASSERT(ret > 0, "TODO");
-        buff[ret] = 0;
-    }
-    if (ec) *ec = m_ec;
-        
-    if (m_ec && not ec) {
-        throw filesystem_error("std::experimental::filesystem::read_symlink", p, m_ec);
-    }
-    else if (m_ec) {
+        set_or_throw(ec, "read_symlink", p);
         return {};
-    } else {
-        return path(buff);
     }
+    _LIBCPP_ASSERT(ret <= PATH_MAX, "TODO");
+    _LIBCPP_ASSERT(ret > 0, "TODO");
+    if (ec) ec->clear();
+    buff[ret] = 0;
+    return {buff};
 }
 
-////////////////////////////////////////////////////////////////////////////
-bool __remove(const path& p, std::error_code *ec)
-{
-    std::error_code m_ec;
+
+bool __remove(const path& p, std::error_code *ec) {
     if (::remove(p.c_str()) == -1) {
-        m_ec = detail::capture_errno();
+        set_or_throw(ec, "remove", p);
+        return false;
     }
-    if (ec) *ec = m_ec;
-        
-    if (m_ec && not ec) {
-        throw filesystem_error("std::experimental::filesystem::remove", p, m_ec);
-    }
-    return !m_ec;
+    return true;
 }
 
-namespace
+namespace {
+
+std::uintmax_t remove_all_impl(path const & p, file_status const & st,
+                               std::error_code *ec)
 {
-    ////////////////////////////////////////////////////////////////////////
-    std::uintmax_t remove_all_impl(
-        path const & p, file_status const & st
-    , std::error_code *ec)
-    {
-        static constexpr std::uintmax_t npos = static_cast<std::uintmax_t>(-1);
-        std::uintmax_t count = 1;
-        if (is_directory(st)) {
-            for (directory_iterator it(p); it != directory_iterator(); ++it) {
-                const file_status fst = __symlink_status(it->path(), ec);
-                if (ec && *ec) {
-                    return npos;
-                }
-                const std::uintmax_t other_count = 
-                    remove_all_impl(it->path(), fst, ec);
-                if ((ec && *ec) || other_count == npos) {
-                    return npos;
-                }
-                count += other_count;
+    static constexpr std::uintmax_t npos = static_cast<std::uintmax_t>(-1);
+    std::uintmax_t count = 1;
+    if (is_directory(st)) {
+        for (directory_iterator it(p); it != directory_iterator(); ++it) {
+            const file_status fst = __symlink_status(it->path(), ec);
+            if (ec && *ec) {
+                return npos;
             }
+            const std::uintmax_t other_count =
+                remove_all_impl(it->path(), fst, ec);
+            if ((ec && *ec) || other_count == npos) {
+                return npos;
+            }
+            count += other_count;
         }
-        const bool ret = __remove(p, ec);
-        _LIBCPP_ASSERT(ret, "Remove should have succeeded"); ((void)ret);
-        if (ec && *ec) {
-            return npos;
-        
-        } else {
-            return count;
-        }
+    }
+    const bool ret = __remove(p, ec);
+    _LIBCPP_ASSERT(ret, "Remove should have succeeded"); ((void)ret);
+    if (ec && *ec) {
+        return npos;
+
+    } else {
+        return count;
     }
 }
 
-////////////////////////////////////////////////////////////////////////////
-std::uintmax_t __remove_all(const path& p, std::error_code *ec)
-{
+} // end namespace
+
+std::uintmax_t __remove_all(const path& p, std::error_code *ec) {
     std::error_code mec;
     const file_status st = __symlink_status(p, &mec);
     if (not status_known(st)) {
-        if (ec) {
-            _LIBCPP_ASSERT(mec, "Expected error code");
-            *ec = mec;
-            return static_cast<std::uintmax_t>(-1);
-        } 
-        throw filesystem_error("std::experimental::filesystem::remove_all", p, mec);
+        set_or_throw(mec, ec, "remove_all", p);
+        return static_cast<std::uintmax_t>(-1);
     }
-    
-    if (exists(st)) {
+    else if (exists(st)) {
         return remove_all_impl(p, st, ec);
     } else {
+        if (ec) ec->clear();
         return 0;
     }
 }
 
-////////////////////////////////////////////////////////////////////////////
-void __rename(const path& from, const path& to, std::error_code *ec)
-{
-    std::error_code m_ec;
-    if (::rename(from.c_str(), to.c_str()) == -1) {
-        m_ec = detail::capture_errno();
-    }
-    if (ec) *ec = m_ec;
-        
-    if (m_ec && not ec) {
-        throw filesystem_error("std::experimental::filesystem::rename", from, to, m_ec);
-    }
+void __rename(const path& from, const path& to, std::error_code *ec) {
+    if (::rename(from.c_str(), to.c_str()) == -1)
+        set_or_throw(ec, "rename", from, to);
+    else if (ec)
+        ec->clear();
 }
 
-////////////////////////////////////////////////////////////////////////////
-void __resize_file(const path& p, std::uintmax_t size, std::error_code *ec)
-{
-    std::error_code m_ec;
-    if (::truncate(p.c_str(), static_cast<long>(size)) == -1) {
-        m_ec = detail::capture_errno();
-    }
-    if (ec) *ec = m_ec;
-    
-    if (m_ec && not ec) {
-        throw filesystem_error("std::experimental::filesystem::resize_file", p, m_ec);
-    }
+void __resize_file(const path& p, std::uintmax_t size, std::error_code *ec) {
+    if (::truncate(p.c_str(), static_cast<long>(size)) == -1)
+        set_or_throw(ec, "resize_file", p);
+    else if (ec)
+        ec->clear();
 }
 
-////////////////////////////////////////////////////////////////////////////
-space_info __space(const path& p, std::error_code *ec)
-{
-    std::error_code m_ec;
+space_info __space(const path& p, std::error_code *ec) {
+    space_info si;
     struct statvfs m_svfs;
     //if we fail but don't throw
     if (::statvfs(p.c_str(), &m_svfs) == -1)  {
-        m_ec = detail::capture_errno();
-    }
-    if (ec) *ec = m_ec;
-    if (m_ec && not ec) {
-        throw filesystem_error("std::experimental::filesystem::space", p, m_ec);
-    }
-    else if (m_ec) {
-        space_info si;
-        si.capacity = si.free = si.available = 
-            static_cast<decltype(si.free)>(-1);
-        return si;
-    } else {
-        space_info si;
-        si.capacity =   m_svfs.f_blocks * m_svfs.f_frsize;
-        si.free =       m_svfs.f_bfree  * m_svfs.f_frsize;
-        si.available =  m_svfs.f_bavail * m_svfs.f_frsize;
+        set_or_throw(ec, "space", p);
+        si.capacity = si.free = si.available = static_cast<decltype(si.free)>(-1);
         return si;
     }
+    if (ec) ec->clear();
+    si.capacity =   m_svfs.f_blocks * m_svfs.f_frsize;
+    si.free =       m_svfs.f_bfree  * m_svfs.f_frsize;
+    si.available =  m_svfs.f_bavail * m_svfs.f_frsize;
+    return si;
 }
 
-////////////////////////////////////////////////////////////////////////////
-file_status __status(const path& p, std::error_code *ec)
-{
-    struct stat m_stat;
-    return detail::posix_stat(p, m_stat, ec);
+file_status __status(const path& p, std::error_code *ec) {
+    return detail::posix_stat(p, ec);
 }
 
-////////////////////////////////////////////////////////////////////////////
-file_status __symlink_status(const path& p, std::error_code *ec)
-{
-    struct stat m_stat;
-    return detail::posix_lstat(p, m_stat, ec);
+file_status __symlink_status(const path& p, std::error_code *ec) {
+    return detail::posix_lstat(p, ec);
 }
 
-////////////////////////////////////////////////////////////////////////////
-path __system_complete(const path& p, std::error_code *ec)
-{
+path __system_complete(const path& p, std::error_code *ec) {
     if (ec) ec->clear();
     return absolute(p, current_path());
 }
 
-////////////////////////////////////////////////////////////////////////////
-path __temp_directory_path(std::error_code *ec)
-{
+path __temp_directory_path(std::error_code *ec) {
     const char* env_paths[] = {"TMPDIR", "TMP", "TEMP", "TEMPDIR"};
-    path p("/tmp");
-    std::error_code m_ec;
-        
-    for (auto & ep : env_paths) 
-    {
-        char const* ret = std::getenv(ep);
-        if (ret) {
-            p = ret;
+    const char* ret = nullptr;
+    for (auto & ep : env_paths)  {
+        if ((ret = std::getenv(ep)))
             break;
-        }
     }
-
-    if (is_directory(p, m_ec)) {
+    path p(ret ? ret : "/tmp");
+    if (is_directory(p)) {
         if (ec) ec->clear();
         return p;
-    } 
-
-    m_ec = std::error_code(
-        static_cast<int>(std::errc::no_such_file_or_directory)
-      , std::system_category()
-      );
-    
-    if (not ec) {
-        throw filesystem_error("std::experimental::filesystem::temp_directory_path", m_ec);
-    } else {
-        *ec = m_ec;
-        return {};
     }
+    set_or_throw(make_error_code(errc::no_such_file_or_directory), ec,
+                 "temp_directory_path");
+    return {};
 }
 
-////////////////////////////////////////////////////////////////////////////////
-//                      OPERATORS DEFINITION                                                    
-////////////////////////////////////////////////////////////////////////////////
+//since the specification of absolute in the current specification
+// this implementation is designed after the sample implementation
+// using the sample table as a guide
+path absolute(const path& p, const path& base) {
+    auto root_name = p.root_name();
+    auto root_dir = p.root_directory();
 
-    
-    //since the specification of absolute in the current specification
-    // this implementation is designed after the sample implementation
-    // using the sample table as a guide
-    path absolute(const path& p, const path& base)
-    {
-      auto root_name = p.root_name();
-      auto root_dir = p.root_directory();
-    
-      if (!root_name.empty() && !root_dir.empty())
-        return p;
-        
-      auto abs_base = base.is_absolute() ? base : absolute(base);
-      
-      /* !has_root_name && !has_root_dir */
-      if (root_name.empty() && root_dir.empty()) 
-      {
-        return abs_base / p;
-      }
-      else if (!root_name.empty()) /* has_root_name && !has_root_dir */
-      {
-        return  root_name / abs_base.root_directory()
-                /
-                abs_base.relative_path() / p.relative_path();
-      }
-      else /* !has_root_name && has_root_dir */
-      {
-        if (abs_base.has_root_name())
-          return abs_base.root_name() / p;
-        // else p is absolute,  return outside of block
-      }
-      
-      _LIBCPP_ASSERT(p.is_absolute(), "path must be absolute");
+    if (!root_name.empty() && !root_dir.empty())
       return p;
+
+    auto abs_base = base.is_absolute() ? base : absolute(base);
+
+    /* !has_root_name && !has_root_dir */
+    if (root_name.empty() && root_dir.empty())
+    {
+      return abs_base / p;
     }
-  
+    else if (!root_name.empty()) /* has_root_name && !has_root_dir */
+    {
+      return  root_name / abs_base.root_directory()
+              /
+              abs_base.relative_path() / p.relative_path();
+    }
+    else /* !has_root_name && has_root_dir */
+    {
+      if (abs_base.has_root_name())
+        return abs_base.root_name() / p;
+      // else p is absolute,  return outside of block
+    }
+
+    _LIBCPP_ASSERT(p.is_absolute(), "path must be absolute");
+    return p;
+}
+
 _LIBCPP_END_NAMESPACE_EXPERIMENTAL_FILESYSTEM
