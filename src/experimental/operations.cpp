@@ -705,29 +705,40 @@ void __last_write_time(
   , std::error_code *ec
   )
 {
-    using Clock = std::chrono::system_clock;
-    
     std::error_code m_ec;
+#ifndef FALLBACK
+    using namespace std::chrono;
+    auto dur_since_epoch = new_time.time_since_epoch();
+    auto sec_since_epoch = duration_cast<seconds>(dur_since_epoch);
+    auto ns_since_epoch = duration_cast<nanoseconds>(dur_since_epoch - sec_since_epoch);
+    struct ::timespec tbuf[2];
+    tbuf[0].tv_sec = 0;
+    tbuf[0].tv_nsec = UTIME_OMIT;
+    tbuf[1].tv_sec = sec_since_epoch.count();
+    tbuf[1].tv_nsec = ns_since_epoch.count();
+
+    if (::utimensat(AT_FDCWD, p.c_str(), tbuf, 0) == -1) {
+        m_ec = detail::capture_errno();
+    }
+#else
     struct ::stat st;
     detail::posix_stat(p, st, &m_ec);
     if (ec) *ec = m_ec;
-        
     if (m_ec && not ec) {
         throw filesystem_error("std::experimental::filesystem::last_write_time", p, m_ec);
     }
     else if (m_ec) {
-        return;
+         return;
     }
-    
+
     ::utimbuf tbuf;
     tbuf.actime = st.st_atime;
     tbuf.modtime = Clock::to_time_t(new_time);
-    
     if (::utime(p.c_str(), &tbuf) == -1) {
         m_ec = detail::capture_errno();
     }
+#endif
     if (ec) *ec = m_ec;
-        
     if (m_ec && not ec) {
         throw filesystem_error("std::experimental::filesystem::last_write_time", p, m_ec);
     }
