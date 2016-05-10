@@ -50,8 +50,8 @@ TEST_CASE(is_fifo_status_test)
         {file_type::directory, false},
         {file_type::symlink, false},
         {file_type::block, false},
-        {file_type::character, true},
-        {file_type::fifo, false},
+        {file_type::character, false},
+        {file_type::fifo, true},
         {file_type::socket, false},
         {file_type::unknown, false}
     };
