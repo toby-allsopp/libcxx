@@ -209,10 +209,11 @@ struct scoped_test_env
         return to;
     }
 
-    void create_hardlink(std::string source, std::string to) {
+    std::string create_hardlink(std::string source, std::string to) {
         source = sanitize_path(source);
         to = sanitize_path(to);
         fs_helper_run(fs_make_cmd("create_hardlink", source, to));
+        return to;
     }
 
     std::string create_fifo(std::string file) {
