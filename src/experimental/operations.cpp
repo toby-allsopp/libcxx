@@ -49,7 +49,7 @@ void set_or_throw(std::error_code const& m_ec, std::error_code* ec,
     } else {
         string msg_s("std::experimental::filesystem::");
         msg_s += msg;
-        throw filesystem_error(msg_s, p, p2, m_ec);
+        __libcpp_throw(filesystem_error(msg_s, p, p2, m_ec));
     }
 }
 
@@ -127,7 +127,6 @@ bool stat_equivalent(struct ::stat& st1, struct ::stat& st2) {
     return (st1.st_dev == st2.st_dev && st1.st_ino == st2.st_ino);
 }
 
-
 //                           DETAIL::MISC
 
 
@@ -146,8 +145,8 @@ bool copy_file_impl(const path& from, const path& to, perms from_perms,
         std::copy(bin, ein, bout);
     }
     if (out.fail() || in.fail()) {
-        std::error_code m_ec = make_error_code(errc::operation_not_permitted);
-        set_or_throw(m_ec, ec, "std::experimental::filesystem::copy_file", from, to);
+        set_or_throw(make_error_code(errc::operation_not_permitted),
+                     ec, "copy_file", from, to);
         return false;
     }
     __permissions(to, from_perms, ec);
@@ -186,27 +185,22 @@ void __copy(const path& from, const path& to, copy_options options,
     const file_status f = sym_status || sym_status2
                                      ? detail::posix_lstat(from, f_st, &m_ec)
                                      : detail::posix_stat(from,  f_st, &m_ec);
-    if (m_ec) {
-        set_or_throw(m_ec, ec, "copy", from, to);
-        return;
-    }
+    if (m_ec)
+        return set_or_throw(m_ec, ec, "copy", from, to);
 
     struct ::stat t_st = {};
     const file_status t = sym_status ? detail::posix_lstat(to, t_st, &m_ec)
                                       : detail::posix_stat(to, t_st, &m_ec);
 
-    if (not status_known(t)) {
-        set_or_throw(m_ec, ec, "copy", from, to);
-        return;
-    }
+    if (not status_known(t))
+        return set_or_throw(m_ec, ec, "copy", from, to);
 
     if (!exists(f) || is_other(f) || is_other(t)
         || (is_directory(f) && is_regular_file(t))
         || detail::stat_equivalent(f_st, t_st))
     {
-        set_or_throw(make_error_code(errc::function_not_supported),
-                     ec, "copy", from, to);
-        return;
+        return set_or_throw(make_error_code(errc::function_not_supported),
+                            ec, "copy", from, to);
     }
 
     if (ec) ec->clear();
@@ -214,8 +208,7 @@ void __copy(const path& from, const path& to, copy_options options,
     if (is_symlink(f)) {
         if (bool(copy_options::skip_symlinks & options)) {
             // do nothing
-        }
-        else if (not exists(t)) {
+        } else if (not exists(t)) {
             __copy_symlink(from, to, ec);
         } else {
             set_or_throw(make_error_code(errc::file_exists),
@@ -257,17 +250,13 @@ void __copy(const path& from, const path& to, copy_options options,
         if (ec && *ec) { return; }
         std::error_code m_ec;
         for (; it != directory_iterator(); it.increment(m_ec)) {
-            if (m_ec) {
-                set_or_throw(m_ec, ec, "copy", from, to);
-                return;
-            }
+            if (m_ec) return set_or_throw(m_ec, ec, "copy", from, to);
             __copy(it->path(), to / it->path().filename(),
                    options | copy_options::__in_recursive_copy, ec);
             if (ec && *ec) { return; }
         }
     }
 }
-
 
 
 bool __copy_file(const path& from, const path& to, copy_options options,
@@ -279,7 +268,7 @@ bool __copy_file(const path& from, const path& to, copy_options options,
     auto from_st = detail::posix_stat(from, &m_ec);
     if (not is_regular_file(from_st)) {
         if (not m_ec)
-            m_ec = make_error_code(errc::no_such_file_or_directory);
+            m_ec = make_error_code(errc::not_supported);
         set_or_throw(m_ec, ec, "copy_file", from, to);
         return false;
     }
@@ -369,11 +358,8 @@ bool __create_directory(const path& p, std::error_code *ec)
     return false;
 }
 
-
-bool __create_directory(
-    path const & p, path const & attributes
-  , std::error_code *ec
-  )
+bool __create_directory(path const & p, path const & attributes,
+                        std::error_code *ec)
 {
     struct ::stat attr_stat;
     std::error_code mec;
@@ -385,53 +371,39 @@ bool __create_directory(
     if (ec) ec->clear();
     if (::mkdir(p.c_str(), attr_stat.st_mode) == 0)
         return true;
-
     if (errno != EEXIST || !is_directory(p))
         set_or_throw(ec, "create_directory", p, attributes);
     return false;
 }
 
-
-void __create_directory_symlink(
-    path const & from, path const & to
-  , std::error_code *ec
-  )
-{
-    if (::symlink(from.c_str(), to.c_str()) != 0) {
+void __create_directory_symlink(path const & from, path const & to,
+                                std::error_code *ec){
+    if (::symlink(from.c_str(), to.c_str()) != 0)
         set_or_throw(ec, "create_directory_symlink", from, to);
-        return;
-    }
-    if (ec) ec->clear();
+    else if (ec)
+        ec->clear();
 }
 
-void __create_hard_link(const path& from, const path& to, std::error_code *ec)
-{
-    if (::link(from.c_str(), to.c_str()) == -1) {
+void __create_hard_link(const path& from, const path& to, std::error_code *ec){
+    if (::link(from.c_str(), to.c_str()) == -1)
         set_or_throw(ec, "create_hard_link", from, to);
-        return;
-    }
-    if (ec) ec->clear();
+    else if (ec)
+        ec->clear();
 }
 
-
-void __create_symlink(path const & from, path const & to, std::error_code *ec)
-{
-    if (::symlink(from.c_str(), to.c_str()) != 0) {
+void __create_symlink(path const & from, path const & to, std::error_code *ec){
+    if (::symlink(from.c_str(), to.c_str()) != 0)
         set_or_throw(ec, "create_symlink", from, to);
-        return;
-    }
-    if (ec) ec->clear();
+    else if (ec)
+        ec->clear();
 }
 
-
-path __current_path(std::error_code *ec)
-{
+path __current_path(std::error_code *ec) {
     auto size = ::pathconf(".", _PC_PATH_MAX);
     _LIBCPP_ASSERT(size >= 0, "pathconf returned a 0 as max size");
 
     auto buff = std::unique_ptr<char[]>(new char[size + 1]);
     char* ret;
-
     if ((ret = ::getcwd(buff.get(), static_cast<size_t>(size))) == nullptr) {
         set_or_throw(ec, "current_path");
         return {};
@@ -441,13 +413,11 @@ path __current_path(std::error_code *ec)
 }
 
 
-void __current_path(const path& p, std::error_code *ec)
-{
-    if (::chdir(p.c_str()) == -1) {
+void __current_path(const path& p, std::error_code *ec) {
+    if (::chdir(p.c_str()) == -1)
         set_or_throw(ec, "current_path", p);
-        return;
-    }
-    if (ec) ec->clear();
+    else if (ec)
+        ec->clear();
 }
 
 
@@ -460,7 +430,8 @@ bool __equivalent(const path& p1, const path& p2, std::error_code *ec)
     auto s2 = detail::posix_stat(p2.native(), st2, &ec2);
 
     if ((!exists(s1) && !exists(s2)) || (is_other(s1) && is_other(s2))) {
-        set_or_throw(make_error_code(errc::not_supported), ec, "equivalent", p1, p2);
+        set_or_throw(make_error_code(errc::not_supported), ec,
+                     "equivalent", p1, p2);
         return false;
     }
     if (ec) ec->clear();
@@ -475,7 +446,7 @@ std::uintmax_t __file_size(const path& p, std::error_code *ec)
     file_status fst = detail::posix_stat(p, st, &m_ec);
     if (!exists(fst) || !is_regular_file(fst)) {
         if (!m_ec)
-            m_ec = make_error_code(errc::function_not_supported);
+            m_ec = make_error_code(errc::not_supported);
         set_or_throw(m_ec, ec, "file_size", p);
         return static_cast<uintmax_t>(-1);
     }
@@ -504,15 +475,13 @@ bool __fs_is_empty(const path& p, std::error_code *ec)
     std::error_code m_ec;
     struct ::stat pst;
     auto st = detail::posix_stat(p, pst, &m_ec);
-    if (is_directory(st)) {
+    if (is_directory(st))
         return directory_iterator(p) == directory_iterator{};
-    }
-    else if (is_regular_file(st)) {
+    else if (is_regular_file(st))
         return static_cast<std::uintmax_t>(pst.st_size) == 0;
-    } else {
-        set_or_throw(m_ec, ec, "is_empty", p);
-        return false;
-    }
+    // else
+    set_or_throw(m_ec, ec, "is_empty", p);
+    return false;
 }
 
 
@@ -562,8 +531,10 @@ void __last_write_time(const path& p, file_time_type new_time,
         }
     }
 #endif
-    if (m_ec) set_or_throw(m_ec, ec, "last_write_time", p);
-    else if (ec) ec->clear();
+    if (m_ec)
+        set_or_throw(m_ec, ec, "last_write_time", p);
+    else if (ec)
+        ec->clear();
 }
 
 
@@ -574,10 +545,8 @@ void __permissions(const path& p, perms prms, std::error_code *ec)
 
     std::error_code m_ec;
     file_status st = detail::posix_stat(p, &m_ec);
-    if (m_ec) {
-        set_or_throw(m_ec, ec, "permissions", p);
-        return;
-    }
+    if (m_ec)
+        return set_or_throw(m_ec, ec, "permissions", p);
 
     if (bool(perms::add_perms & prms))
         prms |= st.permissions() & perms::mask;
@@ -593,8 +562,7 @@ void __permissions(const path& p, perms prms, std::error_code *ec)
 # else
     if (::chmod(p.c_str(), real_perms) == -1) {
 # endif
-        set_or_throw(ec, "permissions", p);
-        return;
+        return set_or_throw(ec, "permissions", p);
     }
     if (ec) ec->clear();
 }
@@ -621,6 +589,7 @@ bool __remove(const path& p, std::error_code *ec) {
         set_or_throw(ec, "remove", p);
         return false;
     }
+    if (ec) ec->clear();
     return true;
 }
 
@@ -647,12 +616,10 @@ std::uintmax_t remove_all_impl(path const & p, file_status const & st,
     }
     const bool ret = __remove(p, ec);
     _LIBCPP_ASSERT(ret, "Remove should have succeeded"); ((void)ret);
-    if (ec && *ec) {
+    if (ec && *ec)
         return npos;
-
-    } else {
+    else
         return count;
-    }
 }
 
 } // end namespace
@@ -660,7 +627,7 @@ std::uintmax_t remove_all_impl(path const & p, file_status const & st,
 std::uintmax_t __remove_all(const path& p, std::error_code *ec) {
     std::error_code mec;
     const file_status st = __symlink_status(p, &mec);
-    if (not status_known(st)) {
+    if (mec) {
         set_or_throw(mec, ec, "remove_all", p);
         return static_cast<std::uintmax_t>(-1);
     }
@@ -692,7 +659,8 @@ space_info __space(const path& p, std::error_code *ec) {
     //if we fail but don't throw
     if (::statvfs(p.c_str(), &m_svfs) == -1)  {
         set_or_throw(ec, "space", p);
-        si.capacity = si.free = si.available = static_cast<decltype(si.free)>(-1);
+        si.capacity = si.free = si.available =
+            static_cast<decltype(si.free)>(-1);
         return si;
     }
     if (ec) ec->clear();
@@ -761,8 +729,6 @@ path absolute(const path& p, const path& base) {
         return abs_base.root_name() / p;
       // else p is absolute,  return outside of block
     }
-
-    _LIBCPP_ASSERT(p.is_absolute(), "path must be absolute");
     return p;
 }
 

@@ -96,7 +96,8 @@ TEST_CASE(copy_file)
     { // exists(to) && overwrite_existing
         const path dest = env.create_file("dest2", 55);
         std::error_code ec;
-        TEST_REQUIRE(fs::copy_file(file, dest, copy_options::overwrite_existing, ec) == true);
+        TEST_REQUIRE(fs::copy_file(file, dest,
+                                   copy_options::overwrite_existing, ec) == true);
         TEST_CHECK(!ec);
         TEST_CHECK(file_size(dest) == 42);
     }

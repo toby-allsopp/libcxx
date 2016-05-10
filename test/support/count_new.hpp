@@ -20,7 +20,8 @@
 
 #if  __has_feature(address_sanitizer) \
   || __has_feature(memory_sanitizer) \
-  || __has_feature(thread_sanitizer)
+  || __has_feature(thread_sanitizer) \
+  || !defined(_LIBCPP_VERSION)
 #define DISABLE_NEW_COUNT
 #endif
 

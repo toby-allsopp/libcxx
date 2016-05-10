@@ -20,7 +20,8 @@ inline bool capture_error_or_throw(std::error_code* user_ec,
         *user_ec = my_ec;
         return true;
     }
-    throw filesystem_error(msg, std::forward<Args>(args)..., my_ec);
+    __libcpp_throw(filesystem_error(msg, std::forward<Args>(args)..., my_ec));
+    return false;
 }
 
 template <class ...Args>
@@ -201,7 +202,6 @@ const directory_entry& recursive_directory_iterator::__deref() const {
 recursive_directory_iterator& 
 recursive_directory_iterator::__increment(error_code *ec)
 {
-    if (ec) ec->clear();
     if (recursion_pending()) {
         if (__try_recursion(ec) || (ec && *ec))
             return *this;
@@ -216,7 +216,10 @@ void recursive_directory_iterator::__advance(error_code* ec) {
     auto& stack = __imp_->__stack_;
     std::error_code m_ec;
     while (stack.size() > 0) {
-        if (stack.top().advance(m_ec)) return;
+        if (stack.top().advance(m_ec)) {
+            if (ec) ec->clear();
+            return;
+        }
         if (m_ec) break;
         stack.pop();
     }
