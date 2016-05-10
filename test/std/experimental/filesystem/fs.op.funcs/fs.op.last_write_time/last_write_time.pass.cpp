@@ -153,15 +153,49 @@ TEST_CASE(test_write_future_time)
     file_time_type last_time = last_write_time(p);
 
     file_time_type new_time = Clock::now() + Hours(24);
+    file_time_type max_allowed = new_time + Sec(1);
+    file_time_type min_allowed = new_time - Sec(1);
+
+    std::error_code ec;
+    last_write_time(p, new_time, ec);
+    TEST_CHECK(!ec);
+
+    file_time_type tt = last_write_time(p);
+
+    TEST_CHECK(tt > min_allowed);
+    TEST_CHECK(tt < max_allowed);
+}
+
+TEST_CASE(test_write_min_max_time)
+{
+    using Clock = file_time_type::clock;
+    using Sec = std::chrono::seconds;
+    using Hours = std::chrono::hours;
+    scoped_test_env env;
+    const path p = env.create_file("file", 42);
+
+    file_time_type last_time = last_write_time(p);
+    file_time_type new_time = file_time_type::min();
+
     std::error_code ec;
     last_write_time(p, new_time, ec);
     TEST_CHECK(ec);
+
     file_time_type tt = last_write_time(p);
-    auto diff = tt - last_time;
-    auto diff2 = std::chrono::duration_cast<Hours>(diff);
-    std::cout << "DIFF " << diff2.count() << std::endl;
-    TEST_CHECK(last_time == tt);
-    TEST_CHECK(tt < new_time);
+    TEST_CHECK(tt == last_time);
+
+    new_time = file_time_type::max();
+    ec.clear();
+    last_write_time(p, new_time, ec);
+
+    tt = last_write_time(p);
+    if (ec) {
+        TEST_CHECK(tt == last_time);
+    } else {
+        file_time_type min_allowed = new_time - Sec(1);
+        TEST_CHECK(tt > min_allowed);
+        TEST_CHECK(tt <= new_time);
+    }
 }
 
 TEST_CASE(test_value_on_failure)
