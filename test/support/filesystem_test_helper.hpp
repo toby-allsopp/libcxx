@@ -113,10 +113,11 @@ struct scoped_test_env
 
     std::string sanitize_path(std::string const & raw) {
         assert(raw.find("..") == std::string::npos);
-        const std::string& root = test_root.native();
-        if (root.compare(0, root.size(), raw) == 0) {
+        if (raw.substr(0, test_root.native().size()) == test_root) {
             return raw;
         } else {
+            fs::path p = raw;
+            assert(!p.is_absolute());
             return test_root / fs::path(raw);
         }
     }

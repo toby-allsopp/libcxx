@@ -175,17 +175,21 @@ TEST_CASE(test_write_min_max_time)
     const path p = env.create_file("file", 42);
 
     file_time_type last_time = last_write_time(p);
-    file_time_type new_time = file_time_type::min();
 
+    file_time_type new_time = file_time_type::min();
     std::error_code ec;
     last_write_time(p, new_time, ec);
-    TEST_CHECK(ec);
-
     file_time_type tt = last_write_time(p);
-    TEST_CHECK(tt == last_time);
+    if (ec) {
+        TEST_CHECK(tt == last_time);
+    } else {
+        file_time_type max_allowed = new_time + Sec(1);
+        TEST_CHECK(tt >= new_time);
+        TEST_CHECK(tt < max_allowed);
+    }
 
+    last_time = tt;
     new_time = file_time_type::max();
-    ec.clear();
     last_write_time(p, new_time, ec);
 
     tt = last_write_time(p);
