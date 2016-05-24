@@ -292,7 +292,7 @@ add_flags_if(LIBCXX_GCC_TOOLCHAIN "-gcc-toolchain ${LIBCXX_GCC_TOOLCHAIN}")
 add_definitions(-D_LIBCPP_HAS_NO_PRAGMA_SYSTEM_HEADER)
 add_compile_flags_if_supported(
     -Wall -W -Wwrite-strings
-    -Wno-unused-parameter -Wno-long-long
+    -Wno-unused-parameter -Wno-long-long -Wno-user-defined-literals
     -Werror=return-type)
 if (LIBCXX_ENABLE_WERROR)
   add_compile_flags_if_supported(-Werror)

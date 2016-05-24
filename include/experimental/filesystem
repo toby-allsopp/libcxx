@@ -1977,7 +1977,13 @@ public:
 
     _LIBCPP_FUNC_VIS directory_options options() const;
     _LIBCPP_FUNC_VIS int  depth() const;
-    _LIBCPP_FUNC_VIS void pop();
+
+    _LIBCPP_INLINE_VISIBILITY
+    void pop() { __pop(); }
+
+    _LIBCPP_INLINE_VISIBILITY
+    void pop(error_code& __ec)
+    { __pop(&__ec); }
 
     _LIBCPP_INLINE_VISIBILITY
     bool recursion_pending() const
@@ -1991,10 +1997,20 @@ private:
     recursive_directory_iterator(const path& __p, directory_options __opt,
                                  error_code *__ec);
 
-    _LIBCPP_FUNC_VIS const directory_entry& __deref() const;
+    _LIBCPP_FUNC_VIS
+    const directory_entry& __deref() const;
+
+    _LIBCPP_FUNC_VIS
     bool __try_recursion(error_code* __ec);
-    _LIBCPP_FUNC_VIS void __advance(error_code* __ec=nullptr);
-    _LIBCPP_FUNC_VIS recursive_directory_iterator& __increment(error_code *__ec=nullptr);
+
+    _LIBCPP_FUNC_VIS
+    void __advance(error_code* __ec=nullptr);
+
+    _LIBCPP_FUNC_VIS
+    recursive_directory_iterator& __increment(error_code *__ec=nullptr);
+
+    _LIBCPP_FUNC_VIS
+    void __pop(error_code* __ec=nullptr);
 
     friend bool operator==(const recursive_directory_iterator&,
                            const recursive_directory_iterator&) _NOEXCEPT;

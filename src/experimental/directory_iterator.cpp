@@ -177,14 +177,16 @@ recursive_directory_iterator::recursive_directory_iterator(const path& p,
     __imp_->__stack_.push(_VSTD::move(new_s));
 }
 
-void recursive_directory_iterator::pop()
+void recursive_directory_iterator::__pop(error_code* ec)
 {
     _LIBCPP_ASSERT(__imp_, "Popping the end iterator");
     __imp_->__stack_.pop();
-    if (__imp_->__stack_.size() == 0)
+    if (__imp_->__stack_.size() == 0) {
         __imp_.reset();
-    else
-        __advance();
+        if (ec) ec->clear();
+    } else {
+        __advance(ec);
+    }
 }
 
 directory_options recursive_directory_iterator::options() const {
