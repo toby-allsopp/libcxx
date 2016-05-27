@@ -397,29 +397,6 @@ namespace Name                                                      \
     } while (false)
 #
 
-////////////////////////////////////////////////////////////////////////////////
-//                            TEST_STATIC_ASSERT
-////////////////////////////////////////////////////////////////////////////////
-#if __cplusplus < 201103L
-# define TEST_STATIC_ASSERT_MSG(msg, ...) ::rapid_cxx_test::detail::static_assert_check_cxx03< \
-    sizeof(::rapid_cxx_test::detail::static_assert_test_cxx03<(__VA_ARGS__)>)> \
-    RAPID_CXX_TEST_PP_CAT(_rapid_cxx_test_static_assert_cxx03, __LINE__) RAPID_CXX_TEST_UNUSED
-#else
-# define TEST_STATIC_ASSERT_MSG(msg, ...) static_assert(__VA_ARGS__, msg)
-#endif
-
-#define TEST_STATIC_ASSERT(...) TEST_STATIC_ASSERT_MSG(#__VA_ARGS__, __VA_ARGS__)
-
-////////////////////////////////////////////////////////////////////////////////
-//                      TEST_SAME_TYPE/TEST_NOT_SAME_TYPE
-////////////////////////////////////////////////////////////////////////////////
-# define TEST_SAME_TYPE(...) \
-    TEST_STATIC_ASSERT_MSG("is_same<" #__VA_ARGS__ ">::value", ::rapid_cxx_test::detail::is_same<__VA_ARGS__>::value)
-# 
-
-# define TEST_NOT_SAME_TYPE(...) \
-    TEST_STATIC_ASSERT_MSG("not is_same<" #__VA_ARGS__ ">::value", not ::rapid_cxx_test::detail::is_same<__VA_ARGS__>::value)
-
 namespace rapid_cxx_test
 {
     typedef void (*invoker_t)();
@@ -809,28 +786,6 @@ namespace rapid_cxx_test
 
     namespace detail
     {
-        template <bool>
-        struct static_assert_test_cxx03;
-
-        template <>
-        struct static_assert_test_cxx03<true> {};
-
-        template <unsigned>
-        struct static_assert_check_cxx03 {};
-
-        ////////////////////////////////////////////////////////////////////////
-        template <class T, class U>
-        struct is_same
-        {
-            enum { value = 0 };
-        };
-
-        template <class T>
-        struct is_same<T, T>
-        {
-            enum { value = 1 };
-        };
-
         template <class Iter1, class Iter2>
         bool check_equal_collections_impl(
             Iter1 start1, Iter1 const end1
