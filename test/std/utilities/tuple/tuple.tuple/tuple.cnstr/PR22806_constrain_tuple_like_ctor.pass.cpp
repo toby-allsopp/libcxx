@@ -121,7 +121,7 @@ int main()
     { // rvalue reference via uses-allocator
         T t1(42);
         std::tuple< T&& > t2(std::allocator_arg, A, std::move(t1));
-        //assert(&std::get<0>(t2) == &t1);
+        assert(&std::get<0>(t2) == &t1);
     }
     { // const lvalue reference via uses-allocator
         T t1(42);
@@ -134,6 +134,7 @@ int main()
     }
     { // lvalue reference via uses-allocator
         T t1(42);
+
         std::tuple< T & > t2(std::allocator_arg, A, t1);
         assert(&std::get<0>(t2) == &t1);
     }
