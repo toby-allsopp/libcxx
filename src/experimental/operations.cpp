@@ -606,48 +606,36 @@ bool __remove(const path& p, std::error_code *ec) {
 
 namespace {
 
-std::uintmax_t remove_all_impl(path const & p, file_status const & st,
-                               std::error_code *ec)
+std::uintmax_t remove_all_impl(path const & p, std::error_code& ec)
 {
-    static constexpr std::uintmax_t npos = static_cast<std::uintmax_t>(-1);
-    std::uintmax_t count = 1;
+    const auto npos = static_cast<std::uintmax_t>(-1);
+    const file_status st = __symlink_status(p, &ec);
+    if (ec) return npos;
+     std::uintmax_t count = 1;
     if (is_directory(st)) {
-        for (directory_iterator it(p); it != directory_iterator(); ++it) {
-            const file_status fst = __symlink_status(it->path(), ec);
-            if (ec && *ec) {
-                return npos;
-            }
-            const std::uintmax_t other_count =
-                remove_all_impl(it->path(), fst, ec);
-            if ((ec && *ec) || other_count == npos) {
-                return npos;
-            }
+        for (directory_iterator it(p, ec); !ec && it != directory_iterator();
+             it.increment(ec)) {
+            auto other_count = remove_all_impl(it->path(), ec);
+            if (ec) return npos;
             count += other_count;
         }
+        if (ec) return npos;
     }
-    const bool ret = __remove(p, ec);
-    _LIBCPP_ASSERT(ret, "Remove should have succeeded"); ((void)ret);
-    if (ec && *ec)
-        return npos;
-    else
-        return count;
+    if (!__remove(p, &ec)) return npos;
+    return count;
 }
 
 } // end namespace
 
 std::uintmax_t __remove_all(const path& p, std::error_code *ec) {
     std::error_code mec;
-    const file_status st = __symlink_status(p, &mec);
+    auto count = remove_all_impl(p, mec);
     if (mec) {
         set_or_throw(mec, ec, "remove_all", p);
         return static_cast<std::uintmax_t>(-1);
     }
-    else if (exists(st)) {
-        return remove_all_impl(p, st, ec);
-    } else {
-        if (ec) ec->clear();
-        return 0;
-    }
+    if (ec) ec->clear();
+    return count;
 }
 
 void __rename(const path& from, const path& to, std::error_code *ec) {

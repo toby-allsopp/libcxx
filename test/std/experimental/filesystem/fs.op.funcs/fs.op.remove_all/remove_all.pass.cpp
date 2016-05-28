@@ -11,8 +11,8 @@
 
 // <experimental/filesystem>
 
-// bool remove(const path& p);
-// bool remove(const path& p, error_code& ec) noexcept;
+// uintmax_t remove_all(const path& p);
+// uintmax_t remove_all(const path& p, error_code& ec) noexcept;
 
 #include <experimental/filesystem>
 #include <type_traits>
@@ -27,17 +27,17 @@
 using namespace std::experimental::filesystem;
 namespace fs = std::experimental::filesystem;
 
-TEST_SUITE(filesystem_remove_test_suite)
+TEST_SUITE(filesystem_remove_all_test_suite)
 
 TEST_CASE(test_signatures)
 {
     const path p; ((void)p);
     std::error_code ec; ((void)ec);
-    ASSERT_SAME_TYPE(decltype(fs::remove(p)), bool);
-    ASSERT_SAME_TYPE(decltype(fs::remove(p, ec)), bool);
+    ASSERT_SAME_TYPE(decltype(fs::remove_all(p)), std::uintmax_t);
+    ASSERT_SAME_TYPE(decltype(fs::remove_all(p, ec)), std::uintmax_t);
 
-    ASSERT_NOT_NOEXCEPT(fs::remove(p));
-    ASSERT_NOEXCEPT(fs::remove(p, ec));
+    ASSERT_NOT_NOEXCEPT(fs::remove_all(p));
+    ASSERT_NOEXCEPT(fs::remove_all(p, ec));
 }
 
 TEST_CASE(test_error_reporting)
@@ -45,7 +45,7 @@ TEST_CASE(test_error_reporting)
     auto checkThrow = [](path const& f, const std::error_code& ec)
     {
         try {
-            fs::remove(f);
+            fs::remove_all(f);
             return false;
         } catch (filesystem_error const& err) {
             return err.path1() == f
@@ -59,21 +59,25 @@ TEST_CASE(test_error_reporting)
     const path bad_perms_dir = env.create_dir("bad_dir");
     const path file_in_bad_dir = env.create_file(bad_perms_dir / "file", 42);
     permissions(bad_perms_dir, perms::none);
+    const path bad_perms_file = env.create_file("file2", 42);
+    permissions(bad_perms_file, perms::none);
+
     const path testCases[] = {
         "",
         env.make_env_path("dne"),
-        non_empty_dir,
         file_in_bad_dir,
+        bad_perms_file,
     };
+    const std::uintmax_t BadRet = -1;
     for (auto& p : testCases) {
         std::error_code ec;
-        TEST_CHECK(!fs::remove(p, ec));
+        TEST_CHECK(fs::remove_all(p, ec) == BadRet);
         TEST_CHECK(ec);
         TEST_CHECK(checkThrow(p, ec));
     }
 }
 
-TEST_CASE(basic_remove_test)
+TEST_CASE(basic_remove_all_test)
 {
     scoped_test_env env;
     const path dne = env.make_env_path("dne");
@@ -91,6 +95,23 @@ TEST_CASE(basic_remove_test)
         TEST_CHECK(remove(p, ec));
         TEST_CHECK(!ec);
         TEST_CHECK(!exists(symlink_status(p)));
+    }
+}
+
+TEST_CASE(symlink_to_dir)
+{
+    scoped_test_env env;
+    const path dir = env.create_dir("dir");
+    const path file = env.create_file(dir / "file", 42);
+    const path link = env.create_symlink(dir, "sym");
+
+    {
+        std::error_code ec = std::make_error_code(std::errc::address_in_use);
+        TEST_CHECK(remove_all(link, ec) == 1);
+        TEST_CHECK(!ec);
+        TEST_CHECK(!exists(symlink_status(link)));
+        TEST_CHECK(exists(dir));
+        TEST_CHECK(exists(file));
     }
 }
 
