@@ -390,7 +390,8 @@ void __create_hard_link(const path& from, const path& to, std::error_code *ec){
         ec->clear();
 }
 
-void __create_symlink(path const & from, path const & to, std::error_code *ec){
+void __create_symlink(path const & from, path const & to, std::error_code *ec) {
+
     if (::symlink(from.c_str(), to.c_str()) != 0)
         set_or_throw(ec, "create_symlink", from, to);
     else if (ec)
@@ -595,11 +596,11 @@ path __read_symlink(const path& p, std::error_code *ec) {
 
 
 bool __remove(const path& p, std::error_code *ec) {
+    if (ec) ec->clear();
     if (::remove(p.c_str()) == -1) {
         set_or_throw(ec, "remove", p);
         return false;
     }
-    if (ec) ec->clear();
     return true;
 }
 
