@@ -28,6 +28,22 @@ using namespace std::experimental::filesystem;
 
 TEST_SUITE(recursive_directory_iterator_pop_tests)
 
+TEST_CASE(print_iter)
+{
+    const path testDir = StaticEnv::Dir;
+    const path DirDepth1 = StaticEnv::Dir2;
+    const path DirDepth2 = StaticEnv::Dir3;
+    const recursive_directory_iterator endIt{};
+
+    std::error_code ec;
+    recursive_directory_iterator it(testDir, ec);
+
+    for (auto ent : it) {
+        std::cout << ent.path() << std::endl;
+    }
+    TEST_CHECK(false);
+}
+
 TEST_CASE(test_depth)
 {
     const path testDir = StaticEnv::Dir;
