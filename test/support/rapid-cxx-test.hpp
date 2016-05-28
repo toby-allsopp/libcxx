@@ -534,7 +534,7 @@ namespace rapid_cxx_test
         }
 
     public:
-        const char *name() const { return m_name; } 
+        const char *name() const { return m_name; }
 
         std::size_t size() const { return m_size; }
 

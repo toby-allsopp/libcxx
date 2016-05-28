@@ -31,4 +31,3 @@ int main()
   path p3 = p1 / p2;
   assert(p3 == "abc/def");
 }
-

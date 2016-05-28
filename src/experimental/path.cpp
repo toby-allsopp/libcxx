@@ -65,7 +65,7 @@ inline bool is_root_directory(const string_type& s, size_t pos) {
 }
 
 inline bool is_trailing_separator(const string_type& s, size_t pos) {
-    return (pos < s.size() && is_separator(s, pos) && 
+    return (pos < s.size() && is_separator(s, pos) &&
             end_of(s, pos) == s.size()-1 &&
             !is_root_directory(s, pos) && !is_root_name(s, pos));
 }

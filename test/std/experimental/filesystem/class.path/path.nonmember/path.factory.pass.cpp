@@ -51,4 +51,3 @@ int main()
     assert(p == In1);
   }
 }
-

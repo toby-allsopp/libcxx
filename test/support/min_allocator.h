@@ -86,7 +86,7 @@ public:
         ++dealloc_count;
         std::free(static_cast<void*>(p));
     }
-  
+
     friend bool operator==(malloc_allocator, malloc_allocator) {return true;}
     friend bool operator!=(malloc_allocator x, malloc_allocator y) {return !(x == y);}
 };

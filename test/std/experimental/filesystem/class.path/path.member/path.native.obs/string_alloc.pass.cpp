@@ -42,7 +42,7 @@ void doShortStringTest(MultiStringType const& MS) {
   Ptr value = MS;
   const path p((const char*)MS);
   {
-      DisableAllocationGuard g; // should not allocate because 
+      DisableAllocationGuard g; // should not allocate
       Str s = p.string<CharT>();
       assert(s == value);
       Str s2 = p.string<CharT>(Alloc{});

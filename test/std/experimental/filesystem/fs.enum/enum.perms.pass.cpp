@@ -66,4 +66,3 @@ int main() {
         E::resolve_symlinks == ME(0x40000),
         "Expected enumeration values do not match");
 }
-
