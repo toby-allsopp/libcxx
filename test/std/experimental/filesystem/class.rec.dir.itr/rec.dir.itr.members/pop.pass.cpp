@@ -41,7 +41,7 @@ TEST_CASE(test_depth)
     std::set<path> notSeenDepth1(std::begin(DE1), std::end(DE1));
 
     std::error_code ec;
-    recursive_directory_iterator it(StaticEnv::Dir;, ec);
+    recursive_directory_iterator it(StaticEnv::Dir, ec);
     TEST_REQUIRE(it != endIt);
     TEST_CHECK(it.depth() == 0);
 
