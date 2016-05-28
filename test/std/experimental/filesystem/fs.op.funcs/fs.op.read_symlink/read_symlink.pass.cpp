@@ -87,7 +87,7 @@ TEST_CASE(basic_symlink_test)
         {env.create_symlink(dne, "dne_link"), dne},
         {env.create_symlink(file, "file_link"), file},
         {env.create_symlink(dir, "dir_link"), dir},
-        {create_symlink("nested_link"), link}
+        {nested_link, link}
     };
     for (auto& TC : testCases) {
         std::error_code ec = std::make_error_code(std::errc::address_in_use);

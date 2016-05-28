@@ -28,31 +28,20 @@ def sanitize(p):
         return p
     assert False
 
-
-
-def set_perms_good(p):
-    try:
-        if not os.path.islink(p):
-            os.chmod(p, 0o777)
-    except OSError as e:
-        pass
-
-
 """
 Some of the tests restrict permissions to induce failures.
 Before we delete the test enviroment, we have to walk it and re-raise the
 permissions.
 """
-def set_env_perms(root_p):
-    set_perms_good(root_p)
+def clean_recursive(root_p):
+    if not os.path.islink(root_p):
+        os.chmod(root_p, 0o777)
     for ent in os.listdir(root_p):
         p = os.path.join(root_p, ent)
-        set_perms_good(p)
         if os.path.islink(p):
             os.remove(p)
         elif os.path.isdir(p):
-            set_env_perms(p)
-            assert not os.path.islink(p)
+            clean_recursive(p)
             os.rmdir(p)
         else:
             os.remove(p)
@@ -77,7 +66,7 @@ def init(root_p):
 
 def clean(root_p):
     root_p = sanitize(root_p)
-    set_env_perms(root_p)
+    clean_recursive(root_p)
     os.rmdir(root_p)
 
 
