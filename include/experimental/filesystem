@@ -61,7 +61,7 @@
     struct space_info
     {
       uintmax_t capacity;
-      uintmax_t free; 
+      uintmax_t free;
       uintmax_t available;
     };
 
@@ -83,7 +83,7 @@
     void copy(const path& from, const path& to);
     void copy(const path& from, const path& to, error_code& ec) _NOEXCEPT;
     void copy(const path& from, const path& to, copy_options options);
-    void copy(const path& from, const path& to, copy_options options,  
+    void copy(const path& from, const path& to, copy_options options,
                    error_code& ec) _NOEXCEPT;
 
     bool copy_file(const path& from, const path& to);
@@ -159,7 +159,7 @@
     bool is_other(const path& p);
     bool is_other(const path& p, error_code& ec) _NOEXCEPT;
 
-    bool is_regular_file(file_status s) _NOEXCEPT; 
+    bool is_regular_file(file_status s) _NOEXCEPT;
     bool is_regular_file(const path& p);
     bool is_regular_file(const path& p, error_code& ec) _NOEXCEPT;
 
@@ -1937,11 +1937,11 @@ public:
     recursive_directory_iterator(const recursive_directory_iterator&) = default;
     recursive_directory_iterator(recursive_directory_iterator&&) = default;
 
-    recursive_directory_iterator & 
+    recursive_directory_iterator &
     operator=(const recursive_directory_iterator&) = default;
 
     _LIBCPP_INLINE_VISIBILITY
-    recursive_directory_iterator & 
+    recursive_directory_iterator &
     operator=(recursive_directory_iterator&& __o) noexcept {
         // non-default implementation provided to support self-move assign.
         if (this != &__o) {

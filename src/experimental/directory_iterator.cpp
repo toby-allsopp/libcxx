@@ -163,7 +163,7 @@ struct recursive_directory_iterator::__shared_imp {
   directory_options   __options_;
 };
 
-recursive_directory_iterator::recursive_directory_iterator(const path& p, 
+recursive_directory_iterator::recursive_directory_iterator(const path& p,
     directory_options opt, error_code *ec)
     : __imp_(nullptr), __rec_(true)
 {
@@ -201,7 +201,7 @@ const directory_entry& recursive_directory_iterator::__deref() const {
     return __imp_->__stack_.top().__entry_;
 }
 
-recursive_directory_iterator& 
+recursive_directory_iterator&
 recursive_directory_iterator::__increment(error_code *ec)
 {
     if (recursion_pending()) {
