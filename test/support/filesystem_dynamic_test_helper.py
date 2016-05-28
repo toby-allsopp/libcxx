@@ -41,13 +41,13 @@ def clean_recursive(root_p):
             os.rmdir(p)
 
 
-def init(root_p):
+def init_test_directory(root_p):
     root_p = sanitize(root_p)
     assert not os.path.exists(root_p)
     os.makedirs(root_p)
 
 
-def clean(root_p):
+def destroy_test_directory(root_p):
     root_p = sanitize(root_p)
     clean_recursive(root_p)
     os.rmdir(root_p)

@@ -96,25 +96,20 @@ static const fs::path RecDirFollowSymlinksIterationList[] = {
 struct scoped_test_env
 {
     scoped_test_env() : test_root(random_env_path())
-    {
-        fs_helper_run(fs_make_cmd("init", test_root));
-    }
+        { fs_helper_run(fs_make_cmd("init_test_directory", test_root)); }
+
+    ~scoped_test_env()
+        { fs_helper_run(fs_make_cmd("destroy_test_directory", test_root)); }
 
     scoped_test_env(scoped_test_env const &) = delete;
     scoped_test_env & operator=(scoped_test_env const &) = delete;
-
-    ~scoped_test_env() {
-        fs_helper_run(fs_make_cmd("clean", test_root));
-    }
-
-    const fs::path& root() const { return test_root; }
 
     fs::path make_env_path(std::string p) { return sanitize_path(p); }
 
     std::string sanitize_path(std::string raw) {
         assert(raw.find("..") == std::string::npos);
-        std::string const& n = root().native();
-        if (n.compare(0, n.size(), raw, 0, n.size()) != 0) {
+        std::string const& root = test_root.native();
+        if (root.compare(0, root.size(), raw, 0, root.size()) != 0) {
             assert(raw.front() != '\\');
             fs::path tmp(test_root);
             tmp /= raw;

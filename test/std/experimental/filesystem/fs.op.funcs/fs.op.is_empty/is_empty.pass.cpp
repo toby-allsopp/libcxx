@@ -49,9 +49,9 @@ TEST_CASE(test_is_empty_directory)
 TEST_CASE(test_is_empty_directory_dynamic)
 {
     scoped_test_env env;
-    TEST_CHECK(is_empty(env.root()));
+    TEST_CHECK(is_empty(env.test_root));
     env.create_file("foo", 42);
-    TEST_CHECK(!is_empty(env.root()));
+    TEST_CHECK(!is_empty(env.test_root));
 }
 
 TEST_CASE(test_is_empty_file)

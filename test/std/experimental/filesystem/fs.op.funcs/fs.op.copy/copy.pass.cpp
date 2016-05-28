@@ -69,7 +69,7 @@ TEST_CASE(test_error_reporting)
     {
         std::error_code ec;
         const path f = StaticEnv::DNE;
-        const path t = env.root();
+        const path t = env.test_root;
         fs::copy(f, t, ec);
         TEST_REQUIRE(ec);
         TEST_CHECK(checkThrow(f, t, ec));
