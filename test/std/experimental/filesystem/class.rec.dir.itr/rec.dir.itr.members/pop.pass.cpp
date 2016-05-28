@@ -28,56 +28,58 @@ using namespace std::experimental::filesystem;
 
 TEST_SUITE(recursive_directory_iterator_pop_tests)
 
-TEST_CASE(print_iter)
-{
-    const path testDir = StaticEnv::Dir;
-    const path DirDepth1 = StaticEnv::Dir2;
-    const path DirDepth2 = StaticEnv::Dir3;
-    const recursive_directory_iterator endIt{};
-
-    std::error_code ec;
-    recursive_directory_iterator it(testDir, ec);
-
-    for (auto ent : it) {
-        std::cout << ent.path() << std::endl;
-    }
-    TEST_CHECK(false);
-}
-
+// NOTE: Since the order of iteration is unspecified we use a list of
+// seen files at each depth to determine the new depth after a 'pop()' operation.
 TEST_CASE(test_depth)
 {
-    const path testDir = StaticEnv::Dir;
-    const path DirDepth1 = StaticEnv::Dir2;
-    const path DirDepth2 = StaticEnv::Dir3;
     const recursive_directory_iterator endIt{};
 
+    auto& DE0 = StaticEnv::DirIterationList;
+    std::set<path> notSeenDepth0(std::begin(DE0), std::end(DE0));
+
+    auto& DE1 = StaticEnv::DirIterationListDepth1;
+    std::set<path> notSeenDepth1(std::begin(DE1), std::end(DE1));
+
     std::error_code ec;
-    recursive_directory_iterator it(testDir, ec);
+    recursive_directory_iterator it(StaticEnv::Dir;, ec);
     TEST_REQUIRE(it != endIt);
     TEST_CHECK(it.depth() == 0);
 
-    bool seen_d1, seen_d2;
-    seen_d1 = seen_d2 = false;
-
     while (it.depth() != 2) {
+        if (it.depth() == 0)
+            notSeenDepth0.erase(it->path());
+        else
+            notSeenDepth1.erase(it->path());
         ++it;
         TEST_REQUIRE(it != endIt);
     }
 
-    it.pop();
-    TEST_REQUIRE(it != endIt);
-    TEST_CHECK(it.depth() == 1);
+    while (true) {
+        auto set_ec = std::make_error_code(std::errc::address_in_use);
+        it.pop(set_ec);
+        TEST_CHECK(!set_ec);
 
-    it.pop();
-    TEST_REQUIRE(it != endIt);
-    TEST_CHECK(it.depth() == 0);
-
-    it.pop();
-    TEST_CHECK(it == endIt);
+        if (it == endIt) {
+            // We must have seen every entry at depth 0 and 1.
+            TEST_REQUIRE(notSeenDepth0.empty() && notSeenDepth1.empty());
+            break;
+        }
+        else if (it.depth() == 1) {
+            // If we popped to depth 1 then there must be unseen entries
+            // at this level.
+            TEST_REQUIRE(!notSeenDepth1.empty());
+            TEST_CHECK(notSeenDepth1.count(it->path()));
+            notSeenDepth1.clear();
+        }
+        else if (it.depth() == 0) {
+            // If we popped to depth 0 there must be unseen entries at this
+            // level. There should also be no unseen entries at depth 1.
+            TEST_REQUIRE(!notSeenDepth0.empty());
+            TEST_REQUIRE(notSeenDepth1.empty());
+            TEST_CHECK(notSeenDepth0.count(it->path()));
+            notSeenDepth0.clear();
+        }
+    }
 }
 
-TEST_CASE(test_dummy)
-{
-
-}
 TEST_SUITE_END()

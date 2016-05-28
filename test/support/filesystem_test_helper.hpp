@@ -58,6 +58,13 @@ static const fs::path DirIterationList[] = {
 const std::size_t DirIterationListSize = sizeof(DirIterationList)
                                         / sizeof(fs::path);
 
+static const fs::path DirIterationListDepth1[] = {
+    makePath("dir1/dir2/afile3"),
+    makePath("dir1/dir2/dir3"),
+    makePath("dir1/dir2/symlink_to_dir3"),
+    makePath("dir1/dir2/file4"),
+};
+
 static const fs::path RecDirIterationList[] = {
     makePath("dir1/dir2"),
     makePath("dir1/file1"),
@@ -314,5 +321,7 @@ bool checkCollectionsEqual(
     }
     return (start1 == end1 && start2 == end2);
 }
+
+std::error_code
 
 #endif /* FILESYSTEM_TEST_HELPER_HPP */
