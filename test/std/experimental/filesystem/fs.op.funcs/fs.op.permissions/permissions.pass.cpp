@@ -115,32 +115,39 @@ TEST_CASE(basic_permissions_test)
     }
 }
 
-TEST_CASE(test_no_resolve_symlink_on_sym_fails)
+TEST_CASE(test_no_resolve_symlink_on_symlink)
 {
     scoped_test_env env;
     const path file = env.create_file("file", 42);
     const path sym = env.create_symlink(file, "sym");
-    const auto link_perms = symlink_status(sym).permissions();
     const auto file_perms = status(file).permissions();
 
     struct TestCase {
-      perms set_perms;
+        perms set_perms;
+        perms expected; // only expected on platform that support symlink perms.
     } cases[] = {
-        {perms::none},
-        {perms::add_perms},
-        {perms::remove_perms},
+        {perms::owner_all, perms::owner_all},
+        {perms::group_all | perms::add_perms, perms::owner_all | perms::group_all},
+        {perms::owner_all | perms::remove_perms, perms::group_all},
     };
     for (auto const& TC : cases) {
-        // On linux symlink permissions are not supported. Check that the
-        // correct error code is returned and that the permissions on both
-        // the file and the link are unchanged.
+#ifdef __APPLE__
+        // On OS X symlink permissions are supported. We should get an empty
+        // error code and the expected permissions.
+        const auto expected_link_perms = TC.expected;
+        std::error_code expected_ec;
+#else
+        // On linux symlink permissions are not supported. The error code should
+        // be 'operation_not_supported' and the sylink permissions should be
+        // unchanged.
+        const auto expected_link_perms = symlink_status(sym).permissions();
+        std::error_code expected_ec = std::make_error_code(std::errc::operation_not_supported);
+#endif
         std::error_code ec = std::make_error_code(std::errc::bad_address);
         permissions(sym, TC.set_perms, ec);
-        TEST_CHECK(ec == std::make_error_code(std::errc::operation_not_supported));
-
-        // Test both permissions are unchanged
+        TEST_CHECK(ec == expected_ec);
         TEST_CHECK(status(file).permissions() == file_perms);
-        TEST_CHECK(symlink_status(sym).permissions() == link_perms);
+        TEST_CHECK(symlink_status(sym).permissions() == expected_link_perms);
     }
 }
 
