@@ -95,7 +95,7 @@ if ( APPLE AND (LIBCXX_CXX_ABI_LIBNAME STREQUAL "libcxxabi" OR
       RESULT_VARIABLE res
       OUTPUT_STRIP_TRAILING_WHITESPACE)
     if (res EQUAL 0)
-      message(NOTE "Found SDK version '${sdk_ver}")
+      message(STATUS "Found SDK version ${sdk_ver}")
       string(REPLACE "10." "" sdk_ver "${sdk_ver}")
       if (sdk_ver LESS 9)
         set(LIBCXX_LIBCPPABI_VERSION "")
