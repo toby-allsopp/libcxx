@@ -551,7 +551,6 @@ void __permissions(const path& p, perms prms, std::error_code *ec)
 
     bool is_sym = is_symlink(st);
     if (resolve_symlinks && is_sym) {
-        is_sym = false;
         if (add_perms || remove_perms) {
             st = detail::posix_stat(p, &m_ec);
             if (m_ec) return set_or_throw(m_ec, ec, "permissions", p);
@@ -570,6 +569,9 @@ void __permissions(const path& p, perms prms, std::error_code *ec)
         ? 0 : AT_SYMLINK_NOFOLLOW;
     if (::fchmodat(AT_FDCWD, p.c_str(), real_perms, flags) == -1) {
 # else
+    if (!resolve_symlinks && is_sym)
+        return set_or_throw(make_error_code(errc::operation_not_supported),
+                            ec, "permissions", p);
     if (::chmod(p.c_str(), real_perms) == -1) {
 # endif
         return set_or_throw(ec, "permissions", p);
