@@ -322,6 +322,4 @@ bool checkCollectionsEqual(
     return (start1 == end1 && start2 == end2);
 }
 
-std::error_code
-
 #endif /* FILESYSTEM_TEST_HELPER_HPP */
