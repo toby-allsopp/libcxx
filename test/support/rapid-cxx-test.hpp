@@ -661,7 +661,7 @@ namespace rapid_cxx_test
             return m_failure;
         }
 
-        void clear_failure() 
+        void clear_failure()
         {
             m_failure.type = failure_type::none;
             m_failure.file = "";

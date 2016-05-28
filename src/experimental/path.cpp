@@ -73,7 +73,7 @@ inline bool is_trailing_separator(const string_type& s, size_t pos) {
 size_t start_of(const string_type& s, size_t pos) {
     if (pos >= s.size()) return npos;
     bool in_sep = (s[pos] == preferred_separator);
-    while (pos - 1 < s.size() && 
+    while (pos - 1 < s.size() &&
         (s[pos-1] == preferred_separator) == in_sep)
     { --pos; }
     if (pos == 2 && !in_sep && s[0] == preferred_separator &&
@@ -98,8 +98,8 @@ inline size_t root_name_start(const string_type& s) {
 
 size_t root_name_end(const string_type& s) {
     if (s.size() < 2 || s[0] != preferred_separator
-        || s[1] != preferred_separator) { 
-        return npos; 
+        || s[1] != preferred_separator) {
+        return npos;
     }
     if (s.size() == 2) {
         return 1;
@@ -118,7 +118,7 @@ size_t root_directory_start(const string_type& s) {
     size_t e = root_name_end(s);
     if (!good(e))
     return is_separator(s, 0) ? 0 : npos;
-    return is_separator(s, e + 1) ? e + 1 : npos; 
+    return is_separator(s, e + 1) ? e + 1 : npos;
 }
 
 size_t root_directory_end(const string_type& s) {
@@ -263,7 +263,7 @@ path & path::replace_extension(path const & replacement)
 
 string_view path::__root_name() const
 {
-    return parser::is_root_name(__pn_, 0) 
+    return parser::is_root_name(__pn_, 0)
       ? parser::extract_preferred(__pn_, 0)
       : string_view{};
 }

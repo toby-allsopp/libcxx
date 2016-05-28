@@ -65,5 +65,5 @@ int main() {
         E::remove_perms     == ME(0x20000) &&
         E::resolve_symlinks == ME(0x40000),
         "Expected enumeration values do not match");
-  
 }
+
