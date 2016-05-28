@@ -131,7 +131,6 @@ TEST_CASE(nested_dir)
 
     std::error_code ec = std::make_error_code(std::errc::address_in_use);
     TEST_CHECK(remove_all(dir, ec) == expected_count);
-    std::cout << ec.message() << std::endl;
     TEST_CHECK(!ec);
     for (auto const& p : all_files) {
         TEST_CHECK(!exists(symlink_status(p)));
