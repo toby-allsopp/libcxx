@@ -347,7 +347,7 @@ namespace Name                                                      \
         }                                                                              \
         ::rapid_cxx_test::get_reporter().report(m_f);                                  \
     } while (false)
-# 
+#
 
 # define TEST_CHECK_EQUAL_COLLECTIONS(...)                                             \
     do {                                                                               \
@@ -513,13 +513,13 @@ namespace rapid_cxx_test
         cp.func = func;
         cp.line = line;
     }
-    
+
     ////////////////////////////////////////////////////////////////////////////
     inline checkpoint const & get_checkpoint()
     {
         return detail::global_checkpoint();
     }
-    
+
     ////////////////////////////////////////////////////////////////////////////
     class test_suite
     {
@@ -603,7 +603,7 @@ namespace rapid_cxx_test
 
         void test_case_end()
         {
-            if (m_failure.type != failure_type::none 
+            if (m_failure.type != failure_type::none
                 && m_failure.type !=  failure_type::unsupported) {
                 ++m_testcase_failures;
             }
