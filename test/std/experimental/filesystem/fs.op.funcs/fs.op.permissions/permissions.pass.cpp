@@ -1,0 +1,147 @@
+//===----------------------------------------------------------------------===//
+//
+//                     The LLVM Compiler Infrastructure
+//
+// This file is dual licensed under the MIT and the University of Illinois Open
+// Source Licenses. See LICENSE.TXT for details.
+//
+//===----------------------------------------------------------------------===//
+
+// UNSUPPORTED: c++98, c++03
+
+// <experimental/filesystem>
+
+// void permissions(const path& p, perms prms);
+// void permissions(const path& p, perms prms, std::error_code& ec) noexcept;
+
+
+#include <experimental/filesystem>
+#include <type_traits>
+#include <chrono>
+#include <thread>
+#include <cassert>
+
+#include "test_macros.h"
+#include "rapid-cxx-test.hpp"
+#include "filesystem_test_helper.hpp"
+
+using namespace std::experimental::filesystem;
+namespace fs = std::experimental::filesystem;
+
+using PR = fs::perms;
+
+TEST_SUITE(filesystem_permissions_test_suite)
+
+TEST_CASE(test_signatures)
+{
+    const path p; ((void)p);
+    const perms opts{}; ((void)opts);
+    std::error_code ec; ((void)ec);
+    ASSERT_NOT_NOEXCEPT(fs::permissions(p, opts));
+    // Not noexcept because of narrow contract
+    ASSERT_NOT_NOEXCEPT(fs::permissions(p, opts, ec));
+}
+
+TEST_CASE(test_error_reporting)
+{
+    auto checkThrow = [](path const& f, fs::perms opts, const std::error_code& ec)
+    {
+        try {
+            fs::permissions(f, opts);
+            return false;
+        } catch (filesystem_error const& err) {
+            return err.path1() == f
+                && err.path2() == ""
+                && err.code() == ec;
+        }
+    };
+
+    scoped_test_env env;
+    const path dne = env.make_env_path("dne");
+    const path dne_sym = env.create_symlink(dne, "dne_sym");
+    { // !exists
+        std::error_code ec;
+        fs::permissions(dne, fs::perms{}, ec);
+        TEST_REQUIRE(ec);
+        TEST_CHECK(checkThrow(dne, fs::perms{}, ec));
+    }
+    {
+        std::error_code ec;
+        fs::permissions(dne_sym, perms::resolve_symlinks, ec);
+        TEST_REQUIRE(ec);
+        TEST_CHECK(checkThrow(dne_sym, perms::resolve_symlinks, ec));
+    }
+}
+
+TEST_CASE(basic_permissions_test)
+{
+    scoped_test_env env;
+    const path file = env.create_file("file1", 42);
+    const path dir = env.create_dir("dir1");
+    const path file_for_sym = env.create_file("file2", 42);
+    const path sym = env.create_symlink(file_for_sym, "sym");
+    const perms AP = perms::add_perms;
+    const perms RP = perms::remove_perms;
+    const perms RS = perms::resolve_symlinks;
+    struct TestCase {
+      path p;
+      perms set_perms;
+      perms expected;
+    } cases[] = {
+        // test file
+        {file, perms::owner_all, perms::owner_all},
+        {file, perms::group_all | AP, perms::owner_all | perms::group_all},
+        {file, perms::group_all | RP, perms::owner_all},
+        {file, perms::none, perms::none},
+        // test directory
+        {dir, perms::owner_all, perms::owner_all},
+        {dir, perms::group_all | AP, perms::owner_all | perms::group_all},
+        {dir, perms::group_all | RP, perms::owner_all},
+        {dir, perms::none, perms::none},
+        // test symlink with resolve symlinks on symlink
+        {sym, perms::owner_all | RS, perms::owner_all},
+        {sym, perms::group_all | AP | RS, perms::owner_all | perms::group_all},
+        {sym, perms::group_all | RP | RS, perms::owner_all},
+        {sym, perms::none | RS, perms::none}
+    };
+    for (auto const& TC : cases) {
+        TEST_CHECK(status(TC.p).permissions() != TC.expected);
+        // Set the error code to ensure it's cleared.
+        std::error_code ec = std::make_error_code(std::errc::bad_address);
+        permissions(TC.p, TC.set_perms, ec);
+        TEST_CHECK(!ec);
+        auto pp = status(TC.p).permissions();
+        TEST_CHECK(status(TC.p).permissions() == TC.expected);
+    }
+}
+
+TEST_CASE(test_no_resolve_symlink_on_sym_fails)
+{
+    scoped_test_env env;
+    const path file = env.create_file("file", 42);
+    const path sym = env.create_symlink(file, "sym");
+    const auto link_perms = symlink_status(sym).permissions();
+    const auto file_perms = status(file).permissions();
+
+    struct TestCase {
+      perms set_perms;
+    } cases[] = {
+        {perms::none},
+        {perms::add_perms},
+        {perms::remove_perms},
+    };
+    for (auto const& TC : cases) {
+        // On linux symlink permissions are not supported. Check that the
+        // correct error code is returned and that the permissions on both
+        // the file and the link are unchanged.
+        std::error_code ec = std::make_error_code(std::errc::bad_address);
+        permissions(sym, TC.set_perms, ec);
+        TEST_CHECK(ec == std::make_error_code(std::errc::operation_not_supported));
+
+        // Test both permissions are unchanged
+        TEST_CHECK(status(file).permissions() == file_perms);
+        TEST_CHECK(symlink_status(sym).permissions() == link_perms);
+    }
+}
+
+TEST_SUITE_END()
