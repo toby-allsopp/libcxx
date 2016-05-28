@@ -58,7 +58,7 @@ TEST_CASE(test_error_reporting)
     scoped_test_env env;
     const path cases[] = {
         env.make_env_path("dne"),
-        env.create_file("file", 42re),
+        env.create_file("file", 42),
         env.create_dir("dir")
     };
     for (path const& p : cases) {

@@ -30,54 +30,32 @@ def sanitize(p):
 
 
 
+def set_perms_good(p):
+    try:
+        if not os.path.islink(p):
+            os.chmod(p, 0o777)
+    except OSError as e:
+        pass
+
+
 """
 Some of the tests restrict permissions to induce failures.
 Before we delete the test enviroment, we have to walk it and re-raise the
 permissions.
 """
 def set_env_perms(root_p):
-    root_p = sanitize(root_p)
-    for root, dirs, files in os.walk(root_p):
-        for d in dirs:
-            d = os.path.join(root, d)
-            try:
-                os.chmod(d, 0o777)
-            except OSError as e:
-                pass
-        for f in files:
-            f = os.path.join(root, f)
-            try:
-                os.chmod(f, 0o777)
-            except OSError as e:
-                pass
-
-
-def remove_all_impl_1(root_p):
-    for root, dirs, files in os.walk(root_p, topdown=False):
-        for f in files:
-            try:
-                os.remove(os.path.join(root, f))
-            except OSError:
-                pass
-        for d in dirs:
-            try:
-                os.rmdir(os.path.join(root, d))
-            except OSError as e:
-                pass
-        try:
-            os.rmdir(root)
-        except OSError:
-            pass
-
-
-def remove_all_impl_2(root_p):
-    for root, dirs, files in os.walk(root_p, topdown=False):
-        for f in files:
-            os.remove(os.path.join(root, f))
-        for d in dirs:
-            os.rmdir(os.path.join(root, d))
-        os.rmdir(root)
-
+    set_perms_good(root_p)
+    for ent in os.listdir(root_p):
+        p = os.path.join(root_p, ent)
+        set_perms_good(p)
+        if os.path.islink(p):
+            os.remove(p)
+        elif os.path.isdir(p):
+            set_env_perms(p)
+            assert not os.path.islink(p)
+            os.rmdir(p)
+        else:
+            os.remove(p)
 
 """
 Nothing in pythons os module seems to work for recursive deletion.
@@ -98,8 +76,9 @@ def init(root_p):
 
 
 def clean(root_p):
+    root_p = sanitize(root_p)
     set_env_perms(root_p)
-    remove_all(root_p)
+    os.rmdir(root_p)
 
 
 def create_file(fname, size):

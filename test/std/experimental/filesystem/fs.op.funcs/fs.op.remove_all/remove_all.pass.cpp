@@ -63,12 +63,10 @@ TEST_CASE(test_error_reporting)
     permissions(bad_perms_file, perms::none);
 
     const path testCases[] = {
-        "",
         env.make_env_path("dne"),
-        file_in_bad_dir,
-        bad_perms_file,
+        file_in_bad_dir
     };
-    const std::uintmax_t BadRet = -1;
+    const auto BadRet = static_cast<std::uintmax_t>(-1);
     for (auto& p : testCases) {
         std::error_code ec;
         TEST_CHECK(fs::remove_all(p, ec) == BadRet);
@@ -113,6 +111,32 @@ TEST_CASE(symlink_to_dir)
         TEST_CHECK(exists(dir));
         TEST_CHECK(exists(file));
     }
+}
+
+
+TEST_CASE(nested_dir)
+{
+    scoped_test_env env;
+    const path dir = env.create_dir("dir");
+    const path dir1 = env.create_dir(dir / "dir1");
+    const path out_of_dir_file = env.create_file("file1", 42);
+    const path all_files[] = {
+        dir, dir1,
+        env.create_file(dir / "file1", 42),
+        env.create_symlink(out_of_dir_file, dir / "sym1"),
+        env.create_file(dir1 / "file2", 42),
+        env.create_symlink(dir, dir1 / "sym2")
+    };
+    const std::size_t expected_count = sizeof(all_files) / sizeof(all_files[0]);
+
+    std::error_code ec = std::make_error_code(std::errc::address_in_use);
+    TEST_CHECK(remove_all(dir, ec) == expected_count);
+    std::cout << ec.message() << std::endl;
+    TEST_CHECK(!ec);
+    for (auto const& p : all_files) {
+        TEST_CHECK(!exists(symlink_status(p)));
+    }
+    TEST_CHECK(exists(out_of_dir_file));
 }
 
 TEST_SUITE_END()
