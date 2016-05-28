@@ -2,14 +2,10 @@
 import sys
 import os
 import stat
-import subprocess
-import shutil
-import socket
 
 # Ensure that this is being run on a specific platform
-assert sys.platform.startswith('linux') or sys.platform.startswith('darwin') or\
-    sys.platform.startswith('cygwin')
-
+assert sys.platform.startswith('linux') or sys.platform.startswith('darwin') \
+    or sys.platform.startswith('cygwin') or sys.platform.startswith('freebsd')
 
 def env_path():
     ep = os.environ.get('LIBCXX_FILESYSTEM_DYNAMIC_TEST_ROOT')
@@ -38,24 +34,12 @@ def clean_recursive(root_p):
         os.chmod(root_p, 0o777)
     for ent in os.listdir(root_p):
         p = os.path.join(root_p, ent)
-        if os.path.islink(p):
+        if os.path.islink(p) or not os.path.isdir(p):
             os.remove(p)
-        elif os.path.isdir(p):
+        else:
+            assert os.path.isdir(p)
             clean_recursive(p)
             os.rmdir(p)
-        else:
-            os.remove(p)
-
-"""
-Nothing in pythons os module seems to work for recursive deletion.
-Symlinks don't get removed the first time. Sometimes we have to make a second
-pass to actually delete the directory.
-"""
-def remove_all(root_p):
-    root_p = sanitize(root_p)
-    remove_all_impl_1(root_p)
-    if os.path.exists(root_p):
-        remove_all_impl_2(root_p)
 
 
 def init(root_p):
@@ -72,8 +56,7 @@ def clean(root_p):
 
 def create_file(fname, size):
     with open(sanitize(fname), 'w') as f:
-        for c in ['a'] * size:
-            f.write(c)
+        f.write('c' * size)
 
 
 def create_dir(dname, mode=0o777):
