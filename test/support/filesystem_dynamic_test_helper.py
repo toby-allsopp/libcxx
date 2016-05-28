@@ -59,8 +59,8 @@ def create_file(fname, size):
         f.write('c' * size)
 
 
-def create_dir(dname, mode=0o777):
-    os.mkdir(sanitize(dname), mode)
+def create_dir(dname):
+    os.mkdir(sanitize(dname))
 
 
 def create_symlink(source, link):
@@ -71,8 +71,8 @@ def create_hardlink(source, link):
     os.link(sanitize(source), sanitize(link))
 
 
-def create_fifo(source, mode=0o666):
-    os.mkfifo(sanitize(source), mode)
+def create_fifo(source):
+    os.mkfifo(sanitize(source))
 
 
 def create_socket(source):
