@@ -450,7 +450,6 @@ namespace rapid_cxx_test
             : type(type1), file(file1), func(func1), line(line1),
               expression(expression1), message(message1)
         {
-            //trim_file_string();
             trim_func_string();
         }
 
