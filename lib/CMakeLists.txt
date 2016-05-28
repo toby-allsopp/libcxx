@@ -90,39 +90,41 @@ if ( APPLE AND (LIBCXX_CXX_ABI_LIBNAME STREQUAL "libcxxabi" OR
   if (NOT DEFINED LIBCXX_LIBCPPABI_VERSION)
     set(LIBCXX_LIBCPPABI_VERSION "2")
   endif()
+  set(SYMBOLS_LIST "${CMAKE_CURRENT_SOURCE_DIR}/libc++abi${LIBCXX_LIBCPPABI_VERSION}.exp")
+  add_link_flags(
+    "-compatibility_version 1"
+    "-install_name /usr/lib/libc++.1.dylib"
+    "-Wl,-unexported_symbols_list,${CMAKE_CURRENT_SOURCE_DIR}/libc++unexp.exp")
 
   if ( CMAKE_OSX_DEPLOYMENT_TARGET STREQUAL "10.6" )
     add_definitions(-D__STRICT_ANSI__)
+    set(REEXPORT_LINE "-Wl,-reexport_library,/usr/lib/libc++abi.dylib")
     add_link_flags(
-      "-compatibility_version 1"
       "-current_version 1"
-      "-install_name /usr/lib/libc++.1.dylib"
-      "-Wl,-reexport_library,/usr/lib/libc++abi.dylib"
-      "-Wl,-unexported_symbols_list,${CMAKE_CURRENT_SOURCE_DIR}/libc++unexp.exp"
       "/usr/lib/libSystem.B.dylib")
-  else()
-    if ( ${CMAKE_OSX_SYSROOT} )
+  elseif(${CMAKE_OSX_SYSROOT})
       list(FIND ${CMAKE_OSX_ARCHITECTURES} "armv7" OSX_HAS_ARMV7)
       if (OSX_HAS_ARMV7)
-        set(OSX_RE_EXPORT_LINE
-          "${CMAKE_OSX_SYSROOT}/usr/lib/libc++abi.dylib"
+        set(EXPORT_LIBRARY "${CMAKE_OSX_SYSROOT}/usr/lib/libc++abi.dylib")
+        set(REEXPORT_LINE
           "-Wl,-reexported_symbols_list,${CMAKE_CURRENT_SOURCE_DIR}/libc++sjlj-abi.exp")
       else()
-        set(OSX_RE_EXPORT_LINE
+        set(REEXPORT_LINE
           "-Wl,-reexport_library,${CMAKE_OSX_SYSROOT}/usr/lib/libc++abi.dylib")
       endif()
-    else()
-      set(OSX_RE_EXPORT_LINE "/usr/lib/libc++abi.dylib -Wl,-reexported_symbols_list,${CMAKE_CURRENT_SOURCE_DIR}/libc++abi${LIBCXX_LIBCPPABI_VERSION}.exp")
-    endif()
+  else()
+      if (NOT LIBCXX_LINK_INTREE_LIBCXXABI)
+        set(EXPORT_LIBRARY "/usr/lib/libc++abi.dylib")
+      endif()
+      set(REEXPORT_LINE "-Wl,-reexported_symbols_list,${SYMBOLS_LIST}")
+  endif()
 
     add_link_flags(
-      "-compatibility_version 1"
-      "-install_name /usr/lib/libc++.1.dylib"
-      "-Wl,-unexported_symbols_list,${CMAKE_CURRENT_SOURCE_DIR}/libc++unexp.exp"
-      "${OSX_RE_EXPORT_LINE}"
+      "${EXPORT_LIBRARY}"
+      "${REEXPORT_LINE}"
       "-Wl,-force_symbols_not_weak_list,${CMAKE_CURRENT_SOURCE_DIR}/notweak.exp"
       "-Wl,-force_symbols_weak_list,${CMAKE_CURRENT_SOURCE_DIR}/weak.exp")
-  endif()
+
 endif()
 
 target_link_libraries(cxx ${LIBCXX_LIBRARIES})
