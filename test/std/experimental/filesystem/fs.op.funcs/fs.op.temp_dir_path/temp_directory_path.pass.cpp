@@ -94,7 +94,11 @@ TEST_CASE(basic_tests)
         // Set the env variable to point to a dir we can't access
         PutEnv(TC.name, nested_dir);
         ec = set_ec;
-        ret = temp_directory_path(ec);
+        try {
+            ret = temp_directory_path(ec);
+        } catch (std::exception const& e) {
+            std::cout << e.what() << std::endl;
+        }
         TEST_CHECK(ec == std::make_error_code(std::errc::permission_denied));
         TEST_CHECK(ret == "");
 
