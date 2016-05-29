@@ -590,7 +590,7 @@ namespace rapid_cxx_test
         test_reporter()
             : m_testcases(0), m_testcase_failures(0), m_unsupported(0),
               m_assertions(0), m_warning_failures(0), m_check_failures(0),
-              m_require_failures(0), m_failure()
+              m_require_failures(0), m_uncaught_exceptions(0), m_failure()
         {
         }
 
@@ -642,6 +642,7 @@ namespace rapid_cxx_test
                 report_error(o);
                 break;
             case failure_type::uncaught_exception:
+                ++m_uncaught_exceptions;
                 std::fprintf(stderr
                     , "Test case FAILED with uncaught exception:\n"
                       "    last checkpoint near %s::%lu %s\n\n"
@@ -692,7 +693,7 @@ namespace rapid_cxx_test
         { return m_require_failures; }
 
         std::size_t failure_count() const
-        { return m_check_failures + m_require_failures; }
+        { return m_check_failures + m_require_failures + m_uncaught_exceptions; }
 
         // Print a summary of what was run and the outcome.
         void print_summary(const char* suitename) const
@@ -727,6 +728,7 @@ namespace rapid_cxx_test
         std::size_t m_warning_failures;
         std::size_t m_check_failures;
         std::size_t m_require_failures;
+        std::size_t m_uncaught_exceptions;
 
         // The last failure. This is cleared between testcases.
         test_outcome m_failure;

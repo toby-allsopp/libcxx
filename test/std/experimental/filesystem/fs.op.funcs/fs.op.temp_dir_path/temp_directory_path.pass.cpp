@@ -99,7 +99,6 @@ TEST_CASE(basic_tests)
 
         // Finally erase this env variable
         PutEnv(TC.name);
-        TEST_CHECK(false);
     }
     // No env variables are defined
     {
