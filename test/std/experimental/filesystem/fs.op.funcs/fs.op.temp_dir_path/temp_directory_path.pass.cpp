@@ -43,7 +43,6 @@ TEST_CASE(signature_test)
     ASSERT_NOT_NOEXCEPT(temp_directory_path(ec));
 }
 
-
 TEST_CASE(basic_tests)
 {
     scoped_test_env env;
