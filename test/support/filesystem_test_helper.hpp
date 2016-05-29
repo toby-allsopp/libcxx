@@ -157,6 +157,9 @@ struct scoped_test_env
         fs_helper_run(fs_make_cmd("create_fifo", file));
         return file;
     }
+
+  // FreeBSD doesn't support socket files so we shouldn't even
+  // allow tests to call this unguarded.
 #ifndef __FreeBSD__
     std::string create_socket(std::string file) {
         file = sanitize_path(std::move(file));

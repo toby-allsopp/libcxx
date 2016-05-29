@@ -130,7 +130,7 @@ TEST_CASE(symlink_status_file_types_test)
         {StaticEnv::SymlinkToDir, file_type::symlink},
         // Block files tested elsewhere
         {StaticEnv::CharFile, file_type::character},
-#ifndef __FreeBSD__
+#ifndef __FreeBSD__ // FreeBSD doesn't support socket files
         {env.create_socket("socket"), file_type::socket},
 #endif
         {env.create_fifo("fifo"), file_type::fifo}
@@ -153,8 +153,9 @@ TEST_CASE(test_block_file)
 {
     const path possible_paths[] = {
         "/dev/drive0", // Apple
-        "/dev/sda",
-        "/dev/loop0"
+        "/dev/sda",    // Linux
+        "/dev/loop0"   // Linux
+        // No FreeBSD files known
     };
     path p;
     for (const path& possible_p : possible_paths) {
