@@ -71,7 +71,6 @@ TEST_CASE(basic_tests)
         PutEnv(TC.name, TC.p);
     }
     for (auto& TC : cases) {
-        std::cout << TC.name << std::endl;
         std::error_code ec = set_ec;
         path ret = temp_directory_path(ec);
         TEST_CHECK(!ec);
