@@ -15,9 +15,6 @@
 // void rename(const path& old_p,  const path& new_p, error_code& ec) noexcept;
 
 #include <experimental/filesystem>
-#include <type_traits>
-#include <chrono>
-#include <thread>
 #include <cassert>
 
 #include "test_macros.h"
@@ -121,6 +118,5 @@ TEST_CASE(basic_rename_test)
         TEST_CHECK(read_symlink(bad_sym_dest) == dne);
     }
 }
-
 
 TEST_SUITE_END()

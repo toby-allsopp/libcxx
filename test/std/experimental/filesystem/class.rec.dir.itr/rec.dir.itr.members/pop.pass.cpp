@@ -14,9 +14,9 @@
 // class recursive_directory_iterator
 
 // void pop()
+// void pop(error_code& ec) noexcept
 
 #include <experimental/filesystem>
-#include <type_traits>
 #include <set>
 #include <cassert>
 
@@ -27,6 +27,14 @@
 using namespace std::experimental::filesystem;
 
 TEST_SUITE(recursive_directory_iterator_pop_tests)
+
+TEST_CASE(signature_tests)
+{
+    recursive_directory_iterator it{}; ((void)it);
+    std::error_code ec; ((void)ec);
+    ASSERT_NOT_NOEXCEPT(it.pop());
+    ASSERT_NOEXCEPT(it.pop(ec));
+}
 
 // NOTE: Since the order of iteration is unspecified we use a list of
 // seen files at each depth to determine the new depth after a 'pop()' operation.
@@ -57,7 +65,7 @@ TEST_CASE(test_depth)
     while (true) {
         auto set_ec = std::make_error_code(std::errc::address_in_use);
         it.pop(set_ec);
-        TEST_CHECK(!set_ec);
+        TEST_REQUIRE(!set_ec);
 
         if (it == endIt) {
             // We must have seen every entry at depth 0 and 1.

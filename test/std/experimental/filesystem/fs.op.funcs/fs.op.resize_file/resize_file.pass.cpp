@@ -15,9 +15,6 @@
 // void resize_file(const path& p, uintmax_t new_size, error_code& ec) noexcept;
 
 #include <experimental/filesystem>
-#include <type_traits>
-#include <chrono>
-#include <thread>
 #include <cassert>
 
 #include "test_macros.h"
@@ -105,6 +102,5 @@ TEST_CASE(basic_resize_file_test)
         TEST_CHECK(file_size(file1) == new_s);
     }
 }
-
 
 TEST_SUITE_END()
