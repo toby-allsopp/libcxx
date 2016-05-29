@@ -37,7 +37,10 @@ TEST_CASE(signature_test)
 TEST_CASE(test_exist_not_found)
 {
     const path p = StaticEnv::DNE;
-    TEST_CHECK(is_empty(p) == false);
+    std::error_code ec;
+    TEST_CHECK(is_empty(p, ec) == false);
+    TEST_CHECK(ec);
+    TEST_CHECK_THROW(filesystem_error, is_empty(p));
 }
 
 TEST_CASE(test_is_empty_directory)

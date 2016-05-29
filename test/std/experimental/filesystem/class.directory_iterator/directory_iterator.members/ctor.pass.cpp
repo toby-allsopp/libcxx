@@ -191,8 +191,7 @@ TEST_CASE(test_open_on_file_fails)
         TEST_CHECK(it == endIt);
     }
     {
-        directory_iterator it(testFile);
-        TEST_CHECK(it == endIt);
+        TEST_CHECK_THROW(filesystem_error, directory_iterator(testFile));
     }
 }
 
