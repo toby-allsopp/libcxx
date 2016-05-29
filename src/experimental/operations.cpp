@@ -96,7 +96,8 @@ file_status create_file_status(std::error_code& m_ec, path const& p,
     return fs_tmp;
 }
 
-file_status posix_stat(path const & p, struct ::stat& path_stat, std::error_code* ec)
+file_status posix_stat(path const & p, struct ::stat& path_stat,
+                       std::error_code* ec)
 {
     std::error_code m_ec;
     if (::stat(p.c_str(), &path_stat) == -1)
