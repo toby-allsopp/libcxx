@@ -236,6 +236,8 @@
 #pragma GCC system_header
 #endif
 
+#define __cpp_lib_experimental_filesystem 201406
+
 _LIBCPP_BEGIN_NAMESPACE_EXPERIMENTAL_FILESYSTEM
 
 typedef chrono::time_point<std::chrono::system_clock>  file_time_type;

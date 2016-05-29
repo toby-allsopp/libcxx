@@ -13,9 +13,6 @@
 
 // #define __cpp_lib_experimental_filesystem 201406L
 
-// TODO(EricWF) The feature test macro is not defined until the implementation is complete.
-// XFAIL: *
-
 #include <experimental/filesystem>
 
 #ifndef __cpp_lib_experimental_filesystem
