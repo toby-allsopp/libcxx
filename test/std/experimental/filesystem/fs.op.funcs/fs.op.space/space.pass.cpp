@@ -86,6 +86,7 @@ TEST_CASE(basic_space_test)
     };
     for (auto& p : cases) {
         std::error_code ec = std::make_error_code(std::errc::address_in_use);
+        std::cout << p << std::endl;
         space_info info = space(p, ec);
         TEST_CHECK(!ec);
         TEST_CHECK((expect.f_blocks * expect.f_frsize) == info.capacity);
