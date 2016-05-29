@@ -7,6 +7,11 @@
 #include <string>
 #include <iostream>
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
+
 namespace fs = std::experimental::filesystem;
 
 // static test helpers
@@ -160,7 +165,12 @@ struct scoped_test_env
 
     std::string create_socket(std::string file) {
         file = sanitize_path(std::move(file));
+#ifndef __FreeBSD__
         fs_helper_run(fs_make_cmd("create_socket", file));
+#else
+        int ret = ::mknod(file.c_str(), 0600|S_IFSOCK, 0);
+        assert(ret);
+#endif
         return file;
     }
 
