@@ -71,7 +71,7 @@ TEST_CASE(create_directory_one_level)
     perms owner_perms = perms::owner_all;
     perms gperms = perms::group_all;
     perms other_perms = perms::others_read | perms::others_exec;
-#if defined(__APPLE__)
+#if defined(__APPLE__) || defined(__FreeBSD__)
     gperms = perms::group_read | perms::group_exec;
 #endif
     TEST_CHECK((st.permissions() & perms::owner_all) == owner_perms);

@@ -131,7 +131,7 @@ TEST_CASE(test_no_resolve_symlink_on_symlink)
         {perms::owner_all | perms::remove_perms, perms::group_all},
     };
     for (auto const& TC : cases) {
-#ifdef __APPLE__
+#if defined(__APPLE__) || defined(__FreeBSD__)
         // On OS X symlink permissions are supported. We should get an empty
         // error code and the expected permissions.
         const auto expected_link_perms = TC.expected;
