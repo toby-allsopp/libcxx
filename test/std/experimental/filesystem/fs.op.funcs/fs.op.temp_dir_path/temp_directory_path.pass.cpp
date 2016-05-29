@@ -26,12 +26,8 @@
 
 using namespace std::experimental::filesystem;
 
-void PutEnv(std::string var, std::string name) {
-    var += "=" + name;
-    char* buff = (char*)std::malloc(var.size() + 20);
-    std::strcpy(buff, var.c_str());
-    int ret = ::putenv(buff);
-    assert(ret == 0);
+void PutEnv(std::string var, std::string value) {
+    assert(::setenv(var.c_str(), value.c_str(), /* overwrite */ 1) == 0);
 }
 
 void UnsetEnv(std::string var) {
