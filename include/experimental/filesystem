@@ -1914,7 +1914,8 @@ public:
 public:
     // constructors and destructor
     _LIBCPP_INLINE_VISIBILITY
-    recursive_directory_iterator() _NOEXCEPT
+    recursive_directory_iterator()  _NOEXCEPT
+        : __rec_(false)
     {}
 
     _LIBCPP_INLINE_VISIBILITY

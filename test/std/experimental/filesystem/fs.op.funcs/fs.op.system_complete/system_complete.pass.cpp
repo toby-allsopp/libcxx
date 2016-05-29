@@ -29,7 +29,7 @@ using namespace std::experimental::filesystem;
 
 TEST_SUITE(filesystem_system_complete_test_suite)
 
-TEST_CASE(absolute_signature_test)
+TEST_CASE(signature_test)
 {
     const path p; ((void)p);
     std::error_code ec; ((void)ec);

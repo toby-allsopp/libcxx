@@ -691,11 +691,14 @@ path __temp_directory_path(std::error_code *ec) {
             break;
     }
     path p(ret ? ret : "/tmp");
-    if (is_directory(p)) {
+    std::error_code m_ec;
+    if (is_directory(p, m_ec)) {
         if (ec) ec->clear();
         return p;
     }
-    set_or_throw(make_error_code(errc::no_such_file_or_directory), ec,
+    if (!m_ec || m_ec == make_error_code(errc::no_such_file_or_directory))
+        m_ec = make_error_code(errc::not_a_directory);
+    set_or_throw(m_ec, ec,
                  "temp_directory_path");
     return {};
 }
