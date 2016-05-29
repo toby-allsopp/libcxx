@@ -26,14 +26,16 @@
 
 using namespace std::experimental::filesystem;
 
-void PutEnv(std::string var, std::string name = "") {
-    if (name != "") {
-        var += "=" + name;
-    }
+void PutEnv(std::string var, std::string name) {
+    var += "=" + name;
     char* buff = (char*)std::malloc(var.size() + 20);
     std::strcpy(buff, var.c_str());
     int ret = ::putenv(buff);
     assert(ret == 0);
+}
+
+void UnsetEnv(std::string var) {
+    assert(::unsetenv(var.c_str()) == 0);
 }
 
 TEST_SUITE(filesystem_temp_directory_path_test_suite)
@@ -94,16 +96,12 @@ TEST_CASE(basic_tests)
         // Set the env variable to point to a dir we can't access
         PutEnv(TC.name, nested_dir);
         ec = set_ec;
-        try {
-            ret = temp_directory_path(ec);
-        } catch (std::exception const& e) {
-            std::cout << e.what() << std::endl;
-        }
+        ret = temp_directory_path(ec);
         TEST_CHECK(ec == std::make_error_code(std::errc::permission_denied));
         TEST_CHECK(ret == "");
 
         // Finally erase this env variable
-        PutEnv(TC.name);
+        UnsetEnv(TC.name);
     }
     // No env variables are defined
     {
