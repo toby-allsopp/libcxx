@@ -23,11 +23,11 @@
 
 using namespace std::experimental::filesystem;
 
-bool EqualDelta(std::uintmax_t x, std::uintmax_t y) {
+bool EqualDelta(std::uintmax_t x, std::uintmax_t y, std::uintmax_t delta) {
     if (x >= y) {
-        return (x - y) <= 100;
+        return (x - y) <= delta;
     } else {
-        return (y - x) <= 100;
+        return (y - x) <= delta;
     }
 }
 
@@ -84,7 +84,11 @@ TEST_CASE(basic_space_test)
     TEST_CHECK(expect.f_bfree > 0);
     TEST_CHECK(expect.f_bsize > 0);
     TEST_CHECK(expect.f_blocks > 0);
-    
+    const std::uintmax_t expect_cap = expect.f_blocks * expect.f_frsize;
+    // Other processes running on the operating system may have changed
+    // the amount of space available. Check that these are within tolerances.
+    // Currently 5% of capacity
+    const std::uintmax_t delta = expect_cap / 20;
     const path cases[] = {
         StaticEnv::File,
         StaticEnv::Dir,
@@ -97,12 +101,8 @@ TEST_CASE(basic_space_test)
         space_info info = space(p, ec);
         TEST_CHECK(!ec);
         TEST_CHECK((expect.f_blocks * expect.f_frsize) == info.capacity);
-        // Other processes running on the operating system may have changed
-        // the amount of space available. Check that these are within tolerances.
-        std::cout << info.free << " " << info.available << std::endl;
-        TEST_CHECK(false);
-        TEST_CHECK(EqualDelta((expect.f_bfree  * expect.f_frsize), info.free));
-        TEST_CHECK(EqualDelta((expect.f_bavail * expect.f_frsize), info.available));
+        TEST_CHECK(EqualDelta((expect.f_bfree  * expect.f_frsize), info.free, delta));
+        TEST_CHECK(EqualDelta((expect.f_bavail * expect.f_frsize), info.available, delta));
     }
 }
 
