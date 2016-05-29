@@ -11,10 +11,11 @@
 
 // <experimental/filesystem>
 
-// file_status status(const path& p);
-// file_status status(const path& p, error_code& ec) noexcept;
+// file_status symlink_status(const path& p);
+// file_status symlink_status(const path& p, error_code& ec) noexcept;
 
 #include <experimental/filesystem>
+#include <sys/types.h>
 
 #include "test_macros.h"
 #include "rapid-cxx-test.hpp"
@@ -22,28 +23,27 @@
 
 using namespace std::experimental::filesystem;
 
-TEST_SUITE(filesystem_status_test_suite)
+TEST_SUITE(filesystem_symlink_status_test_suite)
 
 TEST_CASE(signature_test)
 {
     const path p; ((void)p);
     std::error_code ec; ((void)ec);
-    ASSERT_NOT_NOEXCEPT(status(p));
-    ASSERT_NOEXCEPT(status(p, ec));
+    ASSERT_NOT_NOEXCEPT(symlink_status(p));
+    ASSERT_NOEXCEPT(symlink_status(p, ec));
 }
 
-TEST_CASE(test_status_not_found)
+TEST_CASE(test_symlink_status_not_found)
 {
     const std::error_code expect_ec =
         std::make_error_code(std::errc::no_such_file_or_directory);
     const path cases[] {
-        StaticEnv::DNE,
-        StaticEnv::BadSymlink
+        StaticEnv::DNE
     };
     for (auto& p : cases) {
         std::error_code ec = std::make_error_code(std::errc::address_in_use);
         // test non-throwing overload.
-        file_status st = status(p, ec);
+        file_status st = symlink_status(p, ec);
         TEST_CHECK(ec == expect_ec);
         TEST_CHECK(st.type() == file_type::not_found);
         TEST_CHECK(st.permissions() == perms::unknown);
@@ -55,12 +55,13 @@ TEST_CASE(test_status_not_found)
     }
 }
 
-TEST_CASE(test_status_cannot_resolve)
+TEST_CASE(test_symlink_status_cannot_resolve)
 {
     scoped_test_env env;
     const path dir = env.create_dir("dir");
-    const path file = env.create_file("dir/file", 42);
-    const path sym = env.create_symlink("dir/file", "sym");
+    const path file_in_dir = env.create_file("dir/file", 42);
+    const path sym_in_dir = env.create_symlink("dir/file", "dir/bad_sym");
+    const path sym_points_in_dir = env.create_symlink("dir/file", "sym");
     permissions(dir, perms::none);
 
     const std::error_code set_ec =
@@ -68,27 +69,40 @@ TEST_CASE(test_status_cannot_resolve)
     const std::error_code expect_ec =
         std::make_error_code(std::errc::permission_denied);
 
-    const path cases[] = {
-        file, sym
+    const path fail_cases[] = {
+        file_in_dir, sym_in_dir
     };
-    for (auto& p : cases)
+    for (auto& p : fail_cases)
     {
         { // test non-throwing case
             std::error_code ec = set_ec;
-            file_status st = status(p, ec);
+            file_status st = symlink_status(p, ec);
             TEST_CHECK(ec == expect_ec);
             TEST_CHECK(st.type() == file_type::none);
             TEST_CHECK(st.permissions() == perms::unknown);
         }
         { // test throwing case
             try {
-                status(p);
+                symlink_status(p);
             } catch (filesystem_error const& err) {
                 TEST_CHECK(err.path1() == p);
                 TEST_CHECK(err.path2() == "");
                 TEST_CHECK(err.code() == expect_ec);
             }
         }
+    }
+    // Test that a symlink that points into a directory without read perms
+    // can be stat-ed using symlink_status
+    {
+        std::error_code ec = set_ec;
+        file_status st = symlink_status(sym_points_in_dir, ec);
+        TEST_CHECK(!ec);
+        TEST_CHECK(st.type() == file_type::symlink);
+        TEST_CHECK(st.permissions() != perms::unknown);
+        // test non-throwing version
+        TEST_REQUIRE_NO_THROW(st = symlink_status(sym_points_in_dir));
+        TEST_CHECK(st.type() == file_type::symlink);
+        TEST_CHECK(st.permissions() != perms::unknown);
     }
 }
 
@@ -99,10 +113,11 @@ TEST_CASE(status_file_types_test)
       path p;
       file_type expect_type;
     } cases[] = {
+        {StaticEnv::BadSymlink, file_type::symlink},
         {StaticEnv::File, file_type::regular},
-        {StaticEnv::SymlinkToFile, file_type::regular},
+        {StaticEnv::SymlinkToFile, file_type::symlink},
         {StaticEnv::Dir, file_type::directory},
-        {StaticEnv::SymlinkToDir, file_type::directory},
+        {StaticEnv::SymlinkToDir, file_type::symlink},
         // Block files tested elsewhere
         {StaticEnv::CharFile, file_type::character},
         {env.create_fifo("fifo"), file_type::fifo},
@@ -111,12 +126,12 @@ TEST_CASE(status_file_types_test)
     for (const auto& TC : cases) {
         // test non-throwing case
         std::error_code ec = std::make_error_code(std::errc::address_in_use);
-        file_status st = status(TC.p, ec);
+        file_status st = symlink_status(TC.p, ec);
         TEST_CHECK(!ec);
         TEST_CHECK(st.type() == TC.expect_type);
         TEST_CHECK(st.permissions() != perms::unknown);
         // test throwing case
-        TEST_REQUIRE_NO_THROW(st = status(TC.p));
+        TEST_REQUIRE_NO_THROW(st = symlink_status(TC.p));
         TEST_CHECK(st.type() == TC.expect_type);
         TEST_CHECK(st.permissions() != perms::unknown);
     }
@@ -140,17 +155,33 @@ TEST_CASE(test_block_file)
     if (p == path{}) {
         TEST_UNSUPPORTED();
     }
-    // test non-throwing case
-    std::cout << p << std::endl;
-    std::error_code ec = std::make_error_code(std::errc::address_in_use);
-    file_status st = status(p, ec);
-    TEST_CHECK(!ec);
-    TEST_CHECK(st.type() == file_type::block);
-    TEST_CHECK(st.permissions() != perms::unknown);
-    // test throwing case
-    TEST_REQUIRE_NO_THROW(st = status(p));
-    TEST_CHECK(st.type() == file_type::block);
-    TEST_CHECK(st.permissions() != perms::unknown);
+    scoped_test_env env;
+    { // test block file
+        // test non-throwing case
+        std::error_code ec = std::make_error_code(std::errc::address_in_use);
+        file_status st = symlink_status(p, ec);
+        TEST_CHECK(!ec);
+        TEST_CHECK(st.type() == file_type::block);
+        TEST_CHECK(st.permissions() != perms::unknown);
+        // test throwing case
+        TEST_REQUIRE_NO_THROW(st = symlink_status(p));
+        TEST_CHECK(st.type() == file_type::block);
+        TEST_CHECK(st.permissions() != perms::unknown);
+    }
+    const path sym = env.make_env_path("sym");
+    create_symlink(p, sym);
+    { // test symlink to block file
+        // test non-throwing case
+        std::error_code ec = std::make_error_code(std::errc::address_in_use);
+        file_status st = symlink_status(sym, ec);
+        TEST_CHECK(!ec);
+        TEST_CHECK(st.type() == file_type::symlink);
+        TEST_CHECK(st.permissions() != perms::unknown);
+        // test throwing case
+        TEST_REQUIRE_NO_THROW(st = symlink_status(sym));
+        TEST_CHECK(st.type() == file_type::symlink);
+        TEST_CHECK(st.permissions() != perms::unknown);
+    }
 }
 
 TEST_SUITE_END()
