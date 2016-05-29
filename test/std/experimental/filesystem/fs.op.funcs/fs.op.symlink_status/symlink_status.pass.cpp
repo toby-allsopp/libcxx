@@ -120,7 +120,7 @@ TEST_CASE(symlink_status_file_types_test)
         {StaticEnv::SymlinkToDir, file_type::symlink},
         // Block files tested elsewhere
         {StaticEnv::CharFile, file_type::character},
-#ifndef __FreeBSD__ // FreeBSD doesn't support socket files
+#if !defined(__APPLE__) && !defined(__FreeBSD__) // No support for domain sockets
         {env.create_socket("socket"), file_type::socket},
 #endif
         {env.create_fifo("fifo"), file_type::fifo}
