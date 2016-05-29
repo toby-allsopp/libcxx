@@ -15,10 +15,6 @@
 // file_status symlink_status(const path& p, error_code& ec) noexcept;
 
 #include <experimental/filesystem>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <unistd.h>
 
 #include "test_macros.h"
 #include "rapid-cxx-test.hpp"
@@ -109,12 +105,6 @@ TEST_CASE(test_symlink_status_cannot_resolve)
     }
 }
 
-TEST_CASE(status_create_socket_file)
-{
-    scoped_test_env env;
-    const path p = env.make_env_path("socket");
-    TEST_REQUIRE(::mknod(p.c_str(), 0600 | S_IFSOCK, 0) != -1);
-}
 
 TEST_CASE(symlink_status_file_types_test)
 {
