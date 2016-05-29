@@ -13,8 +13,8 @@
 
 // class recursive_directory_iterator
 
-// void pop()
-// void pop(error_code& ec) noexcept
+// void pop();
+// void pop(error_code& ec);
 
 #include <experimental/filesystem>
 #include <set>
@@ -33,7 +33,7 @@ TEST_CASE(signature_tests)
     recursive_directory_iterator it{}; ((void)it);
     std::error_code ec; ((void)ec);
     ASSERT_NOT_NOEXCEPT(it.pop());
-    ASSERT_NOEXCEPT(it.pop(ec));
+    ASSERT_NOT_NOEXCEPT(it.pop(ec)); // may require allocation or other things
 }
 
 // NOTE: Since the order of iteration is unspecified we use a list of
