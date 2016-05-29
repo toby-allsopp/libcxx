@@ -100,6 +100,7 @@ TEST_CASE(basic_space_test)
         // Other processes running on the operating system may have changed
         // the amount of space available. Check that these are within tolerances.
         std::cout << info.free << " " << info.available << std::endl;
+        TEST_CHECK(false);
         TEST_CHECK(EqualDelta((expect.f_bfree  * expect.f_frsize), info.free));
         TEST_CHECK(EqualDelta((expect.f_bavail * expect.f_frsize), info.available));
     }
