@@ -7,6 +7,8 @@ macro(pythonize_bool var)
 endmacro()
 
 if (LIBCXX_CONFIGURE_IDE)
+  # TODO(EricWF) Remove me before committing. This is just a bit of extra
+  # configuration to prevent my IDE from getting confused on the test suite.
   include_directories(support)
   file(GLOB_RECURSE LIBCXX_TESTS ${CMAKE_CURRENT_SOURCE_DIR}/*.pass.cpp)
   file(GLOB LIBCXX_TEST_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/support/*)
