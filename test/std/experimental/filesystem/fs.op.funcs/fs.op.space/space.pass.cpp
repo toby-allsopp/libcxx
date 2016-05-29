@@ -23,6 +23,14 @@
 
 using namespace std::experimental::filesystem;
 
+bool EqualDelta(std::uintmax_t x, std::uintmax_t y) {
+    if (x >= y) {
+        return (x - y) <= 100;
+    } else {
+        return (y - x) <= 100;
+    }
+}
+
 TEST_SUITE(filesystem_space_test_suite)
 
 TEST_CASE(signature_test)
@@ -89,8 +97,11 @@ TEST_CASE(basic_space_test)
         space_info info = space(p, ec);
         TEST_CHECK(!ec);
         TEST_CHECK((expect.f_blocks * expect.f_frsize) == info.capacity);
-        TEST_CHECK((expect.f_bfree  * expect.f_frsize) == info.free);
-        TEST_CHECK((expect.f_bavail * expect.f_frsize) == info.available);
+        // Other processes running on the operating system may have changed
+        // the amount of space available. Check that these are within tolerances.
+        std::cout << info.free << " " << info.available << std::endl;
+        TEST_CHECK(EqualDelta((expect.f_bfree  * expect.f_frsize), info.free));
+        TEST_CHECK(EqualDelta((expect.f_bavail * expect.f_frsize), info.available));
     }
 }
 
