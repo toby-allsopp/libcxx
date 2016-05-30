@@ -48,8 +48,8 @@ void check_allocate_deallocate()
             assert(P.alive == 1);
             assert(P.alloc_count == 1);
             assert(P.checkAllocAtLeast(ret, s, align_exp));
-
-            assert(((std::size_t)ret % align_exp) == 0);
+            const auto int_rep = static_cast<std::uintptr_t>(ret);
+            assert((int_rep % align_exp) == 0);
 
             m1.deallocate(ret, s, align_req);
             assert(P.alive == 0);
