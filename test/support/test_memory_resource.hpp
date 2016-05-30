@@ -244,7 +244,6 @@ public:
     }
 
     T* allocate(std::size_t n) {
-        std::cout << "alloc_size=" << alloc_size(n*sizeof(T)) << std::endl;
         char* aligned_ptr = (char*)::operator new(alloc_size(n*sizeof(T)));
         assert(is_max_aligned(aligned_ptr));
 
@@ -276,7 +275,7 @@ private:
         std::size_t bytes = (s + BlockSize - 1) & ~(BlockSize - 1);
         bytes += BlockSize;
         assert(bytes % BlockSize == 0);
-        return bytes / BlockSize;
+        return bytes;
     }
 
     static bool is_max_aligned(void* p) {
