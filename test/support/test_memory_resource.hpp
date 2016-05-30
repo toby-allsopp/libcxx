@@ -244,6 +244,7 @@ public:
     }
 
     T* allocate(std::size_t n) {
+        std::cout << "alloc_size=" << alloc_size(n*sizeof(T)) << std::endl;
         char* aligned_ptr = (char*)::operator new(alloc_size(n*sizeof(T)));
         assert(is_max_aligned(aligned_ptr));
 
