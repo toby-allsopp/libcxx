@@ -5,7 +5,7 @@
 #include <cassert>
 #include <cstdio> // for tempnam
 #include <string>
-#include <iostream>
+#include <fstream>
 
 namespace fs = std::experimental::filesystem;
 
@@ -128,7 +128,11 @@ struct scoped_test_env
 
     std::string create_file(std::string filename, std::size_t size = 0) {
         filename = sanitize_path(std::move(filename));
-        fs_helper_run(fs_make_cmd("create_file", filename, size));
+        std::string out_str(size, 'a');
+        {
+            std::ofstream out(filename.c_str());
+            out << out_str;
+        }
         return filename;
     }
 

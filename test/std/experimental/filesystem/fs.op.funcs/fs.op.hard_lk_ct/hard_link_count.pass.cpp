@@ -45,8 +45,6 @@ TEST_CASE(hard_link_count_for_file)
 
 TEST_CASE(hard_link_count_for_directory)
 {
-    std::cout << hard_link_count(StaticEnv::Dir) << std::endl;
-    std::cout << hard_link_count(StaticEnv::Dir3) << std::endl;
     uintmax_t DirExpect = 3;
     uintmax_t Dir3Expect = 2;
 #if defined(__APPLE__)

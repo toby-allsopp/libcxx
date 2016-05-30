@@ -145,7 +145,6 @@ TEST_CASE(test_block_file)
         TEST_UNSUPPORTED();
     }
     // test non-throwing case
-    std::cout << p << std::endl;
     std::error_code ec = std::make_error_code(std::errc::address_in_use);
     file_status st = status(p, ec);
     TEST_CHECK(!ec);

@@ -67,11 +67,6 @@ TEST_CASE(test_canonical)
         const path ret = canonical(TC.p, TC.base, ec);
         TEST_REQUIRE(!ec);
         const path ret2 = canonical(TC.p, TC.base);
-        if (ret != TC.expect) {
-            std::cout << "Input:  " << TC.p << "\n";
-            std::cout << "Expect: " << TC.expect << "\n";
-            std::cout << "Got:    " << ret << "\n";
-        }
         TEST_CHECK(ret == TC.expect);
         TEST_CHECK(ret == ret2);
         TEST_CHECK(ret.is_absolute());

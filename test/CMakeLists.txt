@@ -36,6 +36,18 @@ if (LIBCXX_CONFIGURE_IDE)
   )
 endif()
 
+
+if (LIBCXX_ENABLE_EXPERIMENTAL_LIBRARY)
+  add_library(filesystem_test STATIC support/filesystem_dynamic_test_helper.hpp
+                                     support/filesystem_dynamic_test_helper.cpp)
+  target_link_libraries(filesystem_test cxx)
+  split_list(LIBCXX_COMPILE_FLAGS)
+  set_target_properties(filesystem_test
+    PROPERTIES
+      COMPILE_FLAGS "${LIBCXX_COMPILE_FLAGS}"
+  )
+endif()
+
 set(LIBCXX_LIT_VARIANT "libcxx" CACHE STRING
     "Configuration variant to use for LIT.")
 
