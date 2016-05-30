@@ -22,15 +22,11 @@
 #include <memory>
 #include <exception>
 #include <cassert>
-#include <iostream>
 
 #include "test_macros.h"
 #include "test_memory_resource.hpp"
 
 namespace ex = std::experimental::pmr;
-
-#define PV(var) std::cout << #var "=" << var << " ";
-#define ENDL std::cout << std::endl;
 
 template <class Alloc>
 void check_allocate_deallocate()
@@ -47,13 +43,13 @@ void check_allocate_deallocate()
             AllocController P;
             R1 r{Alloc(P)};
             ex::memory_resource & m1 = r;
-            PV(s); PV(align_req); PV(align_exp); ENDL;
+
             void * const ret = m1.allocate(s, align_req);
             assert(P.alive == 1);
             assert(P.alloc_count == 1);
             assert(P.checkAllocAtLeast(ret, s, align_exp));
-            const auto int_rep = (std::uintptr_t)ret;
-            assert((int_rep % align_exp) == 0);
+
+            assert(((std::size_t)ret % align_exp) == 0);
 
             m1.deallocate(ret, s, align_req);
             assert(P.alive == 0);
