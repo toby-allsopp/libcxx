@@ -22,7 +22,6 @@
 #include <memory>
 #include <exception>
 #include <cassert>
-#include <iostream>
 
 #include "test_macros.h"
 #include "test_memory_resource.hpp"
@@ -49,11 +48,7 @@ void check_allocate_deallocate()
             assert(P.alive == 1);
             assert(P.alloc_count == 1);
             assert(P.checkAllocAtLeast(ret, s, align_exp));
-            std::uintptr_t align_got = (std::uintptr_t) ret;
-            align_got %= align_exp;
-            std::cout << "s=" << s << " align_req=" << align_req
-                << " align_exp=" << align_exp << " align_got=" << align_got
-                << std::endl;
+
             assert(((std::size_t)ret % align_exp) == 0);
 
             m1.deallocate(ret, s, align_req);
