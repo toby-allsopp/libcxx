@@ -80,6 +80,7 @@ TEST_CASE(test_status_cannot_resolve)
             TEST_CHECK(st.type() == file_type::none);
             TEST_CHECK(st.permissions() == perms::unknown);
         }
+#ifndef TEST_HAS_NO_EXCEPTIONS
         { // test throwing case
             try {
                 status(p);
@@ -89,6 +90,7 @@ TEST_CASE(test_status_cannot_resolve)
                 TEST_CHECK(err.code() == expect_ec);
             }
         }
+#endif
     }
 }
 

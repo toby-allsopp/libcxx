@@ -47,6 +47,7 @@ TEST_CASE(test_error_reporting)
 {
     auto checkThrow = [](path const& f, const std::error_code& ec)
     {
+#ifndef TEST_HAS_NO_EXCEPTIONS
         try {
             space(f);
             return false;
@@ -55,6 +56,9 @@ TEST_CASE(test_error_reporting)
                 && err.path2() == ""
                 && err.code() == ec;
         }
+#else
+        return true;
+#endif
     };
     const path cases[] = {
         "",

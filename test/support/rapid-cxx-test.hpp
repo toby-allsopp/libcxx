@@ -7,6 +7,8 @@
 # include <cstring>
 # include <cassert>
 
+#include "test_macros.h"
+
 #if !defined(RAPID_CXX_TEST_NO_SYSTEM_HEADER) || !defined(__GNUC__)
 #pragma GCC system_header
 #endif
@@ -184,42 +186,10 @@ namespace Name                                                      \
 #
 
 ////////////////////////////////////////////////////////////////////////////////
-//                    TEST_WARN_NO_THROW / TEST_WARN_THROW
-////////////////////////////////////////////////////////////////////////////////
-# define TEST_WARN_NO_THROW(...)                                                       \
-    do {                                                                               \
-        TEST_SET_CHECKPOINT();                                                         \
-        ::rapid_cxx_test::test_outcome m_f(                                            \
-            ::rapid_cxx_test::failure_type::none, __FILE__, TEST_FUNC_NAME(), __LINE__ \
-            , "TEST_WARN_NO_THROW(" #__VA_ARGS__ ")", ""                               \
-            );                                                                         \
-        try {                                                                          \
-            (static_cast<void>(__VA_ARGS__));                                          \
-        } catch (...) {                                                                \
-            m_f.type = ::rapid_cxx_test::failure_type::warn;                           \
-        }                                                                              \
-        ::rapid_cxx_test::get_reporter().report(m_f);                                  \
-    } while (false)
-#
-
-# define TEST_WARN_THROW(Except, ...)                                                  \
-    do {                                                                               \
-        TEST_SET_CHECKPOINT();                                                         \
-        ::rapid_cxx_test::test_outcome m_f(                                            \
-            ::rapid_cxx_test::failure_type::none, __FILE__, TEST_FUNC_NAME(), __LINE__ \
-            , "TEST_WARN_THROW(" #Except "," #__VA_ARGS__ ")", ""                      \
-            );                                                                         \
-        try {                                                                          \
-            (static_cast<void>(__VA_ARGS__));                                          \
-            m_f.type = ::rapid_cxx_test::failure_type::warn;                           \
-        } catch (Except const &) {}                                                    \
-        ::rapid_cxx_test::get_reporter().report(m_f);                                  \
-    } while (false)
-#
-
-////////////////////////////////////////////////////////////////////////////////
 //                    TEST_CHECK_NO_THROW / TEST_CHECK_THROW
 ////////////////////////////////////////////////////////////////////////////////
+#ifndef TEST_HAS_NO_EXCEPTIONS
+
 # define TEST_CHECK_NO_THROW(...)                                                      \
     do {                                                                               \
         TEST_SET_CHECKPOINT();                                                         \
@@ -251,9 +221,30 @@ namespace Name                                                      \
     } while (false)
 #
 
+#else // TEST_HAS_NO_EXCEPTIONS
+
+# define TEST_CHECK_NO_THROW(...)                                                      \
+    do {                                                                               \
+        TEST_SET_CHECKPOINT();                                                         \
+        ::rapid_cxx_test::test_outcome m_f(                                            \
+            ::rapid_cxx_test::failure_type::none, __FILE__, TEST_FUNC_NAME(), __LINE__ \
+            , "TEST_CHECK_NO_THROW(" #__VA_ARGS__ ")", ""                              \
+            );                                                                         \
+        (static_cast<void>(__VA_ARGS__));                                              \
+        ::rapid_cxx_test::get_reporter().report(m_f);                                  \
+    } while (false)
+#
+
+#define TEST_CHECK_THROW(Except, ...) ((void)0)
+
+#endif // TEST_HAS_NO_EXCEPTIONS
+
+
 ////////////////////////////////////////////////////////////////////////////////
 //                    TEST_REQUIRE_NO_THROW / TEST_REQUIRE_THROWs
 ////////////////////////////////////////////////////////////////////////////////
+#ifndef TEST_HAS_NO_EXCEPTIONS
+
 # define TEST_REQUIRE_NO_THROW(...)                                                    \
     do {                                                                               \
         TEST_SET_CHECKPOINT();                                                         \
@@ -291,9 +282,29 @@ namespace Name                                                      \
     } while (false)
 #
 
+#else // TEST_HAS_NO_EXCEPTIONS
+
+# define TEST_REQUIRE_NO_THROW(...)                                                    \
+    do {                                                                               \
+        TEST_SET_CHECKPOINT();                                                         \
+        ::rapid_cxx_test::test_outcome m_f(                                            \
+            ::rapid_cxx_test::failure_type::none, __FILE__, TEST_FUNC_NAME(), __LINE__ \
+            , "TEST_REQUIRE_NO_THROW(" #__VA_ARGS__ ")", ""                            \
+            );                                                                         \
+        (static_cast<void>(__VA_ARGS__));                                              \
+        ::rapid_cxx_test::get_reporter().report(m_f);                                  \
+    } while (false)
+#
+
+#define TEST_REQUIRE_THROW(Except, ...) ((void)0)
+
+#endif // TEST_HAS_NO_EXCEPTIONS
+
 ////////////////////////////////////////////////////////////////////////////////
 //                    TEST_ASSERT_NO_THROW / TEST_ASSERT_THROW
 ////////////////////////////////////////////////////////////////////////////////
+#ifndef TEST_HAS_NO_EXCEPTIONS
+
 # define TEST_ASSERT_NO_THROW(...)                                                     \
     do {                                                                               \
         TEST_SET_CHECKPOINT();                                                         \
@@ -330,6 +341,24 @@ namespace Name                                                      \
         }                                                                              \
     } while (false)
 #
+
+#else // TEST_HAS_NO_EXCEPTIONS
+
+# define TEST_ASSERT_NO_THROW(...)                                                     \
+    do {                                                                               \
+        TEST_SET_CHECKPOINT();                                                         \
+        ::rapid_cxx_test::test_outcome m_f(                                            \
+            ::rapid_cxx_test::failure_type::none, __FILE__, TEST_FUNC_NAME(), __LINE__ \
+            , "TEST_ASSERT_NO_THROW(" #__VA_ARGS__ ")", ""                             \
+            );                                                                         \
+        (static_cast<void>(__VA_ARGS__));                                              \
+        ::rapid_cxx_test::get_reporter().report(m_f);                                  \
+    } while (false)
+#
+
+#define TEST_ASSERT_THROW(Except, ...) ((void)0)
+
+#endif // TEST_HAS_NO_EXCEPTIONS
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -759,8 +788,11 @@ namespace rapid_cxx_test
                 test_case const& tc = *b;
                 set_checkpoint(tc.file, tc.func, tc.line);
                 get_reporter().test_case_begin();
+#ifndef TEST_HAS_NO_EXCEPTIONS
                 try {
+#endif
                     tc.invoke();
+#ifndef TEST_HAS_NO_EXCEPTIONS
                 } catch (...) {
                     test_outcome o;
                     o.type = failure_type::uncaught_exception;
@@ -771,6 +803,7 @@ namespace rapid_cxx_test
                     o.message = "";
                     get_reporter().report(o);
                 }
+#endif
                 get_reporter().test_case_end();
             }
             get_reporter().print_summary(m_ts.name());

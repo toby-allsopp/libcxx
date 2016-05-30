@@ -15,7 +15,6 @@
 // void rename(const path& old_p,  const path& new_p, error_code& ec) noexcept;
 
 #include <experimental/filesystem>
-#include <cassert>
 
 #include "test_macros.h"
 #include "rapid-cxx-test.hpp"
@@ -41,6 +40,7 @@ TEST_CASE(test_error_reporting)
 {
     auto checkThrow = [](path const& f, path const& t, const std::error_code& ec)
     {
+#ifndef TEST_HAS_NO_EXCEPTIONS
         try {
             fs::rename(f, t);
             return false;
@@ -49,6 +49,9 @@ TEST_CASE(test_error_reporting)
                 && err.path2() == t
                 && err.code() == ec;
         }
+#else
+        return true;
+#endif
     };
     scoped_test_env env;
     const path dne = env.make_env_path("dne");

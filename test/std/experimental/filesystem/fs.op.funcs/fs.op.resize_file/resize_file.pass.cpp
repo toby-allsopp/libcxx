@@ -15,7 +15,6 @@
 // void resize_file(const path& p, uintmax_t new_size, error_code& ec) noexcept;
 
 #include <experimental/filesystem>
-#include <cassert>
 
 #include "test_macros.h"
 #include "rapid-cxx-test.hpp"
@@ -43,6 +42,7 @@ TEST_CASE(test_error_reporting)
 {
     auto checkThrow = [](path const& f, std::uintmax_t s, const std::error_code& ec)
     {
+#ifndef TEST_HAS_NO_EXCEPTIONS
         try {
             fs::resize_file(f, s);
             return false;
@@ -51,6 +51,9 @@ TEST_CASE(test_error_reporting)
                 && err.path2() == ""
                 && err.code() == ec;
         }
+#else
+        return true;
+#endif
     };
     scoped_test_env env;
     const path dne = env.make_env_path("dne");

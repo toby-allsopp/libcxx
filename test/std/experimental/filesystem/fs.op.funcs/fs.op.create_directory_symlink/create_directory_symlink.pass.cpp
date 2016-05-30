@@ -16,9 +16,6 @@
 //                   error_code& ec) noexcept;
 
 #include <experimental/filesystem>
-#include <type_traits>
-#include <chrono>
-#include <thread>
 #include <cassert>
 
 #include "test_macros.h"
@@ -42,6 +39,7 @@ TEST_CASE(test_error_reporting)
 {
     auto checkThrow = [](path const& f, path const& t, const std::error_code& ec)
     {
+#ifndef TEST_HAS_NO_EXCEPTIONS
         try {
             fs::create_directory_symlink(f, t);
             return true;
@@ -49,6 +47,9 @@ TEST_CASE(test_error_reporting)
             return err.path1() == f
                 && err.code() == ec;
         }
+#else
+        return true;
+#endif
     };
 
     scoped_test_env env;

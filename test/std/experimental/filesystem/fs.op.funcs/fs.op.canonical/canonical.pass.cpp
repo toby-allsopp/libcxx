@@ -100,6 +100,7 @@ TEST_CASE(test_dne_path)
 
 TEST_CASE(test_exception_contains_paths)
 {
+#ifndef TEST_HAS_NO_EXCEPTIONS
     const path p = "blabla/dne";
     const path base = StaticEnv::Root;
     try {
@@ -116,5 +117,7 @@ TEST_CASE(test_exception_contains_paths)
         TEST_CHECK(err.path1() == p);
         TEST_CHECK(err.path2() == current_path());
     }
+#endif
 }
+
 TEST_SUITE_END()

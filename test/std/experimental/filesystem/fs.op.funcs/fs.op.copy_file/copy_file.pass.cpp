@@ -53,6 +53,7 @@ TEST_CASE(test_error_reporting)
 {
     auto checkThrow = [](path const& f, path const& t, const std::error_code& ec)
     {
+#ifndef TEST_HAS_NO_EXCEPTIONS
         try {
             fs::copy_file(f, t);
             return false;
@@ -61,6 +62,9 @@ TEST_CASE(test_error_reporting)
                 && err.path2() == t
                 && err.code() == ec;
         }
+#else
+        return true;
+#endif
     };
 
     scoped_test_env env;

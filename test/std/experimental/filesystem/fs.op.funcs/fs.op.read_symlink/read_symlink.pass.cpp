@@ -15,10 +15,6 @@
 // path read_symlink(const path& p, error_code& ec);
 
 #include <experimental/filesystem>
-#include <type_traits>
-#include <chrono>
-#include <thread>
-#include <cassert>
 
 #include "test_macros.h"
 #include "rapid-cxx-test.hpp"
@@ -45,6 +41,7 @@ TEST_CASE(test_error_reporting)
 {
     auto checkThrow = [](path const& f, const std::error_code& ec)
     {
+#ifndef TEST_HAS_NO_EXCEPTIONS
         try {
             fs::read_symlink(f);
             return false;
@@ -53,6 +50,9 @@ TEST_CASE(test_error_reporting)
                 && err.path2() == ""
                 && err.code() == ec;
         }
+#else
+        return true;
+#endif
     };
 
     scoped_test_env env;
