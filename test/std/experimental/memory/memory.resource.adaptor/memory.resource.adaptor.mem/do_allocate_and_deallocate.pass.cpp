@@ -30,6 +30,7 @@
 namespace ex = std::experimental::pmr;
 
 #define PV(var) std::cout << #var "=" << var << " ";
+#define ENDL std::cout << std::endl;
 
 template <class Alloc>
 void check_allocate_deallocate()
@@ -46,7 +47,7 @@ void check_allocate_deallocate()
             AllocController P;
             R1 r{Alloc(P)};
             ex::memory_resource & m1 = r;
-            PV(s); PV(align_req); PV(align_exp);
+            PV(s); PV(align_req); PV(align_exp); ENDL;
             void * const ret = m1.allocate(s, align_req);
             assert(P.alive == 1);
             assert(P.alloc_count == 1);
