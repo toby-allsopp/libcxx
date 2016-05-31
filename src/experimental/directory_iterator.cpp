@@ -40,7 +40,7 @@ inline bool set_or_throw(std::error_code& my_ec,
 typedef path::string_type string_type;
 
 
-inline string_type posix_readdir_r(DIR *dir_stream, error_code& ec) {
+inline string_type posix_readdir(DIR *dir_stream, error_code& ec) {
     struct dirent* dir_entry_ptr = nullptr;
     errno = 0; // zero errno in order to detect errors
     if ((dir_entry_ptr = ::readdir(dir_stream)) == nullptr) {
@@ -91,7 +91,7 @@ public:
 
     bool advance(error_code &ec) {
         while (true) {
-            auto str = detail::posix_readdir_r(__stream_,  ec);
+            auto str = detail::posix_readdir(__stream_,  ec);
             if (str == "." || str == "..") {
                 continue;
             } else if (ec || str.empty()) {
