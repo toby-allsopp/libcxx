@@ -393,7 +393,7 @@ void __create_hard_link(const path& from, const path& to, std::error_code *ec){
 
 void __create_symlink(path const & from, path const & to, std::error_code *ec) {
 
-    if (::symlink(from.c_str(), to.c_str()) != 0)
+    if (::symlink(from.c_str(), to.c_str()) == -1)
         set_or_throw(ec, "create_symlink", from, to);
     else if (ec)
         ec->clear();
@@ -503,7 +503,19 @@ void __last_write_time(const path& p, file_time_type new_time,
                        std::error_code *ec)
 {
     std::error_code m_ec;
-#if !defined(__APPLE__)
+#if defined(__APPLE__)
+    using Clock = file_time_type::clock;
+    struct ::stat st;
+    detail::posix_stat(p, st, &m_ec);
+    if (!m_ec) {
+        ::utimbuf tbuf;
+        tbuf.actime = st.st_atime;
+        tbuf.modtime = Clock::to_time_t(new_time);
+        if (::utime(p.c_str(), &tbuf) == -1) {
+            m_ec = detail::capture_errno();
+        }
+    }
+#else
     using namespace std::chrono;
     auto dur_since_epoch = new_time.time_since_epoch();
     auto sec_since_epoch = duration_cast<seconds>(dur_since_epoch);
@@ -516,18 +528,6 @@ void __last_write_time(const path& p, file_time_type new_time,
 
     if (::utimensat(AT_FDCWD, p.c_str(), tbuf, 0) == -1) {
         m_ec = detail::capture_errno();
-    }
-#else
-    using Clock = file_time_type::clock;
-    struct ::stat st;
-    detail::posix_stat(p, st, &m_ec);
-    if (!m_ec) {
-        ::utimbuf tbuf;
-        tbuf.actime = st.st_atime;
-        tbuf.modtime = Clock::to_time_t(new_time);
-        if (::utime(p.c_str(), &tbuf) == -1) {
-            m_ec = detail::capture_errno();
-        }
     }
 #endif
     if (m_ec)
@@ -656,17 +656,22 @@ void __resize_file(const path& p, std::uintmax_t size, std::error_code *ec) {
 space_info __space(const path& p, std::error_code *ec) {
     space_info si;
     struct statvfs m_svfs;
-    //if we fail but don't throw
     if (::statvfs(p.c_str(), &m_svfs) == -1)  {
         set_or_throw(ec, "space", p);
         si.capacity = si.free = si.available =
-            static_cast<decltype(si.free)>(-1);
+            static_cast<std::uintmax_t>(-1);
         return si;
     }
     if (ec) ec->clear();
-    si.capacity =   m_svfs.f_blocks * m_svfs.f_frsize;
-    si.free =       m_svfs.f_bfree  * m_svfs.f_frsize;
-    si.available =  m_svfs.f_bavail * m_svfs.f_frsize;
+    // Multiply with overflow checking.
+    auto do_mult = [&](std::uintmax_t& out, fsblkcnt_t other) {
+      out = other * m_svfs.f_frsize;
+      if (out / other != m_svfs.f_frsize || other == 0)
+          out = static_cast<std::uintmax_t>(-1);
+    };
+    do_mult(si.capacity, m_svfs.f_blocks);
+    do_mult(si.free, m_svfs.f_bfree);
+    do_mult(si.available, m_svfs.f_bavail);
     return si;
 }
 
@@ -702,9 +707,7 @@ path __temp_directory_path(std::error_code *ec) {
     return {};
 }
 
-//since the specification of absolute in the current specification
-// this implementation is designed after the sample implementation
-// using the sample table as a guide
+// An absolute path is composed according to the table in [fs.op.absolute].
 path absolute(const path& p, const path& base) {
     auto root_name = p.root_name();
     auto root_dir = p.root_directory();

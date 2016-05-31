@@ -41,16 +41,15 @@ typedef path::string_type string_type;
 
 
 inline string_type posix_readdir_r(DIR *dir_stream, error_code& ec) {
-    struct dirent dir_entry;
-    struct dirent *dir_entry_ptr{nullptr};
-    int ret;
-    if ((ret = ::readdir_r(dir_stream,  &dir_entry,  &dir_entry_ptr)) != 0)
-    {
+    struct dirent* dir_entry_ptr = nullptr;
+    errno = 0; // zero errno in order to detect errors
+    if ((dir_entry_ptr = ::readdir(dir_stream)) == nullptr) {
         ec = capture_errno();
         return {};
+    } else {
+        ec.clear();
+        return dir_entry_ptr->d_name;
     }
-    ec.clear();
-    return dir_entry_ptr ? dir_entry.d_name : string_type{};
 }
 
 }}                                                       // namespace detail
@@ -97,7 +96,6 @@ public:
                 continue;
             } else if (ec || str.empty()) {
                 close();
-                //__entry_ = {};
                 return false;
             } else {
                 __entry_.assign(__root_ / str);

@@ -607,9 +607,6 @@ template <>
 struct _PathCVT<char> {
     template <class _Iter>
     static void __append_range(string& __dest, _Iter __b, _Iter __e) {
-        // TODO(EricWF) We get better allocation behavior here if we don't
-        // provide the same exception safety guarantees as string.append.
-        // __dest.append(__b, __e);
         for (; __b != __e; ++__b)
             __dest.push_back(*__b);
     }
@@ -669,7 +666,7 @@ public:
         _PathCVT<_ItVal>::__append_range(__pn_, __first, __last);
     }
 
-    // TODO
+    // TODO Implement locale conversions.
     template <class _Source,
               class = _EnableIfPathable<_Source, void>
              >
