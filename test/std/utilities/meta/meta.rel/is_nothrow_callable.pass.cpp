@@ -54,7 +54,7 @@ constexpr bool throws_callable() {
 void test_noexcept_function_pointers()
 {
     struct Dummy { void foo() noexcept {} static void bar() noexcept {} };
-#if !defined(__cpp_noexcept_function_type) && 0
+#if !defined(__cpp_noexcept_function_type)
     {
         // Check that PMF's and function pointers *work*. is_nothrow_callable will always
         // return false because 'noexcept' is not part of the function type.
