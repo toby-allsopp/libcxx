@@ -16,10 +16,12 @@
 #include "climits"
 
 #include <unistd.h>
-#include <utime.h>
 #include <sys/stat.h>
 #include <sys/statvfs.h>
 #include <fcntl.h>  /* values for fchmodat */
+#if defined(__APPLE__)
+#include <sys/time.h> // for ::utimes as used in __last_write_time
+#endif
 
 _LIBCPP_BEGIN_NAMESPACE_EXPERIMENTAL_FILESYSTEM
 
@@ -502,21 +504,34 @@ file_time_type __last_write_time(const path& p, std::error_code *ec)
 void __last_write_time(const path& p, file_time_type new_time,
                        std::error_code *ec)
 {
+    using namespace std::chrono;
     std::error_code m_ec;
+
 #if defined(__APPLE__)
+    // FIXME: Use utimensat when it becomes available on OS X.
+    // This implementation has a race condition between determining the
+    // last access time and attempting to set it to the same value using
+    // ::utimes
     using Clock = file_time_type::clock;
     struct ::stat st;
-    detail::posix_stat(p, st, &m_ec);
-    if (!m_ec) {
-        ::utimbuf tbuf;
-        tbuf.actime = st.st_atime;
-        tbuf.modtime = Clock::to_time_t(new_time);
-        if (::utime(p.c_str(), &tbuf) == -1) {
-            m_ec = detail::capture_errno();
-        }
+    file_status fst = detail::posix_stat(p, st, &m_ec);
+    if (m_ec && !status_known(fst)) {
+        set_or_throw(m_ec, ec, "last_write_time", p);
+        return;
+    }
+    auto write_dur = new_time.time_since_epoch();
+    auto write_sec = duration_cast<seconds>(write_dur);
+    auto access_dur = Clock::from_time_t(st.st_atime).time_since_epoch();
+    auto access_sec = duration_cast<seconds>(access_dur);
+    struct ::timeval tbuf[2];
+    tbuf[0].tv_sec = access_sec.count();
+    tbuf[0].tv_usec = duration_cast<microseconds>(access_dur - access_sec).count();
+    tbuf[1].tv_sec = write_sec.count();
+    tbuf[1].tv_usec = duration_cast<microseconds>(write_dur - write_sec).count();
+    if (::utimes(p.c_str(), tbuf) == -1) {
+        m_ec = detail::capture_errno();
     }
 #else
-    using namespace std::chrono;
     auto dur_since_epoch = new_time.time_since_epoch();
     auto sec_since_epoch = duration_cast<seconds>(dur_since_epoch);
     auto ns_since_epoch = duration_cast<nanoseconds>(dur_since_epoch - sec_since_epoch);
@@ -525,7 +540,6 @@ void __last_write_time(const path& p, file_time_type new_time,
     tbuf[0].tv_nsec = UTIME_OMIT;
     tbuf[1].tv_sec = sec_since_epoch.count();
     tbuf[1].tv_nsec = ns_since_epoch.count();
-
     if (::utimensat(AT_FDCWD, p.c_str(), tbuf, 0) == -1) {
         m_ec = detail::capture_errno();
     }
