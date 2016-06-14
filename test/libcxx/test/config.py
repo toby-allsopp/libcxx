@@ -429,6 +429,14 @@ class Configuration(object):
           self.cxx.compile_flags += ['-D_LIBCPP_ABI_UNSTABLE']
 
     def configure_filesystem_compile_flags(self):
+        enable_fs = self.get_lit_bool('enable_filesystem', default=False)
+        if not enable_fs:
+            return
+        enable_experimental = self.get_lit_bool('enable_experimental', default=False)
+        if not enable_experimental:
+            self.lit_config.fatal(
+                'filesystem is enabled but libc++experimental.a is not.')
+        self.config.available_features.add('c++filesystem')
         static_env = os.path.join(self.libcxx_src_root, 'test', 'std',
                                   'experimental', 'filesystem', 'Inputs', 'static_test_env')
         assert os.path.isdir(static_env)
