@@ -209,7 +209,7 @@ TEST_CASE(set_last_write_time_dynamic_env_test)
         TEST_CHECK(got_time != old_time);
         if (TC.new_time < epoch_time) {
             TEST_CHECK(got_time <= TC.new_time);
-            TEST_CHECK(got_time > TC.new_time - Sec(2));
+            TEST_CHECK(got_time > TC.new_time - Sec(1));
         } else {
             TEST_CHECK(got_time <= TC.new_time + Sec(1));
             TEST_CHECK(got_time >= TC.new_time - Sec(1));
@@ -278,8 +278,8 @@ TEST_CASE(test_write_min_time)
     }
 
     ec = GetTestEC();
-    last_time = Clock::now();
-    last_write_time(p, last_time);
+    last_write_time(p, Clock::now());
+    last_time = last_write_time(p);
 
     new_time = file_time_type::min() + MicroSec(1);
 

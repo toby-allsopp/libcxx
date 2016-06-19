@@ -488,55 +488,6 @@ bool __fs_is_empty(const path& p, std::error_code *ec)
 
 namespace detail { namespace {
 
-
-#if defined(st_mtime)
-constexpr bool have_mtime_timespec = true;
-#else
-constexpr bool have_mtime_timespec = false;
-#endif
-
-#if defined(__APPLE__)
-template <class Stat>
-auto get_mtime_nsec(int, Stat const& st) -> decltype(st.st_mtimespec.tv_nsec)
-{ return st.st_mtimespec.tv_nsec; }
-#else
-template <class Stat>
-auto get_mtime_nsec(int, Stat const& st) -> decltype(st.st_mtim.tv_nsec)
-{ return st.st_mtim.tv_nsec; }
-#endif
-
-template <class Stat>
-auto get_mtime_nsec(long, Stat const& st) -> int { return 0;}
-
-file_time_type mtime_from_stat(struct ::stat& st) {
-    using namespace std::chrono;
-    auto sec = seconds(st.st_mtime);
-    auto nsec = nanoseconds(get_mtime_nsec(0, st));
-    return file_time_type(sec + duration_cast<microseconds>(nsec));
-}
-
-
-#if !defined(UTIME_OMIT)
-#if defined(__APPLE__)
-template <class Stat>
-auto get_atime_nsec(int, Stat const& st) -> decltype(st.st_atimespec.tv_nsec)
-{ return st.st_atimespec.tv_nsec; }
-#else
-template <class Stat>
-auto get_atime_nsec(int, Stat const& st) -> decltype(st.st_atim.tv_nsec)
-{ return st.st_atim.tv_nsec; }
-#endif
-template <class Stat>
-auto get_atime_nsec(long, Stat const& st) -> int { return 0;}
-
-file_time_type atime_from_stat(struct ::stat& st) {
-    using namespace std::chrono;
-    auto sec = seconds(st.st_atime);
-    auto nsec = nanoseconds(get_atime_nsec(0, st));
-    return file_time_type(sec + duration_cast<microseconds>(nsec));
-}
-#endif
-
 template <class CType, class ChronoType>
 bool checked_set(CType* out, ChronoType time) {
     using Lim = numeric_limits<CType>;
@@ -557,7 +508,7 @@ bool set_times_checked(time_t* sec_out, SubSecT* subsec_out, file_time_type tp) 
     auto subsec_dur = duration_cast<SubSecDurT>(dur - sec_dur);
     // The tv_nsec and tv_usec fields must not be negative so adjust accordingly
     if (subsec_dur.count() < 0) {
-        if (sec_dur.count() > min_seconds || have_mtime_timespec) {
+        if (sec_dur.count() > min_seconds) {
             sec_dur -= seconds(1);
             subsec_dur += seconds(1);
         } else {
@@ -581,7 +532,7 @@ file_time_type __last_write_time(const path& p, std::error_code *ec)
         return file_time_type::min();
     }
     if (ec) ec->clear();
-    return detail::mtime_from_stat(st);
+    return file_time_type::clock::from_time_t(st.st_mtime);
 }
 
 void __last_write_time(const path& p, file_time_type new_time,
@@ -606,7 +557,7 @@ void __last_write_time(const path& p, file_time_type new_time,
     struct ::timeval tbuf[2];
     // shouldn't overflow
     detail::set_times_checked<microseconds>(
-        &tbuf[0].tv_sec, &tbuf[0].tv_usec, detail::atime_from_stat(st.st_atime));
+        &tbuf[0].tv_sec, &tbuf[0].tv_usec, st.st_atime);
     const bool overflowed = !detail::set_times_checked<microseconds>(
         &tbuf[1].tv_sec, &tbuf[1].tv_usec, new_time);
 
