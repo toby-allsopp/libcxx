@@ -495,8 +495,6 @@ constexpr bool have_mtime_timespec = true;
 constexpr bool have_mtime_timespec = false;
 #endif
 
-using namespace std::chrono;
-
 template <class Stat>
 auto get_mtime_nsec(int, Stat const& st) -> decltype(st.st_mtim.tv_nsec)
 { return st.st_mtim.tv_nsec; }
@@ -508,6 +506,15 @@ auto get_mtime_nsec(int, Stat const& st) -> decltype(st.st_mtimespec.tv_nsec)
 template <class Stat>
 auto get_mtime_nsec(long, Stat const& st) -> int { return 0;}
 
+file_time_type mtime_from_stat(struct ::stat& st) {
+    using namespace std::chrono;
+    auto sec = seconds(st.st_mtime);
+    auto nsec = nanoseconds(get_mtime_nsec(0, st));
+    return file_time_type(sec + duration_cast<microseconds>(nsec));
+}
+
+
+#if !defined(UTIME_OMIT)
 template <class Stat>
 auto get_atime_nsec(int, Stat const& st) -> decltype(st.st_atim.tv_nsec)
 { return st.st_atim.tv_nsec; }
@@ -519,21 +526,13 @@ auto get_atime_nsec(int, Stat const& st) -> decltype(st.st_atimespec.tv_nsec)
 template <class Stat>
 auto get_atime_nsec(long, Stat const& st) -> int { return 0;}
 
-
-file_time_type mtime_from_stat(struct ::stat& st) {
-    using namespace std::chrono;
-    auto sec = seconds(st.st_mtime);
-    auto nsec = nanoseconds(get_mtime_nsec(0, st));
-    return file_time_type(sec + duration_cast<microseconds>(nsec));
-}
-
-
 file_time_type atime_from_stat(struct ::stat& st) {
     using namespace std::chrono;
     auto sec = seconds(st.st_atime);
     auto nsec = nanoseconds(get_atime_nsec(0, st));
     return file_time_type(sec + duration_cast<microseconds>(nsec));
 }
+#endif
 
 template <class CType, class ChronoType>
 bool checked_set(CType* out, ChronoType time) {
