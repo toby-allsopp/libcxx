@@ -510,9 +510,10 @@ bool set_times_checked(time_t* sec_out, SubSecT* subsec_out, file_time_type tp) 
     // The tv_nsec and tv_usec fields must not be negative so adjust accordingly
     if (subsec_dur.count() < 0) {
         if (sec_dur.count() > min_seconds) {
-            std::cout << "HERE1" << std::endl;
+
             sec_dur -= seconds(1);
             subsec_dur += seconds(1);
+            std::cout << "HERE1 " << sec_dur.count() << " " << subsec_dur.count() <<std::endl;
         } else {
             std::cout << "HERE2" << std::endl;
             subsec_dur = SubSecDurT::zero();
