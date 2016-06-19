@@ -495,13 +495,15 @@ constexpr bool have_mtime_timespec = true;
 constexpr bool have_mtime_timespec = false;
 #endif
 
-template <class Stat>
-auto get_mtime_nsec(int, Stat const& st) -> decltype(st.st_mtim.tv_nsec)
-{ return st.st_mtim.tv_nsec; }
-
+#if defined(__APPLE__)
 template <class Stat>
 auto get_mtime_nsec(int, Stat const& st) -> decltype(st.st_mtimespec.tv_nsec)
 { return st.st_mtimespec.tv_nsec; }
+#else
+template <class Stat>
+auto get_mtime_nsec(int, Stat const& st) -> decltype(st.st_mtim.tv_nsec)
+{ return st.st_mtim.tv_nsec; }
+#endif
 
 template <class Stat>
 auto get_mtime_nsec(long, Stat const& st) -> int { return 0;}
@@ -515,14 +517,15 @@ file_time_type mtime_from_stat(struct ::stat& st) {
 
 
 #if !defined(UTIME_OMIT)
-template <class Stat>
-auto get_atime_nsec(int, Stat const& st) -> decltype(st.st_atim.tv_nsec)
-{ return st.st_atim.tv_nsec; }
-
+#if defined(__APPLE__)
 template <class Stat>
 auto get_atime_nsec(int, Stat const& st) -> decltype(st.st_atimespec.tv_nsec)
 { return st.st_atimespec.tv_nsec; }
-
+#else
+template <class Stat>
+auto get_atime_nsec(int, Stat const& st) -> decltype(st.st_atim.tv_nsec)
+{ return st.st_atim.tv_nsec; }
+#endif
 template <class Stat>
 auto get_atime_nsec(long, Stat const& st) -> int { return 0;}
 
