@@ -335,44 +335,6 @@ TEST_CASE(test_write_min_max_time)
 }
 
 
-
-TEST_CASE(test_write_min_max_representable_time)
-{
-    using Clock = file_time_type::clock;
-    using Sec = std::chrono::seconds;
-    using namespace std::chrono;
-    using Lim = std::numeric_limits<std::time_t>;
-
-    scoped_test_env env;
-    const path p = env.create_file("file", 42);
-
-    std::error_code ec = GetTestEC();
-    file_time_type last_time = last_write_time(p);
-    file_time_type new_time = system_clock::from_time_t(Lim::min());
-    TEST_CHECK(TimeIsRepresentableAsTimeT(new_time));
-
-    last_write_time(p, new_time, ec);
-    file_time_type tt = last_write_time(p);
-    TEST_CHECK(!ec);
-    TEST_CHECK(tt >= new_time);
-    TEST_CHECK(tt < (new_time + Sec(1)));
-
-    ec = GetTestEC();
-    last_time = tt;
-    new_time = system_clock::from_time_t(Lim::max());
-    TEST_CHECK(TimeIsRepresentableAsTimeT(new_time));
-
-    last_write_time(p, new_time, ec);
-    tt = last_write_time(p);
-    TEST_CHECK(!ec);
-    TEST_CHECK(tt > new_time - Sec(1));
-    std::cout << tt.time_since_epoch().count()
-              << " " << new_time.time_since_epoch().count() << std::endl;
-    TEST_CHECK(tt <= new_time);
-
-}
-
-
 TEST_CASE(test_value_on_failure)
 {
     const path p = StaticEnv::DNE;
