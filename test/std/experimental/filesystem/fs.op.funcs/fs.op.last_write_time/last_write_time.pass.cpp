@@ -200,6 +200,7 @@ TEST_CASE(set_last_write_time_dynamic_env_test)
     for (const auto& TC : cases) {
         const auto old_times = GetTimes(TC.p);
         file_time_type old_time(Sec(old_times.second));
+
         std::error_code ec = GetTestEC();
         last_write_time(TC.p, TC.new_time, ec);
         TEST_CHECK(!ec);
