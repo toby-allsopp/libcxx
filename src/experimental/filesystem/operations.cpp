@@ -22,6 +22,7 @@
 #if !defined(UTIME_OMIT)
 #include <sys/time.h> // for ::utimes as used in __last_write_time
 #endif
+#include <iostream>
 
 _LIBCPP_BEGIN_NAMESPACE_EXPERIMENTAL_FILESYSTEM
 
@@ -509,9 +510,11 @@ bool set_times_checked(time_t* sec_out, SubSecT* subsec_out, file_time_type tp) 
     // The tv_nsec and tv_usec fields must not be negative so adjust accordingly
     if (subsec_dur.count() < 0) {
         if (sec_dur.count() > min_seconds) {
+            std::cout << "HERE1" << std::endl;
             sec_dur -= seconds(1);
             subsec_dur += seconds(1);
         } else {
+            std::cout << "HERE2" << std::endl;
             subsec_dur = SubSecDurT::zero();
         }
     }
