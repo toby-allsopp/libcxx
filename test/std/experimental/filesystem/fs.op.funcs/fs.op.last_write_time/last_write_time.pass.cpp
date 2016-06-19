@@ -180,7 +180,7 @@ TEST_CASE(set_last_write_time_dynamic_env_test)
     const file_time_type future_time = now + Hours(3) + Sec(42) + MicroSec(17);
     const file_time_type past_time = now - Minutes(3) - Sec(42) - MicroSec(17);
     const file_time_type before_epoch_time = epoch_time - Minutes(3) - Sec(42) - MicroSec(17);
-    const file_time_type just_before_epoch_time = epoch_time - MicroSec(17);
+    const file_time_type just_before_epoch_time = epoch_time - second(1);
 
     struct TestCase {
       path p;
