@@ -180,7 +180,13 @@ TEST_CASE(set_last_write_time_dynamic_env_test)
     const file_time_type future_time = now + Hours(3) + Sec(42) + MicroSec(17);
     const file_time_type past_time = now - Minutes(3) - Sec(42) - MicroSec(17);
     const file_time_type before_epoch_time = epoch_time - Minutes(3) - Sec(42) - MicroSec(17);
-    const file_time_type just_before_epoch_time = epoch_time - Sec(2);
+    // FreeBSD has a bug in their utimes implementation where the time is not update
+    // when the number of seconds is '-1'.
+#if defined(__FreeBSD__)
+    const file_time_type just_before_epoch_time = epoch_time - Sec(2) - MicroSec(17);
+#else
+    const file_time_type just_before_epoch_time = epoch_time - MicroSec(17);
+#endif
 
     struct TestCase {
       path p;
@@ -209,10 +215,6 @@ TEST_CASE(set_last_write_time_dynamic_env_test)
 
         TEST_CHECK(got_time != old_time);
         if (TC.new_time < epoch_time) {
-            std::cout << "On file: " << TC.p << " "
-                    << got_time.time_since_epoch().count()
-                    << " " << TC.new_time.time_since_epoch().count()
-                    << std::endl;
             TEST_CHECK(got_time <= TC.new_time);
             TEST_CHECK(got_time > TC.new_time - Sec(1));
         } else {

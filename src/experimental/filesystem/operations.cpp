@@ -548,7 +548,6 @@ void __last_write_time(const path& p, file_time_type new_time,
     // This implementation has a race condition between determining the
     // last access time and attempting to set it to the same value using
     // ::utimes
-    using Clock = file_time_type::clock;
     struct ::stat st;
     file_status fst = detail::posix_stat(p, st, &m_ec);
     if (m_ec && !status_known(fst)) {
