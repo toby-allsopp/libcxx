@@ -211,7 +211,7 @@ TEST_CASE(set_last_write_time_dynamic_env_test)
         if (TC.new_time < epoch_time) {
             std::cout << "On file: " << TC.p << " "
                     << got_time.time_since_epoch().count()
-                    << " " << new_time.time_since_epoch().count()
+                    << " " << TC.new_time.time_since_epoch().count()
                     << std::endl;
             TEST_CHECK(got_time <= TC.new_time);
             TEST_CHECK(got_time > TC.new_time - Sec(1));
