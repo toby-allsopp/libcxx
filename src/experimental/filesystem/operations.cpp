@@ -556,7 +556,7 @@ void __last_write_time(const path& p, file_time_type new_time,
     }
     struct ::timeval tbuf[2];
     tbuf[0].tv_sec = st.st_atime;
-    tbuf[0].tv_nsec = 0;
+    tbuf[0].tv_usec = 0;
     const bool overflowed = !detail::set_times_checked<microseconds>(
         &tbuf[1].tv_sec, &tbuf[1].tv_usec, new_time);
 
