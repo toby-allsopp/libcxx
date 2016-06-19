@@ -334,7 +334,6 @@ TEST_CASE(test_write_min_max_time)
     }
 }
 
-
 TEST_CASE(test_value_on_failure)
 {
     const path p = StaticEnv::DNE;
