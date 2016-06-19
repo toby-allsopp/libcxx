@@ -366,6 +366,8 @@ TEST_CASE(test_write_min_max_representable_time)
     tt = last_write_time(p);
     TEST_CHECK(!ec);
     TEST_CHECK(tt > new_time - Sec(1));
+    std::cout << tt.time_since_epoch().count()
+              << " " << new_time.time_since_epoch().count() << std::endl;
     TEST_CHECK(tt <= new_time);
 
 }
