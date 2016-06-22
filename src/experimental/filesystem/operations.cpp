@@ -499,7 +499,11 @@ constexpr auto has_mtim(...) -> bool{ return false; }
 
 static_assert(has_mtim<struct ::stat>(0), "");
 
+#if !defined(UTIME_OMIT)
+constexpr bool has_mtime_nsec = false;
+#else
 constexpr bool has_mtime_nsec = has_mtim<struct ::stat>(0);
+#endif
 
 template <class Stat>
 inline auto get_mtim(Stat const& st, int) -> decltype(st.st_mtim) const&
