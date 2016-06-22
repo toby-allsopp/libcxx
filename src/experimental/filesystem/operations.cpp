@@ -491,6 +491,19 @@ bool __fs_is_empty(const path& p, std::error_code *ec)
 namespace detail { namespace {
 
 template <class Stat>
+constexpr auto has_mtim(int) -> decltype(declval<Stat>().st_mtim, true) { return true; }
+
+template <class Stat>
+constexpr auto has_mtim(long) -> decltype(declval<Stat>().st_mtimeval, true) { return true; }
+
+template <class Stat>
+constexpr auto has_mtim(...) -> bool{ return false; }
+
+static_assert(has_mtim<struct ::stat>(0), "");
+
+constexpr bool has_mtime_nsec = has_mtim<struct ::stat>(0);
+
+template <class Stat>
 inline auto get_mtim(Stat const& st, int) -> decltype(st.st_mtim) const&
 { return st.st_mtim;}
 
@@ -504,7 +517,6 @@ inline auto get_mtim(Stat const& st, ...) -> struct ::timespec {
     tv.tv_sec = st.st_mtime;
     tv.tv_nsec = 0;
 }
-
 
 template <class Stat>
 inline auto get_atim(Stat const& st, int) -> decltype(st.st_atim) const&
@@ -541,7 +553,7 @@ bool set_times_checked(time_t* sec_out, SubSecT* subsec_out, file_time_type tp) 
     auto subsec_dur = duration_cast<SubSecDurT>(dur - sec_dur);
     // The tv_nsec and tv_usec fields must not be negative so adjust accordingly
     if (subsec_dur.count() < 0) {
-        if (sec_dur.count() > min_seconds || true) {
+        if (sec_dur.count() > min_seconds || detail::has_mtime_nsec) {
             sec_dur -= seconds(1);
             subsec_dur += seconds(1);
         } else {

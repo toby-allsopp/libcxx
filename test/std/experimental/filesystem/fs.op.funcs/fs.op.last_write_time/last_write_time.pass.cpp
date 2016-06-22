@@ -280,7 +280,7 @@ TEST_CASE(test_write_min_time)
         TEST_CHECK(tt == last_time);
     } else {
         TEST_CHECK(!ec);
-        TEST_CHECK(tt >= new_time);
+        TEST_CHECK(tt == new_time);
         TEST_CHECK(tt < new_time + Sec(1));
     }
 
