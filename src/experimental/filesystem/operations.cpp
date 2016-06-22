@@ -22,7 +22,9 @@
 #if !defined(UTIME_OMIT)
 #include <sys/time.h> // for ::utimes as used in __last_write_time
 #endif
-
+#if !defined(_POSIX_C_SOURCE) || _POSIX_C_SOURCE < 20900L
+#error SHIT
+#endif
 _LIBCPP_BEGIN_NAMESPACE_EXPERIMENTAL_FILESYSTEM
 
 filesystem_error::~filesystem_error() {}
@@ -500,9 +502,9 @@ constexpr auto has_mtim(...) -> bool{ return false; }
 static_assert(has_mtim<struct ::stat>(0), "");
 
 #if !defined(UTIME_OMIT)
-constexpr bool has_mtime_nsec = false;
+constexpr bool have_nsec_roundtrip = false;
 #else
-constexpr bool has_mtime_nsec = has_mtim<struct ::stat>(0);
+constexpr bool have_nsec_roundtrip = has_mtim<struct ::stat>(0);
 #endif
 
 template <class Stat>
@@ -555,7 +557,7 @@ bool set_times_checked(time_t* sec_out, SubSecT* subsec_out, file_time_type tp) 
     auto subsec_dur = duration_cast<SubSecDurT>(dur - sec_dur);
     // The tv_nsec and tv_usec fields must not be negative so adjust accordingly
     if (subsec_dur.count() < 0) {
-        if (detail::has_mtime_nsec || sec_dur.count() > min_seconds) {
+        if (detail::have_nsec_roundtrip || sec_dur.count() > min_seconds) {
             sec_dur -= seconds(1);
             subsec_dur += seconds(1);
         } else {
@@ -581,8 +583,13 @@ file_time_type __last_write_time(const path& p, std::error_code *ec)
     }
     if (ec) ec->clear();
     auto const& tv = detail::get_mtim(st, 0);
-    return file_time_type(
-        seconds(tv.tv_sec) + duration_cast<microseconds>(nanoseconds(tv.tv_nsec)));
+    auto secs = seconds(tv.tv_sec);
+    auto nsecs = nanoseconds(tv.tv_nsec);
+    if (tv.tv_sec < 0 && tv.tv_nsec) {
+        secs += seconds(1);
+        nsecs -= seconds(1);
+    }
+    return file_time_type(secs + duration_cast<microseconds>(nsecs));
 }
 
 void __last_write_time(const path& p, file_time_type new_time,
@@ -593,7 +600,7 @@ void __last_write_time(const path& p, file_time_type new_time,
 
     // We can use the presence of UTIME_OMIT to detect platforms that do not
     // provide utimensat.
-#if !defined(UTIME_OMIT) || 0
+#if !defined(UTIME_OMIT)
     // This implementation has a race condition between determining the
     // last access time and attempting to set it to the same value using
     // ::utimes

@@ -29,6 +29,7 @@
 #include "filesystem_test_helper.hpp"
 
 #include <sys/stat.h>
+#include <sys/time.h>
 #include <iostream>
 
 using namespace std::experimental::filesystem;
@@ -77,6 +78,16 @@ inline bool TimeIsRepresentableAsTimeT(file_time_type tp) {
     using Lim = std::numeric_limits<std::time_t>;
     auto sec = duration_cast<seconds>(tp.time_since_epoch()).count();
     return (sec >= Lim::min() && sec <= Lim::max());
+}
+
+
+inline bool TimeCanRoundTrip(file_time_type tp) {
+    using namespace std::chrono;
+#if defined(UTIME_OMIT)
+    return TimeIsRepresentableAsTimeT(tp);
+#else
+    return false;
+#endif
 }
 
 
@@ -278,12 +289,12 @@ TEST_CASE(test_write_min_time)
         TEST_CHECK(ec);
         TEST_CHECK(ec != GetTestEC());
         TEST_CHECK(tt == last_time);
+    } else if (TimeCanRoundTrip(new_time)) {
+        TEST_CHECK(!ec);
+        TEST_CHECK(tt == new_time);
     } else {
         TEST_CHECK(!ec);
-        std::cout << tt.time_since_epoch().count() << std::endl;
-        std::cout << new_time.time_since_epoch().count() << std::endl;
-
-        TEST_CHECK(tt == new_time);
+        TEST_CHECK(tt >= new_time);
         TEST_CHECK(tt < new_time + Sec(1));
     }
 
@@ -300,6 +311,10 @@ TEST_CASE(test_write_min_time)
         TEST_CHECK(ec);
         TEST_CHECK(ec != GetTestEC());
         TEST_CHECK(tt == last_time);
+    } else if (TimeCanRoundTrip(new_time)) {
+        TEST_CHECK(!ec);
+        TEST_CHECK(tt >= new_time);
+        TEST_CHECK(tt < new_time + Sec(1));
     } else {
         TEST_CHECK(!ec);
         TEST_CHECK(tt >= new_time);
