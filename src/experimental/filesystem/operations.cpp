@@ -22,6 +22,8 @@
 #if !defined(UTIME_OMIT)
 #include <sys/time.h> // for ::utimes as used in __last_write_time
 #endif
+#undef NDEBUG
+#include "cassert"
 
 _LIBCPP_BEGIN_NAMESPACE_EXPERIMENTAL_FILESYSTEM
 
@@ -488,6 +490,37 @@ bool __fs_is_empty(const path& p, std::error_code *ec)
 
 namespace detail { namespace {
 
+template <class Stat>
+inline auto get_mtim(Stat const& st, int) -> decltype(st.st_mtim) const&
+{ return st.st_mtim;}
+
+template <class Stat>
+inline auto get_mtim(Stat const& st, long) -> decltype(st.st_mtimeval) const&
+{ assert(false); return st.st_mtimeval; }
+
+template <class Stat>
+inline auto get_mtim(Stat const& st, ...) -> struct ::timespec {
+    assert(false); struct ::timespec tv;
+    tv.tv_sec = st.st_mtime;
+    tv.tv_nsec = 0;
+}
+
+
+template <class Stat>
+inline auto get_atim(Stat const& st, int) -> decltype(st.st_atim) const&
+{ return st.st_atim;}
+
+template <class Stat>
+inline auto get_atim(Stat const& st, long) -> decltype(st.st_atimeval) const&
+{ return st.st_atimeval; }
+
+template <class Stat>
+inline auto get_atim(Stat const& st, ...) -> struct ::timespec {
+    struct ::timespec tv;
+    tv.tv_sec = st.st_atime;
+    tv.tv_nsec = 0;
+}
+
 template <class CType, class ChronoType>
 bool checked_set(CType* out, ChronoType time) {
     using Lim = numeric_limits<CType>;
@@ -508,8 +541,7 @@ bool set_times_checked(time_t* sec_out, SubSecT* subsec_out, file_time_type tp) 
     auto subsec_dur = duration_cast<SubSecDurT>(dur - sec_dur);
     // The tv_nsec and tv_usec fields must not be negative so adjust accordingly
     if (subsec_dur.count() < 0) {
-        if (sec_dur.count() > min_seconds) {
-
+        if (sec_dur.count() > min_seconds || true) {
             sec_dur -= seconds(1);
             subsec_dur += seconds(1);
         } else {
@@ -525,6 +557,7 @@ bool set_times_checked(time_t* sec_out, SubSecT* subsec_out, file_time_type tp) 
 
 file_time_type __last_write_time(const path& p, std::error_code *ec)
 {
+    using namespace std::chrono;
     std::error_code m_ec;
     struct ::stat st;
     detail::posix_stat(p, st, &m_ec);
@@ -533,7 +566,9 @@ file_time_type __last_write_time(const path& p, std::error_code *ec)
         return file_time_type::min();
     }
     if (ec) ec->clear();
-    return file_time_type::clock::from_time_t(st.st_mtime);
+    auto const& tv = detail::get_mtim(st, 0);
+    return file_time_type(
+        seconds(tv.tv_sec) + duration_cast<microseconds>(nanoseconds(tv.tv_nsec)));
 }
 
 void __last_write_time(const path& p, file_time_type new_time,
@@ -544,7 +579,7 @@ void __last_write_time(const path& p, file_time_type new_time,
 
     // We can use the presence of UTIME_OMIT to detect platforms that do not
     // provide utimensat.
-#if !defined(UTIME_OMIT)
+#if !defined(UTIME_OMIT) || 0
     // This implementation has a race condition between determining the
     // last access time and attempting to set it to the same value using
     // ::utimes
@@ -555,8 +590,9 @@ void __last_write_time(const path& p, file_time_type new_time,
         return;
     }
     struct ::timeval tbuf[2];
+    struct ::timebuf const& tv = detail::get_atim(st, 0);
     tbuf[0].tv_sec = st.st_atime;
-    tbuf[0].tv_usec = 0;
+    tbuf[0].tv_usec = duration_cast<microseconds>(nanoseconds(detail::get_atim(st, 0).tv_nsec));
     const bool overflowed = !detail::set_times_checked<microseconds>(
         &tbuf[1].tv_sec, &tbuf[1].tv_usec, new_time);
 
