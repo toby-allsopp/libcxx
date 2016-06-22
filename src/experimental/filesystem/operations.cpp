@@ -602,24 +602,20 @@ void __permissions(const path& p, perms prms, std::error_code *ec)
                    "Both add_perms and remove_perms are set");
 
     std::error_code m_ec;
-    file_status st = resolve_symlinks ? detail::posix_stat(p, &m_ec)
-                                      : detail::posix_lstat(p, &m_ec);
-    if (m_ec) return set_or_throw(m_ec, ec, "permissions", p);
-
-    // AT_SYMLINK_NOFOLLOW can only be used on symlinks, using it on a regular
-    // file will cause fchmodat to report an error on some systems.
-    const bool set_sym_perms = is_symlink(st) && !resolve_symlinks;
-
-    if ((resolve_symlinks && is_symlink(st)) && (add_perms || remove_perms)) {
-        st = detail::posix_stat(p, &m_ec);
-        if (m_ec) return set_or_throw(m_ec, ec, "permissions", p);
+    file_status st;
+    bool set_sym_perms = false;
+    prms &= perms::mask;
+    if (!resolve_symlinks || (add_perms || remove_perms)) {
+        st = resolve_symlinks ? detail::posix_stat(p, &m_ec)
+                              : detail::posix_lstat(p, &m_ec);
+        set_sym_perms = is_symlink(st);
+        if (m_ec)
+            return set_or_throw(m_ec, ec, "permissions", p);
+        else if (add_perms)
+            prms |= st.permissions();
+        else if (remove_perms)
+           prms = st.permissions() & ~prms;
     }
-
-    prms = prms & perms::mask;
-    if (add_perms)
-        prms |= st.permissions();
-    else if (remove_perms)
-        prms = st.permissions() & ~prms;
     auto real_perms = detail::posix_convert_perms(prms);
 
 # if defined(AT_SYMLINK_NOFOLLOW) && defined(AT_FDCWD)
