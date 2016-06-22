@@ -22,8 +22,6 @@
 #if !defined(UTIME_OMIT)
 #include <sys/time.h> // for ::utimes as used in __last_write_time
 #endif
-#undef NDEBUG
-#include "cassert"
 
 _LIBCPP_BEGIN_NAMESPACE_EXPERIMENTAL_FILESYSTEM
 
@@ -494,7 +492,7 @@ template <class Stat>
 constexpr auto has_mtim(int) -> decltype(declval<Stat>().st_mtim, true) { return true; }
 
 template <class Stat>
-constexpr auto has_mtim(long) -> decltype(declval<Stat>().st_mtimeval, true) { return true; }
+constexpr auto has_mtim(long) -> decltype(declval<Stat>().st_mtimespec, true) { return true; }
 
 template <class Stat>
 constexpr auto has_mtim(...) -> bool{ return false; }
@@ -508,12 +506,12 @@ inline auto get_mtim(Stat const& st, int) -> decltype(st.st_mtim) const&
 { return st.st_mtim;}
 
 template <class Stat>
-inline auto get_mtim(Stat const& st, long) -> decltype(st.st_mtimeval) const&
-{ assert(false); return st.st_mtimeval; }
+inline auto get_mtim(Stat const& st, long) -> decltype(st.st_mtimespec) const&
+{ return st.st_mtimespec; }
 
 template <class Stat>
 inline auto get_mtim(Stat const& st, ...) -> struct ::timespec {
-    assert(false); struct ::timespec tv;
+    struct ::timespec tv;
     tv.tv_sec = st.st_mtime;
     tv.tv_nsec = 0;
 }
@@ -523,8 +521,8 @@ inline auto get_atim(Stat const& st, int) -> decltype(st.st_atim) const&
 { return st.st_atim;}
 
 template <class Stat>
-inline auto get_atim(Stat const& st, long) -> decltype(st.st_atimeval) const&
-{ return st.st_atimeval; }
+inline auto get_atim(Stat const& st, long) -> decltype(st.st_atimespec) const&
+{ return st.st_atimespec; }
 
 template <class Stat>
 inline auto get_atim(Stat const& st, ...) -> struct ::timespec {
@@ -553,7 +551,7 @@ bool set_times_checked(time_t* sec_out, SubSecT* subsec_out, file_time_type tp) 
     auto subsec_dur = duration_cast<SubSecDurT>(dur - sec_dur);
     // The tv_nsec and tv_usec fields must not be negative so adjust accordingly
     if (subsec_dur.count() < 0) {
-        if (sec_dur.count() > min_seconds || detail::has_mtime_nsec) {
+        if (detail::has_mtime_nsec || sec_dur.count() > min_seconds) {
             sec_dur -= seconds(1);
             subsec_dur += seconds(1);
         } else {
@@ -602,9 +600,8 @@ void __last_write_time(const path& p, file_time_type new_time,
         return;
     }
     struct ::timeval tbuf[2];
-    struct ::timebuf const& tv = detail::get_atim(st, 0);
     tbuf[0].tv_sec = st.st_atime;
-    tbuf[0].tv_usec = duration_cast<microseconds>(nanoseconds(detail::get_atim(st, 0).tv_nsec));
+    tbuf[0].tv_usec = duration_cast<microseconds>(nanoseconds(detail::get_atim(st, 0).tv_nsec)).count();
     const bool overflowed = !detail::set_times_checked<microseconds>(
         &tbuf[1].tv_sec, &tbuf[1].tv_usec, new_time);
 
