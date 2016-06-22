@@ -22,9 +22,7 @@
 #if !defined(UTIME_OMIT)
 #include <sys/time.h> // for ::utimes as used in __last_write_time
 #endif
-#if !defined(_POSIX_C_SOURCE) || _POSIX_C_SOURCE < 20900L
-#error SHIT
-#endif
+
 _LIBCPP_BEGIN_NAMESPACE_EXPERIMENTAL_FILESYSTEM
 
 filesystem_error::~filesystem_error() {}
