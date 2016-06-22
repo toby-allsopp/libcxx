@@ -566,6 +566,29 @@ bool set_times_checked(time_t* sec_out, SubSecT* subsec_out, file_time_type tp) 
         && checked_set(subsec_out, subsec_dur.count());
 }
 
+using _VSTD::chrono::duration;
+using _VSTD::chrono::duration_cast;
+
+template <class _ToDuration, class _Rep, class _Period>
+inline _ToDuration
+floor(const duration<_Rep, _Period>& __d)
+{
+    _ToDuration __t = duration_cast<_ToDuration>(__d);
+    if (__t > __d)
+        __t = __t - _ToDuration{1};
+    return __t;
+}
+
+template <class _ToDuration, class _Rep, class _Period>
+inline _ToDuration
+ceil(const duration<_Rep, _Period>& __d)
+{
+    _ToDuration __t = duration_cast<_ToDuration>(__d);
+    if (__t < __d)
+        __t = __t + _ToDuration{1};
+    return __t;
+}
+
 }} // end namespace detail
 
 
@@ -587,7 +610,9 @@ file_time_type __last_write_time(const path& p, std::error_code *ec)
         secs += seconds(1);
         nsecs -= seconds(1);
     }
-    return file_time_type(secs + duration_cast<microseconds>(nsecs));
+    auto msec = tv.tv_sec < 0 ? detail::ceil<microseconds>(nsecs)
+                              : detail::floor<microseconds>(nsecs);
+    return file_time_type(secs + msec);
 }
 
 void __last_write_time(const path& p, file_time_type new_time,
@@ -609,8 +634,10 @@ void __last_write_time(const path& p, file_time_type new_time,
         return;
     }
     struct ::timeval tbuf[2];
+    auto nsec = detail::get_atim(st, 0).tv_nsec;
     tbuf[0].tv_sec = st.st_atime;
-    tbuf[0].tv_usec = duration_cast<microseconds>(nanoseconds(detail::get_atim(st, 0).tv_nsec)).count();
+    tbuf[0].tv_usec = (st.st_atime < 0 && nsec ? detail::ceil<microseconds>(nsec)
+                                              : detail::floor<microseconds>(nsec)).count();
     const bool overflowed = !detail::set_times_checked<microseconds>(
         &tbuf[1].tv_sec, &tbuf[1].tv_usec, new_time);
 
