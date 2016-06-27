@@ -375,7 +375,7 @@ struct __variant_end_node {
 
 template <bool _IsTriviallyDestructible, size_t _Idx, class ..._Types>
 union _LIBCPP_TYPE_VIS_ONLY __variant_union {
-    constexpr __variant_union(__variant_end_tag) : __head_() {}
+    //constexpr __variant_union(__variant_end_tag) : __head_() {}
     template <class _Variant, class _Lambda>
     void __visit(_Variant&, _Lambda&&) {}
     __variant_end_node __head_;
@@ -384,7 +384,8 @@ union _LIBCPP_TYPE_VIS_ONLY __variant_union {
 
 template <size_t _Idx, class _T0,  class ..._TRest>
 union _LIBCPP_TYPE_VIS_ONLY __variant_union<true, _Idx, _T0, _TRest...> {
-    __variant_union(__variant_end_tag __t) : __tail_(__t) {}
+    using _TailT = __variant_union<true, _Idx + 1, _TRest...>;
+    constexpr __variant_union(__variant_end_tag) : __end_() {}
 
     template <class ..._Args>
     constexpr __variant_union(__variant_inplace_tag __tag, in_place_index_t<0>,
@@ -432,17 +433,28 @@ union _LIBCPP_TYPE_VIS_ONLY __variant_union<true, _Idx, _T0, _TRest...> {
     __get(in_place_index_t<_OIdx>) const noexcept
     { return __tail_.__get(in_place_index<_OIdx - 1>); }
 
+    void __destroy() {
+        if (__head_.__which_ == variant_npos)
+            return;
+        if (__head_.__which_ == _Idx)
+            __head_.~__variant_element();
+        else
+            __tail_.~_TailT();
+        ::new((void*)&__end_) __variant_end_node();
+    }
+
     ~__variant_union() = default;
 public:
+        __variant_end_node __end_;
         __variant_element<_Idx, _T0> __head_;
-        __variant_union<true, _Idx + 1, _TRest...> __tail_;
+        _TailT __tail_;
 };
 
 template <size_t _Idx, class _T0,  class ..._TRest>
 union _LIBCPP_TYPE_VIS_ONLY __variant_union<false, _Idx, _T0, _TRest...> {
     using _TailT =  __variant_union<false, _Idx + 1, _TRest...>;
 
-    constexpr __variant_union(__variant_end_tag __t) : __tail_(__t) {}
+    constexpr __variant_union(__variant_end_tag __t) : __end_() {}
 
     template <class ..._Args>
     constexpr __variant_union(__variant_inplace_tag __tag, in_place_index_t<0>,
@@ -493,8 +505,21 @@ union _LIBCPP_TYPE_VIS_ONLY __variant_union<false, _Idx, _T0, _TRest...> {
     __get(in_place_index_t<_OIdx>) const noexcept
     { return __tail_.__get(in_place_index<_OIdx - 1>); }
 
+    void __destroy() {
+        if (__head_.__which_ == variant_npos)
+            return;
+        if (__head_.__which_ == _Idx)
+            __head_.~__variant_element();
+        else
+            __tail_.~_TailT();
+        ::new((void*)&__end_) __variant_end_node();
+    }
+
     ~__variant_union() {
-        if (__head_.__which_ == _Idx) {
+        if (__head_.__which_ == variant_npos) {
+            __end_.~__variant_end_node();
+        }
+        else if (__head_.__which_ == _Idx) {
             __head_.~__variant_element();
         } else {
             __tail_.~_TailT();
@@ -502,6 +527,7 @@ union _LIBCPP_TYPE_VIS_ONLY __variant_union<false, _Idx, _T0, _TRest...> {
     }
 
 public:
+    __variant_end_node __end_;
     __variant_element<_Idx, _T0> __head_;
     _TailT __tail_;
 };
@@ -523,6 +549,43 @@ public:
 
   __variant_base(__variant_base const&) = default;
   __variant_base(__variant_base&&) = default;
+
+  void __copy_construct(__variant_base const& __v) {
+      __imp_.__visit(__v.__imp_, [](auto& __my_head, auto& __other_head) {
+        using _HeadT = remove_reference_t<decltype(__my_head)>;
+        ::new ((void*)&__my_head) _HeadT(__other_head);
+      });
+  }
+
+  __variant_base& operator=(__variant_base const& __v) {
+      if (__which_ == variant_npos && __v.__which_ == variant_npos) {
+        // nothing to do
+      }
+      else if (__which_ == __v.__which_) {
+#ifndef _LIBCPP_NO_EXCEPTIONS
+          try {
+#endif
+              __imp_.__visit(__v.__imp_,
+                [](auto& __my_head, auto& __other_head) {
+                    __my_head.__value_ = __other_head.__value_;
+                });
+#ifndef _LIBCPP_NO_EXCEPTIONS
+          } catch (...) {
+              __imp_.__destroy();
+              __which_ = variant_npos;
+              throw;
+          }
+#endif
+      } else {
+          __which_ = variant_npos;
+          __imp_.__destroy();
+          if (__v.__which_ != variant_npos) {
+            ::new((void*)&__imp_) _Imp(__v.__imp_);
+            __which_ = __v.__which_;
+          }
+      }
+     return *this;
+  }
 };
 
 
@@ -541,13 +604,17 @@ public:
         : __imp_(__tag, in_place_index<_OtherIdx>, _VSTD::forward<_Args>(__args)...),
           __which_(_OtherIdx) {}
 
-  __variant_base(__variant_base const& __v)
-      : __imp_(__variant_end_tag{}), __which_(__v.__which_)
-  {
+  void __copy_construct(__variant_base const& __v) {
       __imp_.__visit(__v.__imp_, [](auto& __my_head, auto& __other_head) {
         using _HeadT = remove_reference_t<decltype(__my_head)>;
         ::new ((void*)&__my_head) _HeadT(__other_head);
       });
+  }
+
+  __variant_base(__variant_base const& __v)
+      : __imp_(__variant_end_tag{}), __which_(__v.__which_)
+  {
+      __copy_construct(__v);
   }
 
   __variant_base(__variant_base&& __v)
@@ -558,6 +625,36 @@ public:
         using _HeadT = remove_reference_t<decltype(__my_head)>;
         ::new ((void*)&__my_head) _HeadT(_VSTD::move(__other_head));
       });
+  }
+
+  __variant_base& operator=(__variant_base const& __v) {
+      if (__which_ == variant_npos && __v.__which_ == variant_npos) {
+        // nothing to do
+      }
+      else if (__which_ == __v.__which_) {
+#ifndef _LIBCPP_NO_EXCEPTIONS
+          try {
+#endif
+              __imp_.__visit(__v.__imp_,
+                [](auto& __my_head, auto& __other_head) {
+                    __my_head.__value_ = __other_head.__value_;
+                });
+#ifndef _LIBCPP_NO_EXCEPTIONS
+          } catch (...) {
+              __imp_.__destroy();
+              __which_ = variant_npos;
+              throw;
+          }
+#endif
+      } else {
+          __which_ = variant_npos;
+          __imp_.__destroy();
+          if (__v.__which_ != variant_npos) {
+            __copy_construct(__v);
+            __which_ = __v.__which_;
+          }
+      }
+     return *this;
   }
 };
 
@@ -585,6 +682,21 @@ struct __variant_sfinae_base<true, true, false, false> {
   __variant_sfinae_base& operator=(__variant_sfinae_base const&) = delete;
   __variant_sfinae_base& operator=(__variant_sfinae_base &&) = delete;
 };
+
+
+template <bool _CanCA, bool _CanMA>
+struct __variant_sfinae_base<true, false, _CanCA, _CanMA> {
+  static constexpr bool __copy = true;
+  static constexpr bool __move = true;
+  __variant_sfinae_base() = default;
+  __variant_sfinae_base(__variant_sfinae_base const&) = default;
+  __variant_sfinae_base(__variant_sfinae_base &&) = delete;
+  __variant_sfinae_base& operator=(__variant_sfinae_base const&) = delete;
+  __variant_sfinae_base& operator=(__variant_sfinae_base &&) = delete;
+};
+
+
+
 
 template <bool _CanCA>
 struct __variant_sfinae_base<false, true, _CanCA, true> {
