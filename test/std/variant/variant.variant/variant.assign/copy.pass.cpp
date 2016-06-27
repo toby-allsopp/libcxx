@@ -56,25 +56,44 @@ struct MoveOnlyNT {
 struct CopyAssign {
   static int copy_construct;
   static int copy_assign;
+  static int move_construct;
+  static int move_assign;
   static void reset() {
-      copy_construct = copy_assign = 0;
+      copy_construct = copy_assign = move_construct = move_assign = 0;
   }
   CopyAssign(int v) : value(v) {}
   CopyAssign(CopyAssign const& o) : value(o.value) { ++copy_construct; }
+  CopyAssign(CopyAssign&& o) : value(o.value) { o.value = -1; ++move_construct; }
   CopyAssign& operator=(CopyAssign const& o)  { value = o.value; ++copy_assign; return *this; }
+  CopyAssign& operator=(CopyAssign&& o)  { value = o.value; o.value = -1; ++move_assign; return *this; }
   int value;
 };
 
 int CopyAssign::copy_construct = 0;
 int CopyAssign::copy_assign = 0;
+int CopyAssign::move_construct = 0;
+int CopyAssign::move_assign = 0;
 
 #ifndef TEST_HAS_NO_EXCEPTIONS
+struct CopyThrows {
+  CopyThrows() = default;
+  CopyThrows(CopyThrows const&) { throw 42; }
+  CopyThrows& operator=(CopyThrows const&) { throw 42; }
+};
+
 struct MakeEmptyT {
   MakeEmptyT() = default;
   MakeEmptyT(MakeEmptyT const&) {
+      // Don't throw from the copy constructor since variant's assignment
+      // operator performs a copy before committing to the assignment.
+  }
+  MakeEmptyT(MakeEmptyT &&) {
     throw 42;
   }
   MakeEmptyT& operator=(MakeEmptyT const&) {
+      throw 42;
+  }
+  MakeEmptyT& operator=(MakeEmptyT&&) {
       throw 42;
   }
 };
@@ -232,6 +251,7 @@ void test_copy_assignment_same_index()
         assert(v1.index() == 1);
         assert(std::get<1>(v1).value == 42);
         assert(CopyAssign::copy_construct == 0);
+        assert(CopyAssign::move_construct == 0);
         assert(CopyAssign::copy_assign == 1);
     }
 #ifndef TEST_HAS_NO_EXCEPTIONS
@@ -273,6 +293,7 @@ void test_copy_assignment_different_index()
         assert(v1.index() == 1);
         assert(std::get<1>(v1).value == 42);
         assert(CopyAssign::copy_construct == 1);
+        assert(CopyAssign::move_construct == 1);
         assert(CopyAssign::copy_assign == 0);
     }
 #ifndef TEST_HAS_NO_EXCEPTIONS
@@ -295,6 +316,19 @@ void test_copy_assignment_different_index()
         V v2(std::in_place_type<std::string>, "hello");
         V& vref = (v1 = v2);
         assert(&vref == &v1);
+        assert(v1.index() == 2);
+        assert(std::get<2>(v1) == "hello");
+    }
+    {
+        // Test that if copy construction throws then original value is
+        // unchanged.
+        using V = std::variant<int, CopyThrows, std::string>;
+        V v1(std::in_place_type<std::string>, "hello");
+        V v2(std::in_place_type<CopyThrows>);
+        try {
+            v1 = v2;
+            assert(false);
+        } catch (...) { /* ... */ }
         assert(v1.index() == 2);
         assert(std::get<2>(v1) == "hello");
     }
