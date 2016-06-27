@@ -726,9 +726,12 @@ public:
 
     template <class _Tp, class _Up, class... _Args,
               class _Found = __find_exactly_one_unchecked<_Tp, _Types...>,
-              class = enable_if_t<_CheckCtor<_Found::value>::template __can_construct<initializer_list<_Up>, _Args...>()>>
-    constexpr explicit variant(in_place_type_t<_Tp>, initializer_list<_Up> __il, _Args&&... __args)
-        : __base_(__variant_inplace_tag{}, in_place_index<_Found::value>, _VSTD::move(__il), _VSTD::forward<_Args>(__args)...) {}
+              class = enable_if_t<_CheckCtor<_Found::value>::template
+                  __can_construct<initializer_list<_Up>, _Args...>()>>
+    constexpr explicit variant(in_place_type_t<_Tp>, initializer_list<_Up> __il,
+                               _Args&&... __args)
+        : __base_(__variant_inplace_tag{}, in_place_index<_Found::value>,
+                  _VSTD::move(__il), _VSTD::forward<_Args>(__args)...) {}
 
     template <size_t _Idx, class... _Args,
               size_t _Found =  _Idx < sizeof...(_Types) ? _Idx : variant_npos,
