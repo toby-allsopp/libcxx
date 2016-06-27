@@ -24,7 +24,6 @@
 
 #include "test_macros.h"
 
-
 struct NoCopy {
   NoCopy(NoCopy const&) = delete;
   NoCopy& operator=(NoCopy const&) = default;
