@@ -14,7 +14,7 @@
 
 // template <class ...Types> class variant;
 
-// constexpr variant() noexcept(see below);
+// variant(variant&&) noexcept(see below);
 
 
 #include <variant>
