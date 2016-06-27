@@ -29,6 +29,11 @@ struct NoCopy {
   NoCopy& operator=(NoCopy const&) = default;
 };
 
+struct NothrowCopy {
+  NothrowCopy(NothrowCopy const&) noexcept = default;
+  NothrowCopy& operator=(NothrowCopy const&) noexcept = default;
+};
+
 struct CopyOnly {
   CopyOnly(CopyOnly const&) = default;
   CopyOnly(CopyOnly&&) = delete;
@@ -47,6 +52,21 @@ struct MoveOnlyNT {
   MoveOnlyNT(MoveOnlyNT&&) {}
   MoveOnlyNT& operator=(MoveOnlyNT const&) = default;
 };
+
+struct CopyAssign {
+  static int copy_construct;
+  static int copy_assign;
+  static void reset() {
+      copy_construct = copy_assign = 0;
+  }
+  CopyAssign(int v) : value(v) {}
+  CopyAssign(CopyAssign const& o) : value(o.value) { ++copy_construct; }
+  CopyAssign& operator=(CopyAssign const& o)  { value = o.value; ++copy_assign; return *this; }
+  int value;
+};
+
+int CopyAssign::copy_construct = 0;
+int CopyAssign::copy_assign = 0;
 
 #ifndef TEST_HAS_NO_EXCEPTIONS
 struct MakeEmptyT {
@@ -71,21 +91,24 @@ void makeEmpty(Variant& v) {
 }
 #endif // TEST_HAS_NO_EXCEPTIONS
 
-struct CopyAssign {
-  static int copy_construct;
-  static int copy_assign;
-  static void reset() {
-      copy_construct = copy_assign = 0;
-  }
-  CopyAssign(int v) : value(v) {}
-  CopyAssign(CopyAssign const& o) : value(o.value) { ++copy_construct; }
-  CopyAssign& operator=(CopyAssign const& o)  { value = o.value; ++copy_assign; return *this; }
-  int value;
-};
-
-int CopyAssign::copy_construct = 0;
-int CopyAssign::copy_assign = 0;
-
+void test_copy_assignment_not_noexcept() {
+    {
+        using V = std::variant<int>;
+        static_assert(!std::is_nothrow_copy_assignable<V>::value, "");
+    }
+    {
+        using V = std::variant<NothrowCopy>;
+        static_assert(!std::is_nothrow_copy_assignable<V>::value, "");
+    }
+    {
+        using V = std::variant<int, long>;
+        static_assert(!std::is_nothrow_copy_assignable<V>::value, "");
+    }
+    {
+        using V = std::variant<int, NothrowCopy>;
+        static_assert(!std::is_nothrow_copy_assignable<V>::value, "");
+    }
+}
 
 void test_copy_assignment_sfinae() {
     {
@@ -120,7 +143,8 @@ void test_copy_assignment_empty_empty()
         using V = std::variant<MET>;
         V v1(std::in_place_index<0>); makeEmpty(v1);
         V v2(std::in_place_index<0>); makeEmpty(v2);
-        v1 = v2;
+        V& vref = (v1 = v2);
+        assert(&vref == &v1);
         assert(v1.valueless_by_exception());
         assert(v1.index() == std::variant_npos);
     }
@@ -128,7 +152,8 @@ void test_copy_assignment_empty_empty()
         using V = std::variant<int, long, MET>;
         V v1(std::in_place_index<0>); makeEmpty(v1);
         V v2(std::in_place_index<0>); makeEmpty(v2);
-        v1 = v2;
+        V& vref = (v1 = v2);
+        assert(&vref == &v1);
         assert(v1.valueless_by_exception());
         assert(v1.index() == std::variant_npos);
     }
@@ -143,7 +168,8 @@ void test_copy_assignment_non_empty_empty()
         using V = std::variant<int, MET>;
         V v1(std::in_place_index<0>, 42);
         V v2(std::in_place_index<0>); makeEmpty(v2);
-        v1 = v2;
+        V& vref = (v1 = v2);
+        assert(&vref == &v1);
         assert(v1.valueless_by_exception());
         assert(v1.index() == std::variant_npos);
     }
@@ -151,7 +177,8 @@ void test_copy_assignment_non_empty_empty()
         using V = std::variant<int, MET, std::string>;
         V v1(std::in_place_index<2>, "hello");
         V v2(std::in_place_index<0>); makeEmpty(v2);
-        v1 = v2;
+        V& vref = (v1 = v2);
+        assert(&vref == &v1);
         assert(v1.valueless_by_exception());
         assert(v1.index() == std::variant_npos);
     }
@@ -167,7 +194,8 @@ void test_copy_assignment_empty_non_empty()
         using V = std::variant<int, MET>;
         V v1(std::in_place_index<0>); makeEmpty(v1);
         V v2(std::in_place_index<0>, 42);
-        v1 = v2;
+        V& vref = (v1 = v2);
+        assert(&vref == &v1);
         assert(v1.index() == 0);
         assert(std::get<0>(v1) == 42);
     }
@@ -175,7 +203,8 @@ void test_copy_assignment_empty_non_empty()
         using V = std::variant<int, MET, std::string>;
         V v1(std::in_place_index<0>); makeEmpty(v1);
         V v2(std::in_place_type<std::string>, "hello");
-        v1 = v2;
+        V& vref = (v1 = v2);
+        assert(&vref == &v1);
         assert(v1.index() == 2);
         assert(std::get<2>(v1) == "hello");
     }
@@ -186,28 +215,31 @@ void test_copy_assignment_same_index()
 {
     {
         using V = std::variant<int>;
-        V v1(42);
-        V v2(43);
-        v2 = v1;
-        assert(v2.index() == 0);
-        assert(std::get<0>(v2) == 42);
+        V v1(43);
+        V v2(42);
+        V& vref = (v1 = v2);
+        assert(&vref == &v1);
+        assert(v1.index() == 0);
+        assert(std::get<0>(v1) == 42);
     }
     {
         using V = std::variant<int, long, unsigned>;
-        V v1(42l);
-        V v2(43l);
-        v2 = v1;
-        assert(v2.index() == 1);
-        assert(std::get<1>(v2) == 42);
+        V v1(43l);
+        V v2(42l);
+        V& vref = (v1 = v2);
+        assert(&vref == &v1);
+        assert(v1.index() == 1);
+        assert(std::get<1>(v1) == 42);
     }
     {
         using V = std::variant<int, CopyAssign, unsigned>;
-        V v1(std::in_place_type<CopyAssign>, 42);
-        V v2(std::in_place_type<CopyAssign>, 43);
+        V v1(std::in_place_type<CopyAssign>, 43);
+        V v2(std::in_place_type<CopyAssign>, 42);
         CopyAssign::reset();
-        v2 = v1;
-        assert(v2.index() == 1);
-        assert(std::get<1>(v2).value == 42);
+        V& vref = (v1 = v2);
+        assert(&vref == &v1);
+        assert(v1.index() == 1);
+        assert(std::get<1>(v1).value == 42);
         assert(CopyAssign::copy_construct == 0);
         assert(CopyAssign::copy_assign == 1);
     }
@@ -232,20 +264,22 @@ void test_copy_assignment_different_index()
 {
     {
         using V = std::variant<int, long, unsigned>;
-        V v1(42l);
-        V v2(43);
-        v2 = v1;
-        assert(v2.index() == 1);
-        assert(std::get<1>(v2) == 42);
+        V v1(43);
+        V v2(42l);
+        V& vref = (v1 = v2);
+        assert(&vref == &v1);
+        assert(v1.index() == 1);
+        assert(std::get<1>(v1) == 42);
     }
     {
         using V = std::variant<int, CopyAssign, unsigned>;
-        V v1(std::in_place_type<CopyAssign>, 42);
-        V v2(std::in_place_type<unsigned>, 43);
+        V v1(std::in_place_type<unsigned>, 43);
+        V v2(std::in_place_type<CopyAssign>, 42);
         CopyAssign::reset();
-        v2 = v1;
-        assert(v2.index() == 1);
-        assert(std::get<1>(v2).value == 42);
+        V& vref = (v1 = v2);
+        assert(&vref == &v1);
+        assert(v1.index() == 1);
+        assert(std::get<1>(v1).value == 42);
         assert(CopyAssign::copy_construct == 1);
         assert(CopyAssign::copy_assign == 0);
     }
@@ -267,7 +301,8 @@ void test_copy_assignment_different_index()
         using V = std::variant<int, MET, std::string>;
         V v1(std::in_place_type<MET>);
         V v2(std::in_place_type<std::string>, "hello");
-        v1 = v2;
+        V& vref = (v1 = v2);
+        assert(&vref == &v1);
         assert(v1.index() == 2);
         assert(std::get<2>(v1) == "hello");
     }
@@ -282,4 +317,5 @@ int main()
     test_copy_assignment_same_index();
     test_copy_assignment_different_index();
     test_copy_assignment_sfinae();
+    test_copy_assignment_not_noexcept();
 }

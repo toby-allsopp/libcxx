@@ -532,6 +532,34 @@ public:
     _TailT __tail_;
 };
 
+template <class _VBase1, class _VBase2, class _AssignFn, class _CopyFn>
+void __do_base_assign(_VBase1& _LHS, _VBase2& _RHS, _AssignFn&& __afn, _CopyFn&& __cfn)
+{
+    if (_LHS.__which_ == variant_npos && _RHS.__which_ == variant_npos) {
+        // nothing to do
+      }
+      else if (_LHS.__which_ == _RHS.__which_) {
+#ifndef _LIBCPP_NO_EXCEPTIONS
+          try {
+#endif
+              _LHS.__imp_.__visit(_RHS.__imp_, __afn);
+#ifndef _LIBCPP_NO_EXCEPTIONS
+          } catch (...) {
+              _LHS.__imp_.__destroy();
+              _LHS.__which_ = variant_npos;
+              throw;
+          }
+#endif
+      } else {
+          _LHS.__which_ = variant_npos;
+          _LHS.__imp_.__destroy();
+          if (_RHS.__which_ != variant_npos) {
+            __cfn();
+            _LHS.__which_ = _RHS.__which_;
+          }
+      }
+}
+
 template <bool _HasTDtor, bool _HasTCopy, class ..._Types>
 class __variant_base {
     static_assert(_HasTCopy, "");
@@ -551,32 +579,19 @@ public:
   __variant_base(__variant_base&&) = default;
 
   __variant_base& operator=(__variant_base const& __v) {
-      if (__which_ == variant_npos && __v.__which_ == variant_npos) {
-        // nothing to do
-      }
-      else if (__which_ == __v.__which_) {
-#ifndef _LIBCPP_NO_EXCEPTIONS
-          try {
-#endif
-              __imp_.__visit(__v.__imp_,
-                [](auto& __my_head, auto& __other_head) {
-                    __my_head.__value_ = __other_head.__value_;
-                });
-#ifndef _LIBCPP_NO_EXCEPTIONS
-          } catch (...) {
-              __imp_.__destroy();
-              __which_ = variant_npos;
-              throw;
-          }
-#endif
-      } else {
-          __which_ = variant_npos;
-          __imp_.__destroy();
-          if (__v.__which_ != variant_npos) {
-            ::new((void*)&__imp_) _Imp(__v.__imp_);
-            __which_ = __v.__which_;
-          }
-      }
+      __do_base_assign(*this, __v,
+        [](auto& __my_head, auto& __other_head) { __my_head.__value_ = __other_head.__value_; },
+        [&]() { ::new((void*)&__imp_) _Imp(__v.__imp_); });
+     return *this;
+  }
+
+  __variant_base& operator=(__variant_base&& __v)
+    noexcept(__all<is_nothrow_move_constructible_v<_Types>...,
+                   is_nothrow_move_assignable_v<_Types>...>::value)
+  {
+      __do_base_assign(*this, __v,
+        [](auto& __my_head, auto& __other_head) { __my_head.__value_ = _VSTD::move(__other_head.__value_); },
+        [&]() { ::new((void*)&__imp_) _Imp(_VSTD::move(__v.__imp_)); });
      return *this;
   }
 };
@@ -604,6 +619,13 @@ public:
       });
   }
 
+  void __move_construct(__variant_base& __v) {
+      __imp_.__visit(__v.__imp_, [](auto& __my_head, auto& __other_head) {
+        using _HeadT = remove_reference_t<decltype(__my_head)>;
+        ::new ((void*)&__my_head) _HeadT(_VSTD::move(__other_head));
+      });
+  }
+
   __variant_base(__variant_base const& __v)
       : __imp_(__variant_end_tag{}), __which_(__v.__which_)
   {
@@ -614,39 +636,22 @@ public:
         noexcept(__all<is_nothrow_move_constructible<_Types>::value...>::value)
     : __imp_(__variant_end_tag{}), __which_(__v.__which_)
   {
-      __imp_.__visit(__v.__imp_, [](auto& __my_head, auto& __other_head) {
-        using _HeadT = remove_reference_t<decltype(__my_head)>;
-        ::new ((void*)&__my_head) _HeadT(_VSTD::move(__other_head));
-      });
+      __move_construct(__v);
+  }
+__variant_base& operator=(__variant_base const& __v) {
+      __do_base_assign(*this, __v,
+        [](auto& __my_head, auto& __other_head) { __my_head.__value_ = __other_head.__value_; },
+        [&]() { __copy_construct(__v); });
+     return *this;
   }
 
-  __variant_base& operator=(__variant_base const& __v) {
-      if (__which_ == variant_npos && __v.__which_ == variant_npos) {
-        // nothing to do
-      }
-      else if (__which_ == __v.__which_) {
-#ifndef _LIBCPP_NO_EXCEPTIONS
-          try {
-#endif
-              __imp_.__visit(__v.__imp_,
-                [](auto& __my_head, auto& __other_head) {
-                    __my_head.__value_ = __other_head.__value_;
-                });
-#ifndef _LIBCPP_NO_EXCEPTIONS
-          } catch (...) {
-              __imp_.__destroy();
-              __which_ = variant_npos;
-              throw;
-          }
-#endif
-      } else {
-          __which_ = variant_npos;
-          __imp_.__destroy();
-          if (__v.__which_ != variant_npos) {
-            __copy_construct(__v);
-            __which_ = __v.__which_;
-          }
-      }
+  __variant_base& operator=(__variant_base&& __v)
+    noexcept(__all<is_nothrow_move_constructible_v<_Types>...,
+                   is_nothrow_move_assignable_v<_Types>...>::value)
+  {
+      __do_base_assign(*this, __v,
+        [](auto& __my_head, auto& __other_head) { __my_head.__value_ = _VSTD::move(__other_head.__value_); },
+        [&]() { __move_construct(__v); });
      return *this;
   }
 };
