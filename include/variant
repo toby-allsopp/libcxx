@@ -559,7 +559,9 @@ public:
       });
   }
 
-  __variant_base(__variant_base&& __v) : __imp_(__variant_end_tag{}){
+  __variant_base(__variant_base&& __v)
+        noexcept(__all<is_nothrow_move_constructible<_Types>::value...>::value)
+    : __imp_(__variant_end_tag{}){
       __imp_.__visit(__v.__imp_, [](auto& __my_head, auto& __other_head) {
         using _HeadT = remove_reference_t<decltype(__my_head)>;
         ::new ((void*)&__my_head) _HeadT(_VSTD::move(__other_head));
@@ -593,6 +595,55 @@ public:
   }
 };
 
+template <bool _CanCopy, bool _CanMove>
+struct __variant_ctor_sfinae_base {
+  __variant_ctor_sfinae_base() = default;
+  __variant_ctor_sfinae_base(__variant_ctor_sfinae_base const&) = default;
+  __variant_ctor_sfinae_base(__variant_ctor_sfinae_base &&) = default;
+};
+
+template <>
+struct __variant_ctor_sfinae_base<false, true> {
+  __variant_ctor_sfinae_base() = default;
+  __variant_ctor_sfinae_base(__variant_ctor_sfinae_base const&) = delete;
+  __variant_ctor_sfinae_base(__variant_ctor_sfinae_base &&) = default;
+};
+
+template <>
+struct __variant_ctor_sfinae_base<false, false> {
+  __variant_ctor_sfinae_base() = default;
+  __variant_ctor_sfinae_base(__variant_ctor_sfinae_base const&) = delete;
+  __variant_ctor_sfinae_base(__variant_ctor_sfinae_base &&) = delete;
+};
+
+
+template <bool _CanCopy, bool _CanMove>
+struct __variant_assign_sfinae_base {
+  __variant_assign_sfinae_base() = default;
+  __variant_assign_sfinae_base(__variant_assign_sfinae_base const&) = default;
+  __variant_assign_sfinae_base(__variant_assign_sfinae_base &&) = default;
+  __variant_assign_sfinae_base& operator=(__variant_assign_sfinae_base const&) = default;
+  __variant_assign_sfinae_base& operator=(__variant_assign_sfinae_base &&) = default;
+};
+
+template <>
+struct __variant_assign_sfinae_base<false, true> {
+  __variant_assign_sfinae_base() = default;
+  __variant_assign_sfinae_base(__variant_assign_sfinae_base const&) = default;
+  __variant_assign_sfinae_base(__variant_assign_sfinae_base &&) = default;
+  __variant_assign_sfinae_base& operator=(__variant_assign_sfinae_base const&) = delete;
+  __variant_assign_sfinae_base& operator=(__variant_assign_sfinae_base &&) = default;
+};
+
+template <>
+struct __variant_assign_sfinae_base<false, false> {
+  __variant_assign_sfinae_base() = default;
+  __variant_assign_sfinae_base(__variant_assign_sfinae_base const&) = default;
+  __variant_assign_sfinae_base(__variant_assign_sfinae_base &&) = default;
+  __variant_assign_sfinae_base& operator=(__variant_assign_sfinae_base const&) = delete;
+  __variant_assign_sfinae_base& operator=(__variant_assign_sfinae_base &&) = delete;
+};
+
 
 template <>
 class _LIBCPP_TYPE_VIS_ONLY variant<> {
@@ -600,7 +651,16 @@ class _LIBCPP_TYPE_VIS_ONLY variant<> {
 };
 
 template <class... _Types>
-class _LIBCPP_TYPE_VIS_ONLY variant {
+class _LIBCPP_TYPE_VIS_ONLY variant :
+    __variant_ctor_sfinae_base<
+        __all<is_copy_constructible<_Types>::value...>::value,
+        __all<is_move_constructible<_Types>::value...>::value
+    >,
+    __variant_assign_sfinae_base<
+        __all<is_copy_assignable<_Types>::value...>::value,
+        __all<is_move_assignable<_Types>::value...>::value
+    >
+{
     using _IsTrivD = __all<is_trivially_destructible<_Types>::value...>;
     using _IsTrivCC= __all<is_trivially_copy_constructible<_Types>::value...>;
     using _Base = __variant_base<_IsTrivD::value, _IsTrivCC::value, _Types...>;
@@ -650,6 +710,9 @@ public:
     >
     constexpr variant() noexcept(is_nothrow_default_constructible<_First>::value)
         : __base_(__variant_inplace_tag{}, in_place_index<0>) {}
+
+    variant(variant const&) = default;
+    variant(variant&&) = default;
 
     template <class _Tp,
               class = enable_if_t<_CheckUnaryCtor<_Tp>::template __can_construct<_Tp>()>>
@@ -734,11 +797,11 @@ public:
     ~variant() = default;
 
     // ?.3.3, Assignment
-    //variant& operator=(const variant&);
-    //variant& operator=(variant&&) /* TODO noexcept(see below) */;
-    
+    variant& operator=(const variant&) = default;
+    variant& operator=(variant&&) = default;
+
     //template <class _Tp> variant& operator=(_Tp&&) /* TODO noexcept(see below) */;
-    
+
     // ?.3.4, Modifiers
     template <class _Tp, class... _Args> void emplace(_Args&&...);
     template <class _Tp, class _Up, class... _Args>

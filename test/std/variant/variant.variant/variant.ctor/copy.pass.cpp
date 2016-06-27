@@ -30,7 +30,42 @@ struct NonT {
 };
 static_assert(!std::is_trivially_copy_constructible<NonT>::value, "");
 
-void test_default_ctor_basic()
+
+struct NoCopy {
+  NoCopy(NoCopy const&) = delete;
+};
+
+struct MoveOnly {
+  MoveOnly(MoveOnly const&) = delete;
+  MoveOnly(MoveOnly&&) = default;
+};
+
+
+struct MoveOnlyNT {
+  MoveOnlyNT(MoveOnlyNT const&) = delete;
+  MoveOnlyNT(MoveOnlyNT&&) {}
+};
+
+void test_copy_ctor_sfinae() {
+    {
+        using V = std::variant<int, long>;
+        static_assert(std::is_copy_constructible<V>::value, "");
+    }
+    {
+        using V = std::variant<int, NoCopy>;
+        static_assert(!std::is_copy_constructible<V>::value, "");
+    }
+    {
+        using V = std::variant<int, MoveOnly>;
+        static_assert(!std::is_copy_constructible<V>::value, "");
+    }
+    {
+        using V = std::variant<int, MoveOnlyNT>;
+        static_assert(!std::is_copy_constructible<V>::value, "");
+    }
+}
+
+void test_copy_ctor_basic()
 {
     {
         std::variant<int> v(std::in_place_index<0>, 42);
@@ -62,5 +97,6 @@ void test_default_ctor_basic()
 
 int main()
 {
-    test_default_ctor_basic();
+    test_copy_ctor_basic();
+    test_copy_ctor_sfinae();
 }
