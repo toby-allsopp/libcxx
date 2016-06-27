@@ -181,7 +181,7 @@ private:
         typename detail::Identity<LArgs>::type..., CtorAlloc const& alloc) {
         return alloc;
     }
-
+public:
     const TypeID* args_id;
     UsesAllocatorType constructor_called = UA_None;
     CtorAlloc allocator;
@@ -198,6 +198,10 @@ public:
 
     UsesAllocatorV1() : Base(&makeArgumentID<>()) {}
 
+    UsesAllocatorV1(UsesAllocatorV1 const&)
+        : Base(&makeArgumentID<UsesAllocatorV1 const&>()) {}
+    UsesAllocatorV1(UsesAllocatorV1 &&)
+        : Base(&makeArgumentID<UsesAllocatorV1 &&>()) {}
     // Non-Uses Allocator Ctor
     template <class ...Args, EnableIfB<sizeof...(Args) == Arity> = false>
     UsesAllocatorV1(Args&&... args) : Base(&makeArgumentID<Args&&...>()) {};
@@ -227,6 +231,10 @@ public:
     using CtorAlloc = typename Base::CtorAlloc;
 
     UsesAllocatorV2() : Base(&makeArgumentID<>()) {}
+    UsesAllocatorV2(UsesAllocatorV2 const&)
+        : Base(&makeArgumentID<UsesAllocatorV2 const&>()) {}
+    UsesAllocatorV2(UsesAllocatorV2 &&)
+        : Base(&makeArgumentID<UsesAllocatorV2 &&>()) {}
 
     // Non-Uses Allocator Ctor
     template <class ...Args, EnableIfB<sizeof...(Args) == Arity> = false>
@@ -249,6 +257,10 @@ public:
     using CtorAlloc = typename Base::CtorAlloc;
 
     UsesAllocatorV3() : Base(&makeArgumentID<>()) {}
+    UsesAllocatorV3(UsesAllocatorV3 const&)
+        : Base(&makeArgumentID<UsesAllocatorV3 const&>()) {}
+    UsesAllocatorV3(UsesAllocatorV3 &&)
+        : Base(&makeArgumentID<UsesAllocatorV3 &&>()) {}
 
     // Non-Uses Allocator Ctor
     template <class ...Args, EnableIfB<sizeof...(Args) == Arity> = false>
@@ -277,7 +289,10 @@ public:
     using CtorAlloc = typename Base::CtorAlloc;
 
     NotUsesAllocator() : Base(&makeArgumentID<>()) {}
-
+    NotUsesAllocator(NotUsesAllocator const&)
+        : Base(&makeArgumentID<NotUsesAllocator const&>()) {}
+    NotUsesAllocator(NotUsesAllocator &&)
+        : Base(&makeArgumentID<NotUsesAllocator &&>()) {}
     // Non-Uses Allocator Ctor
     template <class ...Args, EnableIfB<sizeof...(Args) == Arity> = false>
     NotUsesAllocator(Args&&... args) : Base(&makeArgumentID<Args&&...>()) {};

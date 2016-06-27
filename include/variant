@@ -395,7 +395,7 @@ union _LIBCPP_TYPE_VIS_ONLY __variant_union<true, _Idx, _T0, _TRest...> {
     __variant_union(__variant_alloc_tag __tag, in_place_index_t<0>,
                               _Alloc const& __a, _Args&&... __args)
         : __head_(__tag, __uses_alloc_ctor<_T0, _Alloc, _Args...>(),
-                  _VSTD::forward<_Args>(__args)...) {}
+                  __a, _VSTD::forward<_Args>(__args)...) {}
 
     template <size_t _OtherIdx, class ..._Args>
     constexpr __variant_union(__variant_inplace_tag __tag,
@@ -449,10 +449,24 @@ union _LIBCPP_TYPE_VIS_ONLY __variant_union<false, _Idx, _T0, _TRest...> {
                               _Args&&... __args)
         : __head_(__tag, _VSTD::forward<_Args>(__args)...) {}
 
+
+    template <class _Alloc, class ..._Args>
+    __variant_union(__variant_alloc_tag __tag, in_place_index_t<0>,
+                              _Alloc const& __a, _Args&&... __args)
+        : __head_(__tag, __uses_alloc_ctor<_T0, _Alloc, _Args...>(),
+                  __a, _VSTD::forward<_Args>(__args)...) {}
+
     template <size_t _OtherIdx, class ..._Args>
     constexpr __variant_union(__variant_inplace_tag __tag,
                               in_place_index_t<_OtherIdx>, _Args&&... __args)
         : __tail_(__tag, in_place_index<_OtherIdx - 1>, _VSTD::forward<_Args>(__args)...) {}
+
+
+    template <size_t _OtherIdx, class _Alloc, class ..._Args>
+    __variant_union(__variant_alloc_tag __tag, in_place_index_t<_OtherIdx>,
+                    _Alloc const& __a, _Args&&... __args)
+        : __tail_(__tag, in_place_index<_OtherIdx - 1>, __a, _VSTD::forward<_Args>(__args)...) {}
+
 
     template <class _Variant, class _Lambda>
     void __visit(_Variant& __other, _Lambda&& __fn) {
@@ -524,7 +538,7 @@ public:
   __variant_base(allocator_arg_t, _Alloc const& __a, __variant_base const& __v)
       : __imp_(__variant_end_tag{}), __which_(__v.__which_)
   {
-      __imp_.__visit(__v.__imp_, [&](auto& __my_head, auto& __other_head) {
+      __imp_.__visit(__v.__imp_, [&](auto& __my_head, auto const& __other_head) {
         using _HeadT = remove_reference_t<decltype(__my_head)>;
         using _T0 = typename _HeadT::element_type;
         ::new ((void*)&__my_head) _HeadT(
@@ -579,7 +593,7 @@ public:
   __variant_base(allocator_arg_t, _Alloc const& __a, __variant_base const& __v)
       : __imp_(__variant_end_tag{}), __which_(__v.__which_)
   {
-      __imp_.__visit(__v.__imp_, [&](auto& __my_head, auto& __other_head) {
+      __imp_.__visit(__v.__imp_, [&](auto& __my_head, auto const& __other_head) {
         using _HeadT = remove_reference_t<decltype(__my_head)>;
         using _T0 = typename _HeadT::element_type;
         ::new ((void*)&__my_head) _HeadT(

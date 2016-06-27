@@ -21,6 +21,7 @@
 #include <variant>
 #include <type_traits>
 #include <cassert>
+#include <iostream>
 
 #include "test_macros.h"
 #include "uses_alloc_types.hpp"
@@ -41,7 +42,6 @@ struct MoveOnly {
   MoveOnly(MoveOnly const&) = delete;
   MoveOnly(MoveOnly&&) = default;
 };
-
 
 struct MoveOnlyNT {
   MoveOnlyNT(MoveOnlyNT const&) = delete;
@@ -101,8 +101,72 @@ void test_copy_ctor_basic()
     }
 }
 
+
+void test_copy_ctor_uses_alloc()
+{
+    using A = std::allocator<void>;
+    using A2 = std::allocator<int>;
+    using UA1 = UsesAllocatorV1<A, 1>;
+    using UA2 = UsesAllocatorV2<A, 1>;
+    using UA3 = UsesAllocatorV3<A, 1>;
+    using NUA = NotUsesAllocator<A, 1>;
+    using V = std::variant<UA1, UA2, UA3, NUA>;
+    const A a;
+    const A2 a2;
+    static_assert(std::__uses_alloc_ctor<UA1, A, UA1 const&>::value == 1, "");
+    {
+        V v(std::in_place_index<0>);
+        V v2(std::allocator_arg, a, v);
+        assert(v2.index() == 0);
+        assert(checkConstruct<UA1 const&>(std::get<0>(v2), UA_AllocArg));
+    }
+    {
+        V v(std::in_place_index<0>);
+        V v2(std::allocator_arg, a2, v);
+        assert(v2.index() == 0);
+        assert(checkConstruct<UA1 const&>(std::get<0>(v2), UA_None));
+    }
+    {
+        V v(std::in_place_index<1>);
+        V v2(std::allocator_arg, a, v);
+        assert(v2.index() == 1);
+        assert(checkConstruct<UA2 const&>(std::get<1>(v2), UA_AllocLast));
+    }
+    {
+        V v(std::in_place_index<1>);
+        V v2(std::allocator_arg, a2, v);
+        assert(v2.index() == 1);
+        assert(checkConstruct<UA2 const&>(std::get<1>(v2), UA_None));
+    }
+    {
+        V v(std::in_place_index<2>);
+        V v2(std::allocator_arg, a, v);
+        assert(v2.index() == 2);
+        assert(checkConstruct<UA3 const&>(std::get<2>(v2), UA_AllocArg));
+    }
+    {
+        V v(std::in_place_index<2>);
+        V v2(std::allocator_arg, a2, v);
+        assert(v2.index() == 2);
+        assert(checkConstruct<UA3 const&>(std::get<2>(v2), UA_None));
+    }
+    {
+        V v(std::in_place_index<3>);
+        V v3(std::allocator_arg, a, v);
+        assert(v3.index() == 3);
+        assert(checkConstruct<NUA const&>(std::get<3>(v3), UA_None));
+    }
+    {
+        V v(std::in_place_index<3>);
+        V v3(std::allocator_arg, a2, v);
+        assert(v3.index() == 3);
+        assert(checkConstruct<NUA const&>(std::get<3>(v3), UA_None));
+    }
+}
+
 int main()
 {
     test_copy_ctor_basic();
+    test_copy_ctor_uses_alloc();
     test_copy_ctor_sfinae();
 }
