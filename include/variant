@@ -226,7 +226,7 @@ template <size_t _Idx, class... _Types>
 inline _LIBCPP_INLINE_VISIBILITY
 constexpr variant_alternative_t<_Idx, variant<_Types...>>&
 get(variant<_Types...>& __v) {
-    return __v.__imp_.__get(in_place_index<_Idx>);
+    return __v.__base_.__imp_.__get(in_place_index<_Idx>);
 }
 
 template <size_t _Idx, class... _Types>
@@ -234,14 +234,14 @@ inline _LIBCPP_INLINE_VISIBILITY
 constexpr variant_alternative_t<_Idx, variant<_Types...>>&&
 get(variant<_Types...>&& __v) {
     using _Tp = variant_alternative_t<_Idx, variant<_Types...>>;
-    return static_cast<_Tp&&>(__v.__imp_.__get(in_place_index<_Idx>));
+    return static_cast<_Tp&&>(__v.__base_.__imp_.__get(in_place_index<_Idx>));
 }
 
 template <size_t _Idx, class... _Types>
 inline _LIBCPP_INLINE_VISIBILITY
 constexpr variant_alternative_t<_Idx, variant<_Types...>> const&
 get(const variant<_Types...>& __v) {
-    return __v.__imp_.__get(in_place_index<_Idx>);
+    return __v.__base_.__imp_.__get(in_place_index<_Idx>);
 }
 
 template <size_t _Idx, class... _Types>
@@ -249,7 +249,7 @@ inline _LIBCPP_INLINE_VISIBILITY
 constexpr variant_alternative_t<_Idx, variant<_Types...>> const&&
 get(const variant<_Types...>&& __v) {
     using _Tp = variant_alternative_t<_Idx, variant<_Types...>>;
-    return static_cast<_Tp const&&>(__v.__imp_.__get(in_place_index<_Idx>));
+    return static_cast<_Tp const&&>(__v.__base_.__imp_.__get(in_place_index<_Idx>));
 }
 
 template <class _Tp, class... _Types>
@@ -373,15 +373,9 @@ struct __variant_element {
     _Tp __value_;
 };
 
-struct __variant_end_element {
-    constexpr __variant_end_element() : __which_(variant_npos) {}
-    size_t __which_;
-};
-
 template <bool _IsTriviallyDestructible, size_t _Idx, class ..._Types>
 union _LIBCPP_TYPE_VIS_ONLY __variant_union {
     static_assert(sizeof...(_Types) == 0, "Specialization is for an empty union");
-    __variant_end_element __head_;
 };
 
 template <size_t _Idx, class _T0,  class ..._TRest>
@@ -425,8 +419,9 @@ union _LIBCPP_TYPE_VIS_ONLY __variant_union<true, _Idx, _T0, _TRest...> {
 
     ~__variant_union() = default;
 public:
-    __variant_element<_Idx, _T0> __head_;
-    __variant_union<true, _Idx + 1, _TRest...> __tail_;
+        char __dummy_;
+        __variant_element<_Idx, _T0> __head_;
+        __variant_union<true, _Idx + 1, _TRest...> __tail_;
 };
 
 template <size_t _Idx, class _T0,  class ..._TRest>
@@ -461,16 +456,27 @@ union _LIBCPP_TYPE_VIS_ONLY __variant_union<false, _Idx, _T0, _TRest...> {
     { return __tail_.__get(in_place_index<_OIdx - 1>); }
 
     ~__variant_union() {
-        if (__head_.__which_ == _Idx) {
-            __head_.~__variant_element();
-        } else {
-            __tail_.~_TailT();
-        }
+        // TODO
     }
 
 public:
+
+    char __dummy_;
     __variant_element<_Idx, _T0> __head_;
     _TailT __tail_;
+};
+
+template <bool _HasTDtor, class ..._Types>
+struct __variant_base {
+  using _Imp = __variant_union<_HasTDtor, 0, _Types...>;
+  _Imp __imp_;
+  size_t __which_;
+
+  template <class _Tag, size_t _OtherIdx, class ..._Args>
+    constexpr __variant_base(_Tag __tag,
+                              in_place_index_t<_OtherIdx>, _Args&&... __args)
+        : __imp_(__tag, in_place_index<_OtherIdx>, _VSTD::forward<_Args>(__args)...),
+          __which_(_OtherIdx) {}
 };
 
 template <>
@@ -481,7 +487,7 @@ class _LIBCPP_TYPE_VIS_ONLY variant<> {
 template <class... _Types>
 class _LIBCPP_TYPE_VIS_ONLY variant {
     using _IsTriviallyDestructible = __all<is_trivially_destructible<_Types>::value...>;
-    using _Imp = __variant_union<_IsTriviallyDestructible::value, 0, _Types...>;
+    using _Base = __variant_base<_IsTriviallyDestructible::value, _Types...>;
     using _First = variant_alternative_t<0, variant<_Types...>>;
   
     template <size_t _Idx, class _Dummy = void>
@@ -520,14 +526,14 @@ class _LIBCPP_TYPE_VIS_ONLY variant {
 
     };
 public:
-    _Imp __imp_;
+    _Base __base_;
 public:
     // ?.3.1 Constructors
     template <bool _Dummy = true, class = enable_if_t<
         __dependent_type<is_default_constructible<_First>, _Dummy>::value>
     >
     constexpr variant() noexcept(is_nothrow_default_constructible<_First>::value)
-        : __imp_(__variant_inplace_tag{}, in_place_index<0>) {}
+        : __base_(__variant_inplace_tag{}, in_place_index<0>) {}
 
     variant(conditional_t<
             __all<is_copy_constructible<_Types>::value...>::value,
@@ -541,37 +547,37 @@ public:
     template <class _Tp,
               class = enable_if_t<_CheckUnaryCtor<_Tp>::template __can_construct<_Tp>()>>
     constexpr variant(_Tp&& __t) /* TODO noexcept(see below) */
-        : __imp_(__variant_inplace_tag{}, in_place_index<_CheckUnaryCtor<_Tp>::__index>, _VSTD::forward<_Tp>(__t)) {}
+        : __base_(__variant_inplace_tag{}, in_place_index<_CheckUnaryCtor<_Tp>::__index>, _VSTD::forward<_Tp>(__t)) {}
 
     template <class _Tp, class... _Args,
               class _Found = __find_exactly_one_unchecked<_Tp, _Types...>,
               class = enable_if_t<_CheckCtor<_Found::value>::template __can_construct<_Args...>()>>
     constexpr explicit variant(in_place_type_t<_Tp>, _Args&&... __args)
-        : __imp_(__variant_inplace_tag{}, in_place_index<_Found::value>, _VSTD::forward<_Args>(__args)...) {}
+        : __base_(__variant_inplace_tag{}, in_place_index<_Found::value>, _VSTD::forward<_Args>(__args)...) {}
 
     template <class _Tp, class _Up, class... _Args,
               class _Found = __find_exactly_one_unchecked<_Tp, _Types...>,
               class = enable_if_t<_CheckCtor<_Found::value>::template __can_construct<initializer_list<_Up>, _Args...>()>>
     constexpr explicit variant(in_place_type_t<_Tp>, initializer_list<_Up> __il, _Args&&... __args)
-        : __imp_(__variant_inplace_tag{}, in_place_index<_Found::value>, _VSTD::move(__il), _VSTD::forward<_Args>(__args)...) {}
+        : __base_(__variant_inplace_tag{}, in_place_index<_Found::value>, _VSTD::move(__il), _VSTD::forward<_Args>(__args)...) {}
 
     template <size_t _Idx, class... _Args,
               size_t _Found =  _Idx < sizeof...(_Types) ? _Idx : variant_npos,
               class = enable_if_t<_CheckCtor<_Found>::template __can_construct<_Args...>()>>
     constexpr explicit variant(in_place_index_t<_Idx> __i, _Args&&... __args)
-        : __imp_(__variant_inplace_tag{}, __i, _VSTD::forward<_Args>(__args)...) {}
+        : __base_(__variant_inplace_tag{}, __i, _VSTD::forward<_Args>(__args)...) {}
 
     template <size_t _Idx, class _Up, class... _Args,
               size_t _Found =  _Idx < sizeof...(_Types) ? _Idx : variant_npos,
               class = enable_if_t<_CheckCtor<_Found>::template __can_construct<initializer_list<_Up>, _Args...>()>>
     constexpr explicit variant(in_place_index_t<_Idx> __i, initializer_list<_Up> __il, _Args&&... __args)
-        : __imp_(__variant_inplace_tag{}, __i, _VSTD::move(__il), _VSTD::forward<_Args>(__args)...) {}
+        : __base_(__variant_inplace_tag{}, __i, _VSTD::move(__il), _VSTD::forward<_Args>(__args)...) {}
 
     // allocator-extended constructors
     template <class _Alloc, bool _Dummy = true, class = enable_if_t<
         __dependent_type<is_default_constructible<_First>, _Dummy>::value>>
     variant(allocator_arg_t, const _Alloc& __a)
-        : __imp_(__variant_alloc_tag{}, in_place_index<0>, __a) {}
+        : __base_(__variant_alloc_tag{}, in_place_index<0>, __a) {}
 
     template <class _Alloc>
     variant(allocator_arg_t, const _Alloc&, const variant&);
@@ -614,7 +620,7 @@ public:
 
     _LIBCPP_INLINE_VISIBILITY
     constexpr size_t index() const noexcept {
-        return __imp_.__head_.__which_;
+        return __base_.__which_;
     }
 
     // ?.3.6, Swap
