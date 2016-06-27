@@ -376,7 +376,7 @@ using __find_variant_overload = decltype(
 struct __union_access {
   template <size_t _Idx, class _VUnion,
             enable_if_t<_VUnion::__index == _Idx, bool> = true>
-  static constexpr auto __get(_VUnion& __v) -> decltype((__v.__head_)) {
+  static constexpr auto& __get(_VUnion& __v) {
     return __v.__head_;
   }
 
