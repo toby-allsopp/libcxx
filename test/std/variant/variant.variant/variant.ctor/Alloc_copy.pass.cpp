@@ -113,7 +113,6 @@ void test_copy_ctor_uses_alloc()
     using V = std::variant<UA1, UA2, UA3, NUA>;
     const A a;
     const A2 a2;
-    static_assert(std::__uses_alloc_ctor<UA1, A, UA1 const&>::value == 1, "");
     {
         V v(std::in_place_index<0>);
         V v2(std::allocator_arg, a, v);
