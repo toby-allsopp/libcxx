@@ -152,6 +152,17 @@ namespace std {
 #pragma GCC system_header
 #endif
 
+
+namespace std { // explicitly not using versioning namespace
+
+class _LIBCPP_EXCEPTION_ABI bad_variant_access : public exception{
+public:
+   bad_variant_access() noexcept : exception() {}
+   _LIBCPP_FUNC_VIS const char* what() const noexcept;
+};
+
+} // end namespace std
+
 _LIBCPP_BEGIN_NAMESPACE_STD
 
 template <class... _Types> class variant;
