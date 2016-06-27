@@ -995,34 +995,62 @@ get(const tuple<_Tp...>&& __t) _NOEXCEPT
 template <typename _T1, size_t _Idx, typename... _Args>
 struct __find_exactly_one_t_helper;
 
+template <typename _T1, size_t _Idx, typename... _Args>
+struct __find_exactly_one_t_helper_unchecked;
+
 // -- find exactly one
+template <typename _T1, size_t _Idx, typename... _Args>
+struct __find_exactly_one_t_asserter {
+    static constexpr size_t value = _Idx;
+//  Check the rest of the list to make sure there's only one
+    static_assert ( __find_exactly_one_t_helper<_T1, 0, _Args...>::value == -1, "type can only occur once in type list" );
+};
+
+
 template <typename _T1, size_t _Idx, typename... _Args>
 struct __find_exactly_one_t_checker {
     static constexpr size_t value = _Idx;
 //  Check the rest of the list to make sure there's only one
     static_assert ( __find_exactly_one_t_helper<_T1, 0, _Args...>::value == -1, "type can only occur once in type list" );
-    };
+};
 
 
 template <typename _T1, size_t _Idx>
 struct __find_exactly_one_t_helper <_T1, _Idx> {
     static constexpr size_t value = -1;
-    };
+};
 
 template <typename _T1, size_t _Idx, typename _Head, typename... _Args>
 struct __find_exactly_one_t_helper <_T1, _Idx, _Head, _Args...> {
     static constexpr size_t value =
         std::conditional<
             std::is_same<_T1, _Head>::value,
-            __find_exactly_one_t_checker<_T1, _Idx,   _Args...>,
+            __find_exactly_one_t_asserter<_T1, _Idx,   _Args...>,
             __find_exactly_one_t_helper <_T1, _Idx+1, _Args...>
         >::type::value;
     };
+
+
+template <typename _T1, size_t _Idx, typename _Head, typename... _Args>
+struct __find_exactly_one_t_helper_unchecked <_T1, _Idx, _Head, _Args...> {
+    static constexpr size_t value =
+        std::conditional<
+            std::is_same<_T1, _Head>::value,
+            __find_exactly_one_t_checker<_T1, _Idx,   _Args...>,
+            __find_exactly_one_t_helper <_T1, _Idx+1, _Args...>
+        >::type::value;
+};
 
 template <typename _T1, typename... _Args>
 struct __find_exactly_one_t {
     static constexpr size_t value = __find_exactly_one_t_helper<_T1, 0, _Args...>::value;
     static_assert ( value != -1, "type not found in type list" );
+};
+
+
+template <typename _T1, typename... _Args>
+struct __find_exactly_one_unchecked {
+    static constexpr size_t value = __find_exactly_one_t_helper_unchecked<_T1, 0, _Args...>::value;
 };
 
 template <class _T1, class... _Args>

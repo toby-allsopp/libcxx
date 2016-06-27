@@ -398,36 +398,132 @@ class _LIBCPP_TYPE_VIS_ONLY variant<> {
     // TODO(EricWF) WTF?
 };
 
+template <size_t _Idx, class _Type>
+struct __variant_overload {
+  using type = _Type;
+  static constexpr size_t value = _Idx;
+};
+
+template <size_t _Idx, class ..._Types>
+struct __variant_overloads_imp {
+  static_assert(sizeof...(_Types) == 0, "Wrong specialization selected");
+
+  static __variant_overload<_Idx, void> __fun(...);
+};
+
+template <size_t _Idx, class _T0, class... _TRest>
+struct __variant_overloads_imp<_Idx, _T0, _TRest...> : __variant_overloads_imp<_Idx + 1, _TRest...> {
+  using _BaseT = __variant_overloads_imp<_Idx + 1, _TRest...>;
+  static __variant_overload<_Idx, _T0> __fun(_T0);
+  using _BaseT::__fun;
+};
+
+template <class _Ovl, class ..._Types>
+struct __variant_overload_imp1;
+
+template <class _Tp, class ..._Types>
+struct __variant_overload_imp1<__variant_overload<variant_npos, _Tp>, _Types...> {
+  static constexpr size_t __index = variant_npos;
+  static constexpr bool __good = false;
+  using type = _Tp;
+};
+
+template <size_t _Idx, class _Tp, class ..._Types>
+struct __variant_overload_imp1<__variant_overload<_Idx, _Tp>, _Types...> {
+  static constexpr size_t __index = _Idx;
+  static constexpr bool __good = __find_exactly_one_unchecked<_Tp, _Types...>::value != variant_npos;
+  using type = _Tp;
+};
+
+
+
+template <class _Tp, class ..._Types>
+struct __find_variant_overload : __variant_overload_imp1<
+    decltype(__variant_overloads_imp<0, _Types...>::__fun(_VSTD::declval<_Tp>())),
+        _Types...> {};
+
 template <class... _Types>
 class _LIBCPP_TYPE_VIS_ONLY variant {
     using _IsTriviallyDestructible = __all<is_trivially_destructible<_Types>::value...>;
     using _Imp = __variant_union<_IsTriviallyDestructible::value, 0, _Types...>;
+    using _First = variant_alternative_t<0, variant<_Types...>>;
+  
+    template <size_t _Idx, class _Dummy = void>
+    struct _CheckCtor {
+      using _Tp = variant_alternative_t<_Idx, variant<_Types...>>;
+      template <class ..._Args>
+      static constexpr bool __can_construct() {
+          return is_constructible<_Tp, _Args...>::value;
+      }
+    };
+  
+    template <class _Dummy>
+    struct _CheckCtor<variant_npos, _Dummy> {
+      template <class ...>
+      static constexpr bool __can_construct() { return false; }
+    };
+
+    template <class _Arg, class _Found = __find_variant_overload<_Arg, _Types...>,
+              bool = is_same<decay_t<_Arg>, variant>::value>
+    struct _CheckUnaryCtor {
+      template <class ...>
+      static constexpr bool __can_construct() { return false; }
+    };
+
+    template <class _Arg, class _Found>
+    struct _CheckUnaryCtor<_Arg, _Found, false> {
+      static constexpr size_t __index = _Found::__index;
+
+      template <class _UArg>
+      static constexpr enable_if_t<_Found::__good, bool>
+      __can_construct() { return is_constructible<typename _Found::type, _UArg>::value;}
+
+      template <class _UArg>
+      static constexpr enable_if_t<!_Found::__good, bool>
+      __can_construct() { return false; }
+
+    };
 public:
     _Imp __imp_;
 public:
     // ?.3.1 Constructors
-    constexpr variant()
-        noexcept(is_nothrow_default_constructible<
-            variant_alternative_t<0, variant<_Types...>>>::value)
+    template <bool _Dummy = true, class = enable_if_t<
+        __dependent_type<is_default_constructible<_First>, _Dummy>::value>
+    >
+    constexpr variant() noexcept(is_nothrow_default_constructible<_First>::value)
         : __imp_(in_place_index<0>) {}
 
     variant(const variant&);
     variant(variant&&) /* TODO noexcept(see below) */;
 
-    template <class _Tp> constexpr variant(_Tp&&) /* TODO noexcept(see below) */;
+    template <class _Tp,
+              class = enable_if_t<_CheckUnaryCtor<_Tp>::template __can_construct<_Tp>()>>
+    constexpr variant(_Tp&& __t) /* TODO noexcept(see below) */
+        : __imp_(in_place_index<_CheckUnaryCtor<_Tp>::__index>, _VSTD::forward<_Tp>(__t)) {}
 
-    template <class _Tp, class... _Args>
-    constexpr explicit variant(in_place_type_t<_Tp>, _Args&&...);
+    template <class _Tp, class... _Args,
+              class _Found = __find_exactly_one_unchecked<_Tp, _Types...>,
+              class = enable_if_t<_CheckCtor<_Found::value>::template __can_construct<_Args...>()>>
+    constexpr explicit variant(in_place_type_t<_Tp>, _Args&&... __args)
+        : __imp_(in_place_index<_Found::value>, _VSTD::forward<_Args>(__args)...) {}
 
-    template <class _Tp, class _Up, class... _Args>
-    constexpr explicit variant(in_place_type_t<_Tp>, initializer_list<_Up>, _Args&&...);
+    template <class _Tp, class _Up, class... _Args,
+              class _Found = __find_exactly_one_unchecked<_Tp, _Types...>,
+              class = enable_if_t<_CheckCtor<_Found::value>::template __can_construct<initializer_list<_Up>, _Args...>()>>
+    constexpr explicit variant(in_place_type_t<_Tp>, initializer_list<_Up> __il, _Args&&... __args)
+        : __imp_(in_place_index<_Found::value>, _VSTD::move(__il), _VSTD::forward<_Args>(__args)...) {}
 
-    template <size_t _Idx, class... _Args>
+    template <size_t _Idx, class... _Args,
+              size_t _Found =  _Idx < sizeof...(_Types) ? _Idx : variant_npos,
+              class = enable_if_t<_CheckCtor<_Found>::template __can_construct<_Args...>()>>
     constexpr explicit variant(in_place_index_t<_Idx> __i, _Args&&... __args)
         : __imp_(__i, _VSTD::forward<_Args>(__args)...) {}
 
-    template <size_t _Idx, class _Up, class... _Args>
-    constexpr explicit variant(in_place_index_t<_Idx>, initializer_list<_Up>, _Args&&...);
+    template <size_t _Idx, class _Up, class... _Args,
+              size_t _Found =  _Idx < sizeof...(_Types) ? _Idx : variant_npos,
+              class = enable_if_t<_CheckCtor<_Found>::template __can_construct<initializer_list<_Up>, _Args...>()>>
+    constexpr explicit variant(in_place_index_t<_Idx> __i, initializer_list<_Up> __il, _Args&&... __args)
+        : __imp_(__i, _VSTD::move(__il), _VSTD::forward<_Args>(__args)...) {}
 
     // allocator-extended constructors
     template <class _Alloc>

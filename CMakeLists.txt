@@ -293,8 +293,8 @@ remove_flags(-DNDEBUG -UNDEBUG -D_DEBUG
 remove_flags(-Wno-pedantic -pedantic-errors -pedantic)
 
 # Required flags ==============================================================
-add_compile_flags_if_supported(-std=c++11)
-if (NOT MSVC AND NOT LIBCXX_SUPPORTS_STD_EQ_CXX11_FLAG)
+add_compile_flags_if_supported(-std=c++1z)
+if (NOT MSVC AND NOT LIBCXX_SUPPORTS_STD_EQ_CXX1Z_FLAG)
   message(FATAL_ERROR "C++11 is required but the compiler does not support -std=c++11")
 endif()
 
