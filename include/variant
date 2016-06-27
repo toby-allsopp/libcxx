@@ -299,52 +299,6 @@ struct _LIBCPP_TYPE_VIS_ONLY monostate {};
 template <class... _Types, class _Alloc>
 struct _LIBCPP_TYPE_VIS_ONLY uses_allocator<variant<_Types...>, _Alloc> : true_type {};
 
-
-template <size_t _Idx, class _Type>
-struct __variant_overload {
-  using type = _Type;
-  static constexpr size_t __index = _Idx;
-};
-
-template <class _Type>
-struct __variant_overload<variant_npos, _Type> {
-  using type = _Type;
-  static constexpr size_t __index = variant_npos;
-};
-
-template <bool _Enable, size_t _Idx, class ..._Types>
-struct __variant_overloads_imp {
-  static_assert(sizeof...(_Types) == 0, "Wrong specialization selected");
-  static __variant_overload<variant_npos, void> __fun();
-};
-
-template <size_t _Idx, class _T0, class... _TRest>
-struct __variant_overloads_imp<true, _Idx, _T0, _TRest...>
-    : __variant_overloads_imp<true, _Idx + 1, _TRest...> {
-  using _BaseT = __variant_overloads_imp<true, _Idx + 1, _TRest...>;
-  static __variant_overload<
-        __find_exactly_one_t_checker<_T0, _Idx, _TRest...>::value
-      , _T0>
-  __fun(_T0);
-  using _BaseT::__fun;
-};
-
-template <size_t _Idx, class ..._Types>
-struct __variant_overloads_imp<false, _Idx, _Types...> {
-
-};
-
-template <bool _Enable, class _Tp, class ..._Types>
-auto __find_variant_overload_imp(int)
-    -> decltype(__variant_overloads_imp<_Enable, 0, _Types...>::__fun(_VSTD::declval<_Tp>()));
-
-template <bool _Enable, class _Tp, class ..._Types>
-auto __find_variant_overload_imp(...)
-    -> decltype(__variant_overload<variant_npos, void>{});
-
-template <bool _Enable, class _Tp, class ..._Types>
-using __find_variant_overload = decltype(_VSTD::__find_variant_overload_imp<_Enable, _Tp, _Types...>(0));
-
 struct __variant_end_tag {};
 struct __variant_inplace_tag {};
 struct __variant_alloc_tag {};
@@ -376,292 +330,6 @@ struct __variant_element {
     _Tp __value_;
 };
 
-struct __variant_end_node {
-  size_t __which_ = variant_npos;
-};
-
-template <bool _IsTriviallyDestructible, size_t _Idx, class ..._Types>
-union _LIBCPP_TYPE_VIS_ONLY __variant_union {
-    template <class _Variant, class _Lambda>
-    void __visit(_Variant&, _Lambda&&) {}
-};
-
-
-template <size_t _Idx, class _T0,  class ..._TRest>
-union _LIBCPP_TYPE_VIS_ONLY __variant_union<true, _Idx, _T0, _TRest...> {
-    using _TailT = __variant_union<true, _Idx + 1, _TRest...>;
-    constexpr __variant_union(__variant_end_tag) : __end_() {}
-
-    template <class ..._Args>
-    constexpr __variant_union(__variant_inplace_tag __tag, in_place_index_t<0>,
-                              _Args&&... __args)
-        : __head_(__tag, _VSTD::forward<_Args>(__args)...) {}
-
-    template <class _Alloc, class ..._Args>
-    __variant_union(__variant_alloc_tag __tag, in_place_index_t<0>,
-                              _Alloc const& __a, _Args&&... __args)
-        : __head_(__tag, __uses_alloc_ctor<_T0, _Alloc, _Args...>(),
-                  __a, _VSTD::forward<_Args>(__args)...) {}
-
-    template <size_t _OtherIdx, class ..._Args>
-    constexpr __variant_union(__variant_inplace_tag __tag,
-                              in_place_index_t<_OtherIdx>, _Args&&... __args)
-        : __tail_(__tag, in_place_index<_OtherIdx - 1>, _VSTD::forward<_Args>(__args)...) {}
-
-    template <size_t _OtherIdx, class _Alloc, class ..._Args>
-    __variant_union(__variant_alloc_tag __tag, in_place_index_t<_OtherIdx>,
-                    _Alloc const& __a, _Args&&... __args)
-        : __tail_(__tag, in_place_index<_OtherIdx - 1>, __a, _VSTD::forward<_Args>(__args)...) {}
-
-    template <class _Variant, class _Lambda>
-    void __visit(_Variant& __other, _Lambda&& __fn) {
-        if (__other.__head_.__which_ == _Idx) {
-            __fn(__head_, __other.__head_);
-        } else {
-            __tail_.__visit(__other.__tail_, _VSTD::forward<_Lambda>(__fn));
-        }
-    }
-
-    constexpr _T0& __get(in_place_index_t<0>) noexcept
-    { return __head_.__value_; }
-
-    constexpr const _T0& __get(in_place_index_t<0>) const noexcept
-    { return __head_.__value_; }
-
-    template <size_t _OIdx, enable_if_t<_OIdx - 1 <= sizeof...(_TRest), bool> = true>
-    constexpr tuple_element_t<_OIdx - 1, __tuple_types<_TRest...>>&
-    __get(in_place_index_t<_OIdx>) noexcept
-    { return __tail_.__get(in_place_index<_OIdx - 1>); }
-
-    template <size_t _OIdx, enable_if_t<_OIdx - 1 <= sizeof...(_TRest), bool> = true>
-    constexpr tuple_element_t<_OIdx - 1, __tuple_types<_TRest...>> const &
-    __get(in_place_index_t<_OIdx>) const noexcept
-    { return __tail_.__get(in_place_index<_OIdx - 1>); }
-
-    void __destroy() {
-        if (__head_.__which_ == variant_npos)
-            return;
-        if (__head_.__which_ == _Idx)
-            __head_.~__variant_element();
-        else
-            __tail_.~_TailT();
-        ::new((void*)&__end_) __variant_end_node();
-    }
-
-    ~__variant_union() = default;
-public:
-        __variant_end_node __end_;
-        __variant_element<_Idx, _T0> __head_;
-        _TailT __tail_;
-};
-
-template <size_t _Idx, class _T0,  class ..._TRest>
-union _LIBCPP_TYPE_VIS_ONLY __variant_union<false, _Idx, _T0, _TRest...> {
-    using _TailT =  __variant_union<false, _Idx + 1, _TRest...>;
-
-    constexpr __variant_union(__variant_end_tag __t) : __end_() {}
-
-    template <class ..._Args>
-    constexpr __variant_union(__variant_inplace_tag __tag, in_place_index_t<0>,
-                              _Args&&... __args)
-        : __head_(__tag, _VSTD::forward<_Args>(__args)...) {}
-
-
-    template <class _Alloc, class ..._Args>
-    __variant_union(__variant_alloc_tag __tag, in_place_index_t<0>,
-                              _Alloc const& __a, _Args&&... __args)
-        : __head_(__tag, __uses_alloc_ctor<_T0, _Alloc, _Args...>(),
-                  __a, _VSTD::forward<_Args>(__args)...) {}
-
-    template <size_t _OtherIdx, class ..._Args>
-    constexpr __variant_union(__variant_inplace_tag __tag,
-                              in_place_index_t<_OtherIdx>, _Args&&... __args)
-        : __tail_(__tag, in_place_index<_OtherIdx - 1>, _VSTD::forward<_Args>(__args)...) {}
-
-
-    template <size_t _OtherIdx, class _Alloc, class ..._Args>
-    __variant_union(__variant_alloc_tag __tag, in_place_index_t<_OtherIdx>,
-                    _Alloc const& __a, _Args&&... __args)
-        : __tail_(__tag, in_place_index<_OtherIdx - 1>, __a, _VSTD::forward<_Args>(__args)...) {}
-
-
-    template <class _Variant, class _Lambda>
-    void __visit(_Variant& __other, _Lambda&& __fn) {
-        if (__other.__head_.__which_ == _Idx) {
-            __fn(__head_, __other.__head_);
-        } else {
-            __tail_.__visit(__other.__tail_, _VSTD::forward<_Lambda>(__fn));
-        }
-    }
-
-    constexpr _T0& __get(in_place_index_t<0>) noexcept
-    { return __head_.__value_; }
-
-    constexpr const _T0& __get(in_place_index_t<0>) const noexcept
-    { return __head_.__value_; }
-
-    template <size_t _OIdx, enable_if_t<_OIdx - 1 <= sizeof...(_TRest), bool> = true>
-    constexpr tuple_element_t<_OIdx - 1, __tuple_types<_TRest...>>&
-    __get(in_place_index_t<_OIdx>) noexcept
-    { return __tail_.__get(in_place_index<_OIdx - 1>); }
-
-    template <size_t _OIdx, enable_if_t<_OIdx - 1 <= sizeof...(_TRest), bool> = true>
-    constexpr tuple_element_t<_OIdx - 1, __tuple_types<_TRest...>> const &
-    __get(in_place_index_t<_OIdx>) const noexcept
-    { return __tail_.__get(in_place_index<_OIdx - 1>); }
-
-    void __destroy(bool __reconstruct = true) {
-        if (__head_.__which_ == variant_npos)
-            return;
-        if (__head_.__which_ == _Idx)
-            __head_.~__variant_element();
-        else
-            __tail_.~_TailT();
-        if (__reconstruct)
-            ::new((void*)&__end_) __variant_end_node();
-    }
-
-    ~__variant_union() {
-        __destroy(false);
-    }
-
-public:
-    __variant_end_node __end_;
-    __variant_element<_Idx, _T0> __head_;
-    _TailT __tail_;
-};
-
-template <class _VBase1, class _VBase2, class _AssignFn, class _CopyFn>
-inline _LIBCPP_INLINE_VISIBILITY
-void __do_base_assign(_VBase1& _LHS, _VBase2& _RHS, _AssignFn&& __afn, _CopyFn&& __cfn)
-{
-    if (_LHS.__which_ == variant_npos && _RHS.__which_ == variant_npos) {
-        //
-    } else if (_LHS.__which_ == _RHS.__which_) {
-        _LHS.__imp_.__visit(_RHS.__imp_, __afn);
-    }
-    else if (_RHS.__which_ == variant_npos) {
-        _LHS.__which_ = variant_npos;
-        _LHS.__imp_.__destroy();
-    } else {
-        __cfn();
-        _LHS.__which_ = _RHS.__which_;
-    }
-}
-
-template <bool _HasTDtor, bool _HasTCopy, class ..._Types>
-class __variant_base {
-    static_assert(_HasTCopy, "");
-public:
-  using _Imp = __variant_union<_HasTDtor, 0, _Types...>;
-  _Imp __imp_;
-  size_t __which_;
-
-  __variant_base(__variant_end_tag __tag, size_t __w = variant_npos)
-      : __imp_(__tag), __which_(__w)  {}
-
-  template <class _Tag, size_t _OtherIdx, class ..._Args>
-  constexpr __variant_base(_Tag __tag, in_place_index_t<_OtherIdx>, _Args&&... __args)
-        : __imp_(__tag, in_place_index<_OtherIdx>, _VSTD::forward<_Args>(__args)...), __which_(_OtherIdx) {}
-
-  __variant_base(__variant_base const&) = default;
-  __variant_base(__variant_base&&) = default;
-
-  __variant_base& operator=(__variant_base const& __v) {
-      __do_base_assign(*this, __v,
-        [](auto& __my_head, auto& __other_head) { __my_head.__value_ = __other_head.__value_; },
-        [&]() {
-          __variant_base __tmp(__v);
-          __which_ = variant_npos;
-          __imp_.__destroy();
-          ::new((void*)&__imp_) _Imp(_VSTD::move(__tmp.__imp_));
-          __which_ = __tmp.__which_;
-        });
-     return *this;
-  }
-
-  __variant_base& operator=(__variant_base&& __v)
-    noexcept(__all<is_nothrow_move_constructible_v<_Types>...,
-                   is_nothrow_move_assignable_v<_Types>...>::value)
-  {
-      __do_base_assign(*this, __v,
-        [](auto& __my_head, auto& __other_head) { __my_head.__value_ = _VSTD::move(__other_head.__value_); },
-        [&]() {
-          __which_ = variant_npos;
-          __imp_.__destroy();
-          ::new((void*)&__imp_) _Imp(_VSTD::move(__v.__imp_));
-          __which_ = __v.__which_;
-        });
-     return *this;
-  }
-};
-
-
-template <bool _HasTDtor, class ..._Types>
-class __variant_base<_HasTDtor, false, _Types...> {
-public:
-  using _Imp = __variant_union<_HasTDtor, 0, _Types...>;
-  _Imp __imp_;
-  size_t __which_;
-
-  __variant_base(__variant_end_tag __tag)
-      : __imp_(__tag), __which_(variant_npos)  {}
-
-  template <class _Tag, size_t _OtherIdx, class ..._Args>
-  constexpr __variant_base(_Tag __tag, in_place_index_t<_OtherIdx>, _Args&&... __args)
-        : __imp_(__tag, in_place_index<_OtherIdx>, _VSTD::forward<_Args>(__args)...),
-          __which_(_OtherIdx) {}
-
-  void __move_construct(__variant_base& __v) {
-      __imp_.__visit(__v.__imp_, [&](auto& __my_head, auto& __other_head) {
-        using _HeadT = remove_reference_t<decltype(__my_head)>;
-        ::new ((void*)&__my_head) _HeadT(_VSTD::move(__other_head));
-        __which_ = __other_head.__which_;
-      });
-  }
-
-  __variant_base(__variant_base const& __v)
-      : __imp_(__variant_end_tag{}), __which_(variant_npos)
-  {
-      __imp_.__visit(__v.__imp_, [&](auto& __my_head, auto& __other_head) {
-        using _HeadT = remove_reference_t<decltype(__my_head)>;
-        ::new ((void*)&__my_head) _HeadT(__other_head);
-        __which_ = __other_head.__which_;
-      });
-  }
-
-  __variant_base(__variant_base&& __v)
-        noexcept(__all<is_nothrow_move_constructible<_Types>::value...>::value)
-    : __imp_(__variant_end_tag{}), __which_(__v.__which_)
-  {
-      __move_construct(__v);
-  }
-__variant_base& operator=(__variant_base const& __v) {
-      __do_base_assign(*this, __v,
-        [](auto& __my_head, auto& __other_head) { __my_head.__value_ = __other_head.__value_; },
-        [&]() {
-          __variant_base __tmp(__v);
-          __which_ = variant_npos;
-          __imp_.__destroy();
-          __move_construct(__tmp);
-        });
-     return *this;
-  }
-
-  __variant_base& operator=(__variant_base&& __v)
-    noexcept(__all<is_nothrow_move_constructible_v<_Types>...,
-                   is_nothrow_move_assignable_v<_Types>...>::value)
-  {
-      __do_base_assign(*this, __v,
-        [](auto& __my_head, auto& __other_head) { __my_head.__value_ = _VSTD::move(__other_head.__value_); },
-        [&]() {
-          __which_ = variant_npos;
-          __imp_.__destroy();
-          __move_construct(__v);
-        });
-     return *this;
-  }
-};
 
 namespace __variant_detail {
 
@@ -769,7 +437,326 @@ struct _CheckCtorImp<variant_npos, _PossibleTp> {
   static constexpr bool __can_assign() { return false; }
 };
 
+
+template <size_t _Idx, class _Type>
+struct __variant_overload {
+  using type = _Type;
+  static constexpr size_t __index = _Idx;
+};
+
+template <class _Type>
+struct __variant_overload<variant_npos, _Type> {
+  using type = _Type;
+  static constexpr size_t __index = variant_npos;
+};
+
+template <bool _Enable, size_t _Idx, class ..._Types>
+struct __variant_overloads_imp {
+  static_assert(sizeof...(_Types) == 0, "Wrong specialization selected");
+  static __variant_overload<variant_npos, void> __fun();
+};
+
+template <size_t _Idx, class _T0, class... _TRest>
+struct __variant_overloads_imp<true, _Idx, _T0, _TRest...>
+    : __variant_overloads_imp<true, _Idx + 1, _TRest...> {
+  using _BaseT = __variant_overloads_imp<true, _Idx + 1, _TRest...>;
+  static __variant_overload<
+        __find_exactly_one_t_checker<_T0, _Idx, _TRest...>::value
+      , _T0>
+  __fun(_T0);
+  using _BaseT::__fun;
+};
+
+template <size_t _Idx, class ..._Types>
+struct __variant_overloads_imp<false, _Idx, _Types...> { };
+
+template <bool _Enable, class _Tp, class ..._Types>
+auto __find_variant_overload_imp(int)
+    -> decltype(__variant_overloads_imp<_Enable, 0, _Types...>::__fun(_VSTD::declval<_Tp>()));
+
+template <bool _Enable, class _Tp, class ..._Types>
+auto __find_variant_overload_imp(...)
+    -> decltype(__variant_overload<variant_npos, void>{});
+
+template <bool _Enable, class _Tp, class ..._Types>
+using __find_variant_overload = decltype(
+    __variant_detail::__find_variant_overload_imp<_Enable, _Tp, _Types...>(0));
+
+
+template <class _VBase1, class _VBase2, class _AssignFn, class _CopyFn>
+inline _LIBCPP_INLINE_VISIBILITY
+void __do_base_assign(_VBase1& _LHS, _VBase2& _RHS, _AssignFn&& __afn, _CopyFn&& __cfn)
+{
+    if (_LHS.__which_ == variant_npos && _RHS.__which_ == variant_npos) {
+        //
+    } else if (_LHS.__which_ == _RHS.__which_) {
+        _LHS.__imp_.__visit(_RHS.__imp_, __afn);
+    }
+    else if (_RHS.__which_ == variant_npos) {
+        _LHS.__which_ = variant_npos;
+        _LHS.__imp_.__destroy();
+    } else {
+        __cfn();
+        _LHS.__which_ = _RHS.__which_;
+    }
+}
+
 } // namespace __variant_detail
+
+struct __variant_end_node {
+  size_t __which_ = variant_npos;
+};
+
+template <bool _IsTriviallyDestructible, size_t _Idx, class ..._Types>
+union _LIBCPP_TYPE_VIS_ONLY __variant_union {
+    template <class _Variant, class _Lambda>
+    void __visit(_Variant&, _Lambda&&) {}
+};
+
+template <size_t _Idx, class _T0,  class ..._TRest>
+union _LIBCPP_TYPE_VIS_ONLY __variant_union<true, _Idx, _T0, _TRest...> {
+    using _TailT = __variant_union<true, _Idx + 1, _TRest...>;
+    constexpr __variant_union(__variant_end_tag) : __end_() {}
+
+    template <class ..._Args>
+    constexpr __variant_union(__variant_inplace_tag __tag, in_place_index_t<0>,
+                              _Args&&... __args)
+        : __head_(__tag, _VSTD::forward<_Args>(__args)...) {}
+
+    template <class _Alloc, class ..._Args>
+    __variant_union(__variant_alloc_tag __tag, in_place_index_t<0>,
+                              _Alloc const& __a, _Args&&... __args)
+        : __head_(__tag, __uses_alloc_ctor<_T0, _Alloc, _Args...>(),
+                  __a, _VSTD::forward<_Args>(__args)...) {}
+
+    template <class _Tag, size_t _OtherIdx, class ..._Args>
+    constexpr __variant_union(_Tag __tag, in_place_index_t<_OtherIdx>,
+                              _Args&&... __args)
+        : __tail_(__tag, in_place_index<_OtherIdx - 1>,
+                  _VSTD::forward<_Args>(__args)...) {}
+
+    constexpr _T0& __get(in_place_index_t<0>) noexcept
+    { return __head_.__value_; }
+
+    constexpr const _T0& __get(in_place_index_t<0>) const noexcept
+    { return __head_.__value_; }
+
+    template <size_t _OIdx, enable_if_t<_OIdx - 1 <= sizeof...(_TRest), bool> = true>
+    constexpr tuple_element_t<_OIdx - 1, __tuple_types<_TRest...>>&
+    __get(in_place_index_t<_OIdx>) noexcept
+    { return __tail_.__get(in_place_index<_OIdx - 1>); }
+
+    template <size_t _OIdx, enable_if_t<_OIdx - 1 <= sizeof...(_TRest), bool> = true>
+    constexpr tuple_element_t<_OIdx - 1, __tuple_types<_TRest...>> const &
+    __get(in_place_index_t<_OIdx>) const noexcept
+    { return __tail_.__get(in_place_index<_OIdx - 1>); }
+
+    template <class _Variant, class _Lambda>
+    void __visit(_Variant& __other, _Lambda&& __fn) {
+        if (__other.__head_.__which_ == _Idx) {
+            __fn(__head_, __other.__head_);
+        } else {
+            __tail_.__visit(__other.__tail_, _VSTD::forward<_Lambda>(__fn));
+        }
+    }
+
+    void __destroy() {
+        if (__head_.__which_ == variant_npos)
+            return;
+        if (__head_.__which_ == _Idx)
+            __head_.~__variant_element();
+        else
+            __tail_.~_TailT();
+        ::new((void*)&__end_) __variant_end_node();
+    }
+
+    ~__variant_union() = default;
+
+public:
+    __variant_end_node __end_;
+    __variant_element<_Idx, _T0> __head_;
+    _TailT __tail_;
+};
+
+template <size_t _Idx, class _T0,  class ..._TRest>
+union _LIBCPP_TYPE_VIS_ONLY __variant_union<false, _Idx, _T0, _TRest...> {
+    using _TailT =  __variant_union<false, _Idx + 1, _TRest...>;
+
+    constexpr __variant_union(__variant_end_tag __t) : __end_() {}
+
+    template <class ..._Args>
+    constexpr __variant_union(__variant_inplace_tag __tag, in_place_index_t<0>,
+                              _Args&&... __args)
+        : __head_(__tag, _VSTD::forward<_Args>(__args)...) {}
+
+    template <class _Alloc, class ..._Args>
+    __variant_union(__variant_alloc_tag __tag, in_place_index_t<0>,
+                              _Alloc const& __a, _Args&&... __args)
+        : __head_(__tag, __uses_alloc_ctor<_T0, _Alloc, _Args...>(),
+                  __a, _VSTD::forward<_Args>(__args)...) {}
+
+    template <class _Tag, size_t _OtherIdx, class ..._Args>
+    constexpr __variant_union(_Tag __tag, in_place_index_t<_OtherIdx>,
+                              _Args&&... __args)
+        : __tail_(__tag, in_place_index<_OtherIdx - 1>,
+                  _VSTD::forward<_Args>(__args)...) {}
+
+    constexpr _T0& __get(in_place_index_t<0>) noexcept
+    { return __head_.__value_; }
+
+    constexpr const _T0& __get(in_place_index_t<0>) const noexcept
+    { return __head_.__value_; }
+
+    template <size_t _OIdx, enable_if_t<_OIdx - 1 <= sizeof...(_TRest), bool> = true>
+    constexpr tuple_element_t<_OIdx - 1, __tuple_types<_TRest...>>&
+    __get(in_place_index_t<_OIdx>) noexcept
+    { return __tail_.__get(in_place_index<_OIdx - 1>); }
+
+    template <size_t _OIdx, enable_if_t<_OIdx - 1 <= sizeof...(_TRest), bool> = true>
+    constexpr tuple_element_t<_OIdx - 1, __tuple_types<_TRest...>> const &
+    __get(in_place_index_t<_OIdx>) const noexcept
+    { return __tail_.__get(in_place_index<_OIdx - 1>); }
+
+    template <class _Variant, class _Lambda>
+    void __visit(_Variant& __other, _Lambda&& __fn) {
+        if (__other.__head_.__which_ == _Idx) {
+            __fn(__head_, __other.__head_);
+        } else {
+            __tail_.__visit(__other.__tail_, _VSTD::forward<_Lambda>(__fn));
+        }
+    }
+
+    void __destroy(bool __reconstruct = true) {
+        if (__head_.__which_ == variant_npos)
+            return;
+        if (__head_.__which_ == _Idx)
+            __head_.~__variant_element();
+        else
+            __tail_.~_TailT();
+        if (__reconstruct)
+            ::new((void*)&__end_) __variant_end_node();
+    }
+
+    ~__variant_union() { __destroy(false); }
+
+public:
+    __variant_end_node __end_;
+    __variant_element<_Idx, _T0> __head_;
+    _TailT __tail_;
+};
+
+
+template <bool _HasTDtor, bool _HasTCopy, class ..._Types>
+class __variant_base {
+    static_assert(_HasTCopy, "");
+public:
+  using _Imp = __variant_union<_HasTDtor, 0, _Types...>;
+  _Imp __imp_;
+  size_t __which_ = variant_npos;
+
+  __variant_base(__variant_end_tag __tag) : __imp_(__tag)  {}
+
+  template <class _Tag, size_t _OtherIdx, class ..._Args>
+  constexpr __variant_base(_Tag __tag, in_place_index_t<_OtherIdx>, _Args&&... __args)
+        : __imp_(__tag, in_place_index<_OtherIdx>, _VSTD::forward<_Args>(__args)...),
+          __which_(_OtherIdx) {}
+
+  __variant_base(__variant_base const&) = default;
+  __variant_base(__variant_base&&) = default;
+
+  __variant_base& operator=(__variant_base const& __v) {
+      __variant_detail::__do_base_assign(*this, __v,
+        [](auto& __my_head, auto& __other_head) { __my_head.__value_ = __other_head.__value_; },
+        [&]() {
+          __variant_base __tmp(__v);
+          __which_ = variant_npos;
+          __imp_.__destroy();
+          ::new((void*)&__imp_) _Imp(_VSTD::move(__tmp.__imp_));
+          __which_ = __tmp.__which_;
+        });
+     return *this;
+  }
+
+  __variant_base& operator=(__variant_base&& __v)
+    noexcept(__all<is_nothrow_move_constructible_v<_Types>...,
+                   is_nothrow_move_assignable_v<_Types>...>::value)
+  {
+      __variant_detail::__do_base_assign(*this, __v,
+        [](auto& __my_head, auto& __other_head) { __my_head.__value_ = _VSTD::move(__other_head.__value_); },
+        [&]() {
+          __which_ = variant_npos;
+          __imp_.__destroy();
+          ::new((void*)&__imp_) _Imp(_VSTD::move(__v.__imp_));
+          __which_ = __v.__which_;
+        });
+     return *this;
+  }
+};
+
+template <bool _HasTDtor, class ..._Types>
+class __variant_base<_HasTDtor, false, _Types...> {
+public:
+  using _Imp = __variant_union<_HasTDtor, 0, _Types...>;
+  _Imp __imp_;
+  size_t __which_ = variant_npos;
+
+  __variant_base(__variant_end_tag __tag) : __imp_(__tag) {}
+
+  template <class _Tag, size_t _OtherIdx, class ..._Args>
+  constexpr __variant_base(_Tag __tag, in_place_index_t<_OtherIdx>,
+                           _Args&&... __args)
+        : __imp_(__tag, in_place_index<_OtherIdx>, _VSTD::forward<_Args>(__args)...),
+          __which_(_OtherIdx) {}
+
+  void __move_construct(__variant_base& __v) {
+      __imp_.__visit(__v.__imp_, [&](auto& __my_head, auto& __other_head) {
+        using _HeadT = remove_reference_t<decltype(__my_head)>;
+        ::new ((void*)&__my_head) _HeadT(_VSTD::move(__other_head));
+        __which_ = __other_head.__which_;
+      });
+  }
+
+  __variant_base(__variant_base const& __v) : __imp_(__variant_end_tag{})
+  {
+      __imp_.__visit(__v.__imp_, [&](auto& __my_head, auto& __other_head) {
+        using _HeadT = remove_reference_t<decltype(__my_head)>;
+        ::new ((void*)&__my_head) _HeadT(__other_head);
+        __which_ = __other_head.__which_;
+      });
+  }
+
+  __variant_base(__variant_base&& __v)
+        noexcept(__all<is_nothrow_move_constructible<_Types>::value...>::value)
+    : __imp_(__variant_end_tag{})
+  {
+      __move_construct(__v);
+  }
+  __variant_base& operator=(__variant_base const& __v) {
+    __variant_detail::__do_base_assign(*this, __v,
+        [](auto& __my_head, auto& __other_head) { __my_head.__value_ = __other_head.__value_; },
+        [&]() {
+          __variant_base __tmp(__v);
+          __which_ = variant_npos;
+          __imp_.__destroy();
+          __move_construct(__tmp);
+        });
+     return *this;
+  }
+
+  __variant_base& operator=(__variant_base&& __v)
+    noexcept(__all<is_nothrow_move_constructible_v<_Types>...,
+                   is_nothrow_move_assignable_v<_Types>...>::value)
+  {
+      __variant_detail::__do_base_assign(*this, __v,
+        [](auto& __my_head, auto& __other_head) { __my_head.__value_ = _VSTD::move(__other_head.__value_); },
+        [&]() {
+          __which_ = variant_npos;
+          __imp_.__destroy();
+          __move_construct(__v);
+        });
+     return *this;
+  }
+};
 
 template <>
 class _LIBCPP_TYPE_VIS_ONLY variant<> {
@@ -805,7 +792,7 @@ class _LIBCPP_TYPE_VIS_ONLY variant
     using _EnableCtorTp = enable_if_t<_CheckCtorTp<_Tp>::template __can_construct<_Args...>()>;
 
     template <class _Arg,
-              class _Found = __find_variant_overload<
+              class _Found = __variant_detail::__find_variant_overload<
                   !is_same<decay_t<_Arg>, variant>::value, _Arg, _Types...>>
     using _CheckArg = __variant_detail::_CheckCtorImp<_Found::__index, _Found>;
 
