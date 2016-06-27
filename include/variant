@@ -716,8 +716,7 @@ public:
       });
   }
 
-  __variant_base(__variant_base const& __v) : __imp_(__variant_end_tag{})
-  {
+  __variant_base(__variant_base const& __v) : __imp_(__variant_end_tag{}) {
       __imp_.__visit(__v.__imp_, [&](auto& __my_head, auto& __other_head) {
         using _HeadT = remove_reference_t<decltype(__my_head)>;
         ::new ((void*)&__my_head) _HeadT(__other_head);
@@ -731,9 +730,12 @@ public:
   {
       __move_construct(__v);
   }
+
   __variant_base& operator=(__variant_base const& __v) {
     __variant_detail::__do_base_assign(*this, __v,
-        [](auto& __my_head, auto& __other_head) { __my_head.__value_ = __other_head.__value_; },
+        [](auto& __my_head, auto& __other_head) {
+          __my_head.__value_ = __other_head.__value_;
+        },
         [&]() {
           __variant_base __tmp(__v);
           __which_ = variant_npos;
@@ -748,7 +750,9 @@ public:
                    is_nothrow_move_assignable_v<_Types>...>::value)
   {
       __variant_detail::__do_base_assign(*this, __v,
-        [](auto& __my_head, auto& __other_head) { __my_head.__value_ = _VSTD::move(__other_head.__value_); },
+        [](auto& __my_head, auto& __other_head) {
+          __my_head.__value_ = _VSTD::move(__other_head.__value_);
+        },
         [&]() {
           __which_ = variant_npos;
           __imp_.__destroy();
@@ -781,23 +785,27 @@ class _LIBCPP_TYPE_VIS_ONLY variant
         _BoundIdx, variant_alternative<_BoundIdx, variant>>;
 
     template <size_t _Idx, class ..._Args>
-    using _EnableCtorIdx = enable_if_t<_CheckCtorIdx<_Idx>::template __can_construct<_Args...>()>;
+    using _EnableCtorIdx =
+        enable_if_t<_CheckCtorIdx<_Idx>::template __can_construct<_Args...>()>;
 
     template <class _Tp,
               class _Found = __find_exactly_one_unchecked<_Tp, _Types...>>
-    using _CheckCtorTp = __variant_detail::_CheckCtorImp<
-        _Found::value, __identity<_Tp>>;
+    using _CheckCtorTp =
+        __variant_detail::_CheckCtorImp<_Found::value, __identity<_Tp>>;
 
     template <class _Tp, class ..._Args>
-    using _EnableCtorTp = enable_if_t<_CheckCtorTp<_Tp>::template __can_construct<_Args...>()>;
+    using _EnableCtorTp =
+        enable_if_t<_CheckCtorTp<_Tp>::template __can_construct<_Args...>()>;
 
     template <class _Arg,
               class _Found = __variant_detail::__find_variant_overload<
                   !is_same<decay_t<_Arg>, variant>::value, _Arg, _Types...>>
-    using _CheckArg = __variant_detail::_CheckCtorImp<_Found::__index, _Found>;
+    using _CheckArg =
+        __variant_detail::_CheckCtorImp<_Found::__index, _Found>;
 
     template <class _Arg, class _Tp>
-    using _EnableArg = enable_if_t<_CheckArg<_Arg>::template __can_construct<_Tp>()>;
+    using _EnableArg =
+        enable_if_t<_CheckArg<_Arg>::template __can_construct<_Tp>()>;
 
   template <size_t _Idx, class ..._Args>
   void __overwrite_base(_Args&& ...__args) {
