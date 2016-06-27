@@ -279,6 +279,69 @@ constexpr add_pointer_t<const _Tp> get_if(const variant<_Types...>*) noexcept;
 template <class... _Types, class _Alloc>
 struct _LIBCPP_TYPE_VIS_ONLY uses_allocator<variant<_Types...>, _Alloc> : true_type {};
 
+template <class... _Types>
+class _LIBCPP_TYPE_VIS_ONLY variant {
+public:
+    // ?.3.1 Constructors
+    constexpr variant() /* TODO noexcept(see below) */;
+    variant(const variant&);
+    variant(variant&&) /* TODO noexcept(see below) */;
+    
+    template <class _Tp> constexpr variant(_Tp&&) /* TODO noexcept(see below) */;
+    
+    template <class _Tp, class... _Args>
+    constexpr explicit variant(in_place_type_t<_Tp>, _Args&&...);
+    template <class _Tp, class _Up, class... _Args>
+    constexpr explicit variant(in_place_type_t<_Tp>, initializer_list<_Up>, _Args&&...);
+    
+    template <size_t _Idx, class... _Args>
+    constexpr explicit variant(in_place_index_t<_Idx>, _Args&&...);
+    template <size_t _Idx, class _Up, class... _Args>
+    constexpr explicit variant(in_place_index_t<_Idx>, initializer_list<_Up>, _Args&&...);
+    
+    // allocator-extended constructors
+    template <class _Alloc>
+    variant(allocator_arg_t, const _Alloc&);
+    template <class _Alloc>
+    variant(allocator_arg_t, const _Alloc&, const variant&);
+    template <class _Alloc>
+    variant(allocator_arg_t, const _Alloc&, variant&&);
+    template <class _Alloc, class _Tp>
+    variant(allocator_arg_t, const _Alloc&, _Tp&&);
+    template <class _Alloc, class _Tp, class... _Args>
+    variant(allocator_arg_t, const _Alloc&, in_place_type_t<_Tp>, _Args&&...);
+    template <class _Alloc, class _Tp, class _Up, class... _Args>
+    variant(allocator_arg_t, const _Alloc&, in_place_type_t<_Tp>, initializer_list<_Up>, _Args&&...);
+    template <class _Alloc, size_t _Idx, class... _Args>
+    variant(allocator_arg_t, const _Alloc&, in_place_index_t<_Idx>, _Args&&...);
+    template <class _Alloc, size_t _Idx, class _Up, class... _Args>
+    variant(allocator_arg_t, const _Alloc&, in_place_index_t<_Idx>, initializer_list<_Up>, _Args&&...);
+
+    // ?.3.2, Destructor
+    ~variant();
+
+    // ?.3.3, Assignment
+    variant& operator=(const variant&);
+    variant& operator=(variant&&) /* TODO noexcept(see below) */;
+    
+    template <class _Tp> variant& operator=(_Tp&&) /* TODO noexcept(see below) */;
+    
+    // ?.3.4, Modifiers
+    template <class _Tp, class... _Args> void emplace(_Args&&...);
+    template <class _Tp, class _Up, class... _Args>
+    void emplace(initializer_list<_Up>, _Args&&...);
+    template <size_t _Idx, class... _Args> void emplace(_Args&&...);
+    template <size_t _Idx, class _Up, class... _Args>
+    void emplace(initializer_list<_Up>, _Args&&...);
+    
+    // ?.3.5, Value status
+    constexpr bool valueless_by_exception() const noexcept;
+    constexpr size_t index() const noexcept;
+    
+    // ?.3.6, Swap
+    void swap(variant&) /* TODO noexcept(see below) */;
+};
+
 _LIBCPP_END_NAMESPACE_STD
 
 #endif // _LIBCPP_STD_VER > 14
