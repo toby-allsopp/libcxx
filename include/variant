@@ -508,25 +508,19 @@ union _LIBCPP_TYPE_VIS_ONLY __variant_union<false, _Idx, _T0, _TRest...> {
     __get(in_place_index_t<_OIdx>) const noexcept
     { return __tail_.__get(in_place_index<_OIdx - 1>); }
 
-    void __destroy() {
+    void __destroy(bool __reconstruct = true) {
         if (__head_.__which_ == variant_npos)
             return;
         if (__head_.__which_ == _Idx)
             __head_.~__variant_element();
         else
             __tail_.~_TailT();
-        ::new((void*)&__end_) __variant_end_node();
+        if (__reconstruct)
+            ::new((void*)&__end_) __variant_end_node();
     }
 
     ~__variant_union() {
-        if (__head_.__which_ == variant_npos) {
-            __end_.~__variant_end_node();
-        }
-        else if (__head_.__which_ == _Idx) {
-            __head_.~__variant_element();
-        } else {
-            __tail_.~_TailT();
-        }
+        __destroy(false);
     }
 
 public:
@@ -614,13 +608,6 @@ public:
         : __imp_(__tag, in_place_index<_OtherIdx>, _VSTD::forward<_Args>(__args)...),
           __which_(_OtherIdx) {}
 
-  void __copy_construct(__variant_base const& __v) {
-      __imp_.__visit(__v.__imp_, [](auto& __my_head, auto& __other_head) {
-        using _HeadT = remove_reference_t<decltype(__my_head)>;
-        ::new ((void*)&__my_head) _HeadT(__other_head);
-      });
-  }
-
   void __move_construct(__variant_base& __v) {
       __imp_.__visit(__v.__imp_, [](auto& __my_head, auto& __other_head) {
         using _HeadT = remove_reference_t<decltype(__my_head)>;
@@ -631,7 +618,10 @@ public:
   __variant_base(__variant_base const& __v)
       : __imp_(__variant_end_tag{}), __which_(__v.__which_)
   {
-      __copy_construct(__v);
+      __imp_.__visit(__v.__imp_, [](auto& __my_head, auto& __other_head) {
+        using _HeadT = remove_reference_t<decltype(__my_head)>;
+        ::new ((void*)&__my_head) _HeadT(__other_head);
+      });
   }
 
   __variant_base(__variant_base&& __v)
@@ -760,20 +750,45 @@ class _LIBCPP_TYPE_VIS_ONLY variant : public __variant_sfinae_base_t<_Types...>
     using _CtorBase = __variant_sfinae_base_t<_Types...>;
     using _First = variant_alternative_t<0, variant<_Types...>>;
   
+    template <size_t _Idx, class _PossibleTp, class _Dummy = void>
+    struct _CheckCtorTpImp {
+      static constexpr in_place_index_t<_Idx> __index{};
+      using _Tp =  _PossibleTp; //variant_alternative_t<_Idx, variant<_Types...>>;
+      template <class ..._Args>
+      static constexpr bool __can_construct() {
+          return is_constructible<_Tp, _Args...>::value;
+      }
+    };
+
     template <size_t _Idx, class _Dummy = void>
-    struct _CheckCtor {
+    struct _CheckCtorIdxImp {
+      static constexpr in_place_index_t<_Idx> __index{};
       using _Tp = variant_alternative_t<_Idx, variant<_Types...>>;
       template <class ..._Args>
       static constexpr bool __can_construct() {
           return is_constructible<_Tp, _Args...>::value;
       }
     };
-  
-    template <class _Dummy>
-    struct _CheckCtor<variant_npos, _Dummy> {
+
+
+    template <class _PossibleTp, class _Dummy>
+    struct _CheckCtorTpImp<variant_npos, _PossibleTp, _Dummy> {
       template <class ...>
       static constexpr bool __can_construct() { return false; }
     };
+
+    template <class _Dummy>
+    struct _CheckCtorIdxImp<variant_npos, _Dummy> {
+      template <class ...>
+      static constexpr bool __can_construct() { return false; }
+    };
+
+    template <size_t _Idx,
+              size_t _BoundIdx = _Idx < sizeof...(_Types) ? _Idx : variant_npos>
+    using _CheckCtorIdx = _CheckCtorIdxImp<_BoundIdx>;
+
+    template <class _Tp, class _Found = __find_exactly_one_unchecked<_Tp, _Types...>>
+    using _CheckCtorTp = _CheckCtorTpImp<_Found::value, _Tp>;
 
     template <class _Arg, class _Found = __find_variant_overload<_Arg, _Types...>,
               bool = is_same<decay_t<_Arg>, variant>::value>
@@ -809,6 +824,19 @@ class _LIBCPP_TYPE_VIS_ONLY variant : public __variant_sfinae_base_t<_Types...>
        __can_assign() { return false; }
     };
 
+
+  template <size_t _Idx, class ..._Args>
+  void __overwrite_base(_Args&& ...__args) {
+    if (__base_.__which_ != variant_npos) {
+        __base_.__which_ = variant_npos;
+        __base_.__imp_.__destroy();
+    }
+    ::new((void*)&__base_.__imp_) typename _Base::_Imp(
+        __variant_inplace_tag{}, in_place_index<_Idx>,
+        _VSTD::forward<_Args>(__args)...);
+    __base_.__which_ = _Idx;
+  }
+
 public:
     // ?.3.1 Constructors
     template <bool _Dummy = true, class = enable_if_t<
@@ -829,32 +857,31 @@ public:
                   _VSTD::forward<_Tp>(__t)) {}
 
     template <class _Tp, class... _Args,
-              class _Found = __find_exactly_one_unchecked<_Tp, _Types...>,
-              class = enable_if_t<_CheckCtor<_Found::value>::template __can_construct<_Args...>()>>
+              class = enable_if_t<_CheckCtorTp<_Tp>::template __can_construct<_Args...>()>>
     constexpr explicit variant(in_place_type_t<_Tp>, _Args&&... __args)
-        : __base_(__variant_inplace_tag{}, in_place_index<_Found::value>,
+        : __base_(__variant_inplace_tag{}, _CheckCtorTp<_Tp>::__index,
                   _VSTD::forward<_Args>(__args)...) {}
 
     template <class _Tp, class _Up, class... _Args,
-              class _Found = __find_exactly_one_unchecked<_Tp, _Types...>,
-              class = enable_if_t<_CheckCtor<_Found::value>::template
+              class = enable_if_t<_CheckCtorTp<_Tp>::template
                   __can_construct<initializer_list<_Up>, _Args...>()>>
     constexpr explicit variant(in_place_type_t<_Tp>, initializer_list<_Up> __il,
                                _Args&&... __args)
-        : __base_(__variant_inplace_tag{}, in_place_index<_Found::value>,
+        : __base_(__variant_inplace_tag{}, _CheckCtorTp<_Tp>::__index,
                   _VSTD::move(__il), _VSTD::forward<_Args>(__args)...) {}
 
     template <size_t _Idx, class... _Args,
-              size_t _Found =  _Idx < sizeof...(_Types) ? _Idx : variant_npos,
-              class = enable_if_t<_CheckCtor<_Found>::template __can_construct<_Args...>()>>
+              class = enable_if_t<_CheckCtorIdx<_Idx>::template __can_construct<_Args...>()>>
     constexpr explicit variant(in_place_index_t<_Idx> __i, _Args&&... __args)
         : __base_(__variant_inplace_tag{}, __i, _VSTD::forward<_Args>(__args)...) {}
 
     template <size_t _Idx, class _Up, class... _Args,
-              size_t _Found =  _Idx < sizeof...(_Types) ? _Idx : variant_npos,
-              class = enable_if_t<_CheckCtor<_Found>::template __can_construct<initializer_list<_Up>, _Args...>()>>
-    constexpr explicit variant(in_place_index_t<_Idx> __i, initializer_list<_Up> __il, _Args&&... __args)
-        : __base_(__variant_inplace_tag{}, __i, _VSTD::move(__il), _VSTD::forward<_Args>(__args)...) {}
+              class = enable_if_t<_CheckCtorIdx<_Idx>::template
+                  __can_construct<initializer_list<_Up>, _Args...>()>>
+    constexpr explicit variant(in_place_index_t<_Idx> __i,
+                               initializer_list<_Up> __il, _Args&&... __args)
+        : __base_(__variant_inplace_tag{}, __i, _VSTD::move(__il),
+                  _VSTD::forward<_Args>(__args)...) {}
 
     // allocator-extended constructors
     template <class _Alloc, bool _Dummy = true, class = enable_if_t<
@@ -898,31 +925,27 @@ public:
                   __a, _VSTD::forward<_Tp>(__tp)) {}
 
     template <class _Alloc, class _Tp, class... _Args,
-              class _Found = __find_exactly_one_unchecked<_Tp, _Types...>,
-              class = enable_if_t<_CheckCtor<_Found::value>::template
+              class = enable_if_t<_CheckCtorTp<_Tp>::template
                   __can_construct<_Args...>()>>
     variant(allocator_arg_t, const _Alloc& __a, in_place_type_t<_Tp>, _Args&&... __args)
-        : __base_(__variant_alloc_tag{}, in_place_index<_Found::value>, __a,
+        : __base_(__variant_alloc_tag{}, _CheckCtorTp<_Tp>::__index, __a,
                   _VSTD::forward<_Args>(__args)...) {}
 
     template <class _Alloc, class _Tp, class _Up, class... _Args,
-              class _Found = __find_exactly_one_unchecked<_Tp, _Types...>,
-              class = enable_if_t<_CheckCtor<_Found::value>::template
+              class = enable_if_t<_CheckCtorTp<_Tp>::template
                   __can_construct<initializer_list<_Up>, _Args...>()>>
     variant(allocator_arg_t, const _Alloc& __a, in_place_type_t<_Tp>,
             initializer_list<_Up> __il, _Args&&... __args)
-        : __base_(__variant_alloc_tag{}, in_place_index<_Found::value>, __a,
+        : __base_(__variant_alloc_tag{}, _CheckCtorTp<_Tp>::__index, __a,
                   _VSTD::move(__il), _VSTD::forward<_Args>(__args)...) {}
 
     template <class _Alloc, size_t _Idx, class... _Args,
-        size_t _Found =  _Idx < sizeof...(_Types) ? _Idx : variant_npos,
-              class = enable_if_t<_CheckCtor<_Found>::template __can_construct<_Args...>()>>
+              class = enable_if_t<_CheckCtorIdx<_Idx>::template __can_construct<_Args...>()>>
     variant(allocator_arg_t, const _Alloc& __a, in_place_index_t<_Idx> __i, _Args&&... __args)
         : __base_(__variant_alloc_tag{}, __i, __a, _VSTD::forward<_Args>(__args)...) {}
 
     template <class _Alloc, size_t _Idx, class _Up, class... _Args,
-        size_t _Found =  _Idx < sizeof...(_Types) ? _Idx : variant_npos,
-              class = enable_if_t<_CheckCtor<_Found>::template __can_construct<initializer_list<_Up>, _Args...>()>>
+              class = enable_if_t<_CheckCtorIdx<_Idx>::template __can_construct<initializer_list<_Up>, _Args...>()>>
     variant(allocator_arg_t, const _Alloc& __a, in_place_index_t<_Idx> __i,
             initializer_list<_Up> __il, _Args&&... __args)
         : __base_(__variant_alloc_tag{}, __i, __a, _VSTD::move(__il), _VSTD::forward<_Args>(__args)...) {}
@@ -944,25 +967,45 @@ public:
             _VSTD::get<_CA::__index>(*this) = _VSTD::forward<_Tp>(__tp);
             return *this;
         }
-        if (!valueless_by_exception()) {
-            __base_.__which_ = variant_npos;
-            __base_.__imp_.__destroy();
-        }
-        ::new((void*)&__base_.__imp_) typename _Base::_Imp(
-            __variant_inplace_tag{}, in_place_index<_CA::__index>,
-            _VSTD::forward<_Tp>(__tp));
-        __base_.__which_ = _CA::__index;
+        __overwrite_base<_CA::__index>(_VSTD::forward<_Tp>(__tp));
         return *this;
     }
 
     // ?.3.4, Modifiers
-    template <class _Tp, class... _Args> void emplace(_Args&&...);
-    template <class _Tp, class _Up, class... _Args>
-    void emplace(initializer_list<_Up>, _Args&&...);
-    template <size_t _Idx, class... _Args> void emplace(_Args&&...);
-    template <size_t _Idx, class _Up, class... _Args>
-    void emplace(initializer_list<_Up>, _Args&&...);
-    
+#if 0
+    template <class _Tp, class... _Args,
+              class = enable_if_t<_CheckCtorTp<_Tp>::template
+                  __can_construct<_Args...>()>>
+    void emplace(_Args&&... __args) {
+        __overwrite_base<_CheckCtorTp>(_VSTD::forward<_Args>(__args)...);
+    }
+
+    template <class _Tp, class _Up, class... _Args,
+              class _Found = __find_exactly_one_unchecked<_Tp, _Types...>,
+              class = enable_if_t<_CheckCtor<_Found::value>::template
+                  __can_construct<initializer_list<_Up>, _Args...>()>>
+    void emplace(initializer_list<_Up> __il, _Args&&... __args) {
+        __overwrite_base<_Found::value>(_VSTD::move(__il),
+                                        _VSTD::forward<_Args>(__args)...);
+    }
+
+    template <size_t _Idx, class... _Args,
+              size_t _Found =  _Idx < sizeof...(_Types) ? _Idx : variant_npos,
+              class = enable_if_t<_CheckCtor<_Found>::template __can_construct<_Args...>()>>
+    void emplace(_Args&&... __args)
+    {
+        __overwrite_base<_Found>(_VSTD::forward<_Args>(__args)...);
+    }
+
+    template <size_t _Idx, class _Up, class... _Args,
+              size_t _Found =  _Idx < sizeof...(_Types) ? _Idx : variant_npos,
+              class = enable_if_t<_CheckCtor<_Found>::template
+                  __can_construct<initializer_list<_Up>, _Args...>()>>
+    void emplace(initializer_list<_Up> __il, _Args&&... __args) {
+        __overwrite_base<_Found>(_VSTD::move(__il),
+                                 _VSTD::forward<_Args>(__args)...);
+    }
+#endif
     // ?.3.5, Value status
     _LIBCPP_INLINE_VISIBILITY
     constexpr bool valueless_by_exception() const noexcept {

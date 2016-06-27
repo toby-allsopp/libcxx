@@ -23,6 +23,7 @@
 #include <cassert>
 
 #include "test_macros.h"
+#include "test_convertible.hpp"
 
 struct Dummy {
   Dummy() = default;
