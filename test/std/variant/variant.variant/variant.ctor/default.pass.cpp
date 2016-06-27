@@ -63,15 +63,17 @@ void test_default_ctor_noexcept() {
     }
 }
 
-
 void test_default_ctor_throws()
 {
 #ifndef TEST_HAS_NO_EXCEPTIONS
+    using V = std::variant<DefaultCtorThrows, int>;
     try {
-        std::variant<DefaultCtorThrows> v;
+        V v;
         assert(false);
     } catch (int const& ex) {
         assert(ex == 42);
+    } catch (...) {
+        assert(false);
     }
 #endif
 }
