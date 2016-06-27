@@ -319,8 +319,6 @@ constexpr add_pointer_t<const _Tp> get_if(const variant<_Types...>* __v) noexcep
         : nullptr;
 }
 
-struct _LIBCPP_TYPE_VIS_ONLY monostate {};
-
 template <class... _Types, class _Alloc>
 struct _LIBCPP_TYPE_VIS_ONLY uses_allocator<variant<_Types...>, _Alloc> : true_type {};
 
@@ -1024,6 +1022,27 @@ public:
 public: // TODO Make this private
     _Base __base_;
 };
+
+
+struct _LIBCPP_TYPE_VIS_ONLY monostate {};
+
+inline _LIBCPP_INLINE_VISIBILITY
+constexpr bool operator<(monostate, monostate) noexcept { return false; }
+
+inline _LIBCPP_INLINE_VISIBILITY
+constexpr bool operator>(monostate, monostate) noexcept { return false; }
+
+inline _LIBCPP_INLINE_VISIBILITY
+constexpr bool operator<=(monostate, monostate) noexcept { return true; }
+
+inline _LIBCPP_INLINE_VISIBILITY
+constexpr bool operator>=(monostate, monostate) noexcept { return true; }
+
+inline _LIBCPP_INLINE_VISIBILITY
+constexpr bool operator==(monostate, monostate) noexcept { return true; }
+
+inline _LIBCPP_INLINE_VISIBILITY
+constexpr bool operator!=(monostate, monostate) noexcept { return false; }
 
 _LIBCPP_END_NAMESPACE_STD
 
