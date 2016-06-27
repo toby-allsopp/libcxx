@@ -163,6 +163,8 @@ public:
 
 } // end namespace std
 
+#if _LIBCPP_STD_VER > 14
+
 _LIBCPP_BEGIN_NAMESPACE_STD
 
 template <class... _Types> class variant;
@@ -278,5 +280,7 @@ template <class... _Types, class _Alloc>
 struct _LIBCPP_TYPE_VIS_ONLY uses_allocator<variant<_Types...>, _Alloc> : true_type {};
 
 _LIBCPP_END_NAMESPACE_STD
+
+#endif // _LIBCPP_STD_VER > 14
 
 #endif  // _LIBCPP_VARIANT
