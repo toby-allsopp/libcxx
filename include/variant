@@ -143,7 +143,7 @@ namespace std {
 */
 
 #include <__config>
-#include <__tuple>
+#include <tuple>
 #include <__functional_base>
 #include <type_traits>
 #include <initializer_list>
@@ -225,22 +225,32 @@ constexpr bool holds_alternative(const variant<_Types...>&) noexcept;
 template <size_t _Idx, class... _Types>
 inline _LIBCPP_INLINE_VISIBILITY
 constexpr variant_alternative_t<_Idx, variant<_Types...>>&
-get(variant<_Types...>&);
+get(variant<_Types...>& __v) {
+    return __v.__imp_.__get(in_place_index<_Idx>);
+}
 
 template <size_t _Idx, class... _Types>
 inline _LIBCPP_INLINE_VISIBILITY
 constexpr variant_alternative_t<_Idx, variant<_Types...>>&&
-get(variant<_Types...>&&);
+get(variant<_Types...>&& __v) {
+    using _Tp = variant_alternative_t<_Idx, variant<_Types...>>;
+    return static_cast<_Tp&&>(__v.__imp_.__get(in_place_index<_Idx>));
+}
 
 template <size_t _Idx, class... _Types>
 inline _LIBCPP_INLINE_VISIBILITY
 constexpr variant_alternative_t<_Idx, variant<_Types...>> const&
-get(const variant<_Types...>&);
+get(const variant<_Types...>& __v) {
+    return __v.__imp_.__get(in_place_index<_Idx>);
+}
 
 template <size_t _Idx, class... _Types>
 inline _LIBCPP_INLINE_VISIBILITY
 constexpr variant_alternative_t<_Idx, variant<_Types...>> const&&
-get(const variant<_Types...>&&);
+get(const variant<_Types...>&& __v) {
+    using _Tp = variant_alternative_t<_Idx, variant<_Types...>>;
+    return static_cast<_Tp const&&>(__v.__imp_.__get(in_place_index<_Idx>));
+}
 
 template <class _Tp, class... _Types>
 inline _LIBCPP_INLINE_VISIBILITY
@@ -279,16 +289,121 @@ constexpr add_pointer_t<const _Tp> get_if(const variant<_Types...>*) noexcept;
 template <class... _Types, class _Alloc>
 struct _LIBCPP_TYPE_VIS_ONLY uses_allocator<variant<_Types...>, _Alloc> : true_type {};
 
+template <size_t _Idx, class _Tp>
+struct __variant_element {
+    template <class ..._Args>
+    constexpr __variant_element(_Args&& ...__args)
+        : __which_(_Idx), __value_(_VSTD::forward<_Args>(__args)...) {}
+
+    size_t __which_;
+    _Tp __value_;
+};
+
+struct __variant_end_element {
+    constexpr __variant_end_element() : __which_(variant_npos) {}
+    size_t __which_;
+};
+
+template <bool _IsTriviallyDestructible, size_t _Idx, class ..._Types>
+union _LIBCPP_TYPE_VIS_ONLY __variant_union {
+    static_assert(sizeof...(_Types) == 0, "Specialization is for an empty union");
+    __variant_end_element __head_;
+};
+
+template <size_t _Idx, class _T0,  class ..._TRest>
+union _LIBCPP_TYPE_VIS_ONLY __variant_union<true, _Idx, _T0, _TRest...> {
+    template <class ..._Args>
+    constexpr __variant_union(in_place_index_t<0>, _Args&&... __args)
+        : __head_(_VSTD::forward<_Args>(__args)...) {}
+
+    template <size_t _OtherIdx, class ..._Args>
+    constexpr __variant_union(in_place_index_t<_OtherIdx>, _Args&&... __args)
+        : __tail_(in_place_index<_OtherIdx - 1>, _VSTD::forward<_Args>(__args)...) {}
+
+    constexpr _T0& __get(in_place_index_t<0>) noexcept
+    { return __head_.__value_; }
+
+    constexpr const _T0& __get(in_place_index_t<0>) const noexcept
+    { return __head_.__value_; }
+
+    template <size_t _OIdx, enable_if_t<_OIdx - 1 <= sizeof...(_TRest), bool> = true>
+    constexpr tuple_element_t<_OIdx - 1, __tuple_types<_TRest...>>&
+    __get(in_place_index_t<_OIdx>) noexcept
+    { return __tail_.__get(in_place_index<_OIdx - 1>); }
+
+    template <size_t _OIdx, enable_if_t<_OIdx - 1 <= sizeof...(_TRest), bool> = true>
+    constexpr tuple_element_t<_OIdx - 1, __tuple_types<_TRest...>> const &
+    __get(in_place_index_t<_OIdx>) const noexcept
+    { return __tail_.__get(in_place_index<_OIdx - 1>); }
+
+    ~__variant_union() = default;
+public:
+    __variant_element<_Idx, _T0> __head_;
+    __variant_union<true, _Idx + 1, _TRest...> __tail_;
+};
+
+template <size_t _Idx, class _T0,  class ..._TRest>
+union _LIBCPP_TYPE_VIS_ONLY __variant_union<false, _Idx, _T0, _TRest...> {
+    using _TailT =  __variant_union<false, _Idx + 1, _TRest...>;
+
+    template <class ..._Args>
+    constexpr __variant_union(in_place_index_t<0>, _Args&&... __args)
+        : __head_(_VSTD::forward<_Args>(__args)...) {}
+
+    template <size_t _OtherIdx, class ..._Args>
+    constexpr __variant_union(in_place_index_t<_OtherIdx>, _Args&&... __args)
+        : __tail_(in_place_index<_OtherIdx - 1>, _VSTD::forward<_Args>(__args)...) {}
+
+    constexpr _T0& __get(in_place_index_t<0>) noexcept
+    { return __head_.__value_; }
+
+    constexpr const _T0& __get(in_place_index_t<0>) const noexcept
+    { return __head_.__value_; }
+
+    template <size_t _OIdx, enable_if_t<_OIdx - 1 <= sizeof...(_TRest), bool> = true>
+    constexpr tuple_element_t<_OIdx - 1, __tuple_types<_TRest...>>&
+    __get(in_place_index_t<_OIdx>) noexcept
+    { return __tail_.__get(in_place_index<_OIdx - 1>); }
+
+    template <size_t _OIdx, enable_if_t<_OIdx - 1 <= sizeof...(_TRest), bool> = true>
+    constexpr tuple_element_t<_OIdx - 1, __tuple_types<_TRest...>> const &
+    __get(in_place_index_t<_OIdx>) const noexcept
+    { return __tail_.__get(in_place_index<_OIdx - 1>); }
+
+    ~__variant_union() {
+        if (__head_.__which_ == _Idx) {
+            __head_.~__variant_element();
+        } else {
+            __tail_.~_TailT();
+        }
+    }
+
+public:
+    __variant_element<_Idx, _T0> __head_;
+    _TailT __tail_;
+};
+
+template <>
+class _LIBCPP_TYPE_VIS_ONLY variant<> {
+    // TODO(EricWF) WTF?
+};
+
 template <class... _Types>
 class _LIBCPP_TYPE_VIS_ONLY variant {
+    using _IsTriviallyDestructible = __all<is_trivially_destructible<_Types>::value...>;
+    using _Imp = __variant_union<_IsTriviallyDestructible::value, 0, _Types...>;
+public:
+    _Imp __imp_;
 public:
     // ?.3.1 Constructors
-    constexpr variant() /* TODO noexcept(see below) */;
+    constexpr variant() /* TODO noexcept(see below) */
+        : __imp_(in_place_index<0>) {}
+
     variant(const variant&);
     variant(variant&&) /* TODO noexcept(see below) */;
-    
+
     template <class _Tp> constexpr variant(_Tp&&) /* TODO noexcept(see below) */;
-    
+
     template <class _Tp, class... _Args>
     constexpr explicit variant(in_place_type_t<_Tp>, _Args&&...);
     template <class _Tp, class _Up, class... _Args>
@@ -318,7 +433,7 @@ public:
     variant(allocator_arg_t, const _Alloc&, in_place_index_t<_Idx>, initializer_list<_Up>, _Args&&...);
 
     // ?.3.2, Destructor
-    ~variant();
+    ~variant() = default;
 
     // ?.3.3, Assignment
     variant& operator=(const variant&);
@@ -335,9 +450,16 @@ public:
     void emplace(initializer_list<_Up>, _Args&&...);
     
     // ?.3.5, Value status
-    constexpr bool valueless_by_exception() const noexcept;
-    constexpr size_t index() const noexcept;
-    
+    _LIBCPP_INLINE_VISIBILITY
+    constexpr bool valueless_by_exception() const noexcept {
+        return index() == variant_npos;
+    }
+
+    _LIBCPP_INLINE_VISIBILITY
+    constexpr size_t index() const noexcept {
+        return __imp_.__head_.__which_;
+    }
+
     // ?.3.6, Swap
     void swap(variant&) /* TODO noexcept(see below) */;
 };
