@@ -511,12 +511,12 @@ public:
   __variant_base(allocator_arg_t, _Alloc const& __a, __variant_base&& __v)
       : __imp_(__variant_end_tag{}), __which_(__v.__which_)
   {
-      __imp_.__visit(__v.__imp_, [](auto& __my_head, auto& __other_head) {
+      __imp_.__visit(__v.__imp_, [&](auto& __my_head, auto& __other_head) {
         using _HeadT = remove_reference_t<decltype(__my_head)>;
         using _T0 = typename _HeadT::element_type;
         ::new ((void*)&__my_head) _HeadT(
             __variant_alloc_tag{}, __uses_alloc_ctor<_T0, _Alloc, _T0 &&>(),
-            _VSTD::move(__other_head.__value_));
+            __a, _VSTD::move(__other_head.__value_));
       });
   }
 
@@ -524,12 +524,12 @@ public:
   __variant_base(allocator_arg_t, _Alloc const& __a, __variant_base const& __v)
       : __imp_(__variant_end_tag{}), __which_(__v.__which_)
   {
-      __imp_.__visit(__v.__imp_, [](auto& __my_head, auto& __other_head) {
+      __imp_.__visit(__v.__imp_, [&](auto& __my_head, auto& __other_head) {
         using _HeadT = remove_reference_t<decltype(__my_head)>;
         using _T0 = typename _HeadT::element_type;
         ::new ((void*)&__my_head) _HeadT(
             __variant_alloc_tag{}, __uses_alloc_ctor<_T0, _Alloc, _T0 const&>(),
-            __other_head.__value_);
+            __a, __other_head.__value_);
       });
   }
 };
@@ -566,12 +566,12 @@ public:
   __variant_base(allocator_arg_t, _Alloc const& __a, __variant_base&& __v)
       : __imp_(__variant_end_tag{}), __which_(__v.__which_)
   {
-      __imp_.__visit(__v.__imp_, [](auto& __my_head, auto& __other_head) {
+      __imp_.__visit(__v.__imp_, [&](auto& __my_head, auto& __other_head) {
         using _HeadT = remove_reference_t<decltype(__my_head)>;
         using _T0 = typename _HeadT::element_type;
         ::new ((void*)&__my_head) _HeadT(
             __variant_alloc_tag{}, __uses_alloc_ctor<_T0, _Alloc, _T0 &&>(),
-            _VSTD::move(__other_head.__value_));
+            __a, _VSTD::move(__other_head.__value_));
       });
   }
 
@@ -579,18 +579,20 @@ public:
   __variant_base(allocator_arg_t, _Alloc const& __a, __variant_base const& __v)
       : __imp_(__variant_end_tag{}), __which_(__v.__which_)
   {
-      __imp_.__visit(__v.__imp_, [](auto& __my_head, auto& __other_head) {
+      __imp_.__visit(__v.__imp_, [&](auto& __my_head, auto& __other_head) {
         using _HeadT = remove_reference_t<decltype(__my_head)>;
         using _T0 = typename _HeadT::element_type;
         ::new ((void*)&__my_head) _HeadT(
             __variant_alloc_tag{}, __uses_alloc_ctor<_T0, _Alloc, _T0 const&>(),
-            __other_head.__value_);
+            __a, __other_head.__value_);
       });
   }
 };
 
 template <bool _CanCopy, bool _CanMove>
 struct __variant_ctor_sfinae_base {
+  static constexpr bool __copy = _CanCopy;
+  static constexpr bool __move = _CanMove;
   __variant_ctor_sfinae_base() = default;
   __variant_ctor_sfinae_base(__variant_ctor_sfinae_base const&) = default;
   __variant_ctor_sfinae_base(__variant_ctor_sfinae_base &&) = default;
@@ -598,6 +600,8 @@ struct __variant_ctor_sfinae_base {
 
 template <>
 struct __variant_ctor_sfinae_base<false, true> {
+  static constexpr bool __copy = false;
+  static constexpr bool __move = true;
   __variant_ctor_sfinae_base() = default;
   __variant_ctor_sfinae_base(__variant_ctor_sfinae_base const&) = delete;
   __variant_ctor_sfinae_base(__variant_ctor_sfinae_base &&) = default;
@@ -605,6 +609,8 @@ struct __variant_ctor_sfinae_base<false, true> {
 
 template <>
 struct __variant_ctor_sfinae_base<false, false> {
+  static constexpr bool __copy = false;
+  static constexpr bool __move = false;
   __variant_ctor_sfinae_base() = default;
   __variant_ctor_sfinae_base(__variant_ctor_sfinae_base const&) = delete;
   __variant_ctor_sfinae_base(__variant_ctor_sfinae_base &&) = delete;
@@ -613,6 +619,8 @@ struct __variant_ctor_sfinae_base<false, false> {
 
 template <bool _CanCopy, bool _CanMove>
 struct __variant_assign_sfinae_base {
+  static constexpr bool __copy = _CanCopy;
+  static constexpr bool __move = _CanMove;
   __variant_assign_sfinae_base() = default;
   __variant_assign_sfinae_base(__variant_assign_sfinae_base const&) = default;
   __variant_assign_sfinae_base(__variant_assign_sfinae_base &&) = default;
@@ -622,6 +630,8 @@ struct __variant_assign_sfinae_base {
 
 template <>
 struct __variant_assign_sfinae_base<false, true> {
+  static constexpr bool __copy = false;
+  static constexpr bool __move = true;
   __variant_assign_sfinae_base() = default;
   __variant_assign_sfinae_base(__variant_assign_sfinae_base const&) = default;
   __variant_assign_sfinae_base(__variant_assign_sfinae_base &&) = default;
@@ -631,6 +641,8 @@ struct __variant_assign_sfinae_base<false, true> {
 
 template <>
 struct __variant_assign_sfinae_base<false, false> {
+  static constexpr bool __copy = false;
+  static constexpr bool __move = false;
   __variant_assign_sfinae_base() = default;
   __variant_assign_sfinae_base(__variant_assign_sfinae_base const&) = default;
   __variant_assign_sfinae_base(__variant_assign_sfinae_base &&) = default;
@@ -644,20 +656,30 @@ class _LIBCPP_TYPE_VIS_ONLY variant<> {
     // TODO(EricWF) WTF?
 };
 
-template <class... _Types>
-class _LIBCPP_TYPE_VIS_ONLY variant :
+template <class ..._Types>
+using __variant_ctor_base =
     __variant_ctor_sfinae_base<
         __all<is_copy_constructible<_Types>::value...>::value,
         __all<is_move_constructible<_Types>::value...>::value
-    >,
+    >;
+
+template <class ..._Types>
+using __variant_assign_base =
     __variant_assign_sfinae_base<
         __all<is_copy_assignable<_Types>::value...>::value,
         __all<is_move_assignable<_Types>::value...>::value
-    >
+    >;
+
+template <class... _Types>
+class _LIBCPP_TYPE_VIS_ONLY variant :
+    __variant_ctor_base<_Types...>,
+    __variant_assign_base<_Types...>
 {
     using _IsTrivD = __all<is_trivially_destructible<_Types>::value...>;
     using _IsTrivCC= __all<is_trivially_copy_constructible<_Types>::value...>;
     using _Base = __variant_base<_IsTrivD::value, _IsTrivCC::value, _Types...>;
+    using _CtorBase = __variant_ctor_base<_Types...>;
+
     using _First = variant_alternative_t<0, variant<_Types...>>;
   
     template <size_t _Idx, class _Dummy = void>
@@ -751,11 +773,11 @@ public:
     variant(allocator_arg_t, const _Alloc& __a)
         : __base_(__variant_alloc_tag{}, in_place_index<0>, __a) {}
 
-    template <class _Alloc>
+    template <class _Alloc, bool _Dummy = true, class = enable_if_t<_CtorBase::__copy && _Dummy>>
     variant(allocator_arg_t __t, const _Alloc& __a, const variant& __v)
         : __base_(__t, __a, __v.__base_) {}
 
-    template <class _Alloc>
+    template <class _Alloc, bool _Dummy = true, class = enable_if_t<_CtorBase::__move && _Dummy>>
     variant(allocator_arg_t __t, const _Alloc& __a, variant&& __v)
         : __base_(__t, __a, _VSTD::move(__v.__base_)) {}
 
