@@ -18,9 +18,65 @@
 
 
 #include <variant>
+#include <type_traits>
 #include <cassert>
 
-int main()
+#include "test_macros.h"
+
+struct NonDefaultConstructible {
+  NonDefaultConstructible(int) {}
+};
+
+struct NotNoexcept {
+  NotNoexcept() noexcept(false) {}
+};
+
+#ifndef TEST_HAS_NO_EXCEPTIONS
+struct DefaultCtorThrows {
+  DefaultCtorThrows() { throw 42; }
+};
+#endif
+
+void test_default_ctor_sfinae() {
+    {
+        using V = std::variant<std::monostate, int>;
+        static_assert(std::is_default_constructible<V>::value, "");
+    }
+    {
+        using V = std::variant<NonDefaultConstructible, int>;
+        static_assert(!std::is_default_constructible<V>::value, "");
+    }
+    {
+        using V = std::variant<int&, int>;
+        static_assert(!std::is_default_constructible<V>::value, "");
+    }
+}
+
+void test_default_ctor_noexcept() {
+    {
+        using V = std::variant<int>;
+        static_assert(std::is_nothrow_default_constructible<V>::value, "");
+    }
+    {
+        using V = std::variant<NotNoexcept>;
+        static_assert(!std::is_nothrow_default_constructible<V>::value, "");
+    }
+}
+
+
+void test_default_ctor_throws()
+{
+#ifndef TEST_HAS_NO_EXCEPTIONS
+    try {
+        std::variant<DefaultCtorThrows> v;
+        assert(false);
+    } catch (int const& ex) {
+        assert(ex == 42);
+    }
+#endif
+}
+
+void test_default_ctor_basic()
 {
     {
         std::variant<int> v;
@@ -44,4 +100,12 @@ int main()
         static_assert(v.index() == 0, "");
         static_assert(std::get<0>(v) == 0, "");
     }
+}
+
+int main()
+{
+    test_default_ctor_basic();
+    test_default_ctor_sfinae();
+    test_default_ctor_noexcept();
+    test_default_ctor_throws();
 }
