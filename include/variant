@@ -550,13 +550,6 @@ public:
   __variant_base(__variant_base const&) = default;
   __variant_base(__variant_base&&) = default;
 
-  void __copy_construct(__variant_base const& __v) {
-      __imp_.__visit(__v.__imp_, [](auto& __my_head, auto& __other_head) {
-        using _HeadT = remove_reference_t<decltype(__my_head)>;
-        ::new ((void*)&__my_head) _HeadT(__other_head);
-      });
-  }
-
   __variant_base& operator=(__variant_base const& __v) {
       if (__which_ == variant_npos && __v.__which_ == variant_npos) {
         // nothing to do
