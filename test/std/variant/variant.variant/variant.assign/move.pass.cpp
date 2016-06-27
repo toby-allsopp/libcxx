@@ -28,11 +28,6 @@ struct NoCopy {
   NoCopy& operator=(NoCopy const&) = default;
 };
 
-struct NothrowCopy {
-  NothrowCopy(NothrowCopy const&) noexcept = default;
-  NothrowCopy& operator=(NothrowCopy const&) noexcept = default;
-};
-
 struct CopyOnly {
   CopyOnly(CopyOnly const&) = default;
   CopyOnly(CopyOnly&&) = delete;
