@@ -1,0 +1,209 @@
+// -*- C++ -*-
+//===-------------------------- variant -----------------------------------===//
+//
+//                     The LLVM Compiler Infrastructure
+//
+// This file is dual licensed under the MIT and the University of Illinois Open
+// Source Licenses. See LICENSE.TXT for details.
+//
+//===----------------------------------------------------------------------===//
+
+#ifndef _LIBCPP_VARIANT
+#define _LIBCPP_VARIANT
+
+/*
+    variant synopsis
+namespace std {
+  // ?.3, variant of value types
+  template <class... Types> class variant;
+
+  // ?.4, variant helper classes
+  template <class T> struct variant_size; // undefined
+  template <class T> struct variant_size<const T>;
+  template <class T> struct variant_size<volatile T>;
+  template <class T> struct variant_size<const volatile T>;
+  template <class T> constexpr size_t variant_size_v
+    = variant_size<T>::value;
+
+  template <class... Types>
+    struct variant_size<variant<Types...>>;
+
+  template <size_t I, class T> struct variant_alternative; // undefined
+  template <size_t I, class T> struct variant_alternative<I, const T>;
+  template <size_t I, class T> struct variant_alternative<I, volatile T>;
+  template <size_t I, class T> struct variant_alternative<I, const volatile T>;
+  template <size_t I, class T>
+    using variant_alternative_t = typename variant_alternative<I, T>::type;
+
+  template <size_t I, class... Types>
+    struct variant_alternative<I, variant<Types...>>;
+
+  constexpr size_t variant_npos = -1;
+
+
+  // ?.5, In-place construction
+  template <class T> struct in_place_type_t{ explicit in_place_type_t() = default; };
+  template <class T> constexpr in_place_type_t<T> in_place_type{};
+
+  template <size_t I> struct in_place_index_t{ explicit in_place_index_t() = default; };
+  template <size_t I> constexpr in_place_index_t<I> in_place_index{};
+
+  // ?.6, Value access
+  template <class T, class... Types>
+    constexpr bool holds_alternative(const variant<Types...>&) noexcept;
+
+  template <size_t I, class... Types>
+    constexpr variant_alternative_t<I, variant<Types...>>&
+    get(variant<Types...>&);
+  template <size_t I, class... Types>
+    constexpr variant_alternative_t<I, variant<Types...>>&&
+    get(variant<Types...>&&);
+  template <size_t I, class... Types>
+    constexpr variant_alternative_t<I, variant<Types...>> const&
+    get(const variant<Types...>&);
+  template <size_t I, class... Types>
+    constexpr variant_alternative_t<I, variant<Types...>> const&&
+    get(const variant<Types...>&&);
+
+  template <class T, class... Types>
+    constexpr T& get(variant<Types...>&);
+  template <class T, class... Types>
+    constexpr T&& get(variant<Types...>&&);
+  template <class T, class... Types>
+    constexpr const T& get(const variant<Types...>&);
+  template <class T, class... Types>
+    constexpr const T&& get(const variant<Types...>&&);
+
+  template <size_t I, class... Types>
+    constexpr add_pointer_t<variant_alternative_t<I, variant<Types...>>>
+    get_if(variant<Types...>*) noexcept;
+  template <size_t I, class... Types>
+    constexpr add_pointer_t<const variant_alternative_t<I, variant<Types...>>>
+    get_if(const variant<Types...>*) noexcept;
+
+  template <class T, class... Types>
+    constexpr add_pointer_t<T> get_if(variant<Types...>*) noexcept;
+  template <class T, class... Types>
+    constexpr add_pointer_t<const T> get_if(const variant<Types...>*) noexcept;
+
+  // ?.7, Relational operators
+  template <class... Types>
+    constexpr bool operator==(const variant<Types...>&,
+                              const variant<Types...>&);
+  template <class... Types>
+    constexpr bool operator!=(const variant<Types...>&,
+                              const variant<Types...>&);
+  template <class... Types>
+    constexpr bool operator<(const variant<Types...>&,
+                             const variant<Types...>&);
+  template <class... Types>
+    constexpr bool operator>(const variant<Types...>&,
+                             const variant<Types...>&);
+  template <class... Types>
+    constexpr bool operator<=(const variant<Types...>&,
+                              const variant<Types...>&);
+  template <class... Types>
+    constexpr bool operator>=(const variant<Types...>&,
+                              const variant<Types...>&);
+
+  // ?.8, Visitation
+  template <class Visitor, class... Variants>
+  constexpr see below visit(Visitor&&, Variants&&...);
+
+  // ?.9, Class monostate
+  struct monostate;
+
+  // ?.10, monostate relational operators
+  constexpr bool operator<(monostate, monostate) noexcept;
+  constexpr bool operator>(monostate, monostate) noexcept;
+  constexpr bool operator<=(monostate, monostate) noexcept;
+  constexpr bool operator>=(monostate, monostate) noexcept;
+  constexpr bool operator==(monostate, monostate) noexcept;
+  constexpr bool operator!=(monostate, monostate) noexcept;
+
+  // ?.11, Specialized algorithms
+  template <class... Types>
+  void swap(variant<Types...>&, variant<Types...>&) noexcept(see below);
+
+  // ?.12, class bad_variant_access
+  class bad_variant_access;
+
+  // ?.13, Hash support
+  template <class T> struct hash;
+  template <class... Types> struct hash<variant<Types...>>;
+  template <> struct hash<monostate>;
+
+  // ?.14, Allocator-related traits
+  template <class T, class Alloc> struct uses_allocator;
+  template <class... Types, class Alloc>
+  struct uses_allocator<variant<Types...>, Alloc>;
+  
+} // namespace std
+
+*/
+
+#include <__config>
+#include <__tuple>
+#include <type_traits>
+#include <initializer_list>
+
+#if !defined(_LIBCPP_HAS_NO_PRAGMA_SYSTEM_HEADER)
+#pragma GCC system_header
+#endif
+
+_LIBCPP_BEGIN_NAMESPACE_STD
+
+template <class... _Types> class variant;
+
+  // ?.4, variant helper classes
+template <class _Tp> struct variant_size; // undefined
+template <class _Tp> struct variant_size<const _Tp> : variant_size<_Tp> {};
+template <class _Tp> struct variant_size<volatile _Tp> : variant_size<_Tp> {};
+template <class _Tp> struct variant_size<const volatile _Tp> : variant_size<_Tp> {};
+template <class _Tp> constexpr size_t variant_size_v
+    = variant_size<_Tp>::value;
+
+template <class... _Types>
+struct variant_size<variant<_Types...>>
+    : integral_constant<size_t, sizeof...(_Types)> {};
+
+template <size_t _Idx, class _Tp> struct variant_alternative; // undefined
+template <size_t _Idx, class _Tp> struct variant_alternative<_Idx, const _Tp> {
+    using type = typename variant_alternative<_Idx, _Tp>::type const;
+};
+template <size_t _Idx, class _Tp> struct variant_alternative<_Idx, volatile _Tp> {
+  using type = typename variant_alternative<_Idx, _Tp>::type volatile;
+};
+template <size_t _Idx, class _Tp> struct variant_alternative<_Idx, const volatile _Tp> {
+  using type = typename variant_alternative<_Idx, _Tp>::type const volatile;
+};
+template <size_t _Idx, class _Tp>
+using variant_alternative_t = typename variant_alternative<_Idx, _Tp>::type;
+
+template <size_t _Idx, class... _Types>
+struct variant_alternative<_Idx, variant<_Types...>> {
+  static_assert(_Idx < sizeof...(_Types), "Index is out of range");
+  using type = typename tuple_element<_Idx, __tuple_types<_Types...>>::type;
+};
+
+constexpr size_t variant_npos = -1;
+
+template <class>
+struct _LIBCPP_TYPE_VIS_ONLY in_place_type_t {
+    explicit in_place_type_t() = default;
+};
+
+template <class _Tp>
+constexpr in_place_type_t<_Tp> in_place_type{};
+
+template <size_t>
+struct _LIBCPP_TYPE_VIS_ONLY in_place_index_t {
+    explicit in_place_index_t() = default;
+};
+
+template <size_t _Idx>
+constexpr in_place_index_t<_Idx> in_place_index{};
+
+_LIBCPP_END_NAMESPACE_STD
+
+#endif  // _LIBCPP_VARIANT
