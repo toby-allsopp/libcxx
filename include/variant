@@ -303,14 +303,21 @@ struct _LIBCPP_TYPE_VIS_ONLY uses_allocator<variant<_Types...>, _Alloc> : true_t
 template <size_t _Idx, class _Type>
 struct __variant_overload {
   using type = _Type;
-  static constexpr size_t value = _Idx;
+  static constexpr size_t __index = _Idx;
+  static constexpr bool __good = true;
+};
+
+template <class _Type>
+struct __variant_overload<variant_npos, _Type> {
+  using type = _Type;
+  static constexpr size_t __index = variant_npos;
+  static constexpr bool __good = false;
 };
 
 template <size_t _Idx, class ..._Types>
 struct __variant_overloads_imp {
   static_assert(sizeof...(_Types) == 0, "Wrong specialization selected");
-
-  static __variant_overload<_Idx, void> __fun(...);
+  static __variant_overload<variant_npos, void> __fun();
 };
 
 template <size_t _Idx, class _T0, class... _TRest>
@@ -320,30 +327,16 @@ struct __variant_overloads_imp<_Idx, _T0, _TRest...> : __variant_overloads_imp<_
   using _BaseT::__fun;
 };
 
-template <class _Ovl, class ..._Types>
-struct __variant_overload_imp1;
+template <class _Tp, class ..._Types>
+auto __find_variant_overload_imp(int)
+    -> decltype(__variant_overloads_imp<0, _Types...>::__fun(_VSTD::declval<_Tp>()));
 
 template <class _Tp, class ..._Types>
-struct __variant_overload_imp1<__variant_overload<variant_npos, _Tp>, _Types...> {
-  static constexpr size_t __index = variant_npos;
-  static constexpr bool __good = false;
-  using type = _Tp;
-};
-
-template <size_t _Idx, class _Tp, class ..._Types>
-struct __variant_overload_imp1<__variant_overload<_Idx, _Tp>, _Types...> {
-  static constexpr size_t __index = _Idx;
-  static constexpr bool __good = __find_exactly_one_unchecked<_Tp, _Types...>::value != variant_npos;
-  using type = _Tp;
-};
-
-
+auto __find_variant_overload_imp(...)
+    -> decltype(__variant_overload<variant_npos, void>{});
 
 template <class _Tp, class ..._Types>
-struct __find_variant_overload : __variant_overload_imp1<
-    decltype(__variant_overloads_imp<0, _Types...>::__fun(_VSTD::declval<_Tp>())),
-        _Types...> {};
-
+using __find_variant_overload = decltype(_VSTD::__find_variant_overload_imp<_Tp, _Types...>(0));
 
 struct __variant_end_tag {};
 struct __variant_inplace_tag {};
@@ -505,18 +498,18 @@ class __variant_base {
 public:
   using _Imp = __variant_union<_HasTDtor, 0, _Types...>;
   _Imp __imp_;
+  size_t __which_;
 
   template <class _Tag, size_t _OtherIdx, class ..._Args>
   constexpr __variant_base(_Tag __tag, in_place_index_t<_OtherIdx>, _Args&&... __args)
-        : __imp_(__tag, in_place_index<_OtherIdx>, _VSTD::forward<_Args>(__args)...) {}
+        : __imp_(__tag, in_place_index<_OtherIdx>, _VSTD::forward<_Args>(__args)...), __which_(_OtherIdx) {}
 
   __variant_base(__variant_base const&) = default;
   __variant_base(__variant_base&&) = default;
 
-
   template <class _Alloc>
   __variant_base(allocator_arg_t, _Alloc const& __a, __variant_base&& __v)
-      : __imp_(__variant_end_tag{})
+      : __imp_(__variant_end_tag{}), __which_(__v.__which_)
   {
       __imp_.__visit(__v.__imp_, [](auto& __my_head, auto& __other_head) {
         using _HeadT = remove_reference_t<decltype(__my_head)>;
@@ -529,7 +522,7 @@ public:
 
   template <class _Alloc>
   __variant_base(allocator_arg_t, _Alloc const& __a, __variant_base const& __v)
-      : __imp_(__variant_end_tag{})
+      : __imp_(__variant_end_tag{}), __which_(__v.__which_)
   {
       __imp_.__visit(__v.__imp_, [](auto& __my_head, auto& __other_head) {
         using _HeadT = remove_reference_t<decltype(__my_head)>;
@@ -547,12 +540,13 @@ class __variant_base<_HasTDtor, false, _Types...> {
 public:
   using _Imp = __variant_union<_HasTDtor, 0, _Types...>;
   _Imp __imp_;
+  size_t __which_;
 
   template <class _Tag, size_t _OtherIdx, class ..._Args>
   constexpr __variant_base(_Tag __tag, in_place_index_t<_OtherIdx>, _Args&&... __args)
-        : __imp_(__tag, in_place_index<_OtherIdx>, _VSTD::forward<_Args>(__args)...) {}
+        : __imp_(__tag, in_place_index<_OtherIdx>, _VSTD::forward<_Args>(__args)...) , __which_(_OtherIdx) {}
 
-  __variant_base(__variant_base const& __v) : __imp_(__variant_end_tag{}) {
+  __variant_base(__variant_base const& __v) : __imp_(__variant_end_tag{}), __which_(__v.__which_) {
       __imp_.__visit(__v.__imp_, [](auto& __my_head, auto& __other_head) {
         using _HeadT = remove_reference_t<decltype(__my_head)>;
         ::new ((void*)&__my_head) _HeadT(__other_head);
@@ -561,7 +555,7 @@ public:
 
   __variant_base(__variant_base&& __v)
         noexcept(__all<is_nothrow_move_constructible<_Types>::value...>::value)
-    : __imp_(__variant_end_tag{}){
+    : __imp_(__variant_end_tag{}), __which_(__v.__which_) {
       __imp_.__visit(__v.__imp_, [](auto& __my_head, auto& __other_head) {
         using _HeadT = remove_reference_t<decltype(__my_head)>;
         ::new ((void*)&__my_head) _HeadT(_VSTD::move(__other_head));
@@ -570,7 +564,7 @@ public:
 
   template <class _Alloc>
   __variant_base(allocator_arg_t, _Alloc const& __a, __variant_base&& __v)
-      : __imp_(__variant_end_tag{})
+      : __imp_(__variant_end_tag{}), __which_(__v.__which_)
   {
       __imp_.__visit(__v.__imp_, [](auto& __my_head, auto& __other_head) {
         using _HeadT = remove_reference_t<decltype(__my_head)>;
@@ -583,7 +577,7 @@ public:
 
   template <class _Alloc>
   __variant_base(allocator_arg_t, _Alloc const& __a, __variant_base const& __v)
-      : __imp_(__variant_end_tag{})
+      : __imp_(__variant_end_tag{}), __which_(__v.__which_)
   {
       __imp_.__visit(__v.__imp_, [](auto& __my_head, auto& __other_head) {
         using _HeadT = remove_reference_t<decltype(__my_head)>;
@@ -692,12 +686,12 @@ class _LIBCPP_TYPE_VIS_ONLY variant :
     struct _CheckUnaryCtor<_Arg, _Found, false> {
       static constexpr size_t __index = _Found::__index;
 
-      template <class _UArg>
-      static constexpr enable_if_t<_Found::__good, bool>
+      template <class _UArg, bool _Dummy = true>
+      static constexpr enable_if_t<_Found::__good && _Dummy, bool>
       __can_construct() { return is_constructible<typename _Found::type, _UArg>::value;}
 
-      template <class _UArg>
-      static constexpr enable_if_t<!_Found::__good, bool>
+      template <class _UArg, bool _Dummy = true>
+      static constexpr enable_if_t<!_Found::__good && _Dummy, bool>
       __can_construct() { return false; }
 
     };
@@ -818,7 +812,7 @@ public:
 
     _LIBCPP_INLINE_VISIBILITY
     constexpr size_t index() const noexcept {
-        return __base_.__imp_.__head_.__which_;
+        return __base_.__which_;
     }
 
     // ?.3.6, Swap
