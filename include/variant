@@ -533,31 +533,22 @@ public:
 };
 
 template <class _VBase1, class _VBase2, class _AssignFn, class _CopyFn>
+inline _LIBCPP_INLINE_VISIBILITY
 void __do_base_assign(_VBase1& _LHS, _VBase2& _RHS, _AssignFn&& __afn, _CopyFn&& __cfn)
 {
-    if (_LHS.__which_ == variant_npos && _RHS.__which_ == variant_npos) {
-        // nothing to do
-      }
-      else if (_LHS.__which_ == _RHS.__which_) {
-#ifndef _LIBCPP_NO_EXCEPTIONS
-          try {
-#endif
-              _LHS.__imp_.__visit(_RHS.__imp_, __afn);
-#ifndef _LIBCPP_NO_EXCEPTIONS
-          } catch (...) {
-              _LHS.__imp_.__destroy();
-              _LHS.__which_ = variant_npos;
-              throw;
-          }
-#endif
-      } else {
-          _LHS.__which_ = variant_npos;
-          _LHS.__imp_.__destroy();
-          if (_RHS.__which_ != variant_npos) {
-            __cfn();
-            _LHS.__which_ = _RHS.__which_;
-          }
-      }
+    if (_LHS.__which_ == _RHS.__which_ && _LHS.__which_ != variant_npos) {
+        _LHS.__imp_.__visit(_RHS.__imp_, __afn);
+        return;
+    }
+    // else
+    if (_LHS.__which_ != variant_npos) {
+        _LHS.__which_ = variant_npos;
+        _LHS.__imp_.__destroy();
+    }
+    if (_RHS.__which_ != variant_npos) {
+        __cfn();
+        _LHS.__which_ = _RHS.__which_;
+    }
 }
 
 template <bool _HasTDtor, bool _HasTCopy, class ..._Types>
@@ -693,9 +684,6 @@ struct __variant_sfinae_base<true, false, _CanCA, _CanMA> {
   __variant_sfinae_base& operator=(__variant_sfinae_base &&) = delete;
 };
 
-
-
-
 template <bool _CanCA>
 struct __variant_sfinae_base<false, true, _CanCA, true> {
   static constexpr bool __copy = false;
@@ -750,7 +738,6 @@ class _LIBCPP_TYPE_VIS_ONLY variant : public __variant_sfinae_base_t<_Types...>
     using _IsTrivCC= __all<is_trivially_copy_constructible<_Types>::value...>;
     using _Base = __variant_base<_IsTrivD::value, _IsTrivCC::value, _Types...>;
     using _CtorBase = __variant_sfinae_base_t<_Types...>;
-
     using _First = variant_alternative_t<0, variant<_Types...>>;
   
     template <size_t _Idx, class _Dummy = void>
@@ -787,10 +774,8 @@ class _LIBCPP_TYPE_VIS_ONLY variant : public __variant_sfinae_base_t<_Types...>
       template <class _UArg, bool _Dummy = true>
       static constexpr enable_if_t<!_Found::__good && _Dummy, bool>
       __can_construct() { return false; }
-
     };
-public:
-    _Base __base_;
+
 public:
     // ?.3.1 Constructors
     template <bool _Dummy = true, class = enable_if_t<
@@ -939,6 +924,9 @@ public:
 
     // ?.3.6, Swap
     void swap(variant&) /* TODO noexcept(see below) */;
+
+public: // TODO Make this private
+    _Base __base_;
 };
 
 _LIBCPP_END_NAMESPACE_STD
