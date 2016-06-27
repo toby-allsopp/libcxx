@@ -294,6 +294,8 @@ template <class _Tp, class... _Types>
 inline _LIBCPP_INLINE_VISIBILITY
 constexpr add_pointer_t<const _Tp> get_if(const variant<_Types...>*) noexcept;
 
+struct _LIBCPP_TYPE_VIS_ONLY monostate {};
+
 template <class... _Types, class _Alloc>
 struct _LIBCPP_TYPE_VIS_ONLY uses_allocator<variant<_Types...>, _Alloc> : true_type {};
 
@@ -416,6 +418,7 @@ public:
 
     template <class _Tp, class... _Args>
     constexpr explicit variant(in_place_type_t<_Tp>, _Args&&...);
+
     template <class _Tp, class _Up, class... _Args>
     constexpr explicit variant(in_place_type_t<_Tp>, initializer_list<_Up>, _Args&&...);
 
