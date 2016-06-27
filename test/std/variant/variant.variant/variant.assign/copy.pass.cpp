@@ -81,6 +81,15 @@ struct CopyThrows {
   CopyThrows& operator=(CopyThrows const&) { throw 42; }
 };
 
+struct MoveThrows {
+  MoveThrows() = default;
+  MoveThrows(MoveThrows const&) = default;
+  MoveThrows(MoveThrows&&) { throw 42; }
+  MoveThrows& operator=(MoveThrows const&) { return *this; }
+  MoveThrows& operator=(MoveThrows&&) { throw 42; }
+
+};
+
 struct MakeEmptyT {
   MakeEmptyT() = default;
   MakeEmptyT(MakeEmptyT const&) {
@@ -297,28 +306,6 @@ void test_copy_assignment_different_index()
         assert(CopyAssign::copy_assign == 0);
     }
 #ifndef TEST_HAS_NO_EXCEPTIONS
-    using MET = MakeEmptyT;
-    {
-        using V = std::variant<int, MET, std::string>;
-        V v1(std::in_place_type<int>);
-        V v2(std::in_place_type<MET>);
-        try {
-            v1 = v2;
-            assert(false);
-        } catch (...) {
-        }
-        assert(v1.valueless_by_exception());
-        assert(v1.index() == std::variant_npos);
-    }
-    {
-        using V = std::variant<int, MET, std::string>;
-        V v1(std::in_place_type<MET>);
-        V v2(std::in_place_type<std::string>, "hello");
-        V& vref = (v1 = v2);
-        assert(&vref == &v1);
-        assert(v1.index() == 2);
-        assert(std::get<2>(v1) == "hello");
-    }
     {
         // Test that if copy construction throws then original value is
         // unchanged.
@@ -331,6 +318,41 @@ void test_copy_assignment_different_index()
         } catch (...) { /* ... */ }
         assert(v1.index() == 2);
         assert(std::get<2>(v1) == "hello");
+    }
+    {
+        // Test that if move construction throws then the variant is left
+        // valueless by exception.
+        using V = std::variant<int, MoveThrows, std::string>;
+        V v1(std::in_place_type<std::string>, "hello");
+        V v2(std::in_place_type<MoveThrows>);
+        try {
+            v1 = v2;
+            assert(false);
+        } catch (...) { /* ... */ }
+        assert(v1.valueless_by_exception());
+        assert(v2.index() == 1);
+    }
+    {
+        using V = std::variant<int, CopyThrows, std::string>;
+        V v1(std::in_place_type<CopyThrows>);
+        V v2(std::in_place_type<std::string>, "hello");
+        V& vref = (v1 = v2);
+        assert(&vref == &v1);
+        assert(v1.index() == 2);
+        assert(std::get<2>(v1) == "hello");
+        assert(v2.index() == 2);
+        assert(std::get<2>(v2) == "hello");
+    }
+    {
+        using V = std::variant<int, MoveThrows, std::string>;
+        V v1(std::in_place_type<MoveThrows>);
+        V v2(std::in_place_type<std::string>, "hello");
+        V& vref = (v1 = v2);
+        assert(&vref == &v1);
+        assert(v1.index() == 2);
+        assert(std::get<2>(v1) == "hello");
+        assert(v2.index() == 2);
+        assert(std::get<2>(v2) == "hello");
     }
 #endif
 }
