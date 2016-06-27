@@ -534,13 +534,13 @@ template <>
 struct __lazy_and_impl<true> : true_type {};
 
 template <class _Pred>
-struct __lazy_and_impl<true, _Pred> : integral_constant<bool, _Pred::type::value> {};
+struct __lazy_and_impl<true, _Pred> : integral_constant<bool, _Pred::value> {};
 
 template <class _Hp, class ..._Tp>
-struct __lazy_and_impl<true, _Hp, _Tp...> : __lazy_and_impl<_Hp::type::value, _Tp...> {};
+struct __lazy_and_impl<true, _Hp, _Tp...> : __lazy_and_impl<_Hp::value, _Tp...> {};
 
 template <class _P1, class ..._Pr>
-struct __lazy_and : __lazy_and_impl<_P1::type::value, _Pr...> {};
+struct __lazy_and : __lazy_and_impl<_P1::value, _Pr...> {};
 
 // __lazy_or
 
@@ -555,15 +555,15 @@ struct __lazy_or_impl<false> : false_type {};
 
 template <class _Hp, class ..._Tp>
 struct __lazy_or_impl<false, _Hp, _Tp...>
-        : __lazy_or_impl<_Hp::type::value, _Tp...> {};
+        : __lazy_or_impl<_Hp::value, _Tp...> {};
 
 template <class _P1, class ..._Pr>
-struct __lazy_or : __lazy_or_impl<_P1::type::value, _Pr...> {};
+struct __lazy_or : __lazy_or_impl<_P1::value, _Pr...> {};
 
 // __lazy_not
 
 template <class _Pred>
-struct __lazy_not : integral_constant<bool, !_Pred::type::value> {};
+struct __lazy_not : integral_constant<bool, !_Pred::value> {};
 
 // __and_
 template<class...> struct __and_;
