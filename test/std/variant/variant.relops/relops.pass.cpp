@@ -15,13 +15,32 @@
 // template <class ...Types>
 // constexpr bool
 // operator==(variant<Types...> const&, variant<Types...> const&) noexcept;
+//
+// template <class ...Types>
+// constexpr bool
+// operator!=(variant<Types...> const&, variant<Types...> const&) noexcept;
+//
+// template <class ...Types>
+// constexpr bool
+// operator<(variant<Types...> const&, variant<Types...> const&) noexcept;
+//
+// template <class ...Types>
+// constexpr bool
+// operator>(variant<Types...> const&, variant<Types...> const&) noexcept;
+//
+// template <class ...Types>
+// constexpr bool
+// operator<=(variant<Types...> const&, variant<Types...> const&) noexcept;
+//
+// template <class ...Types>
+// constexpr bool
+// operator>=(variant<Types...> const&, variant<Types...> const&) noexcept;
 
 #include <variant>
 #include <type_traits>
 #include <cassert>
 
 #include "test_macros.h"
-
 
 #ifndef TEST_HAS_NO_EXCEPTIONS
 struct MakeEmptyT {
@@ -122,73 +141,64 @@ void test_equality()
 }
 
 template <class Var>
-constexpr bool test_less(Var const& l, Var const& r, bool expect) {
-    return ((l < r) == expect)
-        && (!(l >= r) == expect);
+constexpr bool test_less(Var const& l, Var const& r, bool expect_less,
+                                                     bool expect_greater) {
+    return ((l < r) == expect_less)
+        && (!(l >= r) == expect_less)
+        && ((l > r) == expect_greater)
+        && (!(l <= r) == expect_greater);
 }
 
 void test_relational()
 {
-    { // v1.index() < v2.index()
+    { // same index, same value
         using V = std::variant<int, long>;
-        constexpr V v1(42);
-        constexpr V v2(42);
-        static_assert(test_less(v1, v2, false), "");
+        constexpr V v1(1);
+        constexpr V v2(1);
+        static_assert(test_less(v1, v2, false, false), "");
     }
-    {
+    { // same index, value < other_value
         using V = std::variant<int, long>;
-        constexpr V v1(42);
-        constexpr V v2(43);
-        static_assert(!(v1 == v2), "");
-        static_assert(!(v2 == v1), "");
-        static_assert(v1 != v2, "");
-        static_assert(v2 != v1, "");
+        constexpr V v1(0);
+        constexpr V v2(1);
+        static_assert(test_less(v1, v2, true, false), "");
     }
-    {
+    { // same index, value > other_value
         using V = std::variant<int, long>;
-        constexpr V v1(42);
-        constexpr V v2(42l);
-        static_assert(!(v1 == v2), "");
-        static_assert(!(v2 == v1), "");
-        static_assert(v1 != v2, "");
-        static_assert(v2 != v1, "");
+        constexpr V v1(1);
+        constexpr V v2(0);
+        static_assert(test_less(v1, v2, false, true), "");
     }
-    {
+    { // LHS.index() < RHS.index()
         using V = std::variant<int, long>;
-        constexpr V v1(42l);
-        constexpr V v2(42l);
-        static_assert(v1 == v2, "");
-        static_assert(v2 == v1, "");
-        static_assert(!(v1 != v2), "");
-        static_assert(!(v2 != v1), "");
+        constexpr V v1(0);
+        constexpr V v2(0l);
+        static_assert(test_less(v1, v2, true, false), "");
+    }
+    { // LHS.index() > RHS.index()
+        using V = std::variant<int, long>;
+        constexpr V v1(0l);
+        constexpr V v2(0);
+        static_assert(test_less(v1, v2, false, true), "");
     }
 #ifndef TEST_HAS_NO_EXCEPTIONS
-    {
+    { // LHS.index() < RHS.index(), RHS is empty
         using V = std::variant<int, MakeEmptyT>;
         V v1;
         V v2; makeEmpty(v2);
-        assert(!(v1 == v2));
-        assert(!(v2 == v1));
-        assert(v1 != v2);
-        assert(v2 != v1);
+        assert(test_less(v1, v2, true, false));
     }
-    {
+    { // LHS.index() > RHS.index(), LHS is empty
         using V = std::variant<int, MakeEmptyT>;
         V v1; makeEmpty(v1);
         V v2;
-        assert(!(v1 == v2));
-        assert(!(v2 == v1));
-        assert(v1 != v2);
-        assert(v2 != v1);
+        assert(test_less(v1, v2, false, true));
     }
-    {
+    { // LHS.index() == RHS.index(), LHS and RHS are empty
         using V = std::variant<int, MakeEmptyT>;
         V v1; makeEmpty(v1);
         V v2; makeEmpty(v2);
-        assert(v1 == v2);
-        assert(v2 == v1);
-        assert(!(v1 != v2));
-        assert(!(v2 != v1));
+        assert(test_less(v1, v2, false, false));
     }
 #endif
 }
