@@ -323,7 +323,10 @@ struct __variant_overloads_imp {
 template <size_t _Idx, class _T0, class... _TRest>
 struct __variant_overloads_imp<_Idx, _T0, _TRest...> : __variant_overloads_imp<_Idx + 1, _TRest...> {
   using _BaseT = __variant_overloads_imp<_Idx + 1, _TRest...>;
-  static __variant_overload<_Idx, _T0> __fun(_T0);
+  static __variant_overload<
+        __find_exactly_one_t_checker<_T0, _Idx, _TRest...>::value
+      , _T0>
+  __fun(_T0);
   using _BaseT::__fun;
 };
 
@@ -796,7 +799,10 @@ class _LIBCPP_TYPE_VIS_ONLY variant : public __variant_sfinae_base_t<_Types...>
 
         template <class _UArg, bool _Dummy = true>
       static constexpr enable_if_t<_Found::__good && _Dummy, bool>
-      __can_assign() { return is_assignable<typename _Found::type, _UArg>::value;}
+      __can_assign() {
+            return is_assignable<typename _Found::type&, _UArg>::value
+                && is_constructible<typename _Found::type, _UArg>::value;
+      }
 
       template <class _UArg, bool _Dummy = true>
       static constexpr enable_if_t<!_Found::__good && _Dummy, bool>

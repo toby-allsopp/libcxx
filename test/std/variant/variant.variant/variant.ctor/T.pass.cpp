@@ -50,15 +50,19 @@ void test_T_ctor_noexcept() {
 void test_T_ctor_sfinae() {
     {
         using V = std::variant<int, int&&>;
-        static_assert(!std::is_constructible<V, int>::value, "ambigious");
+        static_assert(!std::is_constructible<V, int>::value, "ambiguous");
     }
     {
         using V = std::variant<int, int const&>;
-        static_assert(!std::is_constructible<V, int>::value, "ambigious");
+        static_assert(!std::is_constructible<V, int>::value, "ambiguous");
     }
     {
         using V = std::variant<long, unsigned>;
-        static_assert(!std::is_constructible<V, int>::value, "ambigious");
+        static_assert(!std::is_constructible<V, int>::value, "ambiguous");
+    }
+    {
+        using V = std::variant<std::string, std::string>;
+        static_assert(!std::is_constructible<V, const char*>::value, "ambiguous");
     }
     {
         using V = std::variant<std::string, void*>;
