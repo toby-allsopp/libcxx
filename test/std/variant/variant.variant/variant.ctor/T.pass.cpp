@@ -24,13 +24,46 @@
 
 #include "test_macros.h"
 
+struct Dummy {
+  Dummy() = default;
+};
+
+struct ThrowsT {
+  ThrowsT(int) noexcept(false) {}
+};
+
+struct NoThrowT {
+  NoThrowT(int) noexcept(true) {}
+};
 
 void test_T_ctor_noexcept() {
-
+    {
+        using V = std::variant<Dummy, NoThrowT>;
+        static_assert(std::is_nothrow_constructible<V, int>::value, "");
+    }
+    {
+        using V = std::variant<Dummy, ThrowsT>;
+        static_assert(!std::is_nothrow_constructible<V, int>::value, "");
+    }
 }
 
 void test_T_ctor_sfinae() {
-
+    {
+        using V = std::variant<int, int&&>;
+        static_assert(!std::is_constructible<V, int>::value, "ambigious");
+    }
+    {
+        using V = std::variant<int, int const&>;
+        static_assert(!std::is_constructible<V, int>::value, "ambigious");
+    }
+    {
+        using V = std::variant<long, unsigned>;
+        static_assert(!std::is_constructible<V, int>::value, "ambigious");
+    }
+    {
+        using V = std::variant<std::string, void*>;
+        static_assert(!std::is_constructible<V, int>::value, "no matching constructor");
+    }
 }
 
 void test_T_ctor_basic()
@@ -46,14 +79,18 @@ void test_T_ctor_basic()
         static_assert(std::get<1>(v) == 42);
     }
     {
+        using V = std::variant<int const&, int&&, long>;
+        static_assert(std::is_convertible<int&, V>::value, "must be implicit");
         int x = 42;
-        std::variant<int const&, int&&, long> v(x);
+        V v(x);
         assert(v.index() == 0);
         assert(&std::get<0>(v) == &x);
     }
     {
+        using V = std::variant<int const&, int&&, long>;
+        static_assert(std::is_convertible<int, V>::value, "must be implicit");
         int x = 42;
-        std::variant<int const&, int&&, long> v(std::move(x));
+        V v(std::move(x));
         assert(v.index() == 1);
         assert(&std::get<1>(v) == &x);
     }

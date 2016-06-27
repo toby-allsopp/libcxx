@@ -684,6 +684,7 @@ class _LIBCPP_TYPE_VIS_ONLY variant :
 
     template <class _Arg, class _Found>
     struct _CheckUnaryCtor<_Arg, _Found, false> {
+      using type = typename _Found::type;
       static constexpr size_t __index = _Found::__index;
 
       template <class _UArg, bool _Dummy = true>
@@ -709,15 +710,19 @@ public:
     variant(variant&&) = default;
 
     template <class _Tp,
-              class = enable_if_t<_CheckUnaryCtor<_Tp>::template __can_construct<_Tp>()>>
-    constexpr variant(_Tp&& __t) /* TODO noexcept(see below) */
-        : __base_(__variant_inplace_tag{}, in_place_index<_CheckUnaryCtor<_Tp>::__index>, _VSTD::forward<_Tp>(__t)) {}
+              class _Found = _CheckUnaryCtor<_Tp>,
+              class = enable_if_t<_Found::template __can_construct<_Tp>()>>
+    constexpr variant(_Tp&& __t)
+            noexcept(is_nothrow_constructible<typename _Found::type, _Tp>::value)
+        : __base_(__variant_inplace_tag{}, in_place_index<_Found::__index>,
+                  _VSTD::forward<_Tp>(__t)) {}
 
     template <class _Tp, class... _Args,
               class _Found = __find_exactly_one_unchecked<_Tp, _Types...>,
               class = enable_if_t<_CheckCtor<_Found::value>::template __can_construct<_Args...>()>>
     constexpr explicit variant(in_place_type_t<_Tp>, _Args&&... __args)
-        : __base_(__variant_inplace_tag{}, in_place_index<_Found::value>, _VSTD::forward<_Args>(__args)...) {}
+        : __base_(__variant_inplace_tag{}, in_place_index<_Found::value>,
+                  _VSTD::forward<_Args>(__args)...) {}
 
     template <class _Tp, class _Up, class... _Args,
               class _Found = __find_exactly_one_unchecked<_Tp, _Types...>,
