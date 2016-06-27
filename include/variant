@@ -1165,7 +1165,6 @@ inline _LIBCPP_INLINE_VISIBILITY
 constexpr bool
 operator==(variant<_Types...> const& _LHS, variant<_Types...> const& _RHS) noexcept
 {
-    using _VT = variant<_Types...>;
     return (_LHS.valueless_by_exception() && _RHS.valueless_by_exception()) ||
         (_LHS.index() == _RHS.index() &&
             _LHS.template __visit<bool>(_RHS, equal_to<>{}));
@@ -1175,9 +1174,39 @@ operator==(variant<_Types...> const& _LHS, variant<_Types...> const& _RHS) noexc
 template <class ..._Types>
 inline _LIBCPP_INLINE_VISIBILITY
 constexpr bool
-operator!=(variant<_Types...> const& _LHS, variant<_Types...> const& _RHS) noexcept
-{
+operator!=(variant<_Types...> const& _LHS, variant<_Types...> const& _RHS) noexcept {
     return !(_LHS == _RHS);
+}
+
+template <class ..._Types>
+inline _LIBCPP_INLINE_VISIBILITY
+constexpr bool
+operator<(variant<_Types...> const& _LHS, variant<_Types...> const& _RHS) noexcept
+{
+    return (_LHS.index() < _RHS.index())
+        || (_LHS.index() == _RHS.index() && !_LHS.valueless_by_exception()
+            && _LHS.template __visit<bool>(_RHS, less<>{}));
+}
+
+template <class ..._Types>
+inline _LIBCPP_INLINE_VISIBILITY
+constexpr bool
+operator>(variant<_Types...> const& _LHS, variant<_Types...> const& _RHS) noexcept {
+    return _RHS < _LHS;
+}
+
+template <class ..._Types>
+inline _LIBCPP_INLINE_VISIBILITY
+constexpr bool
+operator<=(variant<_Types...> const& _LHS, variant<_Types...> const& _RHS) noexcept {
+    return !(_LHS > _RHS);
+}
+
+template <class ..._Types>
+inline _LIBCPP_INLINE_VISIBILITY
+constexpr bool
+operator>=(variant<_Types...> const& _LHS, variant<_Types...> const& _RHS) noexcept {
+    return !(_LHS < _RHS);
 }
 
 struct _LIBCPP_TYPE_VIS_ONLY monostate {};
