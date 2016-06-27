@@ -254,24 +254,32 @@ get(const variant<_Types...>&& __v) {
 
 template <class _Tp, class... _Types>
 inline _LIBCPP_INLINE_VISIBILITY
-constexpr _Tp& get(variant<_Types...>&);
+constexpr _Tp& get(variant<_Types...>& __v) {
+    return _VSTD::get<__find_exactly_one_t<_Tp, _Types...>::value>(__v);
+}
 
 template <class _Tp, class... _Types>
 inline _LIBCPP_INLINE_VISIBILITY
-constexpr _Tp&& get(variant<_Types...>&&);
+constexpr _Tp&& get(variant<_Types...>&& __v) {
+    return _VSTD::get<__find_exactly_one_t<_Tp, _Types...>::value>(_VSTD::move(__v));
+}
 
 template <class _Tp, class... _Types>
 inline _LIBCPP_INLINE_VISIBILITY
-constexpr const _Tp& get(const variant<_Types...>&);
+constexpr const _Tp& get(const variant<_Types...>& __v) {
+    return _VSTD::get<__find_exactly_one_t<_Tp, _Types...>::value>(__v);
+}
 
 template <class _Tp, class... _Types>
 inline _LIBCPP_INLINE_VISIBILITY
-constexpr const _Tp&& get(const variant<_Types...>&&);
+constexpr const _Tp&& get(const variant<_Types...>&& __v) {
+    return _VSTD::get<__find_exactly_one_t<_Tp, _Types...>::value>(_VSTD::move(__v));
+}
 
 template <size_t _Idx, class... _Types>
 inline _LIBCPP_INLINE_VISIBILITY
 constexpr add_pointer_t<variant_alternative_t<_Idx, variant<_Types...>>>
-get_if(variant<_Types...>*) noexcept;
+get_if(variant<_Types...>* __v) noexcept;
 
 template <size_t _Idx, class... _Types>
 inline _LIBCPP_INLINE_VISIBILITY
@@ -396,7 +404,9 @@ public:
     _Imp __imp_;
 public:
     // ?.3.1 Constructors
-    constexpr variant() /* TODO noexcept(see below) */
+    constexpr variant()
+        noexcept(is_nothrow_default_constructible<
+            variant_alternative_t<0, variant<_Types...>>>::value)
         : __imp_(in_place_index<0>) {}
 
     variant(const variant&);
@@ -408,12 +418,14 @@ public:
     constexpr explicit variant(in_place_type_t<_Tp>, _Args&&...);
     template <class _Tp, class _Up, class... _Args>
     constexpr explicit variant(in_place_type_t<_Tp>, initializer_list<_Up>, _Args&&...);
-    
+
     template <size_t _Idx, class... _Args>
-    constexpr explicit variant(in_place_index_t<_Idx>, _Args&&...);
+    constexpr explicit variant(in_place_index_t<_Idx> __i, _Args&&... __args)
+        : __imp_(__i, _VSTD::forward<_Args>(__args)...) {}
+
     template <size_t _Idx, class _Up, class... _Args>
     constexpr explicit variant(in_place_index_t<_Idx>, initializer_list<_Up>, _Args&&...);
-    
+
     // allocator-extended constructors
     template <class _Alloc>
     variant(allocator_arg_t, const _Alloc&);
