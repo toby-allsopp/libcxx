@@ -24,6 +24,8 @@
 
 #include "test_macros.h"
 
+namespace MetaHelpers {
+
 struct Dummy {
   Dummy() = default;
 };
@@ -43,7 +45,37 @@ struct NoThrowT {
   NoThrowT& operator=(int) noexcept { return *this; }
 };
 
+} // namespace MetaHelpers
+
+namespace RuntimeHelpers {
+#ifndef TEST_HAS_NO_EXCEPTIONS
+
+struct ThrowsCtorT {
+  int value;
+  ThrowsCtorT() : value(0) {}
+  ThrowsCtorT(int) noexcept(false) { throw 42; }
+  ThrowsCtorT& operator=(int v) noexcept { value = v; return *this; }
+};
+
+struct ThrowsAssignT {
+  int value;
+  ThrowsAssignT() : value(0) {}
+  ThrowsAssignT(int v) noexcept : value(v) {}
+  ThrowsAssignT& operator=(int) noexcept(false) { throw 42; }
+};
+
+struct NoThrowT {
+  int value;
+  NoThrowT() : value(0) {}
+  NoThrowT(int v) noexcept : value(v) {}
+  NoThrowT& operator=(int v) noexcept { value = v; return *this; }
+};
+
+#endif // !defined(TEST_HAS_NO_EXCEPTIONS)
+} // namespace RuntimeHelpers
+
 void test_T_assignment_noexcept() {
+    using namespace MetaHelpers;
     {
         using V = std::variant<Dummy, NoThrowT>;
         static_assert(std::is_nothrow_assignable<V, int>::value, "");
@@ -117,9 +149,74 @@ void test_T_assignment_basic()
     }
 }
 
+void test_T_assignment_performs_construction()
+{
+using namespace RuntimeHelpers;
+#ifndef TEST_HAS_NO_EXCEPTIONS
+    {
+        using V = std::variant<std::string, ThrowsCtorT>;
+        V v(std::in_place_type<std::string>, "hello");
+        try {
+            v = 42;
+        } catch (...) { /* ... */ }
+        assert(v.valueless_by_exception());
+    }
+    {
+        using V = std::variant<ThrowsAssignT, std::string>;
+        V v(std::in_place_type<std::string>, "hello");
+        v = 42;
+        assert(v.index() == 0);
+        assert(std::get<0>(v).value == 42);
+    }
+#endif
+}
+
+void test_T_assignment_performs_assignment()
+{
+    using namespace RuntimeHelpers;
+#ifndef TEST_HAS_NO_EXCEPTIONS
+    {
+        using V = std::variant<ThrowsCtorT>;
+        V v;
+        v = 42;
+        assert(v.index() == 0);
+        assert(std::get<0>(v).value == 42);
+    }
+    {
+        using V = std::variant<ThrowsCtorT, std::string>;
+        V v;
+        v = 42;
+        assert(v.index() == 0);
+        assert(std::get<0>(v).value == 42);
+    }
+    {
+        using V = std::variant<ThrowsAssignT>;
+        V v(100);
+        try {
+            v = 42;
+            assert(false);
+        } catch(...) { /* ... */ }
+        assert(v.index() == 0);
+        assert(std::get<0>(v).value == 100);
+    }
+    {
+        using V = std::variant<std::string, ThrowsAssignT>;
+        V v(100);
+        try {
+            v = 42;
+            assert(false);
+        } catch(...) { /* ... */ }
+        assert(v.index() == 1);
+        assert(std::get<1>(v).value == 100);
+    }
+#endif
+}
+
 int main()
 {
     test_T_assignment_basic();
+    test_T_assignment_performs_construction();
+    test_T_assignment_performs_assignment();
     test_T_assignment_noexcept();
     test_T_assignment_sfinae();
 }
