@@ -229,6 +229,7 @@ template <size_t _Idx, class... _Types>
 inline _LIBCPP_INLINE_VISIBILITY
 constexpr variant_alternative_t<_Idx, variant<_Types...>>&
 get(variant<_Types...>& __v) {
+    if (__v.index() != _Idx) __libcpp_throw(bad_variant_access());
     return __v.__base_.__imp_.__get(in_place_index<_Idx>);
 }
 
@@ -237,6 +238,7 @@ inline _LIBCPP_INLINE_VISIBILITY
 constexpr variant_alternative_t<_Idx, variant<_Types...>>&&
 get(variant<_Types...>&& __v) {
     using _Tp = variant_alternative_t<_Idx, variant<_Types...>>;
+    if (__v.index() != _Idx) __libcpp_throw(bad_variant_access());
     return static_cast<_Tp&&>(__v.__base_.__imp_.__get(in_place_index<_Idx>));
 }
 
@@ -244,6 +246,7 @@ template <size_t _Idx, class... _Types>
 inline _LIBCPP_INLINE_VISIBILITY
 constexpr variant_alternative_t<_Idx, variant<_Types...>> const&
 get(const variant<_Types...>& __v) {
+    if (__v.index() != _Idx) __libcpp_throw(bad_variant_access());
     return __v.__base_.__imp_.__get(in_place_index<_Idx>);
 }
 
@@ -252,6 +255,7 @@ inline _LIBCPP_INLINE_VISIBILITY
 constexpr variant_alternative_t<_Idx, variant<_Types...>> const&&
 get(const variant<_Types...>&& __v) {
     using _Tp = variant_alternative_t<_Idx, variant<_Types...>>;
+    if (__v.index() != _Idx) __libcpp_throw(bad_variant_access());
     return static_cast<_Tp const&&>(__v.__base_.__imp_.__get(in_place_index<_Idx>));
 }
 
