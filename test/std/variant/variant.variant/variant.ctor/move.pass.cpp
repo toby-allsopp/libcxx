@@ -32,16 +32,18 @@ struct NoCopy {
   NoCopy(NoCopy const&) = delete;
 };
 
-
 struct MoveOnly {
+  int value;
+  MoveOnly(int v) : value(v) {}
   MoveOnly(MoveOnly const&) = delete;
   MoveOnly(MoveOnly&&) = default;
 };
 
-
 struct MoveOnlyNT {
+  int value;
+  MoveOnlyNT(int v) : value(v) {}
   MoveOnlyNT(MoveOnlyNT const&) = delete;
-  MoveOnlyNT(MoveOnlyNT&&) {}
+  MoveOnlyNT(MoveOnlyNT&& other) : value(other.value) { other.value = -1; }
 };
 
 void test_move_noexcept() {
@@ -97,18 +99,34 @@ void test_move_ctor_basic()
         assert(std::get<1>(v2) == 42);
     }
     {
-        std::variant<std::string> v(std::in_place_index<0>, "hello");
+        std::variant<MoveOnly> v(std::in_place_index<0>, 42);
         assert(v.index() == 0);
-        std::variant<std::string> v2(std::move(v));
+        std::variant<MoveOnly> v2(std::move(v));
         assert(v2.index() == 0);
-        assert(std::get<0>(v2) == "hello");
+        assert(std::get<0>(v2).value == 42);
     }
     {
-        std::variant<int, std::string> v(std::in_place_index<1>, "hello");
+        std::variant<int, MoveOnly> v(std::in_place_index<1>, 42);
         assert(v.index() == 1);
-        std::variant<int, std::string> v2(std::move(v));
+        std::variant<int, MoveOnly> v2(std::move(v));
         assert(v2.index() == 1);
-        assert(std::get<1>(v2) == "hello");
+        assert(std::get<1>(v2).value == 42);
+    }
+    {
+        std::variant<MoveOnlyNT> v(std::in_place_index<0>, 42);
+        assert(v.index() == 0);
+        std::variant<MoveOnlyNT> v2(std::move(v));
+        assert(v2.index() == 0);
+        assert(std::get<0>(v).value == -1);
+        assert(std::get<0>(v2).value == 42);
+    }
+    {
+        std::variant<int, MoveOnlyNT> v(std::in_place_index<1>, 42);
+        assert(v.index() == 1);
+        std::variant<int, MoveOnlyNT> v2(std::move(v));
+        assert(v2.index() == 1);
+        assert(std::get<1>(v).value == -1);
+        assert(std::get<1>(v2).value == 42);
     }
 }
 
