@@ -503,6 +503,63 @@ struct _LIBCPP_TYPE_VIS_ONLY uses_allocator<variant<_Types...>, _Alloc> : true_t
 
 namespace __variant_detail {
 
+template <class _First, class ..._Rest>
+struct __make_array_return_type {
+  using type = _First;
+};
+
+template <class ..._Types>
+using __make_array_return = std::array<
+    typename __make_array_return_type<_Types...>::type,
+    sizeof...(_Types)
+>;
+
+template <class ..._Types>
+constexpr __make_array_return<_Types...>
+__make_array(_Types&&... __types) {
+    return {_VSTD::forward<_Types>(__types)...};
+}
+
+template <class _Fn, class... _Vs, size_t... _Is>
+constexpr auto __make_fmatrix_impl(index_sequence<_Is...>) {
+  struct __dispatcher {
+    static constexpr decltype(auto) __dispatch(_Fn __f, _Vs... __vs) {
+      return _VSTD::__invoke_constexpr(static_cast<_Fn>(__f),
+                                       _VSTD::get<_Is>(static_cast<_Vs>(__vs))...);
+    }
+  };
+  return &__dispatcher::__dispatch;
+}
+
+template <class _Fn, class ..._Vs, size_t ..._Is, size_t ..._Js, class ..._Ls>
+constexpr auto __make_fmatrix_impl(
+    index_sequence<_Is...>, index_sequence<_Js...>, _Ls... __ls)
+{
+    return __variant_detail::__make_array(
+        __make_fmatrix_impl<_Fn, _Vs...>(index_sequence<_Is..., _Js>{}, __ls...)...);
+}
+
+template <class _Fn, class ..._Vs>
+constexpr auto __make_fmatrix() {
+    return __make_fmatrix_impl<_Fn, _Vs...>(
+        index_sequence<>{}, make_index_sequence<
+            variant_size<decay_t<_Vs>>::value>{}...);
+}
+
+template <class _Tp>
+constexpr _Tp&& __at_impl(_Tp&& __elem) { return _VSTD::forward<_Tp>(__elem); }
+
+template <class _Tp, class ..._TRest>
+constexpr auto&& __at_impl(_Tp&& __elem, size_t __i, _TRest... __rest) {
+    if (__i == variant_npos) __libcpp_throw(bad_variant_access());
+    return __at_impl(_VSTD::forward<_Tp>(__elem)[__i], __rest...);
+}
+
+template <class _Tp, class ..._TRest>
+constexpr auto&& __at(_Tp&& __elem, _TRest... __rest) {
+    return __at_impl(_VSTD::forward<_Tp>(__elem), __rest...);
+}
+
 template <size_t _Id, class _Ret, class _Func, class ..._Variants>
 struct __dispatcher {
     static constexpr _Ret __dispatch(_Func __fn, _Variants... __vars) {
@@ -574,6 +631,27 @@ void __do_base_assign(_VBase1& _LHS, _VBase2& _RHS, _AssignFn&& __afn, _CopyFn&&
     }
 }
 
+template <class ..._Variants>
+constexpr bool __any_empty(_Variants&... __v) {
+    return false;
+}
+
+template <class _V1, class ..._VRest>
+constexpr bool __any_empty(_V1& __v1, _VRest&... __vrest) {
+    return __v1.valueless_by_exception() ? true : __any_empty(__vrest...);
+}
+
+} // end namespace __variant_detail
+
+
+template <class _Visitor, class... _Variants>
+constexpr decltype(auto) visit(_Visitor&& __vis, _Variants&&... __vars) {
+    if (__variant_detail::__any_empty(__vars...)) __libcpp_throw(bad_variant_access());
+    constexpr auto __fmatrix =
+        __variant_detail::__make_fmatrix<_Visitor&&, _Variants&&...>();
+    return __variant_detail::__at(__fmatrix, __vars.index()...)(
+        _VSTD::forward<_Visitor>(__vis),
+        _VSTD::forward<_Variants>(__vars)...);
 }
 
 struct __variant_end_tag {};
@@ -1137,6 +1215,7 @@ constexpr bool
 operator>=(variant<_Types...> const& _LHS, variant<_Types...> const& _RHS) noexcept {
     return !(_LHS < _RHS);
 }
+
 
 struct _LIBCPP_TYPE_VIS_ONLY monostate {};
 
