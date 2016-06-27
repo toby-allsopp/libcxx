@@ -144,6 +144,7 @@ namespace std {
 
 #include <__config>
 #include <__tuple>
+#include <__functional_base>
 #include <type_traits>
 #include <initializer_list>
 
@@ -203,6 +204,67 @@ struct _LIBCPP_TYPE_VIS_ONLY in_place_index_t {
 
 template <size_t _Idx>
 constexpr in_place_index_t<_Idx> in_place_index{};
+
+template <class _Tp, class... _Types>
+inline _LIBCPP_INLINE_VISIBILITY
+constexpr bool holds_alternative(const variant<_Types...>&) noexcept;
+
+template <size_t _Idx, class... _Types>
+inline _LIBCPP_INLINE_VISIBILITY
+constexpr variant_alternative_t<_Idx, variant<_Types...>>&
+get(variant<_Types...>&);
+
+template <size_t _Idx, class... _Types>
+inline _LIBCPP_INLINE_VISIBILITY
+constexpr variant_alternative_t<_Idx, variant<_Types...>>&&
+get(variant<_Types...>&&);
+
+template <size_t _Idx, class... _Types>
+inline _LIBCPP_INLINE_VISIBILITY
+constexpr variant_alternative_t<_Idx, variant<_Types...>> const&
+get(const variant<_Types...>&);
+
+template <size_t _Idx, class... _Types>
+inline _LIBCPP_INLINE_VISIBILITY
+constexpr variant_alternative_t<_Idx, variant<_Types...>> const&&
+get(const variant<_Types...>&&);
+
+template <class _Tp, class... _Types>
+inline _LIBCPP_INLINE_VISIBILITY
+constexpr _Tp& get(variant<_Types...>&);
+
+template <class _Tp, class... _Types>
+inline _LIBCPP_INLINE_VISIBILITY
+constexpr _Tp&& get(variant<_Types...>&&);
+
+template <class _Tp, class... _Types>
+inline _LIBCPP_INLINE_VISIBILITY
+constexpr const _Tp& get(const variant<_Types...>&);
+
+template <class _Tp, class... _Types>
+inline _LIBCPP_INLINE_VISIBILITY
+constexpr const _Tp&& get(const variant<_Types...>&&);
+
+template <size_t _Idx, class... _Types>
+inline _LIBCPP_INLINE_VISIBILITY
+constexpr add_pointer_t<variant_alternative_t<_Idx, variant<_Types...>>>
+get_if(variant<_Types...>*) noexcept;
+
+template <size_t _Idx, class... _Types>
+inline _LIBCPP_INLINE_VISIBILITY
+constexpr add_pointer_t<const variant_alternative_t<_Idx, variant<_Types...>>>
+get_if(const variant<_Types...>*) noexcept;
+
+template <class _Tp, class... _Types>
+inline _LIBCPP_INLINE_VISIBILITY
+constexpr add_pointer_t<_Tp> get_if(variant<_Types...>*) noexcept;
+
+template <class _Tp, class... _Types>
+inline _LIBCPP_INLINE_VISIBILITY
+constexpr add_pointer_t<const _Tp> get_if(const variant<_Types...>*) noexcept;
+
+template <class... _Types, class _Alloc>
+struct _LIBCPP_TYPE_VIS_ONLY uses_allocator<variant<_Types...>, _Alloc> : true_type {};
 
 _LIBCPP_END_NAMESPACE_STD
 
