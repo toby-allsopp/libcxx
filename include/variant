@@ -150,6 +150,7 @@ namespace std {
 #include <utility>
 #include <initializer_list>
 #include <__debug>
+#include <cassert>
 
 
 #if !defined(_LIBCPP_HAS_NO_PRAGMA_SYSTEM_HEADER)
@@ -887,7 +888,7 @@ public:
         __destroy();
         __move_construct(__tmp);
     }
-      return *this;
+    return *this;
   }
 
   __variant_base& operator=(__variant_base&& __v)
@@ -905,7 +906,7 @@ public:
         __destroy();
         __move_construct(__v);
     }
-      return *this;
+    return *this;
   }
 };
 
@@ -917,17 +918,13 @@ private:
   using _RBase = __variant_base<true, false, _Types...>;
 public:
   using _RBase::_RBase;
-  using _RBase::__destroy;
-  using _RBase::__imp_;
   using _RBase::__which_;
-  using _RBase::__copy_construct;
-  using _RBase::__move_construct;
+  using _RBase::__destroy;
   using _RBase::__copy_assign;
-  using _RBase::__move_assign;
+  using _RBase::__move_construct;
 
   __variant_base(__variant_base const&) = default;
   __variant_base(__variant_base&&) = default;
-
 
   __variant_base& operator=(__variant_base const& __v) {
     if (__which_ == variant_npos && __v.__which_ == variant_npos) {
@@ -941,27 +938,12 @@ public:
         __variant_base __tmp(__v);
         __destroy();
         __move_construct(__tmp);
+        // FIXME this leaks.
+        __tmp.__destroy();
     }
-      return *this;
+    return *this;
   }
-
-  __variant_base& operator=(__variant_base&& __v)
-    noexcept(__all<is_nothrow_move_constructible_v<_Types>...,
-                   is_nothrow_move_assignable_v<_Types>...>::value)
-  {
-    if (__which_ == variant_npos && __v.__which_ == variant_npos) {
-        //
-    } else if (__which_ == __v.__which_) {
-        __move_assign(__v);
-    }
-    else if (__v.__which_ == variant_npos) {
-        __destroy();
-    } else {
-        __destroy();
-        __move_construct(__v);
-    }
-      return *this;
-  }
+  __variant_base& operator=(__variant_base&& __v) = default;
 
   ~__variant_base() { __destroy(); }
 };

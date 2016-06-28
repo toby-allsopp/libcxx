@@ -54,21 +54,24 @@ struct MoveOnlyNT {
 };
 
 struct CopyAssign {
+  static int alive;
   static int copy_construct;
   static int copy_assign;
   static int move_construct;
   static int move_assign;
   static void reset() {
-      copy_construct = copy_assign = move_construct = move_assign = 0;
+      copy_construct = copy_assign = move_construct = move_assign = alive = 0;
   }
-  CopyAssign(int v) : value(v) {}
-  CopyAssign(CopyAssign const& o) : value(o.value) { ++copy_construct; }
-  CopyAssign(CopyAssign&& o) : value(o.value) { o.value = -1; ++move_construct; }
+  CopyAssign(int v) : value(v) { ++alive; }
+  CopyAssign(CopyAssign const& o) : value(o.value) { ++alive; ++copy_construct; }
+  CopyAssign(CopyAssign&& o) : value(o.value) { o.value = -1; ++alive; ++move_construct; }
   CopyAssign& operator=(CopyAssign const& o)  { value = o.value; ++copy_assign; return *this; }
   CopyAssign& operator=(CopyAssign&& o)  { value = o.value; o.value = -1; ++move_assign; return *this; }
+  ~CopyAssign() { --alive; }
   int value;
 };
 
+int CopyAssign::alive = 0;
 int CopyAssign::copy_construct = 0;
 int CopyAssign::copy_assign = 0;
 int CopyAssign::move_construct = 0;
@@ -82,21 +85,27 @@ struct CopyThrows {
 };
 
 struct MoveThrows {
-  MoveThrows() = default;
-  MoveThrows(MoveThrows const&) = default;
-  MoveThrows(MoveThrows&&) { throw 42; }
+  static int alive;
+  MoveThrows() { ++alive; }
+  MoveThrows(MoveThrows const&) {++alive;}
+  MoveThrows(MoveThrows&&) { ++alive; throw 42; }
   MoveThrows& operator=(MoveThrows const&) { return *this; }
   MoveThrows& operator=(MoveThrows&&) { throw 42; }
-
+  ~MoveThrows() { --alive; }
 };
 
+int MoveThrows::alive = 0;
+
 struct MakeEmptyT {
-  MakeEmptyT() = default;
+  static int alive;
+  MakeEmptyT() { ++alive; }
   MakeEmptyT(MakeEmptyT const&) {
+      ++alive;
       // Don't throw from the copy constructor since variant's assignment
       // operator performs a copy before committing to the assignment.
   }
   MakeEmptyT(MakeEmptyT &&) {
+      ++alive;
     throw 42;
   }
   MakeEmptyT& operator=(MakeEmptyT const&) {
@@ -105,7 +114,10 @@ struct MakeEmptyT {
   MakeEmptyT& operator=(MakeEmptyT&&) {
       throw 42;
   }
+   ~MakeEmptyT() { --alive; }
 };
+
+int MakeEmptyT::alive = 0;
 
 template <class Variant>
 void makeEmpty(Variant& v) {
@@ -294,13 +306,17 @@ void test_copy_assignment_different_index()
     }
     {
         using V = std::variant<int, CopyAssign, unsigned>;
+        CopyAssign::reset();
         V v1(std::in_place_type<unsigned>, 43);
         V v2(std::in_place_type<CopyAssign>, 42);
-        CopyAssign::reset();
+        assert(CopyAssign::copy_construct == 0);
+        assert(CopyAssign::move_construct == 0);
+        assert(CopyAssign::alive == 1);
         V& vref = (v1 = v2);
         assert(&vref == &v1);
         assert(v1.index() == 1);
         assert(std::get<1>(v1).value == 42);
+        assert(CopyAssign::alive == 2);
         assert(CopyAssign::copy_construct == 1);
         assert(CopyAssign::move_construct == 1);
         assert(CopyAssign::copy_assign == 0);
@@ -325,12 +341,14 @@ void test_copy_assignment_different_index()
         using V = std::variant<int, MoveThrows, std::string>;
         V v1(std::in_place_type<std::string>, "hello");
         V v2(std::in_place_type<MoveThrows>);
+        assert(MoveThrows::alive == 1);
         try {
             v1 = v2;
             assert(false);
         } catch (...) { /* ... */ }
         assert(v1.valueless_by_exception());
         assert(v2.index() == 1);
+        assert(MoveThrows::alive == 2);
     }
     {
         using V = std::variant<int, CopyThrows, std::string>;
