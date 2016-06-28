@@ -771,15 +771,18 @@ public:
 
 
 template <bool _HasTDtor, bool _HasTCopy, class ..._Types>
-class __variant_base {
-    static_assert(_HasTCopy, "");
-public:
-  using _Imp = __variant_union<_HasTDtor, 0, _Types...>;
+class __variant_base;
+
+
+template <class ..._Types>
+struct __variant_base<true, true, _Types...> {
   static constexpr size_t __size = sizeof...(_Types);
+  using _Imp = __variant_union<
+    __all<is_trivially_destructible<_Types>::value...>::value, 0, _Types...>;
   _Imp __imp_;
   size_t __which_ = variant_npos;
 
-  __variant_base(__variant_end_tag __tag) : __imp_(__tag)  {}
+  constexpr __variant_base(__variant_end_tag __tag) : __imp_(__tag)  {}
 
   template <class _Tag, size_t _OtherIdx, class ..._Args>
   constexpr __variant_base(_Tag __tag, in_place_index_t<_OtherIdx>, _Args&&... __args)
@@ -820,12 +823,13 @@ public:
   }
 };
 
+
 template <bool _HasTDtor, class ..._Types>
 class __variant_base<_HasTDtor, false, _Types...> {
 public:
-  using _Derived = variant<_Types...>;
-  using _Imp = __variant_union<_HasTDtor, 0, _Types...>;
   static constexpr size_t __size = sizeof...(_Types);
+  using _Imp = __variant_union<
+    __all<is_trivially_destructible<_Types>::value...>::value, 0, _Types...>;
   _Imp __imp_;
   size_t __which_ = variant_npos;
 
@@ -894,6 +898,7 @@ public:
   }
 };
 
+
 template <>
 class _LIBCPP_TYPE_VIS_ONLY variant<> {
     // TODO(EricWF) WTF?
@@ -906,7 +911,9 @@ class _LIBCPP_TYPE_VIS_ONLY variant
     // private typedefs
     using _Base = __variant_base<
         __all<is_trivially_destructible<_Types>::value...>::value,
-        __all<is_trivially_copy_constructible<_Types>::value...>::value,
+        __all<is_trivially_copyable<_Types>::value...,
+              is_trivially_copy_constructible<_Types>::value...>
+        ::value,
         _Types...
     >;
     using _CtorBase = __variant_detail::__variant_sfinae_base_t<_Types...>;
