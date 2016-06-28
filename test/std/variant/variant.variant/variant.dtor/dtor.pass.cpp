@@ -56,7 +56,7 @@ int main()
     }
     {
         using V = std::variant<void, void const, void const volatile, void volatile>;
-        static_assert(!std::is_trivially_destructible<V>::value, "");
+        static_assert(std::is_trivially_destructible<V>::value, "");
     }
     {
         using V = std::variant<NonTDtor, int, NonTDtor1>;

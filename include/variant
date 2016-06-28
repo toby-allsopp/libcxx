@@ -850,7 +850,6 @@ union _LIBCPP_TYPE_VIS_ONLY __variant_union<true, _Idx, _T0, _TRest...>
               _VSTD::forward<_Args>(__args)...)
   {
   }
-  inline _LIBCPP_INLINE_VISIBILITY void __destroy(size_t) {}
 public:
   friend struct __variant_detail::__union_access;
   char __dummy_;
@@ -1078,13 +1077,10 @@ private:
 public:
   using _BaseT::_BaseT;
   using _Imp = typename _BaseT::_Imp;
-  using _BaseT::__which_;
-  using _BaseT::__imp_;
-  using _BaseT::__destroy;
   using _Help = __variant_base_helper;
 
-  static_assert(is_trivially_copy_constructible<_Imp>::value, "");
-  static_assert(is_trivially_move_constructible<_Imp>::value, "");
+  static_assert(is_trivially_copyable<_Imp>::value, "");
+  static_assert(is_trivially_destructible<_Imp>::value, "");
 
   __variant_base(__variant_base const&) = default;
   __variant_base(__variant_base&&) = default;
@@ -1092,11 +1088,13 @@ public:
   inline _LIBCPP_INLINE_VISIBILITY __variant_base& operator=(
     __variant_base const& __v)
   {
+    static_assert(is_trivially_copy_constructible<_Imp>::value, "");
+    static_assert(is_trivially_move_constructible<_Imp>::value, "");
     if (!_Help::__do_copy_assign_generic(*this, __v)) {
-      _Imp __tmp(__v.__imp_);
-      __destroy();
-      ::new ((void*)&__imp_) _Imp(_VSTD::move(__tmp));
-      __which_ = __v.__which_;
+      // Perform a trivial copy overtop of the current value. There is
+      // no need to call the destructor.
+      _VSTD::memcpy(&this->__imp_, &__v.__imp_, sizeof(_Imp));
+      this->__which_ = __v.__which_;
     }
     return *this;
   }
@@ -1106,10 +1104,10 @@ public:
     __all<is_nothrow_move_constructible_v<_Types>...,
           is_nothrow_move_assignable_v<_Types>...>::value)
   {
+    static_assert(is_trivially_move_constructible<_Imp>::value, "");
     if (!_Help::__do_move_assign_generic(*this, __v)) {
-      __destroy();
-      ::new ((void*)&__imp_) _Imp(_VSTD::move(__v.__imp_));
-      __which_ = __v.__which_;
+      _VSTD::memcpy(&this->__imp_, &__v.__imp_, sizeof(_Imp));
+      this->__which_ = __v.__which_;
     }
     return *this;
   }
@@ -1124,7 +1122,6 @@ private:
 
 public:
   using _BaseT::_BaseT;
-  using _BaseT::__destroy;
   using _Help = __variant_base_helper;
 
   inline _LIBCPP_INLINE_VISIBILITY __variant_base(__variant_base const& __v)
@@ -1146,7 +1143,7 @@ public:
   {
     if (!_Help::__do_copy_assign_generic(*this, __v)) {
       __variant_base __tmp(__v);
-      __destroy();
+      this->__destroy();
       _Help::__move_construct(*this, __tmp);
     }
     return *this;
@@ -1158,7 +1155,7 @@ public:
           is_nothrow_move_assignable_v<_Types>...>::value)
   {
     if (!_Help::__do_move_assign_generic(*this, __v)) {
-      __destroy();
+      this->__destroy();
       _Help::__move_construct(*this, __v);
     }
     return *this;
@@ -1175,20 +1172,23 @@ template <class... _Types>
 class _LIBCPP_TYPE_VIS_ONLY variant
   : public __variant_detail::__variant_sfinae_base_t<_Types...>
 {
+  
+  template <class _Tp>
+  using _CV = conditional_t<is_void_v<remove_cv_t<remove_reference_t<_Tp>>>, int, _Tp>;
   // private typedefs
   using _Base = __variant_base<
-    __all<is_trivially_destructible<_Types>::value...>::value,
-    __all<is_trivially_copyable<_Types>::value...,
-          is_trivially_copy_constructible<_Types>::value...,
-          is_trivially_move_constructible<_Types>::value...>::value,
+    __all<is_trivially_destructible<_CV<_Types>>::value...>::value,
+    __all<is_trivially_copyable<_CV<_Types>>::value...>::value, //
+          //is_trivially_copy_constructible<_CV<_Types>>::value...,
+          //is_trivially_move_constructible<_CV<_Types>>::value...>::value,
     _Types...>;
   using _CtorBase = __variant_detail::__variant_sfinae_base_t<_Types...>;
   using _First = variant_alternative_t<0, variant>;
 
   // private SFINAE helpers
   template <size_t _Idx,
-            size_t _BoundIdx = _Idx<
-              sizeof...(_Types) ? _Idx : variant_npos> using _CheckCtorIdx =
+            size_t _BoundIdx = ((_Idx<
+              sizeof...(_Types)) ? _Idx : variant_npos)> using _CheckCtorIdx =
               __variant_detail::_CheckCtorImp<
                 _BoundIdx, variant_alternative<_BoundIdx, variant>>;
 
