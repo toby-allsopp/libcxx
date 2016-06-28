@@ -887,11 +887,10 @@ public:
   _TailT __tail_;
 };
 
-struct __variant_base_helper
-{
 
+struct __variant_base_helper {
   template <class _VBase>
-  void __move_construct(_VBase& __lhs, _VBase& __rhs)
+  static void __move_construct(_VBase& __lhs, _VBase& __rhs)
   {
     using namespace __variant_detail;
     __visit_internal(__rhs.__which_,
@@ -905,7 +904,7 @@ struct __variant_base_helper
   }
 
   template <class _VBase>
-  void __copy_construct(_VBase& __lhs, _VBase const& __rhs)
+  static void __copy_construct(_VBase& __lhs, _VBase const& __rhs)
   {
     using namespace __variant_detail;
     __visit_internal(__rhs.__which_,
@@ -916,6 +915,7 @@ struct __variant_base_helper
                      __lhs, __rhs);
     __lhs.__which_ = __rhs.__which_;
   }
+
   template <class _VBase>
   static void __copy_assign(_VBase& __lhs, _VBase const& __rhs)
   {
@@ -926,6 +926,21 @@ struct __variant_base_helper
   }
 
   template <class _VBase>
+  static bool __do_copy_assign_generic(_VBase& __lhs, _VBase const& __rhs)
+  {
+    if (__lhs.__which_ == variant_npos && __rhs.__which_ == variant_npos) {
+        // nothing to do
+    } else if (__lhs.__which_ == __rhs.__which_) {
+      __copy_assign(__lhs, __rhs);
+    } else if (__rhs.__which_ == variant_npos) {
+      __lhs.__destroy();
+    } else {
+        return false;
+    }
+    return true;
+  }
+
+  template <class _VBase>
   static void __move_assign(_VBase& __lhs, _VBase& __rhs)
   {
     __variant_detail::__visit_internal(
@@ -933,6 +948,93 @@ struct __variant_base_helper
       [](auto& __l, auto& __r) { __l.__value_ = _VSTD::move(__r.__value_); },
       __lhs, __rhs);
   }
+
+  template <class _VBase>
+  static bool __do_move_assign_generic(_VBase& __lhs, _VBase& __rhs)
+  {
+    if (__lhs.__which_ == variant_npos && __rhs.__which_ == variant_npos) {
+        // nothing to do
+    } else if (__lhs.__which_ == __rhs.__which_) {
+      __move_assign(__lhs, __rhs);
+    } else if (__rhs.__which_ == variant_npos) {
+      __lhs.__destroy();
+    } else {
+        return false;
+    }
+    return true;
+  }
+};
+
+template <bool _TrivialDtor, class ..._Types>
+struct __variant_base_imp;
+
+template <class ..._Types>
+struct __variant_base_imp<false, _Types...>
+{
+
+  using _Imp = __variant_union<false, 0, _Types...>;
+
+  static constexpr size_t __size = sizeof...(_Types);
+
+  constexpr __variant_base_imp(__variant_end_tag)
+    : __which_(variant_npos)
+    , __imp_(__variant_end_tag{})
+
+  {
+  }
+
+  template <class _Tag, size_t _OtherIdx, class... _Args>
+  constexpr __variant_base_imp(_Tag __tag, in_place_index_t<_OtherIdx>,
+                           _Args&&... __args)
+    : __which_(_OtherIdx)
+    , __imp_(__tag, in_place_index<_OtherIdx>, _VSTD::forward<_Args>(__args)...)
+
+  {
+  }
+
+  ~__variant_base_imp() { __destroy(); }
+
+  void __destroy()
+  {
+    __imp_.__destroy(__which_);
+    __which_ = variant_npos;
+  }
+
+  size_t __which_;
+  _Imp __imp_;
+};
+
+
+template <class ..._Types>
+struct __variant_base_imp<true, _Types...>
+{
+  using _Imp =
+  __variant_union<true, 0, _Types...>;
+
+  static constexpr size_t __size = sizeof...(_Types);
+
+  constexpr __variant_base_imp(__variant_end_tag)
+    : __which_(variant_npos)
+    , __imp_(__variant_end_tag{})
+
+  {
+  }
+
+  template <class _Tag, size_t _OtherIdx, class... _Args>
+  constexpr __variant_base_imp(_Tag __tag, in_place_index_t<_OtherIdx>,
+                           _Args&&... __args)
+    : __which_(_OtherIdx)
+    , __imp_(__tag, in_place_index<_OtherIdx>, _VSTD::forward<_Args>(__args)...)
+  {
+  }
+
+  void __destroy()
+  {
+    __which_ = variant_npos;
+  }
+
+  size_t __which_;
+  _Imp __imp_;
 };
 
 template <bool _HasTDtor, bool _HasTCopy, class... _Types>
@@ -940,39 +1042,27 @@ struct __variant_base;
 
 template <class... _Types>
 struct __variant_base<true, true, _Types...>
+    : public __variant_base_imp<true, _Types...>
 {
-  using _Imp =
-    __variant_union<__all<is_trivially_destructible<_Types>::value...>::value,
-                    0, _Types...>;
+private:
+  using _BaseT = __variant_base_imp<true, _Types...>;
+public:
+  using _BaseT::_BaseT;
+  using _Imp = typename _BaseT::_Imp;
+  using _BaseT::__which_;
+  using _BaseT::__imp_;
+  using _BaseT::__destroy;
   using _Help = __variant_base_helper;
-  static constexpr size_t __size = sizeof...(_Types);
 
-  constexpr __variant_base(__variant_end_tag)
-    : __imp_(__variant_end_tag{})
-    , __which_(variant_npos)
-  {
-  }
-
-  template <class _Tag, size_t _OtherIdx, class... _Args>
-  constexpr __variant_base(_Tag __tag, in_place_index_t<_OtherIdx>,
-                           _Args&&... __args)
-    : __imp_(__tag, in_place_index<_OtherIdx>, _VSTD::forward<_Args>(__args)...)
-    , __which_(_OtherIdx)
-  {
-  }
+  static_assert(is_trivially_copy_constructible<_Imp>::value, "");
+  static_assert(is_trivially_move_constructible<_Imp>::value, "");
 
   __variant_base(__variant_base const&) = default;
   __variant_base(__variant_base&&) = default;
 
   __variant_base& operator=(__variant_base const& __v)
   {
-    if (__which_ == variant_npos && __v.__which_ == variant_npos) {
-      //
-    } else if (__which_ == __v.__which_) {
-      _Help::__copy_assign(*this, __v);
-    } else if (__v.__which_ == variant_npos) {
-      __destroy();
-    } else {
+    if (!_Help::__do_copy_assign_generic(*this, __v)) {
       _Imp __tmp(__v.__imp_);
       __destroy();
       ::new ((void*)&__imp_) _Imp(_VSTD::move(__tmp));
@@ -985,70 +1075,45 @@ struct __variant_base<true, true, _Types...>
     __all<is_nothrow_move_constructible_v<_Types>...,
           is_nothrow_move_assignable_v<_Types>...>::value)
   {
-    if (__which_ == variant_npos && __v.__which_ == variant_npos) {
-      //
-    } else if (__which_ == __v.__which_) {
-      _Help::__move_assign(*this, __v);
-    } else if (__v.__which_ == variant_npos) {
-      __destroy();
-    } else {
+    if (!_Help::__do_move_assign_generic(*this, __v)) {
       __destroy();
       ::new ((void*)&__imp_) _Imp(_VSTD::move(__v.__imp_));
       __which_ = __v.__which_;
     }
     return *this;
   }
-
-  void __destroy()
-  {
-    __imp_.__destroy(__which_);
-    __which_ = variant_npos;
-  }
-
-public:
-  size_t __which_;
-  _Imp __imp_;
 };
 
 template <bool _HasTDtor, class... _Types>
 struct __variant_base<_HasTDtor, false, _Types...>
-  : public __variant_base<true, true, _Types...>
+  : public __variant_base_imp<_HasTDtor, _Types...>
 {
 private:
-  using _RBase = __variant_base<true, true, _Types...>;
-
+  using _BaseT = __variant_base_imp<_HasTDtor, _Types...>;
 public:
+  using _BaseT::_BaseT;
+  using _BaseT::__destroy;
   using _Help = __variant_base_helper;
-  using _RBase::_RBase;
-  using _RBase::__destroy;
-  using _RBase::__imp_;
-  using _RBase::__which_;
 
   __variant_base(__variant_base const& __v)
-    : _RBase(__variant_end_tag{})
+    : _BaseT(__variant_end_tag{})
   {
-    __copy_construct(__v);
+      _Help::__copy_construct(*this, __v);
   }
 
   __variant_base(__variant_base&& __v) noexcept(
     __all<is_nothrow_move_constructible<_Types>::value...>::value)
-    : _RBase(__variant_end_tag{})
+    : _BaseT(__variant_end_tag{})
   {
-    __move_construct(__v);
+      _Help::__move_construct(*this, __v);
   }
 
   __variant_base& operator=(__variant_base const& __v)
   {
-    if (__which_ == variant_npos && __v.__which_ == variant_npos) {
-
-    } else if (__which_ == __v.__which_) {
-      _RBase::__copy_assign(__v);
-    } else if (__v.__which_ == variant_npos) {
-      __destroy();
-    } else {
+    if (!_Help::__do_copy_assign_generic(*this, __v)) {
       __variant_base __tmp(__v);
       __destroy();
-      __move_construct(__tmp);
+      _Help::__move_construct(*this, __tmp);
     }
     return *this;
   }
@@ -1057,15 +1122,9 @@ public:
     __all<is_nothrow_move_constructible_v<_Types>...,
           is_nothrow_move_assignable_v<_Types>...>::value)
   {
-    if (__which_ == variant_npos && __v.__which_ == variant_npos) {
-      // nothing to do
-    } else if (__which_ == __v.__which_) {
-      _RBase::__move_assign(__v);
-    } else if (__v.__which_ == variant_npos) {
+    if (!_Help::__do_move_assign_generic(*this, __v)) {
       __destroy();
-    } else {
-      __destroy();
-      __move_construct(__v);
+      _Help::__move_construct(*this, __v);
     }
     return *this;
   }

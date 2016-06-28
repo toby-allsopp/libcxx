@@ -343,6 +343,7 @@ class Configuration(object):
             self.cxx.flags += ['-gcc-toolchain', gcc_toolchain]
         if self.use_target:
             self.cxx.flags += ['-target', self.config.target_triple]
+        self.cxx.compile_flags += ['-ferror-limit=2']
 
     def configure_compile_flags_header_includes(self):
         support_path = os.path.join(self.libcxx_src_root, 'test/support')
