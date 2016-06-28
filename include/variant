@@ -1178,9 +1178,7 @@ class _LIBCPP_TYPE_VIS_ONLY variant
   // private typedefs
   using _Base = __variant_base<
     __all<is_trivially_destructible<_CV<_Types>>::value...>::value,
-    __all<is_trivially_copyable<_CV<_Types>>::value...>::value, //
-    // is_trivially_copy_constructible<_CV<_Types>>::value...,
-    // is_trivially_move_constructible<_CV<_Types>>::value...>::value,
+    __all<is_trivially_copyable<_CV<_Types>>::value...>::value,
     _Types...>;
   using _CtorBase = __variant_detail::__variant_sfinae_base_t<_Types...>;
   using _First = variant_alternative_t<0, variant>;
