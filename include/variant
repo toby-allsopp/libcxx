@@ -592,6 +592,7 @@ template <class _Fn, class... _Vs, size_t... _Is>
 constexpr auto
 __make_fmatrix_impl(index_sequence<_Is...>)
 {
+  static_assert(is_callable_v<_Fn(decltype(_VSTD::get<_Is>(_VSTD::declval<_Vs>()))...)>, "");
   struct __dispatcher
   {
     static constexpr decltype(auto) __dispatch(_Fn __f, _Vs... __vs)

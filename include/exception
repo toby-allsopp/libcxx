@@ -258,11 +258,11 @@ rethrow_if_nested(const _Ep&, typename enable_if<
 _LIBCPP_BEGIN_NAMESPACE_STD
 
 template <class _Exception>
-_LIBCPP_INLINE_VISIBILITY
-inline void __libcpp_throw(_Exception const& __e) _LIBCPP_NORETURN;
+_LIBCPP_NORETURN void __libcpp_throw(_Exception const& __e);// _LIBCPP_NORETURN;
 
 template <class _Exception>
-inline void __libcpp_throw(_Exception const& __e)
+inline _LIBCPP_INLINE_VISIBILITY
+void __libcpp_throw(_Exception const& __e)
 {
 #ifndef _LIBCPP_NO_EXCEPTIONS
     throw __e;
