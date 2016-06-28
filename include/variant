@@ -451,9 +451,9 @@ inline _LIBCPP_INLINE_VISIBILITY constexpr variant_alternative_t<
 get(variant<_Types...>& __v)
 {
   using _VUA = __variant_detail::__union_access;
-  if (__v.index() != _Idx)
-    __libcpp_throw(bad_variant_access());
-  return _VUA::__get<_Idx>(__v.__base_.__imp_).__value_;
+
+  return __libcpp_throw_if<bad_variant_access>(__v.index() != _Idx),
+      _VUA::__get<_Idx>(__v.__base_.__imp_).__value_;
 }
 
 template <size_t _Idx, class... _Types>
@@ -463,9 +463,8 @@ get(variant<_Types...>&& __v)
 {
   using _VUA = __variant_detail::__union_access;
   using _Tp = variant_alternative_t<_Idx, variant<_Types...>>;
-  if (__v.index() != _Idx)
-    __libcpp_throw(bad_variant_access());
-  return static_cast<_Tp&&>(_VUA::__get<_Idx>(__v.__base_.__imp_).__value_);
+  return __libcpp_throw_if<bad_variant_access>(__v.index() != _Idx),
+      static_cast<_Tp&&>(_VUA::__get<_Idx>(__v.__base_.__imp_).__value_);
 }
 
 template <size_t _Idx, class... _Types>
@@ -474,9 +473,8 @@ inline _LIBCPP_INLINE_VISIBILITY constexpr variant_alternative_t<
 get(const variant<_Types...>& __v)
 {
   using _VUA = __variant_detail::__union_access;
-  if (__v.index() != _Idx)
-    __libcpp_throw(bad_variant_access());
-  return _VUA::__get<_Idx>(__v.__base_.__imp_).__value_;
+  return __libcpp_throw_if<bad_variant_access>(__v.index() != _Idx),
+          _VUA::__get<_Idx>(__v.__base_.__imp_).__value_;
 }
 
 template <size_t _Idx, class... _Types>
@@ -527,7 +525,7 @@ inline _LIBCPP_INLINE_VISIBILITY constexpr add_pointer_t<
   variant_alternative_t<_Idx, variant<_Types...>>>
 get_if(variant<_Types...>* __v) noexcept
 {
-  return __v && __v->index() == _Idx ? _VSTD::addressof(_VSTD::get<_Idx>(*__v))
+  return __v && __v->index() == _Idx ? &_VSTD::get<_Idx>(*__v)
                                      : nullptr;
 }
 
@@ -536,7 +534,7 @@ inline _LIBCPP_INLINE_VISIBILITY constexpr add_pointer_t<
   const variant_alternative_t<_Idx, variant<_Types...>>>
 get_if(const variant<_Types...>* __v) noexcept
 {
-  return __v && __v->index() == _Idx ? _VSTD::addressof(_VSTD::get<_Idx>(*__v))
+  return __v && __v->index() == _Idx ? &_VSTD::get<_Idx>(*__v)
                                      : nullptr;
 }
 
@@ -546,7 +544,7 @@ get_if(variant<_Types...>* __v) noexcept
 {
   using _Found = __find_exactly_one_t<_Tp, _Types...>;
   return __v && __v->index() == _Found::value
-           ? _VSTD::addressof(_VSTD::get<_Found::value>(*__v))
+           ? &_VSTD::get<_Found::value>(*__v)
            : nullptr;
 }
 
@@ -556,7 +554,7 @@ get_if(const variant<_Types...>* __v) noexcept
 {
   using _Found = __find_exactly_one_t<_Tp, _Types...>;
   return __v && __v->index() == _Found::value
-           ? _VSTD::addressof(_VSTD::get<_Found::value>(*__v))
+           ? &_VSTD::get<_Found::value>(*__v)
            : nullptr;
 }
 
@@ -629,8 +627,6 @@ template <class _Tp, class... _TRest>
 constexpr auto&&
 __at_impl(_Tp&& __elem, size_t __i, _TRest... __rest)
 {
-  if (__i == variant_npos)
-    __libcpp_throw(bad_variant_access());
   return __at_impl(_VSTD::forward<_Tp>(__elem)[__i], __rest...);
 }
 
@@ -728,11 +724,10 @@ template <class _Visitor, class... _Variants>
 constexpr decltype(auto)
 visit(_Visitor&& __vis, _Variants&&... __vars)
 {
-  if (__variant_detail::__any_empty(__vars...))
-    __libcpp_throw(bad_variant_access());
   constexpr auto __fmatrix =
     __variant_detail::__make_fmatrix<_Visitor&&, _Variants&&...>();
-  return __variant_detail::__at(__fmatrix, __vars.index()...)(
+  return __libcpp_throw_if<bad_variant_access>(__variant_detail::__any_empty(__vars...)),
+      __variant_detail::__at(__fmatrix, __vars.index()...)(
     _VSTD::forward<_Visitor>(__vis), _VSTD::forward<_Variants>(__vars)...);
 }
 

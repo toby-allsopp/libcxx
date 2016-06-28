@@ -75,13 +75,13 @@ void test_T_ctor_basic()
 {
     {
         constexpr std::variant<int> v(42);
-        static_assert(v.index() == 0);
-        static_assert(std::get<0>(v) == 42);
+        static_assert(v.index() == 0, "");
+        static_assert(std::get<0>(v) == 42, "");
     }
     {
         constexpr std::variant<int, long> v(42l);
-        static_assert(v.index() == 1);
-        static_assert(std::get<1>(v) == 42);
+        static_assert(v.index() == 1, "");
+        static_assert(std::get<1>(v) == 42, "");
     }
     {
         using V = std::variant<int const&, int&&, long>;

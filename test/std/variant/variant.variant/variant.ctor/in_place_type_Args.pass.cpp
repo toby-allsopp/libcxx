@@ -63,18 +63,18 @@ void test_ctor_basic()
 {
     {
         constexpr std::variant<int> v(std::in_place_type<int>, 42);
-        static_assert(v.index() == 0);
-        static_assert(std::get<0>(v) == 42);
+        static_assert(v.index() == 0, "");
+        static_assert(std::get<0>(v) == 42, "");
     }
     {
         constexpr std::variant<int, long> v(std::in_place_type<long>, 42);
-        static_assert(v.index() == 1);
-        static_assert(std::get<1>(v) == 42);
+        static_assert(v.index() == 1, "");
+        static_assert(std::get<1>(v) == 42, "");
     }
     {
         constexpr std::variant<int, const int, long> v(std::in_place_type<const int>, 42);
-        static_assert(v.index() == 1);
-        static_assert(std::get<1>(v) == 42);
+        static_assert(v.index() == 1, "");
+        static_assert(std::get<1>(v) == 42, "");
     }
     {
         using V = std::variant<const int, volatile int, int>;

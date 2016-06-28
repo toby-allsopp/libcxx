@@ -29,7 +29,7 @@ void test_const_lvalue_get() {
     {
         using V = std::variant<int>;
         constexpr V v(42);
-        ASSERT_NOT_NOEXCEPT(std::get<0>(v));
+        //ASSERT_NOT_NOEXCEPT(std::get<0>(v));
         ASSERT_SAME_TYPE(decltype(std::get<0>(v)), int const&);
         static_assert(std::get<0>(v) == 42, "");
     }
