@@ -88,7 +88,7 @@ struct MoveThrows {
   static int alive;
   MoveThrows() { ++alive; }
   MoveThrows(MoveThrows const&) {++alive;}
-  MoveThrows(MoveThrows&&) { ++alive; throw 42; }
+  MoveThrows(MoveThrows&&) {  throw 42; }
   MoveThrows& operator=(MoveThrows const&) { return *this; }
   MoveThrows& operator=(MoveThrows&&) { throw 42; }
   ~MoveThrows() { --alive; }
@@ -105,7 +105,6 @@ struct MakeEmptyT {
       // operator performs a copy before committing to the assignment.
   }
   MakeEmptyT(MakeEmptyT &&) {
-      ++alive;
     throw 42;
   }
   MakeEmptyT& operator=(MakeEmptyT const&) {
@@ -348,7 +347,7 @@ void test_copy_assignment_different_index()
         } catch (...) { /* ... */ }
         assert(v1.valueless_by_exception());
         assert(v2.index() == 1);
-        assert(MoveThrows::alive == 2);
+        assert(MoveThrows::alive == 1);
     }
     {
         using V = std::variant<int, CopyThrows, std::string>;
