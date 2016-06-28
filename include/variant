@@ -176,9 +176,10 @@ public:
 
 _LIBCPP_BEGIN_NAMESPACE_STD
 
-_LIBCPP_INLINE_VISIBILITY inline
-constexpr void __bad_variant_access_if(bool __val) {
-    return __val ? __libcpp_throw(bad_variant_access()) : ((void)0);
+_LIBCPP_INLINE_VISIBILITY inline constexpr void
+__bad_variant_access_if(bool __val)
+{
+  return __val ? __libcpp_throw(bad_variant_access()) : ((void)0);
 }
 
 template <class... _Types>
@@ -458,7 +459,7 @@ get(variant<_Types...>& __v)
   using _VUA = __variant_detail::__union_access;
 
   return __bad_variant_access_if(__v.index() != _Idx),
-      _VUA::__get<_Idx>(__v.__base_.__imp_).__value_;
+         _VUA::__get<_Idx>(__v.__base_.__imp_).__value_;
 }
 
 template <size_t _Idx, class... _Types>
@@ -469,7 +470,7 @@ get(variant<_Types...>&& __v)
   using _VUA = __variant_detail::__union_access;
   using _Tp = variant_alternative_t<_Idx, variant<_Types...>>;
   return __bad_variant_access_if(__v.index() != _Idx),
-      static_cast<_Tp&&>(_VUA::__get<_Idx>(__v.__base_.__imp_).__value_);
+         static_cast<_Tp&&>(_VUA::__get<_Idx>(__v.__base_.__imp_).__value_);
 }
 
 template <size_t _Idx, class... _Types>
@@ -479,7 +480,7 @@ get(const variant<_Types...>& __v)
 {
   using _VUA = __variant_detail::__union_access;
   return __bad_variant_access_if(__v.index() != _Idx),
-          _VUA::__get<_Idx>(__v.__base_.__imp_).__value_;
+         _VUA::__get<_Idx>(__v.__base_.__imp_).__value_;
 }
 
 template <size_t _Idx, class... _Types>
@@ -530,8 +531,7 @@ inline _LIBCPP_INLINE_VISIBILITY constexpr add_pointer_t<
   variant_alternative_t<_Idx, variant<_Types...>>>
 get_if(variant<_Types...>* __v) noexcept
 {
-  return __v && __v->index() == _Idx ? &_VSTD::get<_Idx>(*__v)
-                                     : nullptr;
+  return __v && __v->index() == _Idx ? &_VSTD::get<_Idx>(*__v) : nullptr;
 }
 
 template <size_t _Idx, class... _Types>
@@ -539,8 +539,7 @@ inline _LIBCPP_INLINE_VISIBILITY constexpr add_pointer_t<
   const variant_alternative_t<_Idx, variant<_Types...>>>
 get_if(const variant<_Types...>* __v) noexcept
 {
-  return __v && __v->index() == _Idx ? &_VSTD::get<_Idx>(*__v)
-                                     : nullptr;
+  return __v && __v->index() == _Idx ? &_VSTD::get<_Idx>(*__v) : nullptr;
 }
 
 template <class _Tp, class... _Types>
@@ -548,9 +547,8 @@ inline _LIBCPP_INLINE_VISIBILITY constexpr add_pointer_t<_Tp>
 get_if(variant<_Types...>* __v) noexcept
 {
   using _Found = __find_exactly_one_t<_Tp, _Types...>;
-  return __v && __v->index() == _Found::value
-           ? &_VSTD::get<_Found::value>(*__v)
-           : nullptr;
+  return __v && __v->index() == _Found::value ? &_VSTD::get<_Found::value>(*__v)
+                                              : nullptr;
 }
 
 template <class _Tp, class... _Types>
@@ -558,9 +556,8 @@ inline _LIBCPP_INLINE_VISIBILITY constexpr add_pointer_t<const _Tp>
 get_if(const variant<_Types...>* __v) noexcept
 {
   using _Found = __find_exactly_one_t<_Tp, _Types...>;
-  return __v && __v->index() == _Found::value
-           ? &_VSTD::get<_Found::value>(*__v)
-           : nullptr;
+  return __v && __v->index() == _Found::value ? &_VSTD::get<_Found::value>(*__v)
+                                              : nullptr;
 }
 
 template <class... _Types, class _Alloc>
@@ -732,8 +729,9 @@ visit(_Visitor&& __vis, _Variants&&... __vars)
   constexpr auto __fmatrix =
     __variant_detail::__make_fmatrix<_Visitor&&, _Variants&&...>();
   return __bad_variant_access_if(__variant_detail::__any_empty(__vars...)),
-      __variant_detail::__at(__fmatrix, __vars.index()...)(
-    _VSTD::forward<_Visitor>(__vis), _VSTD::forward<_Variants>(__vars)...);
+         __variant_detail::__at(__fmatrix, __vars.index()...)(
+           _VSTD::forward<_Visitor>(__vis),
+           _VSTD::forward<_Variants>(__vars)...);
 }
 
 struct __variant_end_tag
@@ -887,8 +885,8 @@ public:
   _TailT __tail_;
 };
 
-
-struct __variant_base_helper {
+struct __variant_base_helper
+{
   template <class _VBase>
   static void __move_construct(_VBase& __lhs, _VBase& __rhs)
   {
@@ -929,13 +927,13 @@ struct __variant_base_helper {
   static bool __do_copy_assign_generic(_VBase& __lhs, _VBase const& __rhs)
   {
     if (__lhs.__which_ == variant_npos && __rhs.__which_ == variant_npos) {
-        // nothing to do
+      // nothing to do
     } else if (__lhs.__which_ == __rhs.__which_) {
       __copy_assign(__lhs, __rhs);
     } else if (__rhs.__which_ == variant_npos) {
       __lhs.__destroy();
     } else {
-        return false;
+      return false;
     }
     return true;
   }
@@ -953,22 +951,22 @@ struct __variant_base_helper {
   static bool __do_move_assign_generic(_VBase& __lhs, _VBase& __rhs)
   {
     if (__lhs.__which_ == variant_npos && __rhs.__which_ == variant_npos) {
-        // nothing to do
+      // nothing to do
     } else if (__lhs.__which_ == __rhs.__which_) {
       __move_assign(__lhs, __rhs);
     } else if (__rhs.__which_ == variant_npos) {
       __lhs.__destroy();
     } else {
-        return false;
+      return false;
     }
     return true;
   }
 };
 
-template <bool _TrivialDtor, class ..._Types>
+template <bool _TrivialDtor, class... _Types>
 struct __variant_base_imp;
 
-template <class ..._Types>
+template <class... _Types>
 struct __variant_base_imp<false, _Types...>
 {
 
@@ -985,7 +983,7 @@ struct __variant_base_imp<false, _Types...>
 
   template <class _Tag, size_t _OtherIdx, class... _Args>
   constexpr __variant_base_imp(_Tag __tag, in_place_index_t<_OtherIdx>,
-                           _Args&&... __args)
+                               _Args&&... __args)
     : __which_(_OtherIdx)
     , __imp_(__tag, in_place_index<_OtherIdx>, _VSTD::forward<_Args>(__args)...)
 
@@ -1004,12 +1002,10 @@ struct __variant_base_imp<false, _Types...>
   _Imp __imp_;
 };
 
-
-template <class ..._Types>
+template <class... _Types>
 struct __variant_base_imp<true, _Types...>
 {
-  using _Imp =
-  __variant_union<true, 0, _Types...>;
+  using _Imp = __variant_union<true, 0, _Types...>;
 
   static constexpr size_t __size = sizeof...(_Types);
 
@@ -1022,16 +1018,13 @@ struct __variant_base_imp<true, _Types...>
 
   template <class _Tag, size_t _OtherIdx, class... _Args>
   constexpr __variant_base_imp(_Tag __tag, in_place_index_t<_OtherIdx>,
-                           _Args&&... __args)
+                               _Args&&... __args)
     : __which_(_OtherIdx)
     , __imp_(__tag, in_place_index<_OtherIdx>, _VSTD::forward<_Args>(__args)...)
   {
   }
 
-  void __destroy()
-  {
-    __which_ = variant_npos;
-  }
+  void __destroy() { __which_ = variant_npos; }
 
   size_t __which_;
   _Imp __imp_;
@@ -1042,10 +1035,11 @@ struct __variant_base;
 
 template <class... _Types>
 struct __variant_base<true, true, _Types...>
-    : public __variant_base_imp<true, _Types...>
+  : public __variant_base_imp<true, _Types...>
 {
 private:
   using _BaseT = __variant_base_imp<true, _Types...>;
+
 public:
   using _BaseT::_BaseT;
   using _Imp = typename _BaseT::_Imp;
@@ -1090,6 +1084,7 @@ struct __variant_base<_HasTDtor, false, _Types...>
 {
 private:
   using _BaseT = __variant_base_imp<_HasTDtor, _Types...>;
+
 public:
   using _BaseT::_BaseT;
   using _BaseT::__destroy;
@@ -1098,14 +1093,14 @@ public:
   __variant_base(__variant_base const& __v)
     : _BaseT(__variant_end_tag{})
   {
-      _Help::__copy_construct(*this, __v);
+    _Help::__copy_construct(*this, __v);
   }
 
   __variant_base(__variant_base&& __v) noexcept(
     __all<is_nothrow_move_constructible<_Types>::value...>::value)
     : _BaseT(__variant_end_tag{})
   {
-      _Help::__move_construct(*this, __v);
+    _Help::__move_construct(*this, __v);
   }
 
   __variant_base& operator=(__variant_base const& __v)
