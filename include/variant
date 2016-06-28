@@ -560,9 +560,9 @@ constexpr auto&& __at(_Tp&& __elem, _TRest... __rest) {
     return __at_impl(_VSTD::forward<_Tp>(__elem), __rest...);
 }
 
-template <size_t _Id, class _Ret, class _Func, class ..._Variants>
+template <size_t _Id, class _Func, class ..._Variants>
 struct __dispatcher {
-    static constexpr _Ret __dispatch(_Func __fn, _Variants... __vars) {
+    static constexpr decltype(auto) __dispatch(_Func __fn, _Variants... __vars) {
         return _VSTD::__invoke_constexpr(
             static_cast<_Func>(__fn),
             _VSTD::get<_Id>(static_cast<_Variants>(__vars))...);
@@ -570,10 +570,10 @@ struct __dispatcher {
 };
 
 
-template <size_t _Id, class _Ret, class _Func, class ..._Variants>
+template <size_t _Id, class _Func, class ..._Variants>
 struct __dispatcher_internal {
     using _VUA = __union_access;
-    static constexpr _Ret __dispatch(_Func __fn, _Variants... __vars) {
+    static constexpr decltype(auto) __dispatch(_Func __fn, _Variants... __vars) {
         return _VSTD::__invoke_constexpr(
             static_cast<_Func>(__fn),
             _VUA::__get<_Id>(__vars)...);
@@ -582,25 +582,13 @@ struct __dispatcher_internal {
 
 template <class _Func, class ..._Variants, size_t ..._Idx>
 constexpr auto __get_dispatch_table(index_sequence<_Idx...>) {
-    using _Ret = decltype(_VSTD::__invoke_constexpr(
-        _VSTD::declval<_Func>(),
-        _VSTD::get<0>(_VSTD::declval<_Variants>())...));
-    using _Sig = _Ret(_Func, _Variants...);
-    std::array<_Sig*, sizeof...(_Idx)> __arr =
-        { &__dispatcher<_Idx, _Ret, _Func, _Variants...>::__dispatch... };
-    return __arr;
+    return __make_array(&__dispatcher<_Idx, _Func, _Variants...>::__dispatch...);
 }
 
 template <class _Func, class ..._Variants, size_t ..._Idx>
 constexpr auto __get_dispatch_table_internal(index_sequence<_Idx...>) {
-    using _VUA = __union_access;
-    using _Ret = decltype(_VSTD::__invoke_constexpr(
-        _VSTD::declval<_Func>(),
-        _VUA::__get<0>(_VSTD::declval<_Variants&>())...));
-    using _Sig = _Ret(_Func, _Variants...);
-    std::array<_Sig*, sizeof...(_Idx)> __arr =
-        { &__dispatcher_internal<_Idx, _Ret, _Func, _Variants...>::__dispatch... };
-    return __arr;
+    return __make_array(
+        &__dispatcher_internal<_Idx, _Func, _Variants...>::__dispatch... );
 }
 
 template <class _Lambda, class _VBase1, class ..._VBases>
