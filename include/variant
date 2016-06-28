@@ -912,48 +912,22 @@ public:
 
 template <class ..._Types>
 struct __variant_base<false, false, _Types...>
-    : public __variant_base<true, true, _Types...> {
+    : public __variant_base<true, false, _Types...> {
 private:
-  using _RBase = __variant_base<true, true, _Types...>;
+  using _RBase = __variant_base<true, false, _Types...>;
 public:
   using _RBase::_RBase;
   using _RBase::__destroy;
   using _RBase::__imp_;
   using _RBase::__which_;
+  using _RBase::__copy_construct;
+  using _RBase::__move_construct;
   using _RBase::__copy_assign;
   using _RBase::__move_assign;
 
+  __variant_base(__variant_base const&) = default;
+  __variant_base(__variant_base&&) = default;
 
-  void __move_construct(__variant_base& __v) {
-      using namespace __variant_detail;
-      __visit_internal(__v.__which_, [&](auto& __my_head, auto& __other_head) {
-        using _HeadT = remove_reference_t<decltype(__my_head)>;
-        ::new ((void*)&__my_head) _HeadT(_VSTD::move(__other_head));
-      },
-      *this, __v);
-      __which_ = __v.__which_;
-  }
-
-  void __copy_construct(__variant_base const& __v) {
-      using namespace __variant_detail;
-      __visit_internal(__v.__which_, [&](auto& __my_head, auto& __other_head) {
-        using _HeadT = remove_reference_t<decltype(__my_head)>;
-        ::new ((void*)&__my_head) _HeadT(__other_head);
-      }, *this, __v);
-      __which_ = __v.__which_;
-  }
-
-  __variant_base(__variant_base const& __v) : _RBase(__variant_end_tag{})
-  {
-      __copy_construct(__v);
-  }
-
-  __variant_base(__variant_base&& __v)
-        noexcept(__all<is_nothrow_move_constructible<_Types>::value...>::value)
-    : _RBase(__variant_end_tag{})
-  {
-      __move_construct(__v);
-  }
 
   __variant_base& operator=(__variant_base const& __v) {
     if (__which_ == variant_npos && __v.__which_ == variant_npos) {
