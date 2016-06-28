@@ -269,13 +269,6 @@ inline void __libcpp_throw(_Exception const& __e) {
 #endif
 }
 
-
-template <class _Exception>
-_LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX11
-inline void __libcpp_throw_if(bool __val) {
-    return (__val ? __libcpp_throw(_Exception{}) : ((void)0));
-}
-
 _LIBCPP_END_NAMESPACE_STD
 
 #endif  // _LIBCPP_EXCEPTION

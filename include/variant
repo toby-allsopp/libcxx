@@ -176,6 +176,11 @@ public:
 
 _LIBCPP_BEGIN_NAMESPACE_STD
 
+_LIBCPP_INLINE_VISIBILITY inline
+constexpr void __bad_variant_access_if(bool __val) {
+    return __val ? __libcpp_throw(bad_variant_access()) : ((void)0);
+}
+
 template <class... _Types>
 class variant;
 
@@ -452,7 +457,7 @@ get(variant<_Types...>& __v)
 {
   using _VUA = __variant_detail::__union_access;
 
-  return __libcpp_throw_if<bad_variant_access>(__v.index() != _Idx),
+  return __bad_variant_access_if(__v.index() != _Idx),
       _VUA::__get<_Idx>(__v.__base_.__imp_).__value_;
 }
 
@@ -463,7 +468,7 @@ get(variant<_Types...>&& __v)
 {
   using _VUA = __variant_detail::__union_access;
   using _Tp = variant_alternative_t<_Idx, variant<_Types...>>;
-  return __libcpp_throw_if<bad_variant_access>(__v.index() != _Idx),
+  return __bad_variant_access_if(__v.index() != _Idx),
       static_cast<_Tp&&>(_VUA::__get<_Idx>(__v.__base_.__imp_).__value_);
 }
 
@@ -473,7 +478,7 @@ inline _LIBCPP_INLINE_VISIBILITY constexpr variant_alternative_t<
 get(const variant<_Types...>& __v)
 {
   using _VUA = __variant_detail::__union_access;
-  return __libcpp_throw_if<bad_variant_access>(__v.index() != _Idx),
+  return __bad_variant_access_if(__v.index() != _Idx),
           _VUA::__get<_Idx>(__v.__base_.__imp_).__value_;
 }
 
@@ -726,7 +731,7 @@ visit(_Visitor&& __vis, _Variants&&... __vars)
 {
   constexpr auto __fmatrix =
     __variant_detail::__make_fmatrix<_Visitor&&, _Variants&&...>();
-  return __libcpp_throw_if<bad_variant_access>(__variant_detail::__any_empty(__vars...)),
+  return __bad_variant_access_if(__variant_detail::__any_empty(__vars...)),
       __variant_detail::__at(__fmatrix, __vars.index()...)(
     _VSTD::forward<_Visitor>(__vis), _VSTD::forward<_Variants>(__vars)...);
 }
