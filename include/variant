@@ -783,7 +783,6 @@ struct _LIBCPP_TYPE_VIS_ONLY __variant_element
   _Tp __value_;
 };
 
-
 template <size_t _Idx>
 struct _LIBCPP_TYPE_VIS_ONLY __variant_element<_Idx, void>
 {
@@ -807,7 +806,6 @@ struct _LIBCPP_TYPE_VIS_ONLY __variant_element<_Idx, const volatile void>
 {
   using element_type = const volatile void;
 };
-
 
 template <bool _IsTriviallyDestructible, size_t _Idx, class... _Types>
 union _LIBCPP_TYPE_VIS_ONLY __variant_union
@@ -850,6 +848,7 @@ union _LIBCPP_TYPE_VIS_ONLY __variant_union<true, _Idx, _T0, _TRest...>
               _VSTD::forward<_Args>(__args)...)
   {
   }
+
 public:
   friend struct __variant_detail::__union_access;
   char __dummy_;
@@ -1172,25 +1171,26 @@ template <class... _Types>
 class _LIBCPP_TYPE_VIS_ONLY variant
   : public __variant_detail::__variant_sfinae_base_t<_Types...>
 {
-  
+
   template <class _Tp>
-  using _CV = conditional_t<is_void_v<remove_cv_t<remove_reference_t<_Tp>>>, int, _Tp>;
+  using _CV =
+    conditional_t<is_void_v<remove_cv_t<remove_reference_t<_Tp>>>, int, _Tp>;
   // private typedefs
   using _Base = __variant_base<
     __all<is_trivially_destructible<_CV<_Types>>::value...>::value,
     __all<is_trivially_copyable<_CV<_Types>>::value...>::value, //
-          //is_trivially_copy_constructible<_CV<_Types>>::value...,
-          //is_trivially_move_constructible<_CV<_Types>>::value...>::value,
+    // is_trivially_copy_constructible<_CV<_Types>>::value...,
+    // is_trivially_move_constructible<_CV<_Types>>::value...>::value,
     _Types...>;
   using _CtorBase = __variant_detail::__variant_sfinae_base_t<_Types...>;
   using _First = variant_alternative_t<0, variant>;
 
   // private SFINAE helpers
-  template <size_t _Idx,
-            size_t _BoundIdx = ((_Idx<
-              sizeof...(_Types)) ? _Idx : variant_npos)> using _CheckCtorIdx =
-              __variant_detail::_CheckCtorImp<
-                _BoundIdx, variant_alternative<_BoundIdx, variant>>;
+  template <size_t _Idx, size_t _BoundIdx =
+                           ((_Idx < sizeof...(_Types)) ? _Idx : variant_npos)>
+  using _CheckCtorIdx =
+    __variant_detail::_CheckCtorImp<_BoundIdx,
+                                    variant_alternative<_BoundIdx, variant>>;
 
   template <size_t _Idx, class... _Args>
   using _EnableCtorIdx =
@@ -1217,6 +1217,7 @@ class _LIBCPP_TYPE_VIS_ONLY variant
   // private misc helpers
   template <size_t _Idx, class... _Args>
   inline _LIBCPP_INLINE_VISIBILITY void __overwrite_base(_Args&&... __args)
+    //
   {
     __base_.__destroy();
     ::new ((void*)&__base_.__imp_)
@@ -1322,7 +1323,7 @@ public:
                      [&](auto& __my_head, auto& __other_head) {
                        using _HeadT = remove_reference_t<decltype(__my_head)>;
                        using _T0 = typename _HeadT::element_type;
-                       ::new ((void*)&__my_head)
+                       ::new ((void*)_VSTD::addressof(__my_head))
                          _HeadT(__variant_alloc_tag{},
                                 __uses_alloc_ctor<_T0, _Alloc, _T0&&>(), __a,
                                 _VSTD::move(__other_head.__value_));
