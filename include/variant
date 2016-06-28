@@ -595,7 +595,7 @@ template <class _Lambda, class _VBase1, class ..._VBases>
 inline _LIBCPP_INLINE_VISIBILITY
 void __visit_internal(size_t __w, _Lambda&& __l, _VBase1& __v1, _VBases&... __vrest) {
     const auto __table = __get_dispatch_table_internal<_Lambda&&,
-            decltype((__v1.__imp_)), decltype((__vrest.__imp_))...>(
+        decltype((__v1.__imp_)), decltype((__vrest.__imp_))...>(
         make_index_sequence<_VBase1::__size>{});
     _VSTD::__invoke_constexpr(__table[__w],
         _VSTD::forward<_Lambda>(__l), __v1.__imp_, __vrest.__imp_...);
@@ -611,8 +611,7 @@ void __do_base_assign(_VBase1& _LHS, _VBase2& _RHS, _AssignFn&& __afn, _CopyFn&&
         __visit_internal(_LHS.__which_, _VSTD::forward<_AssignFn>(__afn), _LHS, _RHS);
     }
     else if (_RHS.__which_ == variant_npos) {
-        _LHS.__imp_.__destroy(_LHS.__which_);
-        _LHS.__which_ = variant_npos;
+        _LHS.__destroy();
     } else {
         __cfn();
         _LHS.__which_ = _RHS.__which_;
@@ -646,34 +645,29 @@ struct __variant_end_tag {};
 struct __variant_inplace_tag {};
 struct __variant_alloc_tag {};
 
-struct __variant_end_node {
-  size_t __which_ = variant_npos;
-};
-
 template <size_t _Idx, class _Tp>
 struct __variant_element {
     using element_type = _Tp;
 
     template <class ..._Args>
     constexpr __variant_element(__variant_inplace_tag, _Args&& ...__args)
-        : __which_(_Idx), __value_(_VSTD::forward<_Args>(__args)...) {}
+        : __value_(_VSTD::forward<_Args>(__args)...) {}
 
     template <class _Alloc, class ..._Args>
     __variant_element(__variant_alloc_tag, integral_constant<int, 0>, _Alloc const&,
                       _Args&& ...__args)
-        : __which_(_Idx), __value_(_VSTD::forward<_Args>(__args)...) {}
+        : __value_(_VSTD::forward<_Args>(__args)...) {}
 
     template <class _Alloc, class ..._Args>
     __variant_element(__variant_alloc_tag, integral_constant<int, 1>, _Alloc const& __a,
                       _Args&& ...__args)
-        : __which_(_Idx), __value_(allocator_arg, __a, _VSTD::forward<_Args>(__args)...) {}
+        : __value_(allocator_arg, __a, _VSTD::forward<_Args>(__args)...) {}
 
     template <class _Alloc, class ..._Args>
     __variant_element(__variant_alloc_tag, integral_constant<int, 2>, _Alloc const& __a,
                       _Args&& ...__args)
-        : __which_(_Idx), __value_(_VSTD::forward<_Args>(__args)..., __a) {}
+        : __value_(_VSTD::forward<_Args>(__args)..., __a) {}
 
-    size_t __which_;
     _Tp __value_;
 };
 
@@ -687,7 +681,7 @@ union _LIBCPP_TYPE_VIS_ONLY __variant_union<true, _Idx, _T0, _TRest...> {
     using _TailT = __variant_union<true, _Idx + 1, _TRest...>;
     static constexpr size_t __index = _Idx;
 
-    constexpr __variant_union(__variant_end_tag) : __end_() {}
+    constexpr __variant_union(__variant_end_tag) : __dummy_() {}
 
     template <class ..._Args>
     constexpr __variant_union(__variant_inplace_tag __tag, in_place_index_t<0>,
@@ -707,10 +701,9 @@ union _LIBCPP_TYPE_VIS_ONLY __variant_union<true, _Idx, _T0, _TRest...> {
                   _VSTD::forward<_Args>(__args)...) {}
 
     void __destroy(size_t) {}
-
 public:
     friend struct __variant_detail::__union_access;
-    __variant_end_node __end_;
+    bool __dummy_;
     __variant_element<_Idx, _T0> __head_;
     _TailT __tail_;
 };
@@ -720,7 +713,7 @@ union _LIBCPP_TYPE_VIS_ONLY __variant_union<false, _Idx, _T0, _TRest...> {
     using _TailT =  __variant_union<false, _Idx + 1, _TRest...>;
     static constexpr size_t __index = _Idx;
 
-    constexpr __variant_union(__variant_end_tag __t) : __end_() {}
+    constexpr __variant_union(__variant_end_tag __t) : __dummy_() {}
 
     template <class ..._Args>
     constexpr __variant_union(__variant_inplace_tag __tag, in_place_index_t<0>,
@@ -752,25 +745,26 @@ union _LIBCPP_TYPE_VIS_ONLY __variant_union<false, _Idx, _T0, _TRest...> {
 
 public:
     friend struct __variant_detail::__union_access;
-    __variant_end_node __end_;
+    char __dummy_;
     __variant_element<_Idx, _T0> __head_;
     _TailT __tail_;
 };
 
 
 template <bool _HasTDtor, bool _HasTCopy, class ..._Types>
-class __variant_base;
-
+struct __variant_base;
 
 template <class ..._Types>
-struct __variant_base<true, true, _Types...> {
-  static constexpr size_t __size = sizeof...(_Types);
-  using _Imp = __variant_union<
-    __all<is_trivially_destructible<_Types>::value...>::value, 0, _Types...>;
+struct __variant_base<true, true, _Types...>
+{
+  using _Imp = __variant_union<__all<is_trivially_destructible<_Types>::value...>::value,
+                              0, _Types...>;
   _Imp __imp_;
-  size_t __which_ = variant_npos;
+  static constexpr size_t __size = sizeof...(_Types);
+  size_t __which_;
 
-  constexpr __variant_base(__variant_end_tag __tag) : __imp_(__tag)  {}
+  constexpr __variant_base(__variant_end_tag)
+    : __imp_(__variant_end_tag{}), __which_(variant_npos) {}
 
   template <class _Tag, size_t _OtherIdx, class ..._Args>
   constexpr __variant_base(_Tag __tag, in_place_index_t<_OtherIdx>, _Args&&... __args)
@@ -780,64 +774,97 @@ struct __variant_base<true, true, _Types...> {
   __variant_base(__variant_base const&) = default;
   __variant_base(__variant_base&&) = default;
 
+  void __copy_assign(__variant_base const& __v) {
+      __variant_detail::__visit_internal(__v.__which_,
+        [](auto& __l, auto const& __r){ __l.__value_ = __r.__value_;},
+          *this, __v);
+  }
+
+  void __move_assign(__variant_base&__v) {
+      __variant_detail::__visit_internal(__v.__which_,
+        [](auto& __l, auto& __r){ __l.__value_ = _VSTD::move(__r.__value_);},
+           *this, __v);
+  }
+
   __variant_base& operator=(__variant_base const& __v) {
-      __variant_detail::__do_base_assign(*this, __v,
-        [](auto& __my_val, auto& __other_val) { __my_val.__value_ = __other_val.__value_; },
-        [&]() {
-          __variant_base __tmp(__v);
-          __imp_.__destroy(__which_);
-          __which_ = variant_npos;
-          ::new((void*)&__imp_) _Imp(_VSTD::move(__tmp.__imp_));
-          __which_ = __tmp.__which_;
-        });
-     return *this;
+    if (__which_ == variant_npos && __v.__which_ == variant_npos) {
+        //
+    } else if (__which_ == __v.__which_) {
+        __copy_assign(__v);
+    }
+    else if (__v.__which_ == variant_npos) {
+        __destroy();
+    } else {
+        _Imp __tmp(__v.__imp_);
+        __destroy();
+        ::new((void*)&__imp_)  _Imp(_VSTD::move(__tmp));
+        __which_ = __v.__which_;
+    }
+      return *this;
   }
 
   __variant_base& operator=(__variant_base&& __v)
     noexcept(__all<is_nothrow_move_constructible_v<_Types>...,
                    is_nothrow_move_assignable_v<_Types>...>::value)
   {
-      __variant_detail::__do_base_assign(*this, __v,
-        [](auto& __my_val, auto& __other_val) {
-          __my_val.__value_ = _VSTD::move(__other_val.__value_);
-        },
-        [&]() {
-          __imp_.__destroy(__which_);
-          __which_ = variant_npos;
-          ::new((void*)&__imp_) _Imp(_VSTD::move(__v.__imp_));
-          __which_ = __v.__which_;
-        });
-     return *this;
+    if (__which_ == variant_npos && __v.__which_ == variant_npos) {
+        //
+    } else if (__which_ == __v.__which_) {
+        __move_assign(__v);
+    }
+    else if (__v.__which_ == variant_npos) {
+        __destroy();
+    } else {
+        __destroy();
+        ::new((void*)&__imp_)  _Imp(_VSTD::move(__v.__imp_));
+        __which_ = __v.__which_;
+    }
+      return *this;
   }
+
+    void __destroy() {
+        __imp_.__destroy(__which_);
+        __which_ = variant_npos;
+    }
 };
 
 
 template <class ..._Types>
-class __variant_base<true, false, _Types...>
+struct __variant_base<true, false, _Types...>
     : public __variant_base<true, true, _Types...> {
-public:
+private:
   using _RBase = __variant_base<true, true, _Types...>;
+public:
   using _RBase::_RBase;
-  using _RBase::__which_;
+  using _RBase::__destroy;
   using _RBase::__imp_;
+  using _RBase::__which_;
+  using _RBase::__copy_assign;
+  using _RBase::__move_assign;
+
 
   void __move_construct(__variant_base& __v) {
       using namespace __variant_detail;
       __visit_internal(__v.__which_, [&](auto& __my_head, auto& __other_head) {
         using _HeadT = remove_reference_t<decltype(__my_head)>;
         ::new ((void*)&__my_head) _HeadT(_VSTD::move(__other_head));
-        __which_ = __other_head.__which_;
       },
       *this, __v);
+      __which_ = __v.__which_;
   }
 
-  __variant_base(__variant_base const& __v) : _RBase(__variant_end_tag{}) {
+  void __copy_construct(__variant_base const& __v) {
       using namespace __variant_detail;
       __visit_internal(__v.__which_, [&](auto& __my_head, auto& __other_head) {
         using _HeadT = remove_reference_t<decltype(__my_head)>;
         ::new ((void*)&__my_head) _HeadT(__other_head);
-        __which_ = __other_head.__which_;
       }, *this, __v);
+      __which_ = __v.__which_;
+  }
+
+  __variant_base(__variant_base const& __v) : _RBase(__variant_end_tag{})
+  {
+      __copy_construct(__v);
   }
 
   __variant_base(__variant_base&& __v)
@@ -848,69 +875,121 @@ public:
   }
 
   __variant_base& operator=(__variant_base const& __v) {
-    __variant_detail::__do_base_assign(*this, __v,
-        [](auto& __my_val, auto& __other_val) {
-          __my_val.__value_ = __other_val.__value_;
-        },
-        [&]() {
-          __variant_base __tmp(__v);
-          __imp_.__destroy(__which_);
-          __which_ = variant_npos;
-          __move_construct(__tmp);
-        });
-     return *this;
+    if (__which_ == variant_npos && __v.__which_ == variant_npos) {
+        //
+    } else if (__which_ == __v.__which_) {
+        __copy_assign(__v);
+    }
+    else if (__v.__which_ == variant_npos) {
+        __destroy();
+    } else {
+        __variant_base __tmp(__v);
+        __destroy();
+        __move_construct(__tmp);
+    }
+      return *this;
   }
 
   __variant_base& operator=(__variant_base&& __v)
     noexcept(__all<is_nothrow_move_constructible_v<_Types>...,
                    is_nothrow_move_assignable_v<_Types>...>::value)
   {
-      __variant_detail::__do_base_assign(*this, __v,
-        [](auto& __my_val, auto& __other_val) {
-          __my_val.__value_ = _VSTD::move(__other_val.__value_);
-        },
-        [&]() {
-          __imp_.__destroy(__which_);
-          __which_ = variant_npos;
-          __move_construct(__v);
-        });
-     return *this;
+    if (__which_ == variant_npos && __v.__which_ == variant_npos) {
+        //
+    } else if (__which_ == __v.__which_) {
+        __move_assign(__v);
+    }
+    else if (__v.__which_ == variant_npos) {
+        __destroy();
+    } else {
+        __destroy();
+        __move_construct(__v);
+    }
+      return *this;
   }
 };
 
 
 template <class ..._Types>
-class __variant_base<false, false, _Types...>
-    : public __variant_base<true, false, _Types...> {
+struct __variant_base<false, false, _Types...>
+    : public __variant_base<true, true, _Types...> {
+private:
+  using _RBase = __variant_base<true, true, _Types...>;
 public:
-  using _RBase = __variant_base<true, false, _Types...>;
   using _RBase::_RBase;
-  using _RBase::__which_;
+  using _RBase::__destroy;
   using _RBase::__imp_;
+  using _RBase::__which_;
+  using _RBase::__copy_assign;
+  using _RBase::__move_assign;
 
-  __variant_base(__variant_base const&) = default;
-  __variant_base(__variant_base&&) = default;
 
-  __variant_base& operator=(__variant_base const& __other) {
-      if (_VSTD::addressof(__other) != this) {
-          if (__which_ == __other.__which_)
-            __imp_.__destroy(__which_);
-          _RBase::operator=(static_cast<_RBase const&>(*this));
-      }
+  void __move_construct(__variant_base& __v) {
+      using namespace __variant_detail;
+      __visit_internal(__v.__which_, [&](auto& __my_head, auto& __other_head) {
+        using _HeadT = remove_reference_t<decltype(__my_head)>;
+        ::new ((void*)&__my_head) _HeadT(_VSTD::move(__other_head));
+      },
+      *this, __v);
+      __which_ = __v.__which_;
+  }
+
+  void __copy_construct(__variant_base const& __v) {
+      using namespace __variant_detail;
+      __visit_internal(__v.__which_, [&](auto& __my_head, auto& __other_head) {
+        using _HeadT = remove_reference_t<decltype(__my_head)>;
+        ::new ((void*)&__my_head) _HeadT(__other_head);
+      }, *this, __v);
+      __which_ = __v.__which_;
+  }
+
+  __variant_base(__variant_base const& __v) : _RBase(__variant_end_tag{})
+  {
+      __copy_construct(__v);
+  }
+
+  __variant_base(__variant_base&& __v)
+        noexcept(__all<is_nothrow_move_constructible<_Types>::value...>::value)
+    : _RBase(__variant_end_tag{})
+  {
+      __move_construct(__v);
+  }
+
+  __variant_base& operator=(__variant_base const& __v) {
+    if (__which_ == variant_npos && __v.__which_ == variant_npos) {
+        //
+    } else if (__which_ == __v.__which_) {
+        __copy_assign(__v);
+    }
+    else if (__v.__which_ == variant_npos) {
+        __destroy();
+    } else {
+        __variant_base __tmp(__v);
+        __destroy();
+        __move_construct(__tmp);
+    }
       return *this;
   }
 
-    __variant_base& operator=(__variant_base&& __other)
-        noexcept(__all<is_nothrow_move_constructible_v<_Types>...,
+  __variant_base& operator=(__variant_base&& __v)
+    noexcept(__all<is_nothrow_move_constructible_v<_Types>...,
                    is_nothrow_move_assignable_v<_Types>...>::value)
-    {
-        if (__which_ == __other.__which_)
-            __imp_.__destroy(__which_);
-        _RBase::operator=(static_cast<_RBase&&>(*this));
-        return *this;
+  {
+    if (__which_ == variant_npos && __v.__which_ == variant_npos) {
+        //
+    } else if (__which_ == __v.__which_) {
+        __move_assign(__v);
     }
+    else if (__v.__which_ == variant_npos) {
+        __destroy();
+    } else {
+        __destroy();
+        __move_construct(__v);
+    }
+      return *this;
+  }
 
-  ~__variant_base() { __imp_.__destroy(__which_); }
+  ~__variant_base() { __destroy(); }
 };
 
 
@@ -926,8 +1005,7 @@ class _LIBCPP_TYPE_VIS_ONLY variant
     // private typedefs
     using _Base = __variant_base<
         __all<is_trivially_destructible<_Types>::value...>::value,
-        __all<is_trivially_copyable<_Types>::value...,
-              is_trivially_copy_constructible<_Types>::value...>
+        __all<is_trivially_copyable<_Types>::value...>
         ::value,
         _Types...
     >;
@@ -968,10 +1046,9 @@ class _LIBCPP_TYPE_VIS_ONLY variant
   void __overwrite_base(_Args&& ...__args) {
     if (__base_.__which_ != variant_npos) {
 
-        __base_.__imp_.__destroy(__base_.__which_);
-        __base_.__which_ = variant_npos;
+        __base_.__destroy();
     }
-    ::new((void*)&__base_.__imp_) typename _Base::_Imp(
+    ::new((void*)&__base_) _Base(
         __variant_inplace_tag{}, in_place_index<_Idx>,
         _VSTD::forward<_Args>(__args)...);
     __base_.__which_ = _Idx;
@@ -1038,7 +1115,7 @@ public:
                 ::new ((void*)&__my_head) _HeadT(
                     __variant_alloc_tag{}, __uses_alloc_ctor<_T0, _Alloc, _T0 const&>(),
                     __a, __other_head.__value_);
-                __base_.__which_ = __other_head.__which_;
+                __base_.__which_ =  __v.index();
             },
             __base_, __v.__base_
         );
@@ -1055,7 +1132,7 @@ public:
                 ::new ((void*)&__my_head) _HeadT(
                     __variant_alloc_tag{}, __uses_alloc_ctor<_T0, _Alloc, _T0 &&>(),
                     __a, _VSTD::move(__other_head.__value_));
-                __base_.__which_ = __other_head.__which_;
+                __base_.__which_ = __v.index();
             },
             __base_, __v.__base_
         );
