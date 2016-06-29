@@ -1451,20 +1451,31 @@ public:
   }
 
   // ?.3.6, Swap
+
   template <bool _Dummy = true,
-            class = enable_if_t<__all<
-              __dependent_type<is_swappable<_Types>, _Dummy>::value...>::value>>
+            enable_if_t<__all<
+              __dependent_type<is_swappable<_Types>, _Dummy>::value...,
+              __dependent_type<is_move_constructible<_Types>, _Dummy>::value...
+            >::value, bool> = true>
+  inline _LIBCPP_INLINE_VISIBILITY
   void swap(variant& __rhs) noexcept(
     __all<is_nothrow_swappable_v<_Types>...,
-          is_nothrow_move_constructible_v<_Types>...>::value)
+        is_nothrow_move_constructible_v<_Types>...>::value)
   {
+    using _Help = __variant_base_helper;
     if (valueless_by_exception() && __rhs.valueless_by_exception()) {
       // nothing to do
     } else if (index() == __rhs.index()) {
       __variant_detail::__binary_visit(__variant_detail::__make_swap_visitor(),
                                        *this, __rhs);
     } else {
-      __rhs = _VSTD::exchange(*this, __rhs);
+      variant __tmp(_VSTD::move(__rhs));
+      __rhs.__base_.__destroy();
+      if (!valueless_by_exception())
+        _Help::__move_construct(__rhs.__base_, __base_);
+      __base_.__destroy();
+      if (!__tmp.valueless_by_exception())
+        _Help::__move_construct(__base_, __tmp.__base_);
     }
   }
 

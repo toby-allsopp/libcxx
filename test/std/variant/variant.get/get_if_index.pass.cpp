@@ -32,17 +32,17 @@ void test_const_get_if() {
     {
         using V = std::variant<int, long>;
         constexpr V v(42);
-        ASSERT_NOEXCEPT(std::get_if<0>(std::addressof(v)));
-        ASSERT_SAME_TYPE(decltype(std::get_if<0>(std::addressof(v))), int const*);
-        static_assert(*std::get_if<0>(std::addressof(v)) == 42, "");
-        static_assert(std::get_if<1>(std::addressof(v)) == nullptr, "");
+        ASSERT_NOEXCEPT(std::get_if<0>(&v));
+        ASSERT_SAME_TYPE(decltype(std::get_if<0>(&v)), int const*);
+        static_assert(*std::get_if<0>(&v) == 42, "");
+        static_assert(std::get_if<1>(&v) == nullptr, "");
     }
     {
         using V = std::variant<int, long>;
         constexpr V v(42l);
-        ASSERT_SAME_TYPE(decltype(std::get_if<1>(std::addressof(v))), long const*);
-        static_assert(*std::get_if<1>(std::addressof(v)) == 42, "");
-        static_assert(std::get_if<0>(std::addressof(v)) == nullptr, "");
+        ASSERT_SAME_TYPE(decltype(std::get_if<1>(&v)), long const*);
+        static_assert(*std::get_if<1>(&v) == 42, "");
+        static_assert(std::get_if<0>(&v) == nullptr, "");
     }
     {
         using V = std::variant<int&>;

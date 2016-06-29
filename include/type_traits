@@ -4453,8 +4453,15 @@ template <class _Tp, class _Up = _Tp,
           bool _NotVoid = !is_void<_Tp>::value && !is_void<_Up>::value>
 struct __swappable_with
 {
-    typedef decltype(swap(_VSTD::declval<_Tp>(), _VSTD::declval<_Up>())) __swap1;
-    typedef decltype(swap(_VSTD::declval<_Up>(), _VSTD::declval<_Tp>())) __swap2;
+
+    template <class _Tp1, class _Tp2>
+    static auto __test_swap(int)
+        -> decltype(swap(_VSTD::declval<_Tp1>(), _VSTD::declval<_Tp2>()));
+    template <class, class>
+    static auto __test_swap(long) -> __nat;
+
+    typedef decltype(__test_swap<_Tp, _Up>(0)) __swap1;
+    typedef decltype(__test_swap<_Up, _Tp>(0)) __swap2;
 
     static const bool value = !is_same<__swap1, __nat>::value
                            && !is_same<__swap2, __nat>::value;

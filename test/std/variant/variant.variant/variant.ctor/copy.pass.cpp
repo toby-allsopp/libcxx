@@ -46,6 +46,43 @@ struct MoveOnlyNT {
   MoveOnlyNT(MoveOnlyNT&&) {}
 };
 
+
+
+#ifndef TEST_HAS_NO_EXCEPTIONS
+struct MakeEmptyT {
+  static int alive;
+  MakeEmptyT() { ++alive; }
+  MakeEmptyT(MakeEmptyT const&) {
+      ++alive;
+      // Don't throw from the copy constructor since variant's assignment
+      // operator performs a copy before committing to the assignment.
+  }
+  MakeEmptyT(MakeEmptyT &&) {
+    throw 42;
+  }
+  MakeEmptyT& operator=(MakeEmptyT const&) {
+      throw 42;
+  }
+  MakeEmptyT& operator=(MakeEmptyT&&) {
+      throw 42;
+  }
+   ~MakeEmptyT() { --alive; }
+};
+
+int MakeEmptyT::alive = 0;
+
+template <class Variant>
+void makeEmpty(Variant& v) {
+    Variant v2(std::in_place_type<MakeEmptyT>);
+    try {
+        v = v2;
+        assert(false);
+    }  catch (...) {
+        assert(v.valueless_by_exception());
+    }
+}
+#endif // TEST_HAS_NO_EXCEPTIONS
+
 void test_copy_ctor_sfinae() {
     {
         using V = std::variant<int, long>;
@@ -95,8 +132,20 @@ void test_copy_ctor_basic()
     }
 }
 
+void test_copy_ctor_valueless_by_exception()
+{
+#ifndef TEST_HAS_NO_EXCEPTIONS
+    using V = std::variant<int, MakeEmptyT>;
+    V v1; makeEmpty(v1);
+    V const& cv1 = v1;
+    V v(cv1);
+    assert(v.valueless_by_exception());
+#endif
+}
+
 int main()
 {
     test_copy_ctor_basic();
+    test_copy_ctor_valueless_by_exception();
     test_copy_ctor_sfinae();
 }
