@@ -90,7 +90,7 @@ struct ForwardingCallObject {
       assert(last_call_type == CT_None);
       assert(last_call_args == nullptr);
       last_call_type = type;
-      last_call_args = &makeArgumentID<Args...>();
+      last_call_args = std::addressof(makeArgumentID<Args...>());
   }
 
   template <class ...Args>

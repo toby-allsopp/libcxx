@@ -1287,7 +1287,7 @@ public:
                      [&](auto& __my_head, auto const& __other_head) {
                        using _HeadT = remove_reference_t<decltype(__my_head)>;
                        using _T0 = typename _HeadT::element_type;
-                       ::new ((void*)&__my_head)
+                       ::new ((void*)_VSTD::addressof(__my_head))
                          _HeadT(__variant_alloc_tag{},
                                 __uses_alloc_ctor<_T0, _Alloc, _T0 const&>(),
                                 __a, __other_head.__value_);
