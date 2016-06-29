@@ -671,7 +671,8 @@ template <class _Func, class... _Variants, size_t... _Idx>
 constexpr auto
 __get_binary_dispatch_table(index_sequence<_Idx...>)
 {
-  return __make_array(&__binary_dispatcher<_Idx, _Func, _Variants...>::__dispatch...);
+  return __make_array(
+    &__binary_dispatcher<_Idx, _Func, _Variants...>::__dispatch...);
 }
 
 template <class _Func, class... _Variants, size_t... _Idx>
@@ -700,15 +701,16 @@ __binary_visit_internal(size_t __w, _Lambda&& __l, _VBase1& __v1,
 {
   const auto __table =
     __get_binary_dispatch_table_internal<_Lambda&&, decltype((__v1.__imp_)),
-                                  decltype((__vrest.__imp_))...>(
+                                         decltype((__vrest.__imp_))...>(
       make_index_sequence<_VBase1::__size>{});
   _VSTD::__invoke_constexpr(__table[__w], _VSTD::forward<_Lambda>(__l),
                             __v1.__imp_, __vrest.__imp_...);
 }
 
-inline _LIBCPP_INLINE_VISIBILITY
-auto __make_swap_visitor() {
-    return [](auto& __lhs, auto& __rhs) { swap(__lhs, __rhs); };
+inline _LIBCPP_INLINE_VISIBILITY auto
+__make_swap_visitor()
+{
+  return [](auto& __lhs, auto& __rhs) { swap(__lhs, __rhs); };
 }
 
 template <class... _Variants>
@@ -928,12 +930,13 @@ struct __variant_base_helper
   {
     using namespace __variant_detail;
     __binary_visit_internal(__rhs.__which_,
-                     [&](auto& __my_head, auto& __other_head) {
-                       using _HeadT = remove_reference_t<decltype(__my_head)>;
-                       ::new ((void*)_VSTD::addressof(__my_head))
-                         _HeadT(_VSTD::move(__other_head));
-                     },
-                     __lhs, __rhs);
+                            [&](auto& __my_head, auto& __other_head) {
+                              using _HeadT =
+                                remove_reference_t<decltype(__my_head)>;
+                              ::new ((void*)_VSTD::addressof(__my_head))
+                                _HeadT(_VSTD::move(__other_head));
+                            },
+                            __lhs, __rhs);
     __lhs.__which_ = __rhs.__which_;
   }
 
@@ -943,11 +946,12 @@ struct __variant_base_helper
   {
     using namespace __variant_detail;
     __binary_visit_internal(__rhs.__which_,
-                     [&](auto& __my_head, auto& __other_head) {
-                       using _HeadT = remove_reference_t<decltype(__my_head)>;
-                       ::new ((void*)&__my_head) _HeadT(__other_head);
-                     },
-                     __lhs, __rhs);
+                            [&](auto& __my_head, auto& __other_head) {
+                              using _HeadT =
+                                remove_reference_t<decltype(__my_head)>;
+                              ::new ((void*)&__my_head) _HeadT(__other_head);
+                            },
+                            __lhs, __rhs);
     __lhs.__which_ = __rhs.__which_;
   }
 
@@ -960,8 +964,8 @@ struct __variant_base_helper
     } else if (__lhs.__which_ == __rhs.__which_) {
       __variant_detail::__binary_visit_internal(
         __rhs.__which_,
-        [](auto& __l, auto const& __r) { __l.__value_ = __r.__value_; },
-        __lhs, __rhs);
+        [](auto& __l, auto const& __r) { __l.__value_ = __r.__value_; }, __lhs,
+        __rhs);
     } else if (__rhs.__which_ == variant_npos) {
       __lhs.__destroy();
     } else {
@@ -1172,8 +1176,7 @@ class _LIBCPP_TYPE_VIS_ONLY variant
   // private typedefs
   using _Base = __variant_base<
     __all<is_trivially_destructible<_CV<_Types>>::value...>::value,
-    __all<is_trivially_copyable<_CV<_Types>>::value...>::value,
-    _Types...>;
+    __all<is_trivially_copyable<_CV<_Types>>::value...>::value, _Types...>;
   using _CtorBase = __variant_detail::__variant_sfinae_base_t<_Types...>;
   using _First = variant_alternative_t<0, variant>;
 
@@ -1291,17 +1294,17 @@ public:
     : __base_(__variant_end_tag{})
   {
     using namespace __variant_detail;
-    __binary_visit_internal(__v.index(),
-                     [&](auto& __my_head, auto const& __other_head) {
-                       using _HeadT = remove_reference_t<decltype(__my_head)>;
-                       using _T0 = typename _HeadT::element_type;
-                       ::new ((void*)_VSTD::addressof(__my_head))
-                         _HeadT(__variant_alloc_tag{},
-                                __uses_alloc_ctor<_T0, _Alloc, _T0 const&>(),
-                                __a, __other_head.__value_);
-                       __base_.__which_ = __v.index();
-                     },
-                     __base_, __v.__base_);
+    __binary_visit_internal(
+      __v.index(),
+      [&](auto& __my_head, auto const& __other_head) {
+        using _HeadT = remove_reference_t<decltype(__my_head)>;
+        using _T0 = typename _HeadT::element_type;
+        ::new ((void*)_VSTD::addressof(__my_head)) _HeadT(
+          __variant_alloc_tag{}, __uses_alloc_ctor<_T0, _Alloc, _T0 const&>(),
+          __a, __other_head.__value_);
+        __base_.__which_ = __v.index();
+      },
+      __base_, __v.__base_);
   }
 
   template <class _Alloc, bool _Dummy = true,
@@ -1311,17 +1314,17 @@ public:
     : __base_(__variant_end_tag{})
   {
     using namespace __variant_detail;
-    __binary_visit_internal(__v.index(),
-                     [&](auto& __my_head, auto& __other_head) {
-                       using _HeadT = remove_reference_t<decltype(__my_head)>;
-                       using _T0 = typename _HeadT::element_type;
-                       ::new ((void*)_VSTD::addressof(__my_head))
-                         _HeadT(__variant_alloc_tag{},
-                                __uses_alloc_ctor<_T0, _Alloc, _T0&&>(), __a,
-                                _VSTD::move(__other_head.__value_));
-                       __base_.__which_ = __v.index();
-                     },
-                     __base_, __v.__base_);
+    __binary_visit_internal(
+      __v.index(),
+      [&](auto& __my_head, auto& __other_head) {
+        using _HeadT = remove_reference_t<decltype(__my_head)>;
+        using _T0 = typename _HeadT::element_type;
+        ::new ((void*)_VSTD::addressof(__my_head))
+          _HeadT(__variant_alloc_tag{}, __uses_alloc_ctor<_T0, _Alloc, _T0&&>(),
+                 __a, _VSTD::move(__other_head.__value_));
+        __base_.__which_ = __v.index();
+      },
+      __base_, __v.__base_);
   }
 
   template <
@@ -1441,20 +1444,20 @@ public:
 
   // ?.3.6, Swap
   template <bool _Dummy = true,
-            class = enable_if_t<
-                __all<__dependent_type<is_swappable<_Types>, _Dummy>::value...>::value>>
-  void swap(variant& __rhs)
-    noexcept(__all<is_nothrow_swappable_v<_Types>...,
-                   is_nothrow_move_constructible_v<_Types>...>::value)
+            class = enable_if_t<__all<
+              __dependent_type<is_swappable<_Types>, _Dummy>::value...>::value>>
+  void swap(variant& __rhs) noexcept(
+    __all<is_nothrow_swappable_v<_Types>...,
+          is_nothrow_move_constructible_v<_Types>...>::value)
   {
-      if (valueless_by_exception() && __rhs.valueless_by_exception()) {
-        // nothing to do
-      } else if (index() == __rhs.index()) {
-          __variant_detail::__binary_visit(__variant_detail::__make_swap_visitor(),
-              *this, __rhs);
-      } else {
-        __rhs = _VSTD::exchange(*this, __rhs);
-      }
+    if (valueless_by_exception() && __rhs.valueless_by_exception()) {
+      // nothing to do
+    } else if (index() == __rhs.index()) {
+      __variant_detail::__binary_visit(__variant_detail::__make_swap_visitor(),
+                                       *this, __rhs);
+    } else {
+      __rhs = _VSTD::exchange(*this, __rhs);
+    }
   }
 
   _Base __base_;
@@ -1512,12 +1515,13 @@ operator>=(variant<_Types...> const& _LHS,
   return !(_LHS < _RHS);
 }
 
-template <class ..._Types>
-auto swap(variant<_Types...>& __lhs, variant<_Types...>& __rhs)
-    noexcept(noexcept(__lhs.swap(__rhs)))
-    -> decltype(__lhs.swap(__rhs))
+template <class... _Types>
+auto
+swap(variant<_Types...>& __lhs,
+     variant<_Types...>& __rhs) noexcept(noexcept(__lhs.swap(__rhs)))
+  -> decltype(__lhs.swap(__rhs))
 {
-    __lhs.swap(__rhs);
+  __lhs.swap(__rhs);
 }
 
 struct _LIBCPP_TYPE_VIS_ONLY monostate
