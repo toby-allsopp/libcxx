@@ -944,39 +944,22 @@ struct __variant_base_helper
   }
 
   template <class _VBase>
-  inline _LIBCPP_INLINE_VISIBILITY static void __copy_assign(
-    _VBase& __lhs, _VBase const& __rhs)
-  {
-    __variant_detail::__visit_internal(
-      __rhs.__which_,
-      [](auto& __l, auto const& __r) { __l.__value_ = __r.__value_; }, __lhs,
-      __rhs);
-  }
-
-  template <class _VBase>
   inline _LIBCPP_INLINE_VISIBILITY static bool __do_copy_assign_generic(
     _VBase& __lhs, _VBase const& __rhs)
   {
     if (__lhs.__which_ == variant_npos && __rhs.__which_ == variant_npos) {
       // nothing to do
     } else if (__lhs.__which_ == __rhs.__which_) {
-      __copy_assign(__lhs, __rhs);
+      __variant_detail::__visit_internal(
+        __rhs.__which_,
+        [](auto& __l, auto const& __r) { __l.__value_ = __r.__value_; },
+        __lhs, __rhs);
     } else if (__rhs.__which_ == variant_npos) {
       __lhs.__destroy();
     } else {
-      return false;
+      return false; // copy construction must be handled by caller
     }
     return true;
-  }
-
-  template <class _VBase>
-  inline _LIBCPP_INLINE_VISIBILITY static void __move_assign(_VBase& __lhs,
-                                                             _VBase& __rhs)
-  {
-    __variant_detail::__visit_internal(
-      __rhs.__which_,
-      [](auto& __l, auto& __r) { __l.__value_ = _VSTD::move(__r.__value_); },
-      __lhs, __rhs);
   }
 
   template <class _VBase>
@@ -986,11 +969,14 @@ struct __variant_base_helper
     if (__lhs.__which_ == variant_npos && __rhs.__which_ == variant_npos) {
       // nothing to do
     } else if (__lhs.__which_ == __rhs.__which_) {
-      __move_assign(__lhs, __rhs);
+      __variant_detail::__visit_internal(
+        __rhs.__which_,
+        [](auto& __l, auto& __r) { __l.__value_ = _VSTD::move(__r.__value_); },
+        __lhs, __rhs);
     } else if (__rhs.__which_ == variant_npos) {
       __lhs.__destroy();
     } else {
-      return false;
+      return false; // move construction must be handled by caller
     }
     return true;
   }
