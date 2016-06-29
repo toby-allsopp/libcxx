@@ -424,21 +424,29 @@ template <bool _Enable, class _Tp, class... _Types>
 using __find_variant_overload = decltype(
   __variant_detail::__find_variant_overload_imp<_Enable, _Tp, _Types...>(0));
 
-struct __union_access
+struct __variant_access
 {
   template <size_t _Idx, class _VUnion,
             enable_if_t<_VUnion::__index == _Idx, bool> = true>
-  inline _LIBCPP_INLINE_VISIBILITY static constexpr auto& __get(_VUnion& __v)
+  inline _LIBCPP_INLINE_VISIBILITY static constexpr auto& __get_internal(
+      _VUnion& __v)
   {
     return __v.__head_;
   }
 
   template <size_t _Idx, class _VUnion,
             enable_if_t<_VUnion::__index != _Idx, bool> = true>
-  inline _LIBCPP_INLINE_VISIBILITY static constexpr decltype(auto) __get(
+  inline _LIBCPP_INLINE_VISIBILITY static constexpr decltype(auto) __get_internal(
     _VUnion& __v)
   {
-    return __get<_Idx>(__v.__tail_);
+    return __get_internal<_Idx>(__v.__tail_);
+  }
+
+  template <size_t _Idx, class _Variant>
+  inline _LIBCPP_INLINE_VISIBILITY static constexpr auto& __get(
+    _Variant& __v)
+  {
+    return __get_internal<_Idx>(__v.__base_.__imp_).__value_;
   }
 };
 
@@ -457,10 +465,10 @@ inline _LIBCPP_INLINE_VISIBILITY constexpr variant_alternative_t<
   _Idx, variant<_Types...>>&
 get(variant<_Types...>& __v)
 {
-  using _VUA = __variant_detail::__union_access;
+  using _VUA = __variant_detail::__variant_access;
 
   return __bad_variant_access_if(__v.index() != _Idx),
-         _VUA::__get<_Idx>(__v.__base_.__imp_).__value_;
+         _VUA::__get<_Idx>(__v);
 }
 
 template <size_t _Idx, class... _Types>
@@ -468,10 +476,10 @@ inline _LIBCPP_INLINE_VISIBILITY constexpr variant_alternative_t<
   _Idx, variant<_Types...>>&&
 get(variant<_Types...>&& __v)
 {
-  using _VUA = __variant_detail::__union_access;
+  using _VUA = __variant_detail::__variant_access;
   using _Tp = variant_alternative_t<_Idx, variant<_Types...>>;
   return __bad_variant_access_if(__v.index() != _Idx),
-         static_cast<_Tp&&>(_VUA::__get<_Idx>(__v.__base_.__imp_).__value_);
+         static_cast<_Tp&&>(_VUA::__get<_Idx>(__v));
 }
 
 template <size_t _Idx, class... _Types>
@@ -479,9 +487,9 @@ inline _LIBCPP_INLINE_VISIBILITY constexpr variant_alternative_t<
   _Idx, variant<_Types...>> const&
 get(const variant<_Types...>& __v)
 {
-  using _VUA = __variant_detail::__union_access;
+  using _VUA = __variant_detail::__variant_access;
   return __bad_variant_access_if(__v.index() != _Idx),
-         _VUA::__get<_Idx>(__v.__base_.__imp_).__value_;
+         _VUA::__get<_Idx>(__v);
 }
 
 template <size_t _Idx, class... _Types>
@@ -489,12 +497,12 @@ inline _LIBCPP_INLINE_VISIBILITY constexpr variant_alternative_t<
   _Idx, variant<_Types...>> const&&
 get(const variant<_Types...>&& __v)
 {
-  using _VUA = __variant_detail::__union_access;
+  using _VUA = __variant_detail::__variant_access;
   using _Tp = variant_alternative_t<_Idx, variant<_Types...>>;
   if (__v.index() != _Idx)
     __libcpp_throw(bad_variant_access());
   return static_cast<_Tp const&&>(
-    _VUA::__get<_Idx>(__v.__base_.__imp_).__value_);
+    _VUA::__get<_Idx>(__v));
 }
 
 template <class _Tp, class... _Types>
@@ -659,11 +667,11 @@ struct __binary_dispatcher
 template <size_t _Id, class _Func, class... _Variants>
 struct __binary_dispatcher_internal
 {
-  using _VUA = __union_access;
+  using _VUA = __variant_access;
   static constexpr decltype(auto) __dispatch(_Func __fn, _Variants... __vars)
   {
     return _VSTD::__invoke_constexpr(static_cast<_Func>(__fn),
-                                     _VUA::__get<_Id>(__vars)...);
+                                     _VUA::__get_internal<_Id>(__vars)...);
   }
 };
 
@@ -860,7 +868,7 @@ union _LIBCPP_TYPE_VIS_ONLY __variant_union<true, _Idx, _T0, _TRest...>
   }
 
 public:
-  friend struct __variant_detail::__union_access;
+  friend struct __variant_detail::__variant_access;
   char __dummy_;
   __variant_element<_Idx, _T0> __head_;
   _TailT __tail_;
@@ -916,7 +924,7 @@ union _LIBCPP_TYPE_VIS_ONLY __variant_union<false, _Idx, _T0, _TRest...>
   ~__variant_union() {}
 
 public:
-  friend struct __variant_detail::__union_access;
+  friend struct __variant_detail::__variant_access;
   char __dummy_;
   __variant_element<_Idx, _T0> __head_;
   _TailT __tail_;
@@ -1460,6 +1468,8 @@ public:
     }
   }
 
+private:
+  friend struct __variant_detail::__variant_access;
   _Base __base_;
 };
 
