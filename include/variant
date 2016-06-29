@@ -532,6 +532,8 @@ inline _LIBCPP_INLINE_VISIBILITY constexpr add_pointer_t<
   variant_alternative_t<_Idx, variant<_Types...>>>
 get_if(variant<_Types...>* __v) noexcept
 {
+  // FIXME: Don't use operator& when GCC finally provides a constexpr
+  // std::addressof.
   return __v && __v->index() == _Idx ? &_VSTD::get<_Idx>(*__v) : nullptr;
 }
 
@@ -644,7 +646,7 @@ __at(_Tp&& __elem, _TRest... __rest)
 }
 
 template <size_t _Id, class _Func, class... _Variants>
-struct __dispatcher
+struct __binary_dispatcher
 {
   static constexpr decltype(auto) __dispatch(_Func __fn, _Variants... __vars)
   {
@@ -655,7 +657,7 @@ struct __dispatcher
 };
 
 template <size_t _Id, class _Func, class... _Variants>
-struct __dispatcher_internal
+struct __binary_dispatcher_internal
 {
   using _VUA = __union_access;
   static constexpr decltype(auto) __dispatch(_Func __fn, _Variants... __vars)
@@ -667,25 +669,25 @@ struct __dispatcher_internal
 
 template <class _Func, class... _Variants, size_t... _Idx>
 constexpr auto
-__get_dispatch_table(index_sequence<_Idx...>)
+__get_binary_dispatch_table(index_sequence<_Idx...>)
 {
-  return __make_array(&__dispatcher<_Idx, _Func, _Variants...>::__dispatch...);
+  return __make_array(&__binary_dispatcher<_Idx, _Func, _Variants...>::__dispatch...);
 }
 
 template <class _Func, class... _Variants, size_t... _Idx>
 constexpr auto
-__get_dispatch_table_internal(index_sequence<_Idx...>)
+__get_binary_dispatch_table_internal(index_sequence<_Idx...>)
 {
   return __make_array(
-    &__dispatcher_internal<_Idx, _Func, _Variants...>::__dispatch...);
+    &__binary_dispatcher_internal<_Idx, _Func, _Variants...>::__dispatch...);
 }
 
 template <class _Lambda, class _V1, class _V2>
 constexpr decltype(auto)
-__visit(_Lambda&& __fn, _V1& __v1, _V2& __v2)
+__binary_visit(_Lambda&& __fn, _V1& __v1, _V2& __v2)
 {
   constexpr auto __table =
-    __variant_detail::__get_dispatch_table<_Lambda&&, _V1&, _V2&>(
+    __variant_detail::__get_binary_dispatch_table<_Lambda&&, _V1&, _V2&>(
       make_index_sequence<variant_size_v<_V1>>{});
   return _VSTD::__invoke_constexpr(__table[__v2.index()],
                                    _VSTD::forward<_Lambda>(__fn), __v1, __v2);
@@ -693,14 +695,20 @@ __visit(_Lambda&& __fn, _V1& __v1, _V2& __v2)
 
 template <class _Lambda, class _VBase1, class... _VBases>
 inline _LIBCPP_INLINE_VISIBILITY void
-__visit_internal(size_t __w, _Lambda&& __l, _VBase1& __v1, _VBases&... __vrest)
+__binary_visit_internal(size_t __w, _Lambda&& __l, _VBase1& __v1,
+                        _VBases&... __vrest)
 {
   const auto __table =
-    __get_dispatch_table_internal<_Lambda&&, decltype((__v1.__imp_)),
+    __get_binary_dispatch_table_internal<_Lambda&&, decltype((__v1.__imp_)),
                                   decltype((__vrest.__imp_))...>(
       make_index_sequence<_VBase1::__size>{});
   _VSTD::__invoke_constexpr(__table[__w], _VSTD::forward<_Lambda>(__l),
                             __v1.__imp_, __vrest.__imp_...);
+}
+
+inline _LIBCPP_INLINE_VISIBILITY
+auto __make_swap_visitor() {
+    return [](auto& __lhs, auto& __rhs) { swap(__lhs, __rhs); };
 }
 
 template <class... _Variants>
@@ -919,10 +927,10 @@ struct __variant_base_helper
                                                                 _VBase& __rhs)
   {
     using namespace __variant_detail;
-    __visit_internal(__rhs.__which_,
+    __binary_visit_internal(__rhs.__which_,
                      [&](auto& __my_head, auto& __other_head) {
                        using _HeadT = remove_reference_t<decltype(__my_head)>;
-                       ::new ((void*)&__my_head)
+                       ::new ((void*)_VSTD::addressof(__my_head))
                          _HeadT(_VSTD::move(__other_head));
                      },
                      __lhs, __rhs);
@@ -934,7 +942,7 @@ struct __variant_base_helper
     _VBase& __lhs, _VBase const& __rhs)
   {
     using namespace __variant_detail;
-    __visit_internal(__rhs.__which_,
+    __binary_visit_internal(__rhs.__which_,
                      [&](auto& __my_head, auto& __other_head) {
                        using _HeadT = remove_reference_t<decltype(__my_head)>;
                        ::new ((void*)&__my_head) _HeadT(__other_head);
@@ -950,7 +958,7 @@ struct __variant_base_helper
     if (__lhs.__which_ == variant_npos && __rhs.__which_ == variant_npos) {
       // nothing to do
     } else if (__lhs.__which_ == __rhs.__which_) {
-      __variant_detail::__visit_internal(
+      __variant_detail::__binary_visit_internal(
         __rhs.__which_,
         [](auto& __l, auto const& __r) { __l.__value_ = __r.__value_; },
         __lhs, __rhs);
@@ -969,7 +977,7 @@ struct __variant_base_helper
     if (__lhs.__which_ == variant_npos && __rhs.__which_ == variant_npos) {
       // nothing to do
     } else if (__lhs.__which_ == __rhs.__which_) {
-      __variant_detail::__visit_internal(
+      __variant_detail::__binary_visit_internal(
         __rhs.__which_,
         [](auto& __l, auto& __r) { __l.__value_ = _VSTD::move(__r.__value_); },
         __lhs, __rhs);
@@ -1283,7 +1291,7 @@ public:
     : __base_(__variant_end_tag{})
   {
     using namespace __variant_detail;
-    __visit_internal(__v.index(),
+    __binary_visit_internal(__v.index(),
                      [&](auto& __my_head, auto const& __other_head) {
                        using _HeadT = remove_reference_t<decltype(__my_head)>;
                        using _T0 = typename _HeadT::element_type;
@@ -1303,7 +1311,7 @@ public:
     : __base_(__variant_end_tag{})
   {
     using namespace __variant_detail;
-    __visit_internal(__v.index(),
+    __binary_visit_internal(__v.index(),
                      [&](auto& __my_head, auto& __other_head) {
                        using _HeadT = remove_reference_t<decltype(__my_head)>;
                        using _T0 = typename _HeadT::element_type;
@@ -1432,7 +1440,22 @@ public:
   }
 
   // ?.3.6, Swap
-  void swap(variant&) /* TODO noexcept(see below) */;
+  template <bool _Dummy = true,
+            class = enable_if_t<
+                __all<__dependent_type<is_swappable<_Types>, _Dummy>::value...>::value>>
+  void swap(variant& __rhs)
+    noexcept(__all<is_nothrow_swappable_v<_Types>...,
+                   is_nothrow_move_constructible_v<_Types>...>::value)
+  {
+      if (valueless_by_exception() && __rhs.valueless_by_exception()) {
+        // nothing to do
+      } else if (index() == __rhs.index()) {
+          __variant_detail::__binary_visit(__variant_detail::__make_swap_visitor(),
+              *this, __rhs);
+      } else {
+        __rhs = _VSTD::exchange(*this, __rhs);
+      }
+  }
 
   _Base __base_;
 };
@@ -1444,7 +1467,7 @@ operator==(variant<_Types...> const& _LHS,
 {
   return (_LHS.valueless_by_exception() && _RHS.valueless_by_exception()) ||
          (_LHS.index() == _RHS.index() &&
-          __variant_detail::__visit(equal_to<>{}, _LHS, _RHS));
+          __variant_detail::__binary_visit(equal_to<>{}, _LHS, _RHS));
 }
 
 template <class... _Types>
@@ -1462,7 +1485,7 @@ operator<(variant<_Types...> const& _LHS,
 {
   return (_LHS.index() < _RHS.index()) ||
          (_LHS.index() == _RHS.index() && !_LHS.valueless_by_exception() &&
-          __variant_detail::__visit(less<>{}, _LHS, _RHS));
+          __variant_detail::__binary_visit(less<>{}, _LHS, _RHS));
 }
 
 template <class... _Types>
@@ -1487,6 +1510,14 @@ operator>=(variant<_Types...> const& _LHS,
            variant<_Types...> const& _RHS) noexcept
 {
   return !(_LHS < _RHS);
+}
+
+template <class ..._Types>
+auto swap(variant<_Types...>& __lhs, variant<_Types...>& __rhs)
+    noexcept(noexcept(__lhs.swap(__rhs)))
+    -> decltype(__lhs.swap(__rhs))
+{
+    __lhs.swap(__rhs);
 }
 
 struct _LIBCPP_TYPE_VIS_ONLY monostate
