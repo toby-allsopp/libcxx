@@ -1219,10 +1219,11 @@ class _LIBCPP_TYPE_VIS_ONLY variant
   using _CV =
     conditional_t<is_void_v<remove_cv_t<remove_reference_t<_Tp>>>, int, _Tp>;
   // private typedefs
+  using _CtorBase = __variant_detail::__variant_sfinae_base_t<_Types...>;
   using _Base = __variant_base<
     __all<is_trivially_destructible<_CV<_Types>>::value...>::value,
     __all<is_trivially_copyable<_CV<_Types>>::value...>::value, _Types...>;
-  using _CtorBase = __variant_detail::__variant_sfinae_base_t<_Types...>;
+
   using _First = variant_alternative_t<0, variant>;
 
   // private SFINAE helpers
@@ -1260,7 +1261,7 @@ class _LIBCPP_TYPE_VIS_ONLY variant
   //
   {
     __base_.__destroy();
-    ::new ((void*)&__base_.__imp_)
+    ::new ((void*)_VSTD::addressof(__base_.__imp_))
       typename _Base::_Imp(__variant_inplace_tag{}, in_place_index<_Idx>,
                            _VSTD::forward<_Args>(__args)...);
     __base_.__which_ = _Idx;
@@ -1302,7 +1303,7 @@ public:
   inline _LIBCPP_INLINE_VISIBILITY constexpr explicit variant(
     in_place_type_t<_Tp>, initializer_list<_Up> __il, _Args&&... __args)
     : __base_(__variant_inplace_tag{}, _CheckCtorTp<_Tp>::__ip,
-              _VSTD::move(__il), _VSTD::forward<_Args>(__args)...)
+              __il, _VSTD::forward<_Args>(__args)...)
   {
   }
 
@@ -1317,7 +1318,7 @@ public:
             class = _EnableCtorIdx<_Idx, initializer_list<_Up>, _Args...>>
   inline _LIBCPP_INLINE_VISIBILITY constexpr explicit variant(
     in_place_index_t<_Idx> __i, initializer_list<_Up> __il, _Args&&... __args)
-    : __base_(__variant_inplace_tag{}, __i, _VSTD::move(__il),
+    : __base_(__variant_inplace_tag{}, __i,  __il,
               _VSTD::forward<_Args>(__args)...)
   {
   }
@@ -1399,7 +1400,7 @@ public:
                                            initializer_list<_Up> __il,
                                            _Args&&... __args)
     : __base_(__variant_alloc_tag{}, _CheckCtorTp<_Tp>::__ip, __a,
-              _VSTD::move(__il), _VSTD::forward<_Args>(__args)...)
+              __il, _VSTD::forward<_Args>(__args)...)
   {
   }
 
@@ -1418,7 +1419,7 @@ public:
                                            in_place_index_t<_Idx> __i,
                                            initializer_list<_Up> __il,
                                            _Args&&... __args)
-    : __base_(__variant_alloc_tag{}, __i, __a, _VSTD::move(__il),
+    : __base_(__variant_alloc_tag{}, __i, __a, __il,
               _VSTD::forward<_Args>(__args)...)
   {
   }
@@ -1458,7 +1459,7 @@ public:
                                                 _Args&&... __args)
   {
     __overwrite_base<_CheckCtorTp<_Tp>::__index>(
-      _VSTD::move(__il), _VSTD::forward<_Args>(__args)...);
+      __il, _VSTD::forward<_Args>(__args)...);
   }
 
   template <size_t _Idx, class... _Args, class = _EnableCtorIdx<_Idx, _Args...>>
@@ -1472,7 +1473,7 @@ public:
   inline _LIBCPP_INLINE_VISIBILITY void emplace(initializer_list<_Up> __il,
                                                 _Args&&... __args)
   {
-    __overwrite_base<_Idx>(_VSTD::move(__il), _VSTD::forward<_Args>(__args)...);
+    __overwrite_base<_Idx>(__il, _VSTD::forward<_Args>(__args)...);
   }
 
   // ?.3.5, Value status
