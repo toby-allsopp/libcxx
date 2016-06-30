@@ -41,6 +41,10 @@ void test_hash_variant()
         const H h{};
         assert(h(v) == std::hash<int>{}(42));
         assert(h(v2) == std::hash<int>{}(100));
+        {
+            ASSERT_SAME_TYPE(decltype(h(v)), std::size_t);
+            static_assert(std::is_copy_constructible<H>::value, "");
+        }
     }
     {
         using V = std::variant<int, long, const char*>;
@@ -75,6 +79,10 @@ void test_hash_monostate()
     assert(h(m1) == h(m1));
     assert(h(m2) == h(m2));
     assert(h(m1) == h(m2));
+    {
+        ASSERT_SAME_TYPE(decltype(h(m1)), std::size_t);
+        static_assert(std::is_copy_constructible<H>::value, "");
+    }
 }
 
 int main()

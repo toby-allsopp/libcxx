@@ -1690,7 +1690,7 @@ struct _LIBCPP_INLINE_VISIBILITY hash<variant<_T1, _TRest...>>
   constexpr size_t operator()(variant<_T1, _TRest...> const& __v) const noexcept {
       if (__v.valueless_by_exception())
           return variant_npos;
-      return _VSTD::visit([](auto& __member) -> size_t {
+      return _VSTD::visit([](auto& __member) {
         using _MemT = remove_cv_t<remove_reference_t<decltype(__member)>>;
         return hash<_MemT>{}(__member);
       }, __v);
