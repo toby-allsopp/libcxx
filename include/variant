@@ -1683,11 +1683,17 @@ inline _LIBCPP_INLINE_VISIBILITY constexpr bool operator!=(monostate,
   return false;
 }
 
-template <class _T1, class ..._TRest>
-struct _LIBCPP_INLINE_VISIBILITY hash<variant<_T1, _TRest...>>
+template <>
+struct _LIBCPP_INLINE_VISIBILITY hash<variant<>> {
+  hash() = delete;
+  hash(hash const&) = delete;
+};
+
+template <class ..._Types>
+struct _LIBCPP_INLINE_VISIBILITY hash<variant<_Types...>>
 {
   inline _LIBCPP_INLINE_VISIBILITY
-  constexpr size_t operator()(variant<_T1, _TRest...> const& __v) const noexcept {
+  constexpr size_t operator()(variant<_Types...> const& __v) const noexcept {
       if (__v.valueless_by_exception())
           return variant_npos;
       return _VSTD::visit([](auto& __member) {
