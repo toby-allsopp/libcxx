@@ -147,7 +147,6 @@ default; };
 #include <__config>
 #include <__debug>
 #include <array>
-#include <cassert>
 #include <functional>
 #include <initializer_list>
 #include <tuple>
