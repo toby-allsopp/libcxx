@@ -334,12 +334,15 @@ struct __variant_sfinae_base<false, false, _CanCA, _CanMA>
   __variant_sfinae_base& operator=(__variant_sfinae_base&&) = delete;
 };
 
+template <class _Tp>
+using _RepVoid = conditional_t<is_void_v<_Tp>, int, _Tp>;
+
 template <class... _Types>
 using __variant_sfinae_base_t =
-  __variant_sfinae_base<__all<is_copy_constructible<_Types>::value...>::value,
-                        __all<is_move_constructible<_Types>::value...>::value,
-                        __all<is_copy_assignable<_Types>::value...>::value,
-                        __all<is_move_assignable<_Types>::value...>::value>;
+  __variant_sfinae_base<__all<is_copy_constructible<_RepVoid<_Types>>::value...>::value,
+                        __all<is_move_constructible<_RepVoid<_Types>>::value...>::value,
+                        __all<is_copy_assignable<_RepVoid<_Types>>::value...>::value,
+                        __all<is_move_assignable<_RepVoid<_Types>>::value...>::value>;
 
 template <size_t _Idx, class _PossibleTp>
 struct _CheckCtorImp
@@ -405,6 +408,30 @@ struct __variant_overloads_imp<true, _Idx, _T0, _TRest...>
     __find_exactly_one_t_checker<_T0, _Idx, _TRest...>::value, _T0>
     __fun(_T0);
   using _BaseT::__fun;
+};
+
+template <size_t _Idx, class... _TRest>
+struct __variant_overloads_imp<true, _Idx, void, _TRest...>
+  : __variant_overloads_imp<true, _Idx + 1, _TRest...>
+{
+};
+
+template <size_t _Idx, class... _TRest>
+struct __variant_overloads_imp<true, _Idx, const void, _TRest...>
+  : __variant_overloads_imp<true, _Idx + 1, _TRest...>
+{
+};
+
+template <size_t _Idx, class... _TRest>
+struct __variant_overloads_imp<true, _Idx, volatile void, _TRest...>
+  : __variant_overloads_imp<true, _Idx + 1, _TRest...>
+{
+};
+
+template <size_t _Idx, class... _TRest>
+struct __variant_overloads_imp<true, _Idx, const volatile void, _TRest...>
+  : __variant_overloads_imp<true, _Idx + 1, _TRest...>
+{
 };
 
 template <size_t _Idx, class... _Types>
@@ -653,25 +680,33 @@ __at(_Tp&& __elem, _TRest... __rest)
   return __at_impl(_VSTD::forward<_Tp>(__elem), __rest...);
 }
 
-template <size_t _Id, class _Func, class... _Variants>
+template <size_t _Id, class _Func, class _V1, class _V2>
 struct __binary_dispatcher
 {
-  static constexpr decltype(auto) __dispatch(_Func __fn, _Variants... __vars)
+  static_assert(is_lvalue_reference_v<_V1> && is_lvalue_reference_v<_V2>, "REMOVE ME");
+  static_assert(is_same<typename __uncvref<_V1>::type,
+      typename __uncvref<_V2>::type>::value, "REMOVE ME");
+
+  static constexpr decltype(auto) __dispatch(_Func __fn, _V1& __v1, _V2& __v2)
   {
     return _VSTD::__invoke_constexpr(
       static_cast<_Func>(__fn),
-      _VSTD::get<_Id>(static_cast<_Variants>(__vars))...);
+      _VSTD::get<_Id>(__v1), _VSTD::get<_Id>(__v2));
   }
 };
 
-template <size_t _Id, class _Func, class... _Variants>
+template <size_t _Id, class _Func, class _V1, class _V2>
 struct __binary_dispatcher_internal
 {
+  static_assert(is_lvalue_reference_v<_V1> && is_lvalue_reference_v<_V2>, "REMOVE ME");
+  static_assert(is_same<typename __uncvref<_V1>::type,
+      typename __uncvref<_V2>::type>::value, "REMOVE ME");
   using _VUA = __variant_access;
-  static constexpr decltype(auto) __dispatch(_Func __fn, _Variants... __vars)
+  static constexpr decltype(auto) __dispatch(_Func __fn, _V1& __v1, _V2& __v2)
   {
     return _VSTD::__invoke_constexpr(static_cast<_Func>(__fn),
-                                     _VUA::__get_internal<_Id>(__vars)...);
+                                     _VUA::__get_internal<_Id>(__v1),
+                                     _VUA::__get_internal<_Id>(__v2));
   }
 };
 
@@ -702,17 +737,17 @@ __binary_visit(_Lambda&& __fn, _V1& __v1, _V2& __v2)
                                    _VSTD::forward<_Lambda>(__fn), __v1, __v2);
 }
 
-template <class _Lambda, class _VBase1, class... _VBases>
+template <class _Lambda, class _VBase1, class _VBase2>
 inline _LIBCPP_INLINE_VISIBILITY void
 __binary_visit_internal(size_t __w, _Lambda&& __l, _VBase1& __v1,
-                        _VBases&... __vrest)
+                        _VBase2& __v2)
 {
   const auto __table =
     __get_binary_dispatch_table_internal<_Lambda&&, decltype((__v1.__imp_)),
-                                         decltype((__vrest.__imp_))...>(
+                                         decltype((__v2.__imp_))>(
       make_index_sequence<_VBase1::__size>{});
   _VSTD::__invoke_constexpr(__table[__w], _VSTD::forward<_Lambda>(__l),
-                            __v1.__imp_, __vrest.__imp_...);
+                            __v1.__imp_, __v2.__imp_);
 }
 
 inline _LIBCPP_INLINE_VISIBILITY auto
@@ -735,6 +770,8 @@ __any_empty(_V1& __v1, _VRest&... __vrest)
 {
   return __v1.valueless_by_exception() ? true : __any_empty(__vrest...);
 }
+
+
 
 } // end namespace __variant_detail
 

@@ -22,6 +22,7 @@
 #include <cassert>
 
 #include "test_macros.h"
+#include "variant_test_helpers.hpp"
 
 struct NoCopy {
   NoCopy(NoCopy const&) = delete;
@@ -76,28 +77,6 @@ struct MoveAssign {
 int MoveAssign::move_construct = 0;
 int MoveAssign::move_assign = 0;
 
-#ifndef TEST_HAS_NO_EXCEPTIONS
-struct MakeEmptyT {
-  MakeEmptyT() = default;
-  MakeEmptyT(MakeEmptyT&&) {
-    throw 42;
-  }
-  MakeEmptyT& operator=(MakeEmptyT&&) {
-      throw 42;
-  }
-};
-
-template <class Variant>
-void makeEmpty(Variant& v) {
-    Variant v2(std::in_place_type<MakeEmptyT>);
-    try {
-        v = std::move(v2);
-        assert(false);
-    }  catch (...) {
-        assert(v.valueless_by_exception());
-    }
-}
-#endif // TEST_HAS_NO_EXCEPTIONS
 
 void test_move_assignment_noexcept() {
     {
