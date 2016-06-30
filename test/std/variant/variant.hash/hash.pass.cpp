@@ -47,13 +47,15 @@ void test_hash_variant()
         }
     }
     {
-        using V = std::variant<int, long, const char*>;
+        using V = std::variant<std::monostate, int, long, const char*>;
         using H = std::hash<V>;
         const char* str = "hello";
+        const V v0;
         const V v1(42);
         V v2(100l);
         V v3(str);
         const H h{};
+        assert(h(v0) == std::hash<std::monostate>{}(std::monostate{}));
         assert(h(v1) == std::hash<int>{}(42));
         assert(h(v2) == std::hash<long>{}(100));
         assert(h(v3) == std::hash<const char*>{}(str));
