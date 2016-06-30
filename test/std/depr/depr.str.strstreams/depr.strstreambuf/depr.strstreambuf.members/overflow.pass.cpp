@@ -7,25 +7,26 @@
 //
 //===----------------------------------------------------------------------===//
 
-// <map>
+// <strstream>
 
-// class multimap
+// class strstreambuf
 
-// multimap();
+// int overflow(int c);
 
-// XFAIL: gcc
+#include <iostream>
+#include <string>
+#include <strstream>
 
-#include <map>
+int main() {
+  std::ostrstream oss;
+  std::string s;
 
-struct X
-{
-    std::multimap<int, X> m;
-    std::multimap<int, X>::iterator i;
-    std::multimap<int, X>::const_iterator ci;
-    std::multimap<int, X>::reverse_iterator ri;
-    std::multimap<int, X>::const_reverse_iterator cri;
-};
+  for (int i = 0; i < 4096; ++i)
+    s.push_back((i % 16) + 'a');
 
-int main()
-{
+  oss << s << std::ends;
+  std::cout << oss.str();
+  oss.freeze(false);
+
+  return 0;
 }
