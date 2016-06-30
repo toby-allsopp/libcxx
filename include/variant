@@ -172,9 +172,9 @@ public:
 
 } // end namespace std
 
-#if _LIBCPP_STD_VER > 14
-
 _LIBCPP_BEGIN_NAMESPACE_STD
+
+#if _LIBCPP_STD_VER > 14
 
 _LIBCPP_INLINE_VISIBILITY inline constexpr void
 __bad_variant_access_if(bool __val)
@@ -771,8 +771,6 @@ __any_empty(_V1& __v1, _VRest&... __vrest)
   return __v1.valueless_by_exception() ? true : __any_empty(__vrest...);
 }
 
-
-
 } // end namespace __variant_detail
 
 template <class _Visitor, class... _Variants>
@@ -797,10 +795,17 @@ struct __variant_alloc_tag
 {
 };
 
+//---------------------------- __variant_element -----------------------------//
+
 template <size_t _Idx, class _Tp>
 struct _LIBCPP_TYPE_VIS_ONLY __variant_element
 {
   using element_type = _Tp;
+
+  __variant_element() = delete;
+  __variant_element(__variant_element const&) = default;
+  __variant_element(__variant_element&&) = default;
+  __variant_element& operator=(__variant_element const&) = delete;
 
   template <class... _Args>
   inline _LIBCPP_INLINE_VISIBILITY constexpr __variant_element(
@@ -843,29 +848,44 @@ template <size_t _Idx>
 struct _LIBCPP_TYPE_VIS_ONLY __variant_element<_Idx, void>
 {
   using element_type = void;
+  __variant_element() = delete;
+  __variant_element(__variant_element const&) = delete;
+  __variant_element& operator=(__variant_element const&) = delete;
 };
 
 template <size_t _Idx>
 struct _LIBCPP_TYPE_VIS_ONLY __variant_element<_Idx, const void>
 {
   using element_type = const void;
+  __variant_element() = delete;
+  __variant_element(__variant_element const&) = delete;
+  __variant_element& operator=(__variant_element const&) = delete;
 };
 
 template <size_t _Idx>
 struct _LIBCPP_TYPE_VIS_ONLY __variant_element<_Idx, volatile void>
 {
   using element_type = volatile void;
+  __variant_element() = delete;
+  __variant_element(__variant_element const&) = delete;
+  __variant_element& operator=(__variant_element const&) = delete;
 };
 
 template <size_t _Idx>
 struct _LIBCPP_TYPE_VIS_ONLY __variant_element<_Idx, const volatile void>
 {
   using element_type = const volatile void;
+  __variant_element() = delete;
+  __variant_element(__variant_element const&) = delete;
+  __variant_element& operator=(__variant_element const&) = delete;
 };
+
+//---------------------------- __variant_union -------------------------------//
 
 template <bool _IsTriviallyDestructible, size_t _Idx, class... _Types>
 union _LIBCPP_TYPE_VIS_ONLY __variant_union
 {
+  static_assert(sizeof...(_Types) == 0, "Incorrect specialization used");
   inline _LIBCPP_INLINE_VISIBILITY void __destroy(size_t) {}
 };
 
@@ -967,6 +987,8 @@ public:
   __variant_element<_Idx, _T0> __head_;
   _TailT __tail_;
 };
+
+//---------------------------- __variant_base --------------------------------//
 
 struct __variant_base_helper
 {
@@ -1205,10 +1227,14 @@ public:
   }
 };
 
+//-------------------------------- variant -----------------------------------//
+
 template <>
 class _LIBCPP_TYPE_VIS_ONLY variant<>
 {
-  // TODO(EricWF) WTF?
+  variant() = delete;
+  variant(variant const&) = delete;
+  variant& operator=(variant const&) = delete;
 };
 
 template <class... _Types>
@@ -1615,6 +1641,8 @@ swap(variant<_Types...>& __lhs,
   __lhs.swap(__rhs);
 }
 
+//------------------------------- monostate ----------------------------------//
+
 struct _LIBCPP_TYPE_VIS_ONLY monostate
 {
 };
@@ -1655,8 +1683,30 @@ inline _LIBCPP_INLINE_VISIBILITY constexpr bool operator!=(monostate,
   return false;
 }
 
-_LIBCPP_END_NAMESPACE_STD
+template <class _T1, class ..._TRest>
+struct _LIBCPP_INLINE_VISIBILITY hash<variant<_T1, _TRest...>>
+{
+  inline _LIBCPP_INLINE_VISIBILITY
+  constexpr size_t operator()(variant<_T1, _TRest...> const& __v) const noexcept {
+      if (__v.valueless_by_exception())
+          return variant_npos;
+      return _VSTD::visit([](auto& __member) -> size_t {
+        using _MemT = remove_cv_t<remove_reference_t<decltype(__member)>>;
+        return hash<_MemT>{}(__member);
+      }, __v);
+  }
+};
+
+template <>
+struct _LIBCPP_INLINE_VISIBILITY hash<monostate> {
+  inline _LIBCPP_INLINE_VISIBILITY
+  constexpr size_t operator()(monostate const&) const noexcept {
+      return 0;
+  }
+};
 
 #endif // _LIBCPP_STD_VER > 14
+
+_LIBCPP_END_NAMESPACE_STD
 
 #endif // _LIBCPP_VARIANT
