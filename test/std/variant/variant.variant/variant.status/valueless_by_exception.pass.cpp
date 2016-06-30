@@ -32,7 +32,7 @@ int main()
         static_assert(!v.valueless_by_exception(), "");
     }
     {
-        using V = std::variant<int, void, std::string>;
+        using V = std::variant<int, long, std::string>;
         const V v("abc");
         assert(!v.valueless_by_exception());
     }

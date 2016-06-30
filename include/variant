@@ -334,15 +334,12 @@ struct __variant_sfinae_base<false, false, _CanCA, _CanMA>
   __variant_sfinae_base& operator=(__variant_sfinae_base&&) = delete;
 };
 
-template <class _Tp>
-using _RepVoid = conditional_t<is_void_v<_Tp>, int, _Tp>;
-
 template <class... _Types>
 using __variant_sfinae_base_t =
-  __variant_sfinae_base<__all<is_copy_constructible<_RepVoid<_Types>>::value...>::value,
-                        __all<is_move_constructible<_RepVoid<_Types>>::value...>::value,
-                        __all<is_copy_assignable<_RepVoid<_Types>>::value...>::value,
-                        __all<is_move_assignable<_RepVoid<_Types>>::value...>::value>;
+  __variant_sfinae_base<__all<is_copy_constructible<_Types>::value...>::value,
+                        __all<is_move_constructible<_Types>::value...>::value,
+                        __all<is_copy_assignable<_Types>::value...>::value,
+                        __all<is_move_assignable<_Types>::value...>::value>;
 
 template <size_t _Idx, class _PossibleTp>
 struct _CheckCtorImp
@@ -408,30 +405,6 @@ struct __variant_overloads_imp<true, _Idx, _T0, _TRest...>
     __find_exactly_one_t_checker<_T0, _Idx, _TRest...>::value, _T0>
     __fun(_T0);
   using _BaseT::__fun;
-};
-
-template <size_t _Idx, class... _TRest>
-struct __variant_overloads_imp<true, _Idx, void, _TRest...>
-  : __variant_overloads_imp<true, _Idx + 1, _TRest...>
-{
-};
-
-template <size_t _Idx, class... _TRest>
-struct __variant_overloads_imp<true, _Idx, const void, _TRest...>
-  : __variant_overloads_imp<true, _Idx + 1, _TRest...>
-{
-};
-
-template <size_t _Idx, class... _TRest>
-struct __variant_overloads_imp<true, _Idx, volatile void, _TRest...>
-  : __variant_overloads_imp<true, _Idx + 1, _TRest...>
-{
-};
-
-template <size_t _Idx, class... _TRest>
-struct __variant_overloads_imp<true, _Idx, const volatile void, _TRest...>
-  : __variant_overloads_imp<true, _Idx + 1, _TRest...>
-{
 };
 
 template <size_t _Idx, class... _Types>

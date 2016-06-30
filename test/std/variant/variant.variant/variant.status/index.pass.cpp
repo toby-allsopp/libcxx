@@ -32,9 +32,9 @@ int main()
         static_assert(v.index() == 0, "");
     }
     {
-        using V = std::variant<int, void, long>;
-        constexpr V v(42l);
-        static_assert(v.index() == 2, "");
+        using V = std::variant<int, long>;
+        constexpr V v(std::in_place_index<1>);
+        static_assert(v.index() == 1, "");
     }
     {
         using V = std::variant<int, std::string>;
