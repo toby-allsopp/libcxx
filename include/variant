@@ -721,6 +721,7 @@ __make_swap_visitor()
   return [](auto& __lhs, auto& __rhs) { swap(__lhs, __rhs); };
 }
 
+
 template <class... _Variants>
 constexpr bool
 __any_empty(_Variants&... __v)
@@ -1450,32 +1451,64 @@ public:
     return __base_.__which_;
   }
 
-  // ?.3.6, Swap
 
+private:
+
+  inline _LIBCPP_INLINE_VISIBILITY
+  bool __move_might_throw() {
+        constexpr bool __results[] = { is_nothrow_move_constructible<_Types>::value... };
+        return !valueless_by_exception() && !__results[index()];
+  }
+
+public:
+  // ?.3.6, Swap
   template <bool _Dummy = true,
             enable_if_t<__all<
               __dependent_type<is_swappable<_Types>, _Dummy>::value...,
               __dependent_type<is_move_constructible<_Types>, _Dummy>::value...
             >::value, bool> = true>
   inline _LIBCPP_INLINE_VISIBILITY
-  void swap(variant& __rhs) noexcept(
+  void swap(variant& __other) noexcept(
     __all<is_nothrow_swappable_v<_Types>...,
         is_nothrow_move_constructible_v<_Types>...>::value)
   {
     using _Help = __variant_base_helper;
-    if (valueless_by_exception() && __rhs.valueless_by_exception()) {
+    if (valueless_by_exception() && __other.valueless_by_exception()) {
       // nothing to do
-    } else if (index() == __rhs.index()) {
+    } else if (index() == __other.index()) {
       __variant_detail::__binary_visit(__variant_detail::__make_swap_visitor(),
-                                       *this, __rhs);
+                                       *this, __other);
     } else {
-      variant __tmp(_VSTD::move(__rhs));
-      __rhs.__base_.__destroy();
-      if (!valueless_by_exception())
-        _Help::__move_construct(__rhs.__base_, __base_);
-      __base_.__destroy();
+      // One of the two variants must be move constructed twice. If
+      // one variant stores a nothrow-moveable type and the other does not
+      // then choose that variant for double construction. Otherwise choose
+      // __other.
+      variant *__lhs = this;
+      variant *__rhs = _VSTD::addressof(__other);
+      if (!__move_might_throw() && __other.__move_might_throw()) {
+        _VSTD::swap(__lhs, __rhs);
+      }
+      variant __tmp(_VSTD::move(*__rhs));
+      __rhs->__base_.__destroy();
+      if (!__lhs->valueless_by_exception()) {
+#ifndef _LIBCPP_NO_EXCEPTIONS
+        // EXTENSION: When the move construction of __lhs into __rhs throws
+        // and __tmp is nothrow move constructible then we move __tmp back
+        // into __rhs and provide the strong exception safety guarentee.
+        try {
+            _Help::__move_construct(__rhs->__base_, __lhs->__base_);
+        } catch (...) {
+            if (!__tmp.__move_might_throw())
+                _Help::__move_construct(__rhs->__base_, __tmp.__base_);
+            throw;
+        }
+#else
+        _Help::__move_construct(__rhs->__base_, __lhs->__base_);
+#endif
+      }
+      __lhs->__base_.__destroy();
       if (!__tmp.valueless_by_exception())
-        _Help::__move_construct(__base_, __tmp.__base_);
+        _Help::__move_construct(__lhs->__base_, __tmp.__base_);
     }
   }
 
