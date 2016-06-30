@@ -715,7 +715,7 @@ inline _LIBCPP_INLINE_VISIBILITY void
 __binary_visit_internal(size_t __w, _Lambda&& __l, _VBase1& __v1,
                         _VBase2& __v2)
 {
-  const auto __table =
+  constexpr auto __table =
     __get_binary_dispatch_table_internal<_Lambda&&, decltype((__v1.__imp_)),
                                          decltype((__v2.__imp_))>(
       make_index_sequence<_VBase1::__size>{});
@@ -1129,7 +1129,7 @@ public:
     static_assert(is_trivially_copy_constructible<_Imp>::value, "");
     static_assert(is_trivially_move_constructible<_Imp>::value, "");
     if (!_Help::__do_copy_assign_generic(*this, __v)) {
-      // Perform a trivial copy overtop of the current value. There is
+      // Perform a trivial copy over top of the current value. There is
       // no need to call the destructor.
       _VSTD::memcpy(&this->__imp_, &__v.__imp_, sizeof(_Imp));
       this->__which_ = __v.__which_;
@@ -1492,7 +1492,7 @@ public:
 private:
 
   inline _LIBCPP_INLINE_VISIBILITY
-  bool __move_might_throw() {
+  constexpr bool __move_might_throw() const {
         constexpr bool __results[] = { is_nothrow_move_constructible<_Types>::value... };
         return !valueless_by_exception() && !__results[index()];
   }
