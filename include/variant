@@ -1606,8 +1606,8 @@ operator>=(variant<_Types...> const& _LHS,
 }
 
 template <class... _Types>
-auto
-swap(variant<_Types...>& __lhs,
+inline _LIBCPP_INLINE_VISIBILITY
+auto swap(variant<_Types...>& __lhs,
      variant<_Types...>& __rhs) noexcept(noexcept(__lhs.swap(__rhs)))
   -> decltype(__lhs.swap(__rhs))
 {
@@ -1657,13 +1657,13 @@ inline _LIBCPP_INLINE_VISIBILITY constexpr bool operator!=(monostate,
 }
 
 template <>
-struct _LIBCPP_INLINE_VISIBILITY hash<variant<>> {
+struct _LIBCPP_TYPE_VIS_ONLY hash<variant<>> {
   hash() = delete;
   hash(hash const&) = delete;
 };
 
 template <class ..._Types>
-struct _LIBCPP_INLINE_VISIBILITY hash<variant<_Types...>>
+struct _LIBCPP_TYPE_VIS_ONLY hash<variant<_Types...>>
 {
   inline _LIBCPP_INLINE_VISIBILITY
   constexpr size_t operator()(variant<_Types...> const& __v) const noexcept {
@@ -1677,7 +1677,7 @@ struct _LIBCPP_INLINE_VISIBILITY hash<variant<_Types...>>
 };
 
 template <>
-struct _LIBCPP_INLINE_VISIBILITY hash<monostate> {
+struct _LIBCPP_TYPE_VIS_ONLY hash<monostate> {
   inline _LIBCPP_INLINE_VISIBILITY
   constexpr size_t operator()(monostate const&) const noexcept {
       return 0;
