@@ -1012,6 +1012,12 @@ struct __find_exactly_one_unchecked {
     static constexpr size_t value = (__value >= __ambiguous ? __not_found : __value);
 };
 
+template <class _T1>
+struct __find_exactly_one_unchecked<_T1> {
+  static constexpr size_t __value = -1;
+  static constexpr size_t value = -1;
+};
+
 template <class _T1, class ..._Args>
 struct __find_exactly_one_checked {
     static constexpr bool __matches[] = {is_same<_T1, _Args>::value...};

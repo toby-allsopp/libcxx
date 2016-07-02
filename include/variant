@@ -400,9 +400,9 @@ struct __variant_overloads_imp<true, _Idx, _T0, _TRest...>
   : __variant_overloads_imp<true, _Idx + 1, _TRest...>
 {
   using _BaseT = __variant_overloads_imp<true, _Idx + 1, _TRest...>;
-  static __variant_overload<
-    __find_exactly_one_t_checker<_T0, _Idx, _TRest...>::value, _T0>
-    __fun(_T0);
+  using _Found = __find_exactly_one_unchecked<_T0, _TRest...>;
+  static __variant_overload<_Found::__value == __find_detail::__not_found
+      ? _Idx : -1, _T0> __fun(_T0);
   using _BaseT::__fun;
 };
 
