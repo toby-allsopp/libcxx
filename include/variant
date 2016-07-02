@@ -579,18 +579,10 @@ struct _LIBCPP_TYPE_VIS_ONLY uses_allocator<variant<_Types...>, _Alloc>
 namespace __variant_detail {
 
 template <class _First, class... _Rest>
-struct __make_array_return_type
-{
-  using type = _First;
-};
+using __first_type = _First;
 
 template <class... _Types>
-using __make_array_return =
-  std::array<typename __make_array_return_type<_Types...>::type,
-             sizeof...(_Types)>;
-
-template <class... _Types>
-constexpr __make_array_return<_Types...>
+constexpr array<__first_type<_Types...>, sizeof...(_Types)>
 __make_array(_Types&&... __types)
 {
   return { _VSTD::forward<_Types>(__types)... };
