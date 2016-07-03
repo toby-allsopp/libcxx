@@ -110,7 +110,6 @@ endmacro()
 #==============================================================================
 # Register Benchmark tests
 #==============================================================================
-
 file(GLOB BENCHMARK_TESTS "*.bench.cpp")
 foreach(test_path ${BENCHMARK_TESTS})
   get_filename_component(test_file "${test_path}" NAME)
