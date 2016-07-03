@@ -54,10 +54,7 @@ endif()
 # Benchmark tests configuration
 #==============================================================================
 add_custom_target(libcxx-benchmarks)
-set_target_properties(libcxx-benchmarks
-        PROPERTIES
-        EXCLUDE_FROM_ALL 1
-  )
+
 set(BENCHMARK_LIBCXX_INSTALL ${CMAKE_CURRENT_BINARY_DIR}/benchmark-libcxx)
 set(BENCHMARK_NATIVE_INSTALL ${CMAKE_CURRENT_BINARY_DIR}/benchmark-native)
 set(BENCHMARK_TEST_COMPILE_FLAGS
@@ -65,7 +62,7 @@ set(BENCHMARK_TEST_COMPILE_FLAGS
     -I${BENCHMARK_LIBCXX_INSTALL}/include
 )
 set(BENCHMARK_TEST_LIBCXX_COMPILE_FLAGS
-    -nostdinc++ -I${LIBCXX_SOURCE_DIR}/include
+    -nostdinc++
     ${BENCHMARK_TEST_COMPILE_FLAGS}
 )
 set(BENCHMARK_TEST_LIBCXX_LINK_FLAGS
@@ -73,7 +70,6 @@ set(BENCHMARK_TEST_LIBCXX_LINK_FLAGS
     -L${BENCHMARK_LIBCXX_INSTALL}/lib/
 )
 set(BENCHMARK_TEST_NATIVE_LINK_FLAGS
-    -pthread
     -L${BENCHMARK_NATIVE_INSTALL}/lib/
 )
 split_list(BENCHMARK_TEST_COMPILE_FLAGS)
@@ -96,6 +92,9 @@ macro(add_benchmark_test name source_file)
     add_executable(${native_target} EXCLUDE_FROM_ALL ${source_file})
     add_dependencies(${native_target} google-benchmark-native)
     target_link_libraries(${native_target} -lbenchmark)
+    if (LIBCXX_HAS_PTHREAD_LIB)
+      target_link_libraries(${native_target} -pthread)
+    endif()
     add_dependencies(libcxx-benchmarks ${native_target})
     set_target_properties(${native_target}
       PROPERTIES
