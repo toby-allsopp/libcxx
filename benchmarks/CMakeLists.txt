@@ -51,7 +51,7 @@ if (LIBCXX_BUILD_BENCHMARK_NATIVE_STDLIB)
 endif()
 
 #==============================================================================
-# Build Benchmark tests
+# Benchmark tests configuration
 #==============================================================================
 add_custom_target(libcxx-benchmarks)
 set_target_properties(libcxx-benchmarks
@@ -106,4 +106,15 @@ macro(add_benchmark_test name source_file)
   endif()
 endmacro()
 
-add_benchmark_test(unordered_set_operations unordered_set_operations.bench.cpp)
+
+#==============================================================================
+# Register Benchmark tests
+#==============================================================================
+
+file(GLOB BENCHMARK_TESTS "*.bench.cpp")
+foreach(test_path ${BENCHMARK_TESTS})
+  get_filename_component(test_file "${test_path}" NAME)
+  message(STATUS "TEST: ${test_file}")
+  string(REPLACE ".bench.cpp" "" test_name "${test_file}")
+  add_benchmark_test(${test_name} ${test_file})
+endforeach()
