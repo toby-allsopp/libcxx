@@ -2,6 +2,5 @@ LLVM notes
 ----------
 
 This directory contains the Google Benchmark source code with some unnecessary
-files removed.
-
-Note that this directory is under a different license than libc++.
+files removed. Note that this directory is under a different license than
+libc++.
