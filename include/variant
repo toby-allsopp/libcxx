@@ -578,8 +578,14 @@ struct _LIBCPP_TYPE_VIS_ONLY uses_allocator<variant<_Types...>, _Alloc>
 
 namespace __variant_detail {
 
-template <class _First, class... _Rest>
-using __first_type = _First;
+template <class ..._Args>
+struct __first_type_imp {};
+template <class _First, class ..._Rest>
+struct __first_type_imp<_First, _Rest...> {
+  using type = _First;
+};
+template <class ..._Args>
+using __first_type = typename __first_type_imp<_Args...>::type;
 
 template <class... _Types>
 constexpr array<__first_type<_Types...>, sizeof...(_Types)>
