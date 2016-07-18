@@ -46,7 +46,13 @@ inline std::string getRandomString(std::size_t Len) {
 }
 
 template <class IntT>
-inline std::vector<IntT> getIntegerInputs(size_t N) {
+inline std::vector<IntT> getDuplicateIntegerInputs(size_t N) {
+    std::vector<IntT> inputs(N, static_cast<IntT>(-1));
+    return inputs;
+}
+
+template <class IntT>
+inline std::vector<IntT> getSortedIntegerInputs(size_t N) {
     std::vector<IntT> inputs;
     for (size_t i=0; i < N; ++i) {
         inputs.push_back(i);
@@ -55,7 +61,7 @@ inline std::vector<IntT> getIntegerInputs(size_t N) {
 }
 
 template <class IntT>
-std::vector<IntT> getLargeIntegerInputs(size_t N) {
+std::vector<IntT> getSortedLargeIntegerInputs(size_t N) {
     std::vector<IntT> inputs;
     for (size_t i=0; i < N; ++i) {
         inputs.push_back(i + N);
@@ -63,6 +69,16 @@ std::vector<IntT> getLargeIntegerInputs(size_t N) {
     return inputs;
 }
 
+template <class IntT>
+inline std::vector<IntT> getReverseSortedIntegerInputs(size_t N) {
+    std::vector<IntT> inputs;
+    std::size_t i = N;
+    while (i > 0) {
+        --i;
+        inputs.push_back(i);
+    }
+    return inputs;
+}
 
 template <class IntT>
 std::vector<IntT> getRandomIntegerInputs(size_t N) {
@@ -73,11 +89,28 @@ std::vector<IntT> getRandomIntegerInputs(size_t N) {
     return inputs;
 }
 
+inline std::vector<std::string> getDuplicateStringInputs(size_t N) {
+    std::vector<std::string> inputs(N, getRandomString(1024));
+    return inputs;
+}
+
 inline std::vector<std::string> getRandomStringInputs(size_t N) {
     std::vector<std::string> inputs;
     for (int i=0; i < N; ++i) {
         inputs.push_back(getRandomString(1024));
     }
+    return inputs;
+}
+
+inline std::vector<std::string> getSortedStringInputs(size_t N) {
+    std::vector<std::string> inputs = getRandomStringInputs(N);
+    std::sort(inputs.begin(), inputs.end());
+    return inputs;
+}
+
+inline std::vector<std::string> getReverseSortedStringInputs(size_t N) {
+    std::vector<std::string> inputs = getSortedStringInputs(N);
+    std::reverse(inputs.begin(), inputs.end());
     return inputs;
 }
 

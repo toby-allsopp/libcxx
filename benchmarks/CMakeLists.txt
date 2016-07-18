@@ -64,6 +64,7 @@ set(BENCHMARK_TEST_COMPILE_FLAGS
 set(BENCHMARK_TEST_LIBCXX_COMPILE_FLAGS
     -nostdinc++
     ${BENCHMARK_TEST_COMPILE_FLAGS}
+    -Wno-user-defined-literals
 )
 set(BENCHMARK_TEST_LIBCXX_LINK_FLAGS
     -nodefaultlibs
