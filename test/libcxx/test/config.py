@@ -290,6 +290,9 @@ class Configuration(object):
         if self.cxx.hasCompileFlag('-fsized-deallocation'):
             self.config.available_features.add('fsized-deallocation')
 
+        if self.get_lit_bool('has_libatomic', False):
+            self.config.available_features.add('libatomic')
+
     def configure_compile_flags(self):
         no_default_flags = self.get_lit_bool('no_default_flags', False)
         if not no_default_flags:
@@ -607,6 +610,9 @@ class Configuration(object):
                 self.cxx.flags += ['-fsanitize=address']
                 if llvm_symbolizer is not None:
                     self.env['ASAN_SYMBOLIZER_PATH'] = llvm_symbolizer
+                # FIXME: Turn ODR violation back on after PR28391 is resolved
+                # https://llvm.org/bugs/show_bug.cgi?id=28391
+                self.env['ASAN_OPTIONS'] = 'detect_odr_violation=0'
                 self.config.available_features.add('asan')
                 self.config.available_features.add('sanitizer-new-delete')
             elif san == 'Memory' or san == 'MemoryWithOrigins':
