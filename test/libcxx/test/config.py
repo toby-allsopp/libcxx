@@ -120,6 +120,8 @@ class Configuration(object):
         self.lit_config.note('Using flags: %s' % self.cxx.flags)
         self.lit_config.note('Using compile flags: %s'
                              % self.cxx.compile_flags)
+        if len(self.cxx.warning_flags):
+            self.lit_config.note('Using warnings: %s' % self.cxx.warning_flags)
         self.lit_config.note('Using link flags: %s' % self.cxx.link_flags)
         # Print as list to prevent "set([...])" from being printed.
         self.lit_config.note('Using available_features: %s' %
@@ -569,7 +571,7 @@ class Configuration(object):
     def configure_warnings(self):
         enable_warnings = self.get_lit_bool('enable_warnings', False)
         if enable_warnings:
-            self.cxx.compile_flags += [
+            self.cxx.warning_flags += [
                 '-D_LIBCPP_HAS_NO_PRAGMA_SYSTEM_HEADER',
                 '-Wall', '-Wextra', '-Werror'
             ]
@@ -625,13 +627,10 @@ class Configuration(object):
                 self.config.available_features.add('msan')
                 self.config.available_features.add('sanitizer-new-delete')
             elif san == 'Undefined':
-                blacklist = os.path.join(self.libcxx_src_root,
-                                         'test/ubsan_blacklist.txt')
                 self.cxx.flags += ['-fsanitize=undefined',
                                    '-fno-sanitize=vptr,function,float-divide-by-zero',
-                                   '-fno-sanitize-recover=all',
-                                   '-fsanitize-blacklist=' + blacklist]
-                self.cxx.compile_flags += ['-O3']
+                                   '-fno-sanitize-recover=all']
+                self.cxx.compile_flags += ['-O2']
                 self.env['UBSAN_OPTIONS'] = 'print_stacktrace=1'
                 self.config.available_features.add('ubsan')
             elif san == 'Thread':
