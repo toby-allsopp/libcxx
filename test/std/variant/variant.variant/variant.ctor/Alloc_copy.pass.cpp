@@ -74,26 +74,26 @@ void test_copy_ctor_sfinae() {
 void test_copy_ctor_basic()
 {
     {
-        std::variant<int> v(std::in_place_index<0>, 42);
+        std::variant<int> v(std::in_place<0>, 42);
         std::variant<int> v2(std::allocator_arg, std::allocator<void>{}, v);
         assert(v2.index() == 0);
         assert(std::get<0>(v2) == 42);
     }
     {
-        std::variant<int, long> v(std::in_place_index<1>, 42);
+        std::variant<int, long> v(std::in_place<1>, 42);
         std::variant<int, long> v2(std::allocator_arg, std::allocator<void>{}, v);
         assert(v2.index() == 1);
         assert(std::get<1>(v2) == 42);
     }
     {
-        std::variant<NonT> v(std::in_place_index<0>, 42);
+        std::variant<NonT> v(std::in_place<0>, 42);
         assert(v.index() == 0);
         std::variant<NonT> v2(std::allocator_arg, std::allocator<void>{}, v);
         assert(v2.index() == 0);
         assert(std::get<0>(v2).value == 42);
     }
     {
-        std::variant<int, NonT> v(std::in_place_index<1>, 42);
+        std::variant<int, NonT> v(std::in_place<1>, 42);
         assert(v.index() == 1);
         std::variant<int, NonT> v2(std::allocator_arg, std::allocator<void>{}, v);
         assert(v2.index() == 1);
@@ -114,49 +114,49 @@ void test_copy_ctor_uses_alloc()
     const A a;
     const A2 a2;
     {
-        V v(std::in_place_index<0>);
+        V v(std::in_place<0>);
         V v2(std::allocator_arg, a, v);
         assert(v2.index() == 0);
         assert(checkConstruct<UA1 const&>(std::get<0>(v2), UA_AllocArg));
     }
     {
-        V v(std::in_place_index<0>);
+        V v(std::in_place<0>);
         V v2(std::allocator_arg, a2, v);
         assert(v2.index() == 0);
         assert(checkConstruct<UA1 const&>(std::get<0>(v2), UA_None));
     }
     {
-        V v(std::in_place_index<1>);
+        V v(std::in_place<1>);
         V v2(std::allocator_arg, a, v);
         assert(v2.index() == 1);
         assert(checkConstruct<UA2 const&>(std::get<1>(v2), UA_AllocLast));
     }
     {
-        V v(std::in_place_index<1>);
+        V v(std::in_place<1>);
         V v2(std::allocator_arg, a2, v);
         assert(v2.index() == 1);
         assert(checkConstruct<UA2 const&>(std::get<1>(v2), UA_None));
     }
     {
-        V v(std::in_place_index<2>);
+        V v(std::in_place<2>);
         V v2(std::allocator_arg, a, v);
         assert(v2.index() == 2);
         assert(checkConstruct<UA3 const&>(std::get<2>(v2), UA_AllocArg));
     }
     {
-        V v(std::in_place_index<2>);
+        V v(std::in_place<2>);
         V v2(std::allocator_arg, a2, v);
         assert(v2.index() == 2);
         assert(checkConstruct<UA3 const&>(std::get<2>(v2), UA_None));
     }
     {
-        V v(std::in_place_index<3>);
+        V v(std::in_place<3>);
         V v3(std::allocator_arg, a, v);
         assert(v3.index() == 3);
         assert(checkConstruct<NUA const&>(std::get<3>(v3), UA_None));
     }
     {
-        V v(std::in_place_index<3>);
+        V v(std::in_place<3>);
         V v3(std::allocator_arg, a2, v);
         assert(v3.index() == 3);
         assert(checkConstruct<NUA const&>(std::get<3>(v3), UA_None));

@@ -62,7 +62,7 @@ int main()
         using V = std::variant<NonTDtor, int, NonTDtor1>;
         static_assert(!std::is_trivially_destructible<V>::value, "");
         {
-            V v(std::in_place_index<0>);
+            V v(std::in_place<0>);
             assert(NonTDtor::count == 0);
             assert(NonTDtor1::count == 0);
         }
@@ -70,12 +70,12 @@ int main()
         assert(NonTDtor1::count == 0);
         NonTDtor::count = 0;
         {
-            V v(std::in_place_index<1>);
+            V v(std::in_place<1>);
         }
         assert(NonTDtor::count == 0);
         assert(NonTDtor1::count == 0);
         {
-            V v(std::in_place_index<2>);
+            V v(std::in_place<2>);
             assert(NonTDtor::count == 0);
             assert(NonTDtor1::count == 0);
         }

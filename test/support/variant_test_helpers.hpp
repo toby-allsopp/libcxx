@@ -61,7 +61,7 @@ int MakeEmptyT::alive = 0;
 
 template <class Variant>
 void makeEmpty(Variant& v) {
-    Variant v2(std::in_place_type<MakeEmptyT>);
+    Variant v2(std::in_place<MakeEmptyT>);
     try {
         v = v2;
         assert(false);

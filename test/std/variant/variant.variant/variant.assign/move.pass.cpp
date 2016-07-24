@@ -142,8 +142,8 @@ void test_move_assignment_empty_empty()
     using MET = MakeEmptyT;
     {
         using V = std::variant<int, long, MET>;
-        V v1(std::in_place_index<0>); makeEmpty(v1);
-        V v2(std::in_place_index<0>); makeEmpty(v2);
+        V v1(std::in_place<0>); makeEmpty(v1);
+        V v2(std::in_place<0>); makeEmpty(v2);
         V& vref = (v1 = std::move(v2));
         assert(&vref == &v1);
         assert(v1.valueless_by_exception());
@@ -158,8 +158,8 @@ void test_move_assignment_non_empty_empty()
     using MET = MakeEmptyT;
     {
         using V = std::variant<int, MET>;
-        V v1(std::in_place_index<0>, 42);
-        V v2(std::in_place_index<0>); makeEmpty(v2);
+        V v1(std::in_place<0>, 42);
+        V v2(std::in_place<0>); makeEmpty(v2);
         V& vref = (v1 = std::move(v2));
         assert(&vref == &v1);
         assert(v1.valueless_by_exception());
@@ -167,8 +167,8 @@ void test_move_assignment_non_empty_empty()
     }
     {
         using V = std::variant<int, MET, std::string>;
-        V v1(std::in_place_index<2>, "hello");
-        V v2(std::in_place_index<0>); makeEmpty(v2);
+        V v1(std::in_place<2>, "hello");
+        V v2(std::in_place<0>); makeEmpty(v2);
         V& vref = (v1 = std::move(v2));
         assert(&vref == &v1);
         assert(v1.valueless_by_exception());
@@ -184,8 +184,8 @@ void test_move_assignment_empty_non_empty()
     using MET = MakeEmptyT;
     {
         using V = std::variant<int, MET>;
-        V v1(std::in_place_index<0>); makeEmpty(v1);
-        V v2(std::in_place_index<0>, 42);
+        V v1(std::in_place<0>); makeEmpty(v1);
+        V v2(std::in_place<0>, 42);
         V& vref = (v1 = std::move(v2));
         assert(&vref == &v1);
         assert(v1.index() == 0);
@@ -193,8 +193,8 @@ void test_move_assignment_empty_non_empty()
     }
     {
         using V = std::variant<int, MET, std::string>;
-        V v1(std::in_place_index<0>); makeEmpty(v1);
-        V v2(std::in_place_type<std::string>, "hello");
+        V v1(std::in_place<0>); makeEmpty(v1);
+        V v2(std::in_place<std::string>, "hello");
         V& vref = (v1 = std::move(v2));
         assert(&vref == &v1);
         assert(v1.index() == 2);
@@ -225,8 +225,8 @@ void test_move_assignment_same_index()
     }
     {
         using V = std::variant<int, MoveAssign, unsigned>;
-        V v1(std::in_place_type<MoveAssign>, 43);
-        V v2(std::in_place_type<MoveAssign>, 42);
+        V v1(std::in_place<MoveAssign>, 43);
+        V v2(std::in_place<MoveAssign>, 42);
         MoveAssign::reset();
         V& vref = (v1 = std::move(v2));
         assert(&vref == &v1);
@@ -239,9 +239,9 @@ void test_move_assignment_same_index()
     using MET = MakeEmptyT;
     {
         using V = std::variant<int, MET, std::string>;
-        V v1(std::in_place_type<MET>);
+        V v1(std::in_place<MET>);
         MET& mref = std::get<1>(v1);
-        V v2(std::in_place_type<MET>);
+        V v2(std::in_place<MET>);
         try {
             v1 = std::move(v2);
             assert(false);
@@ -266,8 +266,8 @@ void test_move_assignment_different_index()
     }
     {
         using V = std::variant<int, MoveAssign, unsigned>;
-        V v1(std::in_place_type<unsigned>, 43);
-        V v2(std::in_place_type<MoveAssign>, 42);
+        V v1(std::in_place<unsigned>, 43);
+        V v2(std::in_place<MoveAssign>, 42);
         MoveAssign::reset();
         V& vref = (v1 = std::move(v2));
         assert(&vref == &v1);
@@ -280,8 +280,8 @@ void test_move_assignment_different_index()
     using MET = MakeEmptyT;
     {
         using V = std::variant<int, MET, std::string>;
-        V v1(std::in_place_type<int>);
-        V v2(std::in_place_type<MET>);
+        V v1(std::in_place<int>);
+        V v2(std::in_place<MET>);
         try {
             v1 = std::move(v2);
             assert(false);
@@ -292,8 +292,8 @@ void test_move_assignment_different_index()
     }
     {
         using V = std::variant<int, MET, std::string>;
-        V v1(std::in_place_type<MET>);
-        V v2(std::in_place_type<std::string>, "hello");
+        V v1(std::in_place<MET>);
+        V v2(std::in_place<std::string>, "hello");
         V& vref = (v1 = std::move(v2));
         assert(&vref == &v1);
         assert(v1.index() == 2);

@@ -120,7 +120,7 @@ int MakeEmptyT::alive = 0;
 
 template <class Variant>
 void makeEmpty(Variant& v) {
-    Variant v2(std::in_place_type<MakeEmptyT>);
+    Variant v2(std::in_place<MakeEmptyT>);
     try {
         v = v2;
         assert(false);
@@ -180,8 +180,8 @@ void test_copy_assignment_empty_empty()
     using MET = MakeEmptyT;
     {
         using V = std::variant<int, long, MET>;
-        V v1(std::in_place_index<0>); makeEmpty(v1);
-        V v2(std::in_place_index<0>); makeEmpty(v2);
+        V v1(std::in_place<0>); makeEmpty(v1);
+        V v2(std::in_place<0>); makeEmpty(v2);
         V& vref = (v1 = v2);
         assert(&vref == &v1);
         assert(v1.valueless_by_exception());
@@ -196,8 +196,8 @@ void test_copy_assignment_non_empty_empty()
     using MET = MakeEmptyT;
     {
         using V = std::variant<int, MET>;
-        V v1(std::in_place_index<0>, 42);
-        V v2(std::in_place_index<0>); makeEmpty(v2);
+        V v1(std::in_place<0>, 42);
+        V v2(std::in_place<0>); makeEmpty(v2);
         V& vref = (v1 = v2);
         assert(&vref == &v1);
         assert(v1.valueless_by_exception());
@@ -205,8 +205,8 @@ void test_copy_assignment_non_empty_empty()
     }
     {
         using V = std::variant<int, MET, std::string>;
-        V v1(std::in_place_index<2>, "hello");
-        V v2(std::in_place_index<0>); makeEmpty(v2);
+        V v1(std::in_place<2>, "hello");
+        V v2(std::in_place<0>); makeEmpty(v2);
         V& vref = (v1 = v2);
         assert(&vref == &v1);
         assert(v1.valueless_by_exception());
@@ -222,8 +222,8 @@ void test_copy_assignment_empty_non_empty()
     using MET = MakeEmptyT;
     {
         using V = std::variant<int, MET>;
-        V v1(std::in_place_index<0>); makeEmpty(v1);
-        V v2(std::in_place_index<0>, 42);
+        V v1(std::in_place<0>); makeEmpty(v1);
+        V v2(std::in_place<0>, 42);
         V& vref = (v1 = v2);
         assert(&vref == &v1);
         assert(v1.index() == 0);
@@ -231,8 +231,8 @@ void test_copy_assignment_empty_non_empty()
     }
     {
         using V = std::variant<int, MET, std::string>;
-        V v1(std::in_place_index<0>); makeEmpty(v1);
-        V v2(std::in_place_type<std::string>, "hello");
+        V v1(std::in_place<0>); makeEmpty(v1);
+        V v2(std::in_place<std::string>, "hello");
         V& vref = (v1 = v2);
         assert(&vref == &v1);
         assert(v1.index() == 2);
@@ -263,8 +263,8 @@ void test_copy_assignment_same_index()
     }
     {
         using V = std::variant<int, CopyAssign, unsigned>;
-        V v1(std::in_place_type<CopyAssign>, 43);
-        V v2(std::in_place_type<CopyAssign>, 42);
+        V v1(std::in_place<CopyAssign>, 43);
+        V v2(std::in_place<CopyAssign>, 42);
         CopyAssign::reset();
         V& vref = (v1 = v2);
         assert(&vref == &v1);
@@ -278,9 +278,9 @@ void test_copy_assignment_same_index()
     using MET = MakeEmptyT;
     {
         using V = std::variant<int, MET, std::string>;
-        V v1(std::in_place_type<MET>);
+        V v1(std::in_place<MET>);
         MET& mref = std::get<1>(v1);
-        V v2(std::in_place_type<MET>);
+        V v2(std::in_place<MET>);
         try {
             v1 = v2;
             assert(false);
@@ -306,8 +306,8 @@ void test_copy_assignment_different_index()
     {
         using V = std::variant<int, CopyAssign, unsigned>;
         CopyAssign::reset();
-        V v1(std::in_place_type<unsigned>, 43);
-        V v2(std::in_place_type<CopyAssign>, 42);
+        V v1(std::in_place<unsigned>, 43);
+        V v2(std::in_place<CopyAssign>, 42);
         assert(CopyAssign::copy_construct == 0);
         assert(CopyAssign::move_construct == 0);
         assert(CopyAssign::alive == 1);
@@ -325,8 +325,8 @@ void test_copy_assignment_different_index()
         // Test that if copy construction throws then original value is
         // unchanged.
         using V = std::variant<int, CopyThrows, std::string>;
-        V v1(std::in_place_type<std::string>, "hello");
-        V v2(std::in_place_type<CopyThrows>);
+        V v1(std::in_place<std::string>, "hello");
+        V v2(std::in_place<CopyThrows>);
         try {
             v1 = v2;
             assert(false);
@@ -338,8 +338,8 @@ void test_copy_assignment_different_index()
         // Test that if move construction throws then the variant is left
         // valueless by exception.
         using V = std::variant<int, MoveThrows, std::string>;
-        V v1(std::in_place_type<std::string>, "hello");
-        V v2(std::in_place_type<MoveThrows>);
+        V v1(std::in_place<std::string>, "hello");
+        V v2(std::in_place<MoveThrows>);
         assert(MoveThrows::alive == 1);
         try {
             v1 = v2;
@@ -351,8 +351,8 @@ void test_copy_assignment_different_index()
     }
     {
         using V = std::variant<int, CopyThrows, std::string>;
-        V v1(std::in_place_type<CopyThrows>);
-        V v2(std::in_place_type<std::string>, "hello");
+        V v1(std::in_place<CopyThrows>);
+        V v2(std::in_place<std::string>, "hello");
         V& vref = (v1 = v2);
         assert(&vref == &v1);
         assert(v1.index() == 2);
@@ -362,8 +362,8 @@ void test_copy_assignment_different_index()
     }
     {
         using V = std::variant<int, MoveThrows, std::string>;
-        V v1(std::in_place_type<MoveThrows>);
-        V v2(std::in_place_type<std::string>, "hello");
+        V v1(std::in_place<MoveThrows>);
+        V v2(std::in_place<std::string>, "hello");
         V& vref = (v1 = v2);
         assert(&vref == &v1);
         assert(v1.index() == 2);

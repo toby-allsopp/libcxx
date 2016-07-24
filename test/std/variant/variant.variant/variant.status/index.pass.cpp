@@ -33,7 +33,7 @@ int main()
     }
     {
         using V = std::variant<int, long>;
-        constexpr V v(std::in_place_index<1>);
+        constexpr V v(std::in_place<1>);
         static_assert(v.index() == 1, "");
     }
     {

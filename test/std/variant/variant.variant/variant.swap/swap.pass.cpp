@@ -221,8 +221,8 @@ void test_swap_same_alternative()
         using T = ThrowingTypeWithNothrowSwap;
         using V = std::variant<T, int>;
         T::reset();
-        V v1(std::in_place_index<0>, 42);
-        V v2(std::in_place_index<0>, 100);
+        V v1(std::in_place<0>, 42);
+        V v2(std::in_place<0>, 100);
         v1.swap(v2);
         assert(T::swap_called == 1);
         assert(std::get<0>(v1).value == 100);
@@ -236,8 +236,8 @@ void test_swap_same_alternative()
         using T = NothrowMoveable;
         using V = std::variant<T, int>;
         T::reset();
-        V v1(std::in_place_index<0>, 42);
-        V v2(std::in_place_index<0>, 100);
+        V v1(std::in_place<0>, 42);
+        V v2(std::in_place<0>, 100);
         v1.swap(v2);
         assert(T::swap_called == 0);
         assert(T::move_called == 1);
@@ -257,8 +257,8 @@ void test_swap_same_alternative()
         using T = NothrowTypeWithThrowingSwap;
         using V = std::variant<T, int>;
         T::reset();
-        V v1(std::in_place_index<0>, 42);
-        V v2(std::in_place_index<0>, 100);
+        V v1(std::in_place<0>, 42);
+        V v2(std::in_place<0>, 100);
         try {
             v1.swap(v2);
             assert(false);
@@ -274,8 +274,8 @@ void test_swap_same_alternative()
         using T = ThrowingMoveCtor;
         using V = std::variant<T, int>;
         T::reset();
-        V v1(std::in_place_index<0>, 42);
-        V v2(std::in_place_index<0>, 100);
+        V v1(std::in_place<0>, 42);
+        V v2(std::in_place<0>, 100);
         try {
             v1.swap(v2);
             assert(false);
@@ -290,8 +290,8 @@ void test_swap_same_alternative()
         using T = ThrowingMoveAssignNothrowMoveCtor;
         using V = std::variant<T, int>;
         T::reset();
-        V v1(std::in_place_index<0>, 42);
-        V v2(std::in_place_index<0>, 100);
+        V v1(std::in_place<0>, 42);
+        V v2(std::in_place<0>, 100);
         try {
             v1.swap(v2);
             assert(false);
@@ -312,8 +312,8 @@ void test_swap_different_alternatives()
         using T = NothrowMoveCtorWithThrowingSwap;
         using V = std::variant<T, int>;
         T::reset();
-        V v1(std::in_place_index<0>, 42);
-        V v2(std::in_place_index<1>, 100);
+        V v1(std::in_place<0>, 42);
+        V v2(std::in_place<1>, 100);
         v1.swap(v2);
         assert(T::swap_called == 0);
         // The libc++ implementation double copies the argument, and not
@@ -337,8 +337,8 @@ void test_swap_different_alternatives()
         using V = std::variant<T1, T2>;
         T1::reset();
         T2::reset();
-        V v1(std::in_place_index<0>, 42);
-        V v2(std::in_place_index<1>, 100);
+        V v1(std::in_place<0>, 42);
+        V v2(std::in_place<1>, 100);
         try {
             v1.swap(v2);
             assert(false);
@@ -357,8 +357,8 @@ void test_swap_different_alternatives()
         using V = std::variant<T1, T2>;
         T1::reset();
         T2::reset();
-        V v1(std::in_place_index<0>, 42);
-        V v2(std::in_place_index<1>, 100);
+        V v1(std::in_place<0>, 42);
+        V v2(std::in_place<1>, 100);
         try {
             v1.swap(v2);
             assert(false);
@@ -376,8 +376,8 @@ void test_swap_different_alternatives()
         using T2 = NonThrowingNonNoexceptType;
         using V = std::variant<T1, T2>;
         T2::reset();
-        V v1(std::in_place_index<0>, 42);
-        V v2(std::in_place_index<1>, 100);
+        V v1(std::in_place<0>, 42);
+        V v2(std::in_place<1>, 100);
         v1.swap(v2);
         assert(T2::move_called == 2);
         assert(std::get<1>(v1).value == 100);
@@ -389,8 +389,8 @@ void test_swap_different_alternatives()
         using T2 = ThrowsOnSecondMove;
         using V = std::variant<T1, T2>;
         T1::reset();
-        V v1(std::in_place_index<0>, 42);
-        V v2(std::in_place_index<1>, 100);
+        V v1(std::in_place<0>, 42);
+        V v2(std::in_place<1>, 100);
         try {
             v1.swap(v2);
             assert(false);
@@ -408,8 +408,8 @@ void test_swap_different_alternatives()
         using V = std::variant<T1, T2>;
         T1::reset();
         T2::reset();
-        V v1(std::in_place_index<0>, 42);
-        V v2(std::in_place_index<1>, 100);
+        V v1(std::in_place<0>, 42);
+        V v2(std::in_place<1>, 100);
         try {
             v1.swap(v2);
             assert(false);

@@ -62,38 +62,38 @@ void test_ctor_sfinae() {
 void test_ctor_basic()
 {
     {
-        constexpr std::variant<int> v(std::in_place_type<int>, 42);
+        constexpr std::variant<int> v(std::in_place<int>, 42);
         static_assert(v.index() == 0, "");
         static_assert(std::get<0>(v) == 42, "");
     }
     {
-        constexpr std::variant<int, long> v(std::in_place_type<long>, 42);
+        constexpr std::variant<int, long> v(std::in_place<long>, 42);
         static_assert(v.index() == 1, "");
         static_assert(std::get<1>(v) == 42, "");
     }
     {
-        constexpr std::variant<int, const int, long> v(std::in_place_type<const int>, 42);
+        constexpr std::variant<int, const int, long> v(std::in_place<const int>, 42);
         static_assert(v.index() == 1, "");
         static_assert(std::get<1>(v) == 42, "");
     }
     {
         using V = std::variant<const int, volatile int, int>;
         int x = 42;
-        V v(std::in_place_type<const int>, x);
+        V v(std::in_place<const int>, x);
         assert(v.index() == 0);
         assert(std::get<0>(v) == x);
     }
     {
         using V = std::variant<const int, volatile int, int>;
         int x = 42;
-        V v(std::in_place_type<volatile int>, x);
+        V v(std::in_place<volatile int>, x);
         assert(v.index() == 1);
         assert(std::get<1>(v) == x);
     }
     {
         using V = std::variant<const int, volatile int, int>;
         int x = 42;
-        V v(std::in_place_type<int>, x);
+        V v(std::in_place<int>, x);
         assert(v.index() == 2);
         assert(std::get<2>(v) == x);
     }

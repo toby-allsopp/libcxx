@@ -74,7 +74,7 @@ void test_basic() {
         const int x = 100;
         int y = 42;
         int z = 43;
-        V v(std::in_place_index<0>, -1);
+        V v(std::in_place<0>, -1);
         // default emplace a value
         v.emplace<long>();
         assert(std::get<long>(v) == 0);
