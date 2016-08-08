@@ -28,7 +28,7 @@ if (LIBCXX_INSTALL_HEADERS)
   if (LIBCXX_NEEDS_SITE_CONFIG)
     set(UNIX_CAT cat)
     if (WIN32)
-      set(UNIX_CAT type)
+      set(UNIX_CAT TYPE)
     endif()
 
     # Generate and install a custom __config header. The new header is created

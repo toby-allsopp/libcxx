@@ -25,7 +25,7 @@ environment:
 
     - compiler: llvm-3-8.0
       generator: "MinGW Makefiles"
-      set_path: C:\Program Files\LLVM\bin
+      set_path: C:\Program\ Files\LLVM\bin
 
 install:
   - echo set_path=%set_path%
