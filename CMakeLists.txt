@@ -430,7 +430,7 @@ endif()
 #===============================================================================
 
 include_directories(include)
-add_subdirectory(include))
+add_subdirectory(include)
 add_subdirectory(lib)
 
 if (LIBCXX_INCLUDE_BENCHMARKS)
