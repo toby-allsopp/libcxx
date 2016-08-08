@@ -90,3 +90,4 @@ artifacts:
 
 cache:
   - C:\mingw-builds
+  - C:\projects\deps
