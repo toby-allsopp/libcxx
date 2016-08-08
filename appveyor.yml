@@ -40,6 +40,8 @@ build_script:
   - cd _build
   - echo %configuration%
   - cmake -G "%generator%" "-DCMAKE_BUILD_TYPE=%configuration%" ..
+  - appveyor PushArtifact CMakeFiles/CMakeOutput.log
+  - appveyor PushArtifact CMakeFiles/CMakeError.log
   - cmake --build . --config %configuration%
 
 #test_script:
