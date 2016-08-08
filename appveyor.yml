@@ -29,7 +29,7 @@ environment:
 
 install:
   - echo set_path=%set_path%
-  - for /f %%a in (' dir /s /b /o:gn "%set_path%"') do @set "path_list=%%a"
+  - for /f %%a in (' dir /s /b /o:gn "%set_path%"') do @echo "path_list=%%a"
   - echo %path_list%
   - if not "%set_path%"=="" (set "PATH=%PATH%;%set_path%")
   # git bash conflicts with MinGW makefiles
@@ -39,9 +39,9 @@ build_script:
   - md _build -Force
   - cd _build
   - echo %configuration%
-  - cmake -G "%generator%" "-DCMAKE_BUILD_TYPE=%configuration%" ..
   - appveyor PushArtifact CMakeFiles/CMakeOutput.log
   - appveyor PushArtifact CMakeFiles/CMakeError.log
+  - cmake -G "%generator%" "-DCMAKE_BUILD_TYPE=%configuration%" ..
   - cmake --build . --config %configuration%
 
 #test_script:
