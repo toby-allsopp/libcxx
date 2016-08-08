@@ -30,6 +30,7 @@ if (LIBCXX_INSTALL_HEADERS)
     if (WIN32)
       set(UNIX_CAT type)
     endif()
+    file(APPEND)
     # Generate and install a custom __config header. The new header is created
     # by  prepending __config_site to the current __config header.
     add_custom_command(OUTPUT ${LIBCXX_BINARY_DIR}/__generated_config
