@@ -96,7 +96,7 @@ void *aligned_alloc(size_t alignment, size_t size);                       // C11
 #endif
 
 #if defined(_MSC_VER) && !defined(__clang__)
-#include <../stdlib.h>
+#include <../include/stdlib.h>
 #else
 #include_next <stdlib.h>
 #endif

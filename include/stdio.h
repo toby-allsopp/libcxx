@@ -15,7 +15,7 @@
 #endif
 
 #if defined(_MSC_VER) && !defined(__clang__)
-#include <../stdio.h>
+#include <../include/stdio.h>
 #else
 #include_next <stdio.h>
 #endif
