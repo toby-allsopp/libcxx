@@ -45,7 +45,7 @@ install:
   - if not "%mingw_path%"=="" (set "PATH=%PATH%;%mingw_path%")
   # git bash conflicts with MinGW makefiles
   - if "%generator%"=="MinGW Makefiles" (set "PATH=%PATH:C:\Program Files\Git\usr\bin;=%")
-  - call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" amd64
+  - call "C:\Program Files (x86)\Microsoft Visual Studio 14.3\VC\vcvarsall.bat" amd64
   - cd C:\projects\hana
   - mkdir C:\projects\deps
   - cd C:\projects\deps
