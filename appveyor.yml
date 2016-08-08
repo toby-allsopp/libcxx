@@ -1,5 +1,12 @@
 version: '{build}'
 
+
+os:
+  - Visual Studio 2015 Update 2
+
+build:
+  verbosity: detailed
+
 branches:
   only:
     - windows-build
@@ -46,10 +53,10 @@ install:
   - ninja --version
 
 build_script:
-  - md _build -Force
-  - cd _build
+  - md C:\projects\build-libcxx
+  - cd C:\projects\build-libcxx
   - echo %configuration%
-  - cmake -G "%generator%" "-DCMAKE_BUILD_TYPE=%configuration%" ..
+  - cmake -G "%generator%" "-DCMAKE_BUILD_TYPE=%configuration%" C:\projects\libcxx
   - cmake --build . --config %configuration%
 
 on_failure:
