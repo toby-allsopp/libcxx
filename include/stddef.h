@@ -15,7 +15,11 @@
 #pragma GCC system_header
 #endif
 
+#if defined(_MSC_VER) && !defined(__clang__)
+#include <../stddef.h>
+#else
 #include_next <stddef.h>
+#endif
 
 #elif !defined(_LIBCPP_STDDEF_H)
 #define _LIBCPP_STDDEF_H

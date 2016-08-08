@@ -51,7 +51,11 @@ wctrans_t wctrans(const char* property);
 #pragma GCC system_header
 #endif
 
+#if defined(_MSC_VER) && !defined(__clang__)
+#include <../include/wctype.h>
+#else
 #include_next <wctype.h>
+#endif
 
 #ifdef __cplusplus
 
