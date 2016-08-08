@@ -1,0 +1,55 @@
+version: '{build}'
+
+configuration:
+  - Debug
+  - Release
+
+environment:
+  matrix:
+    - compiler: msvc-14-seh
+      generator: "Visual Studio 14 2015"
+
+    - compiler: msvc-14-seh
+      generator: "Visual Studio 14 2015 Win64"
+
+    - compiler: gcc-4.9.2-posix
+      generator: "MinGW Makefiles"
+      set_path: "C:\MinGW\bin"
+
+    - compiler: gcc-4.9.2-posix
+      generator: "MinGW Makefiles"
+      set_path: "C:\mingw-w64\i686-5.3.0-posix-dwarf-rt_v4-rev0\mingw32\bin"
+
+    - compiler: llvm-3-8.0
+      generator: "MinGWMake Makefiles"
+      set_path: "C:\Program Files\LLVM\bin"
+
+matrix:
+  fast_finish: true
+
+install:
+  - echo set_path=%set_path%
+  - echo dir /s /b /o:gn "%set_path%"
+  - if "%compiler%"=="gcc-4.9.2-posix" (for /f %%a in ('python mingw.py --quiet --version "4.9.2" --arch "%arch%" --threading "posix" --location "C:\mingw-builds"') do @set "compiler_path=%%a")
+  - if not "%set_path%"=="" (set "PATH=%PATH%;%set_path%")
+  # git bash conflicts with MinGW makefiles
+  - if "%generator%"=="MinGW Makefiles" (set "PATH=%PATH:C:\Program Files\Git\usr\bin;=%")
+
+build_script:
+  - md _build -Force
+  - cd _build
+  - echo %configuration%
+  - cmake -G "%generator%" "-DCMAKE_BUILD_TYPE=%configuration%" ..
+  - cmake --build . --config %configuration%
+
+#test_script:
+#  - ctest -c %configuration% --timeout 300 --output-on-failure
+
+artifacts:
+  - path: '_build/CMakeFiles/*.log'
+    name: logs
+#  - path: '_build/Testing/**/*.xml'
+#    name: test_results
+
+cache:
+  - C:\mingw-builds
