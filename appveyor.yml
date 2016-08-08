@@ -35,23 +35,24 @@ install:
   # git bash conflicts with MinGW makefiles
   - if "%generator%"=="MinGW Makefiles" (set "PATH=%PATH:C:\Program Files\Git\usr\bin;=%")
 
+
+artifacts:
+  - path: '_build/CMakeFiles/*.log'
+    name: logs
+    all: true
+#  - path: '_build/Testing/**/*.xml'
+#    name: test_results
+
 build_script:
   - md _build -Force
   - cd _build
   - echo %configuration%
-  - appveyor PushArtifact CMakeFiles/CMakeOutput.log
-  - appveyor PushArtifact CMakeFiles/CMakeError.log
   - cmake -G "%generator%" "-DCMAKE_BUILD_TYPE=%configuration%" ..
   - cmake --build . --config %configuration%
 
 #test_script:
 #  - ctest -c %configuration% --timeout 300 --output-on-failure
 
-artifacts:
-  - path: '_build/CMakeFiles/*.log'
-    name: logs
-#  - path: '_build/Testing/**/*.xml'
-#    name: test_results
 
 cache:
   - C:\mingw-builds
