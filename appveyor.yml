@@ -16,7 +16,7 @@ configuration:
 environment:
   matrix:
     - compiler: llvm-3-8.0
-      generator: "Visual Studio 14 2015"
+      generator: "Visual Studio 14 2015 Win64"
       set_path: 'C:\Program Files\LLVM\bin'
       extra_cmake_flags: '-TLLVM-vs2014'
 
