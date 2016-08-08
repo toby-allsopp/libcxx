@@ -419,7 +419,7 @@ if (LIBCXX_NEEDS_SITE_CONFIG)
   # Provide the config definitions by included the generated __config_site
   # file at compile time.
   add_compile_flags("-include ${LIBCXX_BINARY_DIR}/__config_site")
-  add_compile_flags("/FI${LIBCXX_BINARY_DIR}/__config_site")
+  add_compile_flags("/FI\"${LIBCXX_BINARY_DIR}/__config_site\"")
 
 endif()
 
