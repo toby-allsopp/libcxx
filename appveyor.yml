@@ -18,7 +18,7 @@ environment:
     - compiler: llvm-3-8.0
       generator: "Visual Studio 14 2015"
       set_path: 'C:\Program Files\LLVM\bin'
-
+      extra_cmake_flags: '-TLLVM-vs2014'
 
 
 #    - compiler: msvc-14-seh
@@ -45,7 +45,8 @@ install:
   - if not "%mingw_path%"=="" (set "PATH=%PATH%;%mingw_path%")
   # git bash conflicts with MinGW makefiles
   - if "%generator%"=="MinGW Makefiles" (set "PATH=%PATH:C:\Program Files\Git\usr\bin;=%")
-
+  - call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" amd64
+  - cd C:\projects\hana
   - mkdir C:\projects\deps
   - cd C:\projects\deps
 
@@ -53,7 +54,7 @@ build_script:
   - md C:\projects\build-libcxx
   - cd C:\projects\build-libcxx
   - echo %configuration%
-  - cmake -G "%generator%" "-DCMAKE_BUILD_TYPE=%configuration%" C:\projects\libcxx
+  - cmake -G "%generator%" %extra_cmake_flags% "-DCMAKE_BUILD_TYPE=%configuration%" C:\projects\libcxx
   - cmake --build . --config %configuration%
 
 on_failure:
