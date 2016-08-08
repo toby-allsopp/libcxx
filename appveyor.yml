@@ -1,5 +1,9 @@
 version: '{build}'
 
+branches:
+  only:
+    windows-build
+
 configuration:
   - Debug
   - Release
@@ -27,10 +31,10 @@ environment:
 matrix:
   fast_finish: true
 
+
 install:
   - echo set_path=%set_path%
   - echo dir /s /b /o:gn "%set_path%"
-  - if "%compiler%"=="gcc-4.9.2-posix" (for /f %%a in ('python mingw.py --quiet --version "4.9.2" --arch "%arch%" --threading "posix" --location "C:\mingw-builds"') do @set "compiler_path=%%a")
   - if not "%set_path%"=="" (set "PATH=%PATH%;%set_path%")
   # git bash conflicts with MinGW makefiles
   - if "%generator%"=="MinGW Makefiles" (set "PATH=%PATH:C:\Program Files\Git\usr\bin;=%")
