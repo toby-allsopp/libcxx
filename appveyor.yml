@@ -18,15 +18,15 @@ environment:
 
     - compiler: gcc-4.9.2-posix
       generator: "MinGW Makefiles"
-      set_path: "C:\MinGW\bin"
+      set_path: C:\MinGW\bin
 
     - compiler: gcc-4.9.2-posix
       generator: "MinGW Makefiles"
-      set_path: "C:\mingw-w64\i686-5.3.0-posix-dwarf-rt_v4-rev0\mingw32\bin"
+      set_path: C:\mingw-w64\i686-5.3.0-posix-dwarf-rt_v4-rev0\mingw32\bin
 
     - compiler: llvm-3-8.0
       generator: "MinGWMake Makefiles"
-      set_path: "C:\Program Files\LLVM\bin"
+      set_path: C:\Program Files\LLVM\bin
 
 matrix:
   fast_finish: true
