@@ -45,7 +45,6 @@ install:
   - if not "%mingw_path%"=="" (set "PATH=%PATH%;%mingw_path%")
   # git bash conflicts with MinGW makefiles
   - if "%generator%"=="MinGW Makefiles" (set "PATH=%PATH:C:\Program Files\Git\usr\bin;=%")
-  - cmd: %CXX% --version
 
   - mkdir C:\projects\deps
   - cd C:\projects\deps
