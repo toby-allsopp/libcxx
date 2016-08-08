@@ -428,8 +428,9 @@ endif()
 #===============================================================================
 # Setup Source Code And Tests
 #===============================================================================
-include_directories(include)
+
 add_subdirectory(include)
+include_directories("${CMAKE_BINARY_DIR}/include/c++/v1")
 add_subdirectory(lib)
 
 if (LIBCXX_INCLUDE_BENCHMARKS)
