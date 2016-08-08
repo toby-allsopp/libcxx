@@ -1,7 +1,7 @@
 version: '{build}'
 
-
-os: Visual Studio 2015
+os:
+  - Visual Studio 2015 Update 2
 
 build:
   verbosity: detailed
@@ -21,21 +21,22 @@ environment:
       extra_cmake_flags: '-TLLVM-vs2014'
 
 
+
 #    - compiler: msvc-14-seh
 #      generator: "Visual Studio 14 2015"
 
 #    - compiler: msvc-14-seh
 #      generator: "Visual Studio 14 2015 Win64"
 
-    - compiler: gcc-4.9.2-posix
-      generator: "MinGW Makefiles"
-      mingw_path: 'C:\MinGW\bin'
-      CXX: 'g++'
+#    - compiler: gcc-4.9.2-posix
+#      generator: "MinGW Makefiles"
+#      mingw_path: 'C:\MinGW\bin'
+#      CXX: 'g++'
 
-    - compiler: gcc-4.9.2-posix
-      generator: "MinGW Makefiles"
-      mingw_path: 'C:\mingw-w64\i686-5.3.0-posix-dwarf-rt_v4-rev0\mingw32\bin'
-      CXX: 'g++'
+#    - compiler: gcc-4.9.2-posix
+#      generator: "MinGW Makefiles"
+#      mingw_path: 'C:\mingw-w64\i686-5.3.0-posix-dwarf-rt_v4-rev0\mingw32\bin'
+#      CXX: 'g++'
 
 
 install:
