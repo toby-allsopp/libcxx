@@ -51,8 +51,8 @@ MACRO_ENSURE_OUT_OF_SOURCE_BUILD(
 
 # Basic options ---------------------------------------------------------------
 option(LIBCXX_ENABLE_ASSERTIONS "Enable assertions independent of build mode." ON)
-option(LIBCXX_ENABLE_SHARED "Build libc++ as a shared library." ON)
-option(LIBCXX_ENABLE_EXPERIMENTAL_LIBRARY "Build libc++experimental.a" ON)
+option(LIBCXX_ENABLE_SHARED "Build libc++ as a shared library." OFF) # TODO
+option(LIBCXX_ENABLE_EXPERIMENTAL_LIBRARY "Build libc++experimental.a" OFF ) # TODO
 option(LIBCXX_ENABLE_FILESYSTEM
         "Build filesystem as part of libc++experimental.a" ${LIBCXX_ENABLE_EXPERIMENTAL_LIBRARY})
 option(LIBCXX_INCLUDE_TESTS "Build the libc++ tests." ${LLVM_INCLUDE_TESTS})
@@ -69,7 +69,7 @@ set(LIBCXX_ABI_VERSION 1 CACHE STRING "ABI version of libc++.")
 option(LIBCXX_ABI_UNSTABLE "Unstable ABI of libc++." OFF)
 
 # ABI Library options ---------------------------------------------------------
-set(LIBCXX_CXX_ABI "${LIBCXX_CXX_ABI}" CACHE STRING
+set(LIBCXX_CXX_ABI "none" CACHE STRING
     "Specify C++ ABI library to use." FORCE)
 set(CXXABIS none libcxxabi libcxxrt libstdc++ libsupc++)
 set_property(CACHE LIBCXX_CXX_ABI PROPERTY STRINGS ;${CXXABIS})
@@ -124,11 +124,11 @@ option(LIBCXX_ENABLE_RTTI "Use run time type information." ON)
 option(LIBCXX_ENABLE_GLOBAL_FILESYSTEM_NAMESPACE "Build libc++ with support for the global filesystem namespace." ON)
 option(LIBCXX_ENABLE_STDIN "Build libc++ with support for stdin/std::cin." ON)
 option(LIBCXX_ENABLE_STDOUT "Build libc++ with support for stdout/std::cout." ON)
-option(LIBCXX_ENABLE_THREADS "Build libc++ with support for threads." ON)
+option(LIBCXX_ENABLE_THREADS "Build libc++ with support for threads." OFF)
 option(LIBCXX_ENABLE_THREAD_UNSAFE_C_FUNCTIONS "Build libc++ with support for thread-unsafe C functions" ON)
 option(LIBCXX_ENABLE_MONOTONIC_CLOCK
   "Build libc++ with support for a monotonic clock.
-   This option may only be set to OFF when LIBCXX_ENABLE_THREADS=OFF." ON)
+   This option may only be set to OFF when LIBCXX_ENABLE_THREADS=OFF." OFF)
 option(LIBCXX_HAS_MUSL_LIBC "Build libc++ with support for the Musl C library" OFF)
 option(LIBCXX_HAS_PTHREAD_API "Ignore auto-detection and force use of pthread API" OFF)
 
