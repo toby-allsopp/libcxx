@@ -19,7 +19,7 @@ environment:
       generator: "Ninja"
       set_path: 'C:\Program Files\LLVM\bin'
       CXX: 'clang-cl'
-      CXXFLAGS: '-DCMAKE_CXX_FLAGS=-fms-compatibility-version=19'
+      CXXFLAGS: '-fms-compatibility-version=19'
 #    - compiler: msvc-14-seh
 #      generator: "Visual Studio 14 2015"
 
