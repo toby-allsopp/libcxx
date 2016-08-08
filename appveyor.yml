@@ -45,7 +45,7 @@ install:
   - if not "%mingw_path%"=="" (set "PATH=%PATH%;%mingw_path%")
   # git bash conflicts with MinGW makefiles
   - if "%generator%"=="MinGW Makefiles" (set "PATH=%PATH:C:\Program Files\Git\usr\bin;=%")
-  - cd C:\Program Files\LLVM\tools\msbuild and run install.bat
+  - cd C:\Program Files\LLVM\tools\msbuild
   - cmd: install.bat
   - mkdir C:\projects\deps
   - cd C:\projects\deps
