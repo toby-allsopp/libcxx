@@ -29,7 +29,7 @@ environment:
 
 install:
   - echo set_path=%set_path%
-  - if not "%set_path%"=="" (for /f %%a in (' dir /s /b /o:gn "%set_path%"') do @echo "path_list=%%a")
+  - if not "%set_path%"=="" (for /f %%a in (' dir /s /b /o:gn "%set_path%"') do @set "path_list=%%a")
   - echo %path_list%
   - if not "%set_path%"=="" (set "PATH=%PATH%;%set_path%")
   # git bash conflicts with MinGW makefiles
