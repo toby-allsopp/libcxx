@@ -7,8 +7,7 @@ build:
   verbosity: detailed
 
 branches:
-  only:
-    - windows-build
+  only: windows-build
 
 configuration:
   - Debug
@@ -30,8 +29,9 @@ environment:
       set_path: 'C:\mingw-w64\i686-5.3.0-posix-dwarf-rt_v4-rev0\mingw32\bin'
 
     - compiler: llvm-3-8.0
-      generator: "MinGW Makefiles"
+      generator: "Ninja"
       set_path: 'C:\Program Files\LLVM\bin'
+      CXX: 'clang-cl'
 
 install:
   - echo set_path=%set_path%
