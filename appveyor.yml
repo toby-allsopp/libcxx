@@ -18,8 +18,10 @@ environment:
     - compiler: llvm-3-8.0
       generator: "Ninja"
       set_path: 'C:\Program Files\LLVM\bin'
+      mingw_path: 'C:\MinGW\bin'
       CXX: 'clang-cl'
       CXXFLAGS: '-fms-compatibility-version=19'
+
 #    - compiler: msvc-14-seh
 #      generator: "Visual Studio 14 2015"
 
@@ -27,12 +29,12 @@ environment:
 #      generator: "Visual Studio 14 2015 Win64"
 
     - compiler: gcc-4.9.2-posix
-      generator: "MinGW Makefiles"
-      set_path: 'C:\MinGW\bin'
+      generator: "Ninja"
+      mingw_path: 'C:\MinGW\bin'
 
     - compiler: gcc-4.9.2-posix
       generator: "MinGW Makefiles"
-      set_path: 'C:\mingw-w64\i686-5.3.0-posix-dwarf-rt_v4-rev0\mingw32\bin'
+      mingw_path: 'C:\mingw-w64\i686-5.3.0-posix-dwarf-rt_v4-rev0\mingw32\bin'
 
 
 
@@ -40,6 +42,7 @@ install:
   - echo set_path=%set_path%
   - if not "%set_path%"=="" (for /f %%a in ('dir %set_path% /s /b /o:gn') do @echo "path_list=%%a")
   - if not "%set_path%"=="" (set "PATH=%PATH%;%set_path%")
+  - if not "%mingw_path%"=="" (set "PATH=%PATH%;%mingw_path%")
   # git bash conflicts with MinGW makefiles
   - if "%generator%"=="MinGW Makefiles" (set "PATH=%PATH:C:\Program Files\Git\usr\bin;=%")
   - mkdir C:\projects\deps
