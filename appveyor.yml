@@ -42,7 +42,7 @@ build_script:
   - cmake -G "%generator%" "-DCMAKE_BUILD_TYPE=%configuration%" ..
   - cmake --build . --config %configuration%
 
-after_build:
+on_failure:
   - appveyor PushArtifact CMakeFiles/CMakeOutput.log
   - appveyor PushArtifact CMakeFiles/CMakeError.log
 #test_script:
