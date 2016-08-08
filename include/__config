@@ -12,9 +12,7 @@
 #define _LIBCPP_CONFIG
 
 #if defined(_MSC_VER) && !defined(__clang__)
-# ifndef _LIBCPP_HAS_NO_PRAGMA_SYSTEM_HEADER
-#  define _LIBCPP_HAS_NO_PRAGMA_SYSTEM_HEADER
-# endif
+#define _LIBCPP_HAS_NO_PRAGMA_SYSTEM_HEADER
 #endif
 
 #ifndef _LIBCPP_HAS_NO_PRAGMA_SYSTEM_HEADER
@@ -574,6 +572,7 @@ using namespace _LIBCPP_NAMESPACE __attribute__((__strong__));
 #define _LIBCPP_HAS_NO_CONSTEXPR
 #define _LIBCPP_HAS_NO_CXX14_CONSTEXPR
 #define _LIBCPP_HAS_NO_VARIABLE_TEMPLATES
+#define _LIBCPP_HAS_NO_UNICODE_CHARS
 #define _LIBCPP_HAS_NO_DELETED_FUNCTIONS
 #define _LIBCPP_HAS_NO_DEFAULTED_FUNCTIONS
 #define _LIBCPP_HAS_NO_NOEXCEPT
@@ -581,7 +580,7 @@ using namespace _LIBCPP_NAMESPACE __attribute__((__strong__));
 #define _LIBCPP_NORETURN __declspec(noreturn)
 #define _ALIGNAS(x) __declspec(align(x))
 #define _LIBCPP_HAS_NO_VARIADICS
-#define _LIBCPP_ENABLE_C_HEADER_WORKAROUND
+
 
 
 #define _LIBCPP_BEGIN_NAMESPACE_STD namespace std {

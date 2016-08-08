@@ -25,12 +25,11 @@ if (LIBCXX_INSTALL_HEADERS)
     PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
   )
 
-  if (0) # FIXME (LIBCXX_NEEDS_SITE_CONFIG)
+  if (LIBCXX_NEEDS_SITE_CONFIG)
     set(UNIX_CAT cat)
     if (WIN32)
-      set(UNIX_CAT TYPE)
+      set(UNIX_CAT type)
     endif()
-
     # Generate and install a custom __config header. The new header is created
     # by  prepending __config_site to the current __config header.
     add_custom_command(OUTPUT ${LIBCXX_BINARY_DIR}/__generated_config
