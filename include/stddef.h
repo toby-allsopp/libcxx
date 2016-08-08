@@ -47,7 +47,11 @@ Types:
 #pragma GCC system_header
 #endif
 
+#if defined(_MSC_VER) && !defined(__clang__)
+#include <../include/stddef.h>
+#else
 #include_next <stddef.h>
+#endif
 
 #ifdef __cplusplus
 
