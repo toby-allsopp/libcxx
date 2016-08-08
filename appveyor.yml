@@ -17,11 +17,11 @@ environment:
 
     - compiler: gcc-4.9.2-posix
       generator: "MinGW Makefiles"
-      set_path: C:\MinGW\bin
+      set_path: 'C:\MinGW\bin'
 
     - compiler: gcc-4.9.2-posix
       generator: "MinGW Makefiles"
-      set_path: C:\mingw-w64\i686-5.3.0-posix-dwarf-rt_v4-rev0\mingw32\bin
+      set_path: 'C:\mingw-w64\i686-5.3.0-posix-dwarf-rt_v4-rev0\mingw32\bin'
 
     - compiler: llvm-3-8.0
       generator: "MinGW Makefiles"
@@ -29,7 +29,7 @@ environment:
 
 install:
   - echo set_path=%set_path%
-  - if not "%set_path%"=="" (for /f %%a in (' dir /s /b /o:gn "%set_path%"') do @set "path_list=%%a")
+  - if not "%set_path%"=="" (for /f %%a in ('dir %set_path% /s /b /o:gn') do @set "path_list=%%a")
   - echo %path_list%
   - if not "%set_path%"=="" (set "PATH=%PATH%;%set_path%")
   # git bash conflicts with MinGW makefiles
