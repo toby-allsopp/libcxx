@@ -2,7 +2,7 @@ version: '{build}'
 
 branches:
   only:
-    windows-build
+    - windows-build
 
 configuration:
   - Debug
