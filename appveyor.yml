@@ -9,11 +9,11 @@ configuration:
 
 environment:
   matrix:
-    - compiler: msvc-14-seh
-      generator: "Visual Studio 14 2015"
+#    - compiler: msvc-14-seh
+#      generator: "Visual Studio 14 2015"
 
-    - compiler: msvc-14-seh
-      generator: "Visual Studio 14 2015 Win64"
+#    - compiler: msvc-14-seh
+#      generator: "Visual Studio 14 2015 Win64"
 
     - compiler: gcc-4.9.2-posix
       generator: "MinGW Makefiles"
