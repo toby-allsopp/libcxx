@@ -90,6 +90,8 @@ isupper_l(int c, _locale_t loc)
 #define towupper_l _towupper_l
 #define towlower_l _towlower_l
 #define strftime_l _strftime_l
+#define strtof_l _strtof_l
+#define strtod_l _strtod_l
 #define sscanf_l( __s, __l, __f, ...) _sscanf_l( __s, __f, __l, __VA_ARGS__ )
 #define vsscanf_l( __s, __l, __f, ...) _sscanf_l( __s, __f, __l, __VA_ARGS__ )
 #define sprintf_l( __s, __l, __f, ... ) _sprintf_l( __s, __f, __l, __VA_ARGS__ )
