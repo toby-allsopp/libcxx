@@ -13,7 +13,11 @@
 #include <time.h>        // clock_gettime, CLOCK_MONOTONIC and CLOCK_REALTIME
 
 #if !defined(CLOCK_REALTIME)
-#include <sys/time.h>        // for gettimeofday and timeval
+#ifdef _LIBCPP_MSVCRT
+#include <windows.h>
+#else
+#include <sys/time.h>        //for gettimeofday and timeval
+#endif
 #endif
 
 #if !defined(_LIBCPP_HAS_NO_MONOTONIC_CLOCK) && !defined(CLOCK_MONOTONIC)
@@ -42,22 +46,39 @@ system_clock::now() _NOEXCEPT
         __throw_system_error(errno, "clock_gettime(CLOCK_REALTIME) failed");
     return time_point(seconds(tp.tv_sec) + microseconds(tp.tv_nsec / 1000));
 #else  // !CLOCK_REALTIME
+#ifdef _LIBCPP_MSVCRT
+    // number of 100-nanosecond intervals since January 1, 1601 (UTC)
+    FILETIME ft;
+    GetSystemTimeAsFileTime(&ft);
+    long long val = (static_cast<long long>(ft.dwHighDateTime) << 32) | ft.dwLowDateTime;
+    return time_point(duration(val / 10));
+#else
     timeval tv;
     gettimeofday(&tv, 0);
     return time_point(seconds(tv.tv_sec) + microseconds(tv.tv_usec));
+#endif
 #endif  // CLOCK_REALTIME
 }
 
 time_t
 system_clock::to_time_t(const time_point& t) _NOEXCEPT
 {
+#ifdef _LIBCPP_MSVCRT
+    // number of seconds since midnight, January 1, 1970
+    return time_t(duration_cast<seconds>(t.time_since_epoch()).count() - 11644473600LL);
+#else
     return time_t(duration_cast<seconds>(t.time_since_epoch()).count());
+#endif
 }
 
 system_clock::time_point
 system_clock::from_time_t(time_t t) _NOEXCEPT
 {
+#ifdef _LIBCPP_MSVCRT
+    return system_clock::time_point(seconds(t) + seconds(11644473600LL));
+#else
     return system_clock::time_point(seconds(t));
+#endif
 }
 
 #ifndef _LIBCPP_HAS_NO_MONOTONIC_CLOCK
