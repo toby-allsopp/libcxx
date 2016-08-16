@@ -259,12 +259,25 @@ if (NOT CMAKE_CONFIGURATION_TYPES AND (LIBCXX_INSTALL_LIBRARY OR
                       -P "${LIBCXX_BINARY_DIR}/cmake_install.cmake")
 endif()
 
-add_libcxx_runtime(libcxx
+set(SANITIZER_COMBINATIONS
+        asan  "asan,ubsan"
+        msan  "msan,ubsan"
+        tsan  "tsan,ubsan"
+        ubsan
+)
+
+foreach(comb ${SANITIZER_COMBINATIONS})
+  string(REPLACE "," ";" comb "${comb}")
+  message(STATUS "Configuring for sanitizers: ${comb}")
+  add_libcxx_runtime(libcxx
     SHARED
-    SANITIZERS asan tsan ubsan
+    SANITIZERS ${comb}
     OS ${SANITIZER_COMMON_SUPPORTED_OS}
     SOURCES ${LIBCXX_SOURCES}
     CFLAGS ${LIBCXX_COMPILE_FLAGS}
     LINKFLAGS ${LIBCXX_LINK_FLAGS}
     LINK_LIBS ${LIBCXX_LIBRARIES}
     DEFS ${ASAN_COMMON_DEFINITIONS})
+endforeach()
+
+
