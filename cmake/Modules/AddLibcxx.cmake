@@ -182,7 +182,7 @@ function(add_libcxx_runtime name type)
                                 -DCMAKE_INSTALL_COMPONENT=${LIB_PARENT_TARGET}
                                 -P "${CMAKE_BINARY_DIR}/cmake_install.cmake")
       set_target_properties(install-${LIB_PARENT_TARGET} PROPERTIES
-                            FOLDER "Compiler-RT Misc")
+                            FOLDER "Libcxx Misc")
     endif()
   endif()
 
@@ -206,7 +206,7 @@ function(add_libcxx_runtime name type)
       OUTPUT_NAME   "c++"
       VERSION       "${LIBCXX_ABI_VERSION}.0"
       SOVERSION     "${LIBCXX_ABI_VERSION}"
-  )
+    )
     set_target_properties(${libname} PROPERTIES FOLDER "Compiler-RT Runtime")
     if(LIB_LINK_LIBS AND ${type} STREQUAL "SHARED")
       target_link_libraries(${libname} ${LIB_LINK_LIBS})
