@@ -20,10 +20,8 @@ set(CMAKE_MODULE_PATH
   ${CMAKE_MODULE_PATH}
   )
 
-# Find the LLVM sources and simulate LLVM CMake options.
-include(HandleOutOfTreeLLVM)
-
-if (LIBCXX_BUILT_STANDALONE)
+if (CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+  set(LIBCXX_BUILT_STANDALONE 1)
   project(libcxx CXX C)
 
   set(PACKAGE_NAME libcxx)
@@ -32,26 +30,84 @@ if (LIBCXX_BUILT_STANDALONE)
   set(PACKAGE_BUGREPORT "llvm-bugs@lists.llvm.org")
 endif()
 
-if (LIBCXX_BUILT_STANDALONE AND NOT LLVM_FOUND)
-  message(WARNING "UNSUPPORTED LIBCXX CONFIGURATION DETECTED: "
-                  "llvm-config not found and LLVM_PATH not defined.\n"
-                  "Reconfigure with -DLLVM_CONFIG=path/to/llvm-config "
-                  "or -DLLVM_PATH=path/to/llvm-source-root.")
-endif()
-
-
-include(base-config-ix)
-include(LibcxxUtils)
-load_llvm_config()
-construct_libcxx_default_triple()
-message(STATUS "DEFAULT ARCH ${LIBCXX_DEFAULT_TARGET_ARCH}")
-
 # Require out of source build.
 include(MacroEnsureOutOfSourceBuild)
 MACRO_ENSURE_OUT_OF_SOURCE_BUILD(
  "${PROJECT_NAME} requires an out of source build. Please create a separate
  build directory and run 'cmake /path/to/${PROJECT_NAME} [options]' there."
  )
+
+include(base-config-ix)
+include(LibcxxUtils)
+
+if (LIBCXX_BUILT_STANDALONE)
+  load_llvm_config()
+
+  # Find Python interpreter.
+  set(Python_ADDITIONAL_VERSIONS 2.7 2.6 2.5)
+  include(FindPythonInterp)
+  if(NOT PYTHONINTERP_FOUND)
+    message(FATAL_ERROR "
+      Unable to find Python interpreter required testing. Please install Python
+      or specify the PYTHON_EXECUTABLE CMake variable.")
+  endif()
+
+  if (NOT DEFINED LLVM_INCLUDE_TESTS)
+    set(LLVM_INCLUDE_TESTS ON)
+  endif()
+  if (NOT DEFINED LLVM_INCLUDE_DOCS)
+    set(LLVM_INCLUDE_DOCS OFF)
+  endif()
+  if (NOT DEFINED LLVM_ENABLE_SPHINX)
+    set(LLVM_ENABLE_SPHINX OFF)
+  endif()
+
+  # Required doc configuration
+  if (LLVM_ENABLE_SPHINX)
+    message(STATUS "Sphinx enabled.")
+    find_package(Sphinx REQUIRED)
+  else()
+    message(STATUS "Sphinx disabled.")
+  endif()
+
+  # FIXME - This is cribbed from HandleLLVMOptions.cmake.
+  if(WIN32)
+    set(LLVM_HAVE_LINK_VERSION_SCRIPT 0)
+    if(CYGWIN)
+      set(LLVM_ON_WIN32 0)
+      set(LLVM_ON_UNIX 1)
+    else(CYGWIN)
+      set(LLVM_ON_WIN32 1)
+      set(LLVM_ON_UNIX 0)
+    endif(CYGWIN)
+  else(WIN32)
+    if(UNIX)
+      set(LLVM_ON_WIN32 0)
+      set(LLVM_ON_UNIX 1)
+      if(APPLE)
+        set(LLVM_HAVE_LINK_VERSION_SCRIPT 0)
+      else(APPLE)
+        set(LLVM_HAVE_LINK_VERSION_SCRIPT 1)
+      endif(APPLE)
+    else(UNIX)
+      MESSAGE(SEND_ERROR "Unable to determine platform")
+    endif(UNIX)
+  endif(WIN32)
+
+  # Define default arguments to lit.
+  set(LIT_ARGS_DEFAULT "-sv")
+  if (MSVC OR XCODE)
+    set(LIT_ARGS_DEFAULT "${LIT_ARGS_DEFAULT} --no-progress-bar")
+  endif()
+  set(LLVM_LIT_ARGS "${LIT_ARGS_DEFAULT}" CACHE STRING "Default options for lit")
+endif()
+
+construct_libcxx_default_triple()
+if ("${LIBCXX_DEFAULT_TARGET_ABI}" STREQUAL "androideabi")
+  set(ANDROID 1)
+endif()
+message(STATUS "Default Arch: ${LIBCXX_DEFAULT_TARGET_ARCH}")
+
 
 #===============================================================================
 # Setup CMake Options
@@ -272,6 +328,7 @@ set(LIBCXX_LIBRARIES "")
 
 # Include macros for adding and removing libc++ flags.
 include(HandleLibcxxFlags)
+include(AddLibcxx)
 
 # Target flags ================================================================
 # These flags get added to CMAKE_CXX_FLAGS and CMAKE_C_FLAGS so that

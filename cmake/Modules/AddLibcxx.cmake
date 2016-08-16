@@ -1,5 +1,5 @@
 include(ExternalProject)
-include(CompilerRTUtils)
+include(LibcxxUtils)
 
 function(set_target_output_directories target output_dir)
   # For RUNTIME_OUTPUT_DIRECTORY variable, Multi-configuration generators
@@ -90,7 +90,7 @@ endmacro()
 #                         LINK_LIBS <linked libraries> (only for shared library)
 #                         OBJECT_LIBS <object libraries to use as sources>
 #                         PARENT_TARGET <convenience parent target>)
-function(add_compiler_rt_runtime name type)
+function(add_libcxx_runtime name type)
   if(NOT type MATCHES "^(STATIC|SHARED)$")
     message(FATAL_ERROR "type argument must be STATIC or SHARED")
     return()
@@ -113,7 +113,7 @@ function(add_compiler_rt_runtime name type)
       if(LIB_ARCHS_${libname})
         list(APPEND libnames ${libname})
         set(extra_cflags_${libname} ${DARWIN_${os}_CFLAGS} ${LIB_CFLAGS})
-        set(output_name_${libname} ${libname}${COMPILER_RT_OS_SUFFIX})
+        set(output_name_${libname} ${libname}${LIBCXX_OS_SUFFIX})
         set(sources_${libname} ${LIB_SOURCES})
         format_object_libs(sources_${libname} ${os} ${LIB_OBJECT_LIBS})
       endif()
@@ -126,15 +126,15 @@ function(add_compiler_rt_runtime name type)
       endif()
       if(type STREQUAL "STATIC")
         set(libname "${name}-${arch}")
-        set(output_name_${libname} ${libname}${COMPILER_RT_OS_SUFFIX})
+        set(output_name_${libname} ${libname}${LIBCXX_OS_SUFFIX})
       else()
         set(libname "${name}-dynamic-${arch}")
         set(extra_cflags_${libname} ${TARGET_${arch}_CFLAGS} ${LIB_CFLAGS})
         set(extra_linkflags_${libname} ${TARGET_${arch}_LINKFLAGS} ${LIB_LINKFLAGS})
         if(WIN32)
-          set(output_name_${libname} ${name}_dynamic-${arch}${COMPILER_RT_OS_SUFFIX})
+          set(output_name_${libname} ${name}_dynamic-${arch}${LIBCXX_OS_SUFFIX})
         else()
-          set(output_name_${libname} ${name}-${arch}${COMPILER_RT_OS_SUFFIX})
+          set(output_name_${libname} ${name}-${arch}${LIBCXX_OS_SUFFIX})
         endif()
       endif()
       set(sources_${libname} ${LIB_SOURCES})
@@ -181,7 +181,7 @@ function(add_compiler_rt_runtime name type)
     set_target_link_flags(${libname} ${extra_linkflags_${libname}})
     set_property(TARGET ${libname} APPEND PROPERTY
                 COMPILE_DEFINITIONS ${LIB_DEFS})
-    set_target_output_directories(${libname} ${COMPILER_RT_LIBRARY_OUTPUT_DIR})
+    set_target_output_directories(${libname} ${LIBCXX_LIBRARY_OUTPUT_DIR})
     set_target_properties(${libname} PROPERTIES
         OUTPUT_NAME ${output_name_${libname}})
     set_target_properties(${libname} PROPERTIES FOLDER "Compiler-RT Runtime")
@@ -189,11 +189,11 @@ function(add_compiler_rt_runtime name type)
       target_link_libraries(${libname} ${LIB_LINK_LIBS})
     endif()
     install(TARGETS ${libname}
-      ARCHIVE DESTINATION ${COMPILER_RT_LIBRARY_INSTALL_DIR}
+      ARCHIVE DESTINATION ${LIBCXX_LIBRARY_INSTALL_DIR}
               ${COMPONENT_OPTION}
-      LIBRARY DESTINATION ${COMPILER_RT_LIBRARY_INSTALL_DIR}
+      LIBRARY DESTINATION ${LIBCXX_LIBRARY_INSTALL_DIR}
               ${COMPONENT_OPTION}
-      RUNTIME DESTINATION ${COMPILER_RT_LIBRARY_INSTALL_DIR}
+      RUNTIME DESTINATION ${LIBCXX_LIBRARY_INSTALL_DIR}
               ${COMPONENT_OPTION})
 
     # We only want to generate per-library install targets if you aren't using
@@ -215,27 +215,11 @@ function(add_compiler_rt_runtime name type)
       OSX_ARCHITECTURES "${LIB_ARCHS_${libname}}")
     endif()
 
-    if(type STREQUAL "SHARED")
-      rt_externalize_debuginfo(${libname})
-    endif()
   endforeach()
   if(LIB_PARENT_TARGET)
     add_dependencies(${LIB_PARENT_TARGET} ${libnames})
   endif()
 endfunction()
-
-macro(add_compiler_rt_script name)
-  set(dst ${COMPILER_RT_EXEC_OUTPUT_DIR}/${name})
-  set(src ${CMAKE_CURRENT_SOURCE_DIR}/${name})
-  add_custom_command(OUTPUT ${dst}
-    DEPENDS ${src}
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${src} ${dst}
-    COMMENT "Copying ${name}...")
-  add_custom_target(${name} DEPENDS ${dst})
-  install(FILES ${dst}
-    PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
-    DESTINATION ${COMPILER_RT_INSTALL_PATH}/bin)
-endmacro(add_compiler_rt_script src name)
 
 # Builds custom version of libc++ and installs it in <prefix>.
 # Can be used to build sanitized versions of libc++ for running unit tests.

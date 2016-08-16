@@ -7,13 +7,13 @@ include(CheckIncludeFile)
 check_include_file(unwind.h HAVE_UNWIND_H)
 
 # Top level target used to build all compiler-rt libraries.
-add_custom_target(compiler-rt ALL)
-set_target_properties(compiler-rt PROPERTIES FOLDER "Compiler-RT Misc")
+add_custom_target(libcxx ALL)
+set_target_properties(libcxx PROPERTIES FOLDER "Libc++ Misc")
 
 # Setting these variables from an LLVM build is sufficient that compiler-rt can
 # construct the output paths, so it can behave as if it were in-tree here.
 if (LLVM_LIBRARY_OUTPUT_INTDIR AND LLVM_RUNTIME_OUTPUT_INTDIR AND PACKAGE_VERSION)
-  set(LLVM_TREE_AVAILABLE On)
+  set(LLVM_TREE_AVAILABLE ON)
 endif()
 
 if (LLVM_TREE_AVAILABLE)
@@ -23,21 +23,21 @@ if (LLVM_TREE_AVAILABLE)
   string(REGEX MATCH "[0-9]+\\.[0-9]+(\\.[0-9]+)?" CLANG_VERSION
          ${PACKAGE_VERSION})
   # Setup the paths where compiler-rt runtimes and headers should be stored.
-  set(LIBCXX_MULTILIB_OUTPUT_DIR ${LLVM_LIBRARY_OUTPUT_INTDIR}/clang/${CLANG_VERSION})
-  set(LIBCXX_MULTILIB_INSTALL_PATH lib${LLVM_LIBDIR_SUFFIX}/clang/${CLANG_VERSION})
+  set(LIBCXX_OUTPUT_DIR ${LLVM_LIBRARY_OUTPUT_INTDIR}/clang/${CLANG_VERSION})
+  set(LIBCXX_INSTALL_PATH lib${LLVM_LIBDIR_SUFFIX}/clang/${CLANG_VERSION})
 else()
     # Take output dir and install path from the user.
-  set(LIBCXX_MULTILIB_OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR} CACHE PATH
-    "Path where built compiler-rt libraries should be stored.")
-  set(LIBCXX_MULTILIB_INSTALL_PATH ${CMAKE_INSTALL_PREFIX} CACHE PATH
-    "Path where built compiler-rt libraries should be installed.")
+  set(LIBCXX_OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR} CACHE PATH
+    "Path where built libc++ libraries should be stored.")
+  set(LIBCXX_INSTALL_PATH ${CMAKE_INSTALL_PREFIX} CACHE PATH
+    "Path where built libc++ libraries should be installed.")
 endif()
 
 string(TOLOWER ${CMAKE_SYSTEM_NAME} LIBCXX_OS_DIR)
-set(LIBCXX_MULTILIB_LIBRARY_OUTPUT_DIR
-  ${LIBCXX_MULTILIB_OUTPUT_DIR}/lib/${LIBCXX_OS_DIR})
-set(LIBCXX_MULTILIB_LIBRARY_INSTALL_DIR
-  ${LIBCXX_MULTILIB_INSTALL_PATH}/lib/${LIBCXX_OS_DIR})
+set(LIBCXX_LIBRARY_OUTPUT_DIR
+  ${LIBCXX_OUTPUT_DIR}/lib/${LIBCXX_OS_DIR})
+set(LIBCXX_LIBRARY_INSTALL_DIR
+  ${LIBCXX_INSTALL_PATH}/lib/${LIBCXX_OS_DIR})
 
 if(APPLE)
   # On Darwin if /usr/include doesn't exist, the user probably has Xcode but not
@@ -54,7 +54,6 @@ if(APPLE)
 endif()
 
 macro(test_targets)
-
   if(NOT APPLE) # Supported archs for Apple platforms are generated later
     if("${LIBCXX_DEFAULT_TARGET_ARCH}" MATCHES "i[2-6]86|x86|amd64")
       if(NOT MSVC)

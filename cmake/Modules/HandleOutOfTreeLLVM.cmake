@@ -125,6 +125,4 @@ if (CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
     endif(UNIX)
   endif(WIN32)
 
-  # Add LLVM Functions --------------------------------------------------------
-  include(AddLLVM OPTIONAL)
 endif()

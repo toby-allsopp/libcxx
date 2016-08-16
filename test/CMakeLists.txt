@@ -1,10 +1,5 @@
-macro(pythonize_bool var)
-  if (${var})
-    set(${var} True)
-  else()
-    set(${var} False)
-  endif()
-endmacro()
+# Needed for lit support
+include(AddLLVM)
 
 set(LIBCXX_LIT_VARIANT "libcxx" CACHE STRING
     "Configuration variant to use for LIT.")
