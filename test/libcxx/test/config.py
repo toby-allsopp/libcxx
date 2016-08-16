@@ -617,6 +617,7 @@ class Configuration(object):
                 self.env['ASAN_OPTIONS'] = 'detect_odr_violation=0'
                 self.config.available_features.add('asan')
                 self.config.available_features.add('sanitizer-new-delete')
+                self.cxx.compile_flags += ['-O1']
             elif san == 'Memory' or san == 'MemoryWithOrigins':
                 self.cxx.flags += ['-fsanitize=memory']
                 if san == 'MemoryWithOrigins':
@@ -626,14 +627,12 @@ class Configuration(object):
                     self.env['MSAN_SYMBOLIZER_PATH'] = llvm_symbolizer
                 self.config.available_features.add('msan')
                 self.config.available_features.add('sanitizer-new-delete')
+                self.cxx.compile_flags += ['-O1']
             elif san == 'Undefined':
-                blacklist = os.path.join(self.libcxx_src_root,
-                                         'test/ubsan_blacklist.txt')
                 self.cxx.flags += ['-fsanitize=undefined',
                                    '-fno-sanitize=vptr,function,float-divide-by-zero',
-                                   '-fno-sanitize-recover=all',
-                                   '-fsanitize-blacklist=' + blacklist]
-                self.cxx.compile_flags += ['-O3']
+                                   '-fno-sanitize-recover=all']
+                self.cxx.compile_flags += ['-O2']
                 self.env['UBSAN_OPTIONS'] = 'print_stacktrace=1'
                 self.config.available_features.add('ubsan')
             elif san == 'Thread':
@@ -656,7 +655,7 @@ class Configuration(object):
 
     def configure_substitutions(self):
         sub = self.config.substitutions
-        # Configure compiler substitions
+        # Configure compiler substitutions
         sub.append(('%cxx', self.cxx.path))
         # Configure flags substitutions
         flags_str = ' '.join(self.cxx.flags)
