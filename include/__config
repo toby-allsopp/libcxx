@@ -149,6 +149,9 @@
 #    define _LIBCPP_TOSTRING(x) _LIBCPP_TOSTRING2(x)
 #    define _LIBCPP_WARNING(x) __pragma(message(__FILE__ "(" _LIBCPP_TOSTRING(__LINE__) ") : warning note: " x))
 #  endif
+#  if defined(_MSC_VER)
+#     define _LIBCPP_MSVRT
+#  endif
 #  // If mingw not explicitly detected, assume using MS C runtime only.
 #  ifndef __MINGW32__
 #    define _LIBCPP_MSVCRT // Using Microsoft's C Runtime library

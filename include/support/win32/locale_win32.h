@@ -104,7 +104,7 @@ inline int iswblank_l( wint_t c, locale_t /*loc*/ )
     return ( c == L' ' || c == L'\t' );
 }
 
-#if defined(_LIBCPP_MSVCRT)
+#if defined(_LIBCPP_MSVRT)
 inline int isblank( int c, locale_t /*loc*/ )
 { return ( c == ' ' || c == '\t' ); }
 inline int iswblank( wint_t c, locale_t /*loc*/ )
