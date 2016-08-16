@@ -11,6 +11,7 @@ endif()
 if(POLICY CMP0022)
   cmake_policy(SET CMP0022 NEW) # Required when interacting with LLVM and Clang
 endif()
+cmake_policy(SET CMP0056 OLD)
 
 # Add path for custom modules
 set(CMAKE_MODULE_PATH
@@ -37,6 +38,13 @@ if (LIBCXX_BUILT_STANDALONE AND NOT LLVM_FOUND)
                   "Reconfigure with -DLLVM_CONFIG=path/to/llvm-config "
                   "or -DLLVM_PATH=path/to/llvm-source-root.")
 endif()
+
+
+include(base-config-ix)
+include(LibcxxUtils)
+load_llvm_config()
+construct_libcxx_default_triple()
+message(STATUS "DEFAULT ARCH ${LIBCXX_DEFAULT_TARGET_ARCH}")
 
 # Require out of source build.
 include(MacroEnsureOutOfSourceBuild)
@@ -276,7 +284,7 @@ add_target_flags_if(LIBCXX_GCC_TOOLCHAIN "-gcc-toolchain ${LIBCXX_GCC_TOOLCHAIN}
 
 # Configure compiler.
 include(config-ix)
-
+message(STATUS "Supported Arch: ${LIBCXX_SUPPORTED_ARCH}")
 # Configure coverage options.
 if (LIBCXX_GENERATE_COVERAGE)
   include(CodeCoverage)
