@@ -32,7 +32,7 @@ endfunction()
 #                                  SOURCES <source files>
 #                                  CFLAGS <compile flags>
 #                                  DEFS <compile definitions>)
-function(add_compiler_rt_object_libraries name)
+function(add_libcxx_object_libraries name)
   cmake_parse_arguments(LIB "" "" "OS;ARCHS;SOURCES;CFLAGS;DEFS" ${ARGN})
   set(libnames)
   if(APPLE)
@@ -77,6 +77,33 @@ macro(format_object_libs output suffix)
   endforeach()
 endmacro()
 
+macro(get_sanitizer_flags output)
+  set(FSANITIZE_OPTS)
+  set(ADDITIONAL_OPTS)
+  foreach(san ${ARGN})
+    if (san STREQUAL "asan")
+      list(APPEND FSANITIZE_OPTS address)
+    elseif(san STREQUAL "msan")
+      list(APPEND FSANITIZE_OPTS memory)
+      list(APPEND ADDITIONAL_OPTS -fsanitize-memory-track-origins)
+    elseif(san STREQUAL "tsan")
+      list(APPEND FSANITIZE_OPTS thread)
+    elseif(san STREQUAL "ubsan")
+      list(APPEND FSANITIZE_OPTS undefined)
+      list(APPEND ADDITIONAL_OPTS -fno-sanitize-recover=all -fno-sanitize=vptr,function)
+    else()
+      message(FATAL_ERROR "Sanitizer '${san}' not recognized")
+    endif()
+  endforeach()
+  string(REPLACE ";" "," FSANITIZE_OPTS "-fsanitize=${FSANITIZE_OPTS}")
+  set(${output} ${FSANITIZE_OPTS} ${ADDITIONAL_OPTS})
+endmacro(get_sanitizer_flags)
+
+macro(get_library_output_dir output arch sanitizers)
+  string(REPLACE ";" "/" san_dir "${sanitizers}")
+  set(${output} "${arch}/${san_dir}")
+endmacro(get_library_output_dir)
+
 # Adds static or shared runtime for a list of architectures and operating
 # systems and puts it in the proper directory in the build and install trees.
 # add_compiler_rt_runtime(<name>
@@ -98,49 +125,39 @@ function(add_libcxx_runtime name type)
   cmake_parse_arguments(LIB
     ""
     "PARENT_TARGET"
-    "OS;ARCHS;SOURCES;CFLAGS;LINKFLAGS;DEFS;LINK_LIBS;OBJECT_LIBS"
+    "SANITIZERS;OS;SOURCES;CFLAGS;LINKFLAGS;DEFS;LINK_LIBS;OBJECT_LIBS"
     ${ARGN})
   set(libnames)
-  if(APPLE)
-    foreach(os ${LIB_OS})
-      if(type STREQUAL "STATIC")
-        set(libname "${name}_${os}")
-      else()
-        set(libname "${name}_${os}_dynamic")
-        set(extra_linkflags_${libname} ${DARWIN_${os}_LINKFLAGS} ${LIB_LINKFLAGS})
-      endif()
-      list_intersect(LIB_ARCHS_${libname} DARWIN_${os}_ARCHS LIB_ARCHS)
-      if(LIB_ARCHS_${libname})
-        list(APPEND libnames ${libname})
-        set(extra_cflags_${libname} ${DARWIN_${os}_CFLAGS} ${LIB_CFLAGS})
-        set(output_name_${libname} ${libname}${LIBCXX_OS_SUFFIX})
-        set(sources_${libname} ${LIB_SOURCES})
-        format_object_libs(sources_${libname} ${os} ${LIB_OBJECT_LIBS})
-      endif()
-    endforeach()
+  list(SORT LIB_SANITIZERS)
+  filter_sanitizer_targets(LIB_ARCHS ${LIB_SANITIZERS})
+  if (NOT LIB_ARCHS)
+    return()
+  endif()
+  if (APPLE)
+    message(FATAL_ERROR "Apple targets not supported")
   else()
     foreach(arch ${LIB_ARCHS})
       if(NOT CAN_TARGET_${arch})
         message(FATAL_ERROR "Architecture ${arch} can't be targeted")
         return()
       endif()
+      string(REPLACE ";" "." san_name "${LIB_SANITIZERS}")
+      if (NOT san_name STREQUAL "")
+        set(san_name ".${san_name}")
+      endif()
       if(type STREQUAL "STATIC")
-        set(libname "${name}-${arch}")
-        set(output_name_${libname} ${libname}${LIBCXX_OS_SUFFIX})
+        set(libname "${name}${san_name}-${arch}")
       else()
-        set(libname "${name}-dynamic-${arch}")
+        set(libname "${name}${san_name}-dynamic-${arch}")
         set(extra_cflags_${libname} ${TARGET_${arch}_CFLAGS} ${LIB_CFLAGS})
         set(extra_linkflags_${libname} ${TARGET_${arch}_LINKFLAGS} ${LIB_LINKFLAGS})
-        if(WIN32)
-          set(output_name_${libname} ${name}_dynamic-${arch}${LIBCXX_OS_SUFFIX})
-        else()
-          set(output_name_${libname} ${name}-${arch}${LIBCXX_OS_SUFFIX})
-        endif()
       endif()
       set(sources_${libname} ${LIB_SOURCES})
       format_object_libs(sources_${libname} ${arch} ${LIB_OBJECT_LIBS})
       set(libnames ${libnames} ${libname})
-      set(extra_cflags_${libname} ${TARGET_${arch}_CFLAGS} ${LIB_CFLAGS})
+      get_sanitizer_flags(san_flags_${libname} ${LIB_SANITIZERS})
+      set(extra_cflags_${libname} ${TARGET_${arch}_CFLAGS} ${san_flags_${libname}} ${LIB_CFLAGS})
+      get_library_output_dir(output_path_${libname} "${arch}${LIBCXX_OS_SUFFIX}" "${LIB_SANITIZERS}")
     endforeach()
   endif()
 
@@ -181,19 +198,23 @@ function(add_libcxx_runtime name type)
     set_target_link_flags(${libname} ${extra_linkflags_${libname}})
     set_property(TARGET ${libname} APPEND PROPERTY
                 COMPILE_DEFINITIONS ${LIB_DEFS})
-    set_target_output_directories(${libname} ${LIBCXX_LIBRARY_OUTPUT_DIR})
-    set_target_properties(${libname} PROPERTIES
-        OUTPUT_NAME ${output_name_${libname}})
+    set_target_output_directories(${libname} ${LIBCXX_LIBRARY_OUTPUT_DIR}/${output_path_${libname}})
+    set_target_properties(${libname}
+    PROPERTIES
+      OUTPUT_NAME   "c++"
+      VERSION       "${LIBCXX_ABI_VERSION}.0"
+      SOVERSION     "${LIBCXX_ABI_VERSION}"
+  )
     set_target_properties(${libname} PROPERTIES FOLDER "Compiler-RT Runtime")
     if(LIB_LINK_LIBS AND ${type} STREQUAL "SHARED")
       target_link_libraries(${libname} ${LIB_LINK_LIBS})
     endif()
     install(TARGETS ${libname}
-      ARCHIVE DESTINATION ${LIBCXX_LIBRARY_INSTALL_DIR}
+      ARCHIVE DESTINATION ${LIBCXX_LIBRARY_INSTALL_DIR}/${output_path_${libname}}
               ${COMPONENT_OPTION}
-      LIBRARY DESTINATION ${LIBCXX_LIBRARY_INSTALL_DIR}
+      LIBRARY DESTINATION ${LIBCXX_LIBRARY_INSTALL_DIR}/${output_path_${libname}}
               ${COMPONENT_OPTION}
-      RUNTIME DESTINATION ${LIBCXX_LIBRARY_INSTALL_DIR}
+      RUNTIME DESTINATION ${LIBCXX_LIBRARY_INSTALL_DIR}/${output_path_${libname}}
               ${COMPONENT_OPTION})
 
     # We only want to generate per-library install targets if you aren't using
