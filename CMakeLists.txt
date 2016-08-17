@@ -26,10 +26,10 @@ if (LIBCXX_BUILT_STANDALONE)
   project(libcxx CXX C)
 
   set(PACKAGE_NAME libcxx)
-  set(PACKAGE_VERSION trunk-svn)
+  set(PACKAGE_VERSION 4.0.0svn)
   set(PACKAGE_STRING "${PACKAGE_NAME} ${PACKAGE_VERSION}")
   set(PACKAGE_BUGREPORT "llvm-bugs@lists.llvm.org")
-endif ()
+endif()
 
 if (LIBCXX_BUILT_STANDALONE AND NOT LLVM_FOUND)
   message(WARNING "UNSUPPORTED LIBCXX CONFIGURATION DETECTED: "
@@ -52,10 +52,13 @@ MACRO_ENSURE_OUT_OF_SOURCE_BUILD(
 # Basic options ---------------------------------------------------------------
 option(LIBCXX_ENABLE_ASSERTIONS "Enable assertions independent of build mode." ON)
 option(LIBCXX_ENABLE_SHARED "Build libc++ as a shared library." ON)
+option(LIBCXX_ENABLE_STATIC "Build libc++ as a static library." ON)
 option(LIBCXX_ENABLE_EXPERIMENTAL_LIBRARY "Build libc++experimental.a" ON)
 option(LIBCXX_ENABLE_FILESYSTEM
         "Build filesystem as part of libc++experimental.a" ${LIBCXX_ENABLE_EXPERIMENTAL_LIBRARY})
 option(LIBCXX_INCLUDE_TESTS "Build the libc++ tests." ${LLVM_INCLUDE_TESTS})
+option(LIBCXX_INCLUDE_BENCHMARKS "Build the libc++ benchmarks and their dependancies" OFF)
+option(LIBCXX_BUILD_BENCHMARK_NATIVE_STDLIB "Build the benchmarks against the native STL" OFF)
 option(LIBCXX_INCLUDE_DOCS "Build the libc++ documentation." ${LLVM_INCLUDE_DOCS})
 set(LIBCXX_LIBDIR_SUFFIX "${LLVM_LIBDIR_SUFFIX}" CACHE STRING
     "Define suffix of library directory name (32/64)")
@@ -65,6 +68,10 @@ option(LIBCXX_INSTALL_SUPPORT_HEADERS "Install libc++ support headers." ON)
 option(LIBCXX_INSTALL_EXPERIMENTAL_LIBRARY "Install libc++experimental.a" OFF)
 set(LIBCXX_ABI_VERSION 1 CACHE STRING "ABI version of libc++.")
 option(LIBCXX_ABI_UNSTABLE "Unstable ABI of libc++." OFF)
+
+if (NOT LIBCXX_ENABLE_SHARED AND NOT LIBCXX_ENABLE_STATIC)
+  message(FATAL_ERROR "libc++ must be built as either a shared or static library.")
+endif()
 
 # ABI Library options ---------------------------------------------------------
 set(LIBCXX_CXX_ABI "${LIBCXX_CXX_ABI}" CACHE STRING
@@ -79,12 +86,12 @@ if (NOT LIBCXX_CXX_ABI)
     set(LIBCXX_CXX_ABI_LIBNAME "libcxxabi")
     set(LIBCXX_CXX_ABI_INCLUDE_PATHS "${CMAKE_SOURCE_DIR}/projects/libcxxabi/include")
     set(LIBCXX_CXX_ABI_INTREE 1)
-  else ()
+  else()
     set(LIBCXX_CXX_ABI_LIBNAME "none")
-  endif ()
-else ()
+  endif()
+else()
   set(LIBCXX_CXX_ABI_LIBNAME "${LIBCXX_CXX_ABI}")
-endif ()
+endif()
 
 # Use a static copy of the ABI library when linking libc++. This option
 # cannot be used with LIBCXX_ENABLE_ABI_LINKER_SCRIPT.
@@ -294,9 +301,11 @@ remove_flags(-DNDEBUG -UNDEBUG -D_DEBUG
 remove_flags(-Wno-pedantic -pedantic-errors -pedantic)
 
 # Required flags ==============================================================
-add_compile_flags_if_supported(-std=c++11)
-if (NOT MSVC AND NOT LIBCXX_SUPPORTS_STD_EQ_CXX11_FLAG)
-  message(FATAL_ERROR "C++11 is required but the compiler does not support -std=c++11")
+set(LIBCXX_STANDARD_VER c++11 CACHE INTERNAL "internal option to change build dialect")
+add_compile_flags_if_supported(-std=${LIBCXX_STANDARD_VER})
+mangle_name("LIBCXX_SUPPORTS_STD_EQ_${LIBCXX_STANDARD_VER}_FLAG" SUPPORTS_DIALECT_NAME)
+if (NOT MSVC AND NOT ${SUPPORTS_DIALECT_NAME})
+  message(FATAL_ERROR "C++11 or greater is required but the compiler does not support ${LIBCXX_STANDARD_VER}")
 endif()
 
 # On all systems the system c++ standard library headers need to be excluded.
@@ -304,7 +313,6 @@ endif()
 # Thus, we do nothing and hope we don't accidentally include any of the C++
 # headers
 add_compile_flags_if_supported(-nostdinc++)
-
 
 # Warning flags ===============================================================
 add_definitions(-D_LIBCPP_HAS_NO_PRAGMA_SYSTEM_HEADER)
@@ -426,6 +434,9 @@ include_directories(include)
 add_subdirectory(include)
 add_subdirectory(lib)
 
+if (LIBCXX_INCLUDE_BENCHMARKS)
+  add_subdirectory(benchmarks)
+endif()
 if (LIBCXX_INCLUDE_TESTS)
   add_subdirectory(test)
 endif()

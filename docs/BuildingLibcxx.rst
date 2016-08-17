@@ -150,8 +150,15 @@ libc++ specific options
 
   **Default**: ``ON``
 
-  Build libc++ as a shared library. If ``OFF`` is specified then libc++ is
-  built as a static library.
+  Build libc++ as a shared library. Either :option:`LIBCXX_ENABLE_SHARED` or
+  :option:`LIBCXX_ENABLE_STATIC` has to be enabled.
+
+.. option:: LIBCXX_ENABLE_STATIC:BOOL
+
+  **Default**: ``ON``
+
+  Build libc++ as a static library. Either :option:`LIBCXX_ENABLE_SHARED` or
+  :option:`LIBCXX_ENABLE_STATIC` has to be enabled.
 
 .. option:: LIBCXX_LIBDIR_SUFFIX:STRING
 
@@ -227,7 +234,7 @@ ABI Library Specific Options
   libc++abi is the C++ ABI library used.
 
 
-libc++ Feature options
+libc++ Feature Options
 ----------------------
 
 .. option:: LIBCXX_ENABLE_EXCEPTIONS:BOOL
@@ -242,9 +249,25 @@ libc++ Feature options
 
   Build libc++ with run time type information.
 
+.. option:: LIBCXX_INCLUDE_BENCHMARKS:BOOL
 
-libc++ Feature options
-----------------------
+  **Default**: ``OFF``
+
+  Build the libc++ benchmark tests and the Google Benchmark library needed
+  to support them.
+
+.. option:: LIBCXX_BUILD_BENCHMARK_NATIVE_STDLIB:BOOL
+
+  **Default**:: ``OFF``
+
+  Build the libc++ benchmark tests and Google Benchmark library against the
+  native standard library on the platform. On linux this can be used to compare
+  libc++ to libstdc++ by building the benchmark tests against both standard
+  libraries.
+
+
+libc++ ABI Feature Options
+--------------------------
 
 The following options allow building libc++ for a different ABI version.
 
