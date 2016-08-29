@@ -13,12 +13,6 @@ if(POLICY CMP0022)
 endif()
 cmake_policy(SET CMP0056 OLD)
 
-# Add path for custom modules
-set(CMAKE_MODULE_PATH
-  "${CMAKE_CURRENT_SOURCE_DIR}/cmake"
-  "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules"
-  ${CMAKE_MODULE_PATH}
-  )
 if (CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR OR DEFINED LIBCXX_STANDALONE_BUILD)
   set(LIBCXX_STANDALONE_BUILD 1)
   project(libcxx CXX C)
@@ -28,20 +22,14 @@ if (CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR OR DEFINED LIBCXX_STANDAL
   set(PACKAGE_BUGREPORT "llvm-bugs@lists.llvm.org")
 endif()
 
-if (CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR OR LIBCXX_STANDALONE_BUILD)
-  include(HandleOutOfTreeLLVM)
-  handle_out_of_tree_llvm()
-endif()
+# Add path for custom modules
+set(CMAKE_MODULE_PATH
+  "${CMAKE_CURRENT_SOURCE_DIR}/cmake"
+  "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules"
+  ${CMAKE_MODULE_PATH})
 
-# Require out of source build.
-include(MacroEnsureOutOfSourceBuild)
-MACRO_ENSURE_OUT_OF_SOURCE_BUILD(
- "${PROJECT_NAME} requires an out of source build. Please create a separate
- build directory and run 'cmake /path/to/${PROJECT_NAME} [options]' there."
- )
-
-include(base-config-ix)
 include(LibcxxUtils)
+include(base-config-ix)
 
 #===============================================================================
 # Setup CMake Options
@@ -67,9 +55,6 @@ option(LIBCXX_INSTALL_EXPERIMENTAL_LIBRARY "Install libc++experimental.a" OFF)
 set(LIBCXX_ABI_VERSION 1 CACHE STRING "ABI version of libc++.")
 option(LIBCXX_ABI_UNSTABLE "Unstable ABI of libc++." OFF)
 option(LIBCXX_USE_COMPILER_RT "Use compiler-rt instead of libgcc" OFF)
-
-construct_libcxx_default_triple()
-option(LIBCXX_BUILD_MULTILIB "Build multiple sanitized versions of libc++" ${LIBCXX_HAS_TARGET_TRIPLE})
 
 if (NOT LIBCXX_ENABLE_SHARED AND NOT LIBCXX_ENABLE_STATIC)
   message(FATAL_ERROR "libc++ must be built as either a shared or static library.")
@@ -138,6 +123,9 @@ option(LIBCXX_ENABLE_MONOTONIC_CLOCK
    This option may only be set to OFF when LIBCXX_ENABLE_THREADS=OFF." ON)
 option(LIBCXX_HAS_MUSL_LIBC "Build libc++ with support for the Musl C library" OFF)
 option(LIBCXX_HAS_PTHREAD_API "Ignore auto-detection and force use of pthread API" OFF)
+
+get_libcxx_default_triple()
+option(LIBCXX_BUILD_MULTILIB "Build multiple sanitized versions of libc++" ${LIBCXX_HAS_TARGET_TRIPLE})
 
 # Misc options ----------------------------------------------------------------
 # FIXME: Turn -pedantic back ON. It is currently off because it warns

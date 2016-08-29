@@ -10,6 +10,18 @@ check_include_file(unwind.h HAVE_UNWIND_H)
 add_custom_target(libcxx ALL)
 set_target_properties(libcxx PROPERTIES FOLDER "Libc++ Misc")
 
+# Require out of source build.
+include(MacroEnsureOutOfSourceBuild)
+MACRO_ENSURE_OUT_OF_SOURCE_BUILD(
+ "${PROJECT_NAME} requires an out of source build. Please create a separate
+ build directory and run 'cmake /path/to/${PROJECT_NAME} [options]' there."
+ )
+
+if (CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR OR LIBCXX_STANDALONE_BUILD)
+  include(HandleOutOfTreeLLVM)
+  handle_out_of_tree_llvm()
+endif()
+
 # Setting these variables from an LLVM build is sufficient that compiler-rt can
 # construct the output paths, so it can behave as if it were in-tree here.
 if (LLVM_LIBRARY_OUTPUT_INTDIR AND LLVM_RUNTIME_OUTPUT_INTDIR AND PACKAGE_VERSION)
@@ -52,60 +64,3 @@ if(APPLE)
   endif()
 
 endif()
-
-macro(test_targets)
-  if(NOT APPLE) # Supported archs for Apple platforms are generated later
-    if("${LIBCXX_DEFAULT_TARGET_ARCH}" MATCHES "i[2-6]86|x86|amd64")
-      if(NOT MSVC)
-        test_target_arch(x86_64 "" "-m64")
-        # FIXME: We build runtimes for both i686 and i386, as "clang -m32" may
-        # target different variant than "$CMAKE_C_COMPILER -m32". This part should
-        # be gone after we resolve PR14109.
-        test_target_arch(i686 __i686__ "-m32")
-        test_target_arch(i386 __i386__ "-m32")
-      else()
-        if (CMAKE_SIZEOF_VOID_P EQUAL 4)
-          test_target_arch(i386 "" "")
-        else()
-          test_target_arch(x86_64 "" "")
-        endif()
-      endif()
-    elseif("${LIBCXX_DEFAULT_TARGET_ARCH}" MATCHES "powerpc")
-      TEST_BIG_ENDIAN(HOST_IS_BIG_ENDIAN)
-      if(HOST_IS_BIG_ENDIAN)
-        test_target_arch(powerpc64 "" "-m64")
-      else()
-        test_target_arch(powerpc64le "" "-m64")
-      endif()
-    elseif("${LIBCXX_DEFAULT_TARGET_ARCH}" MATCHES "s390x")
-      test_target_arch(s390x "" "")
-    elseif("${LIBCXX_DEFAULT_TARGET_ARCH}" MATCHES "mipsel|mips64el")
-      # Gcc doesn't accept -m32/-m64 so we do the next best thing and use
-      # -mips32r2/-mips64r2. We don't use -mips1/-mips3 because we want to match
-      # clang's default CPU's. In the 64-bit case, we must also specify the ABI
-      # since the default ABI differs between gcc and clang.
-      # FIXME: Ideally, we would build the N32 library too.
-      test_target_arch(mipsel "" "-mips32r2" "--target=mipsel-linux-gnu")
-      test_target_arch(mips64el "" "-mips64r2" "--target=mips64el-linux-gnu" "-mabi=64")
-    elseif("${LIBCXX_DEFAULT_TARGET_ARCH}" MATCHES "mips")
-      test_target_arch(mips "" "-mips32r2" "--target=mips-linux-gnu")
-      test_target_arch(mips64 "" "-mips64r2" "--target=mips64-linux-gnu" "-mabi=64")
-    elseif("${LIBCXX_DEFAULT_TARGET_ARCH}" MATCHES "arm")
-      if(WIN32)
-        test_target_arch(arm "" "" "")
-      else()
-        test_target_arch(arm "" "-march=armv7-a" "-mfloat-abi=soft")
-        test_target_arch(armhf "" "-march=armv7-a" "-mfloat-abi=hard")
-      endif()
-    elseif("${LIBCXX_DEFAULT_TARGET_ARCH}" MATCHES "aarch32")
-      test_target_arch(aarch32 "" "-march=armv8-a")
-    elseif("${LIBCXX_DEFAULT_TARGET_ARCH}" MATCHES "aarch64")
-      test_target_arch(aarch64 "" "-march=armv8-a")
-    elseif("${LIBCXX_DEFAULT_TARGET_ARCH}" MATCHES "wasm32")
-      test_target_arch(wasm32 "" "--target=wasm32-unknown-unknown")
-    elseif("${LIBCXX_DEFAULT_TARGET_ARCH}" MATCHES "wasm64")
-      test_target_arch(wasm64 "" "--target=wasm64-unknown-unknown")
-    endif()
-    set(LIBCXX_OS_SUFFIX "")
-  endif()
-endmacro()
