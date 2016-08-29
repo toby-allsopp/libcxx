@@ -179,13 +179,17 @@ macro(detect_target_arch)
 endmacro()
 
 macro(construct_libcxx_default_triple)
+  if (NOT DEFINED TARGET_TRIPLE AND NOT DEFINED LIBCXX_DEFAULT_TARGET_TRIPLE)
+    message(WARNING "TARGET_TRIPLE is not set. Disabling multilib build")
+    set(LIBCXX_HAS_TARGET_TRIPLE FALSE)
+    set(LIBCXX_HAS_EXPLICIT_DEFAULT_TARGET_TRIPLE FALSE)
+    return()
+  else()
+    set(LIBCXX_HAS_TARGET_TRIPLE TRUE)
+  endif()
+
   set(LIBCXX_DEFAULT_TARGET_TRIPLE ${TARGET_TRIPLE} CACHE STRING
       "Default triple for which compiler-rt runtimes will be built.")
-  if(DEFINED LIBCXX_TEST_TARGET_TRIPLE)
-    # Backwards compatibility: this variable used to be called
-    # LIBCXX_TEST_TARGET_TRIPLE.
-    set(LIBCXX_DEFAULT_TARGET_TRIPLE ${LIBCXX_TEST_TARGET_TRIPLE})
-  endif()
 
   string(REPLACE "-" ";" TARGET_TRIPLE_LIST "${LIBCXX_DEFAULT_TARGET_TRIPLE}")
   list(GET TARGET_TRIPLE_LIST 0 LIBCXX_DEFAULT_TARGET_ARCH)
@@ -198,4 +202,9 @@ macro(construct_libcxx_default_triple)
   else()
     set(LIBCXX_HAS_EXPLICIT_DEFAULT_TARGET_TRIPLE FALSE)
   endif()
+
+  if ("${LIBCXX_DEFAULT_TARGET_ABI}" STREQUAL "androideabi")
+    set(ANDROID 1)
+  endif()
+  message(STATUS "Default Arch: ${LIBCXX_DEFAULT_TARGET_ARCH}")
 endmacro()

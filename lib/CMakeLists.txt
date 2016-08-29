@@ -260,25 +260,24 @@ if (NOT CMAKE_CONFIGURATION_TYPES AND (LIBCXX_INSTALL_LIBRARY OR
     add_custom_target(install-libcxx DEPENDS install-cxx)
 endif()
 
-set(SANITIZER_COMBINATIONS
-        asan  "asan,ubsan"
-        msan  "msan,ubsan"
-        tsan  "tsan,ubsan"
-        ubsan
-)
+if (LIBCXX_BUILD_MULTILIB)
+  set(SANITIZER_COMBINATIONS
+    asan msan tsan ubsan
+    # "asan,ubsan" "msan,ubsan" "tsan,ubsan"
+  )
 
-foreach(comb ${SANITIZER_COMBINATIONS})
-  string(REPLACE "," ";" comb "${comb}")
-  message(STATUS "Configuring for sanitizers: ${comb}")
-  add_libcxx_runtime(libcxx
-    SHARED
-    SANITIZERS ${comb}
-    OS ${SANITIZER_COMMON_SUPPORTED_OS}
-    SOURCES ${LIBCXX_SOURCES}
-    CFLAGS ${LIBCXX_COMPILE_FLAGS}
-    LINKFLAGS ${LIBCXX_LINK_FLAGS}
-    LINK_LIBS ${LIBCXX_LIBRARIES}
-    DEFS ${ASAN_COMMON_DEFINITIONS})
-endforeach()
-
+  foreach(comb ${SANITIZER_COMBINATIONS})
+    string(REPLACE "," ";" comb "${comb}")
+    message(STATUS "Configuring for sanitizers: ${comb}")
+    add_libcxx_runtime(libcxx
+      SHARED
+      SANITIZERS ${comb}
+      OS ${SANITIZER_COMMON_SUPPORTED_OS}
+      SOURCES ${LIBCXX_SOURCES}
+      CFLAGS ${LIBCXX_COMPILE_FLAGS}
+      LINKFLAGS ${LIBCXX_LINK_FLAGS}
+      LINK_LIBS ${LIBCXX_LIBRARIES}
+      DEFS ${ASAN_COMMON_DEFINITIONS})
+  endforeach()
+endif(LIBCXX_BUILD_MULTILIB)
 

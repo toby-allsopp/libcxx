@@ -1,13 +1,5 @@
 include(AddLLVM) # for add_lit_testsuite
 
-macro(pythonize_bool var)
-  if (${var})
-    set(${var} True)
-  else()
-    set(${var} False)
-  endif()
-endmacro()
-
 set(LIBCXX_LIT_VARIANT "libcxx" CACHE STRING
     "Configuration variant to use for LIT.")
 

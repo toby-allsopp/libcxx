@@ -43,12 +43,6 @@ MACRO_ENSURE_OUT_OF_SOURCE_BUILD(
 include(base-config-ix)
 include(LibcxxUtils)
 
-construct_libcxx_default_triple()
-if ("${LIBCXX_DEFAULT_TARGET_ABI}" STREQUAL "androideabi")
-  set(ANDROID 1)
-endif()
-message(STATUS "Default Arch: ${LIBCXX_DEFAULT_TARGET_ARCH}")
-
 #===============================================================================
 # Setup CMake Options
 #===============================================================================
@@ -73,6 +67,9 @@ option(LIBCXX_INSTALL_EXPERIMENTAL_LIBRARY "Install libc++experimental.a" OFF)
 set(LIBCXX_ABI_VERSION 1 CACHE STRING "ABI version of libc++.")
 option(LIBCXX_ABI_UNSTABLE "Unstable ABI of libc++." OFF)
 option(LIBCXX_USE_COMPILER_RT "Use compiler-rt instead of libgcc" OFF)
+
+construct_libcxx_default_triple()
+option(LIBCXX_BUILD_MULTILIB "Build multiple sanitized versions of libc++" ${LIBCXX_HAS_TARGET_TRIPLE})
 
 if (NOT LIBCXX_ENABLE_SHARED AND NOT LIBCXX_ENABLE_STATIC)
   message(FATAL_ERROR "libc++ must be built as either a shared or static library.")
@@ -282,8 +279,10 @@ add_target_flags_if(LIBCXX_GCC_TOOLCHAIN "-gcc-toolchain ${LIBCXX_GCC_TOOLCHAIN}
 
 # Configure compiler.
 include(config-ix)
-
-message(STATUS "Supported Arch: ${LIBCXX_SUPPORTED_ARCH}")
+if (LIBCXX_BUILD_MULTILIB)
+  include(multilib-config-ix)
+  message(STATUS "Supported Arch: ${LIBCXX_SUPPORTED_ARCH}")
+endif()
 
 if (LIBCXX_USE_COMPILER_RT)
   list(APPEND LIBCXX_LINK_FLAGS "-rtlib=compiler-rt")
