@@ -1,15 +1,17 @@
-macro(find_llvm_parts)
+macro(load_llvm_config)
 # Rely on llvm-config.
   set(CONFIG_OUTPUT)
-  find_program(LLVM_CONFIG "llvm-config")
+  if(NOT LLVM_CONFIG_PATH)
+    find_program(LLVM_CONFIG_PATH "llvm-config")
+  endif()
   if(DEFINED LLVM_PATH)
     set(LLVM_INCLUDE_DIR ${LLVM_INCLUDE_DIR} CACHE PATH "Path to llvm/include")
     set(LLVM_PATH ${LLVM_PATH} CACHE PATH "Path to LLVM source tree")
     set(LLVM_MAIN_SRC_DIR ${LLVM_PATH})
     set(LLVM_CMAKE_PATH "${LLVM_PATH}/cmake/modules")
-  elseif(LLVM_CONFIG)
-    message(STATUS "Found LLVM_CONFIG as ${LLVM_CONFIG}")
-    set(CONFIG_COMMAND ${LLVM_CONFIG}
+  elseif(LLVM_CONFIG_PATH)
+    message(STATUS "Found LLVM_CONFIG_PATH as ${LLVM_CONFIG_PATH}")
+    set(CONFIG_COMMAND ${LLVM_CONFIG_PATH}
       "--includedir"
       "--prefix"
       "--src-root")
@@ -56,15 +58,30 @@ macro(find_llvm_parts)
   list(APPEND CMAKE_MODULE_PATH "${LLVM_CMAKE_PATH}")
   list(APPEND CMAKE_MODULE_PATH "${LLVM_MAIN_SRC_DIR}/cmake/modules")
 
+  # Get some LLVM variables from LLVMConfig.
+  include(LLVMConfig OPTIONAL RESULT_VARIABLE LLVM_CONFIG_FOUND_RES)
+  if (NOT "${LLVM_CONFIG_FOUND_RES}" STREQUAL "NOTFOUND")
+    set(LLVM_CONFIG_FOUND 1)
+  endif()
+
+  set(LLVM_LIBRARY_OUTPUT_INTDIR
+    ${CMAKE_BINARY_DIR}/${CMAKE_CFG_INTDIR}/lib${LLVM_LIBDIR_SUFFIX})
+
   set(LLVM_FOUND ON)
-endmacro(find_llvm_parts)
+endmacro(load_llvm_config)
 
-
-if (CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
-  set(LIBCXX_BUILT_STANDALONE 1)
+macro(handle_out_of_tree_llvm)
+  set(LIBCXX_STANDALONE_BUILD 1)
   message(STATUS "Configuring for standalone build.")
 
-  find_llvm_parts()
+  load_llvm_config()
+
+  if (NOT LLVM_FOUND)
+    message(WARNING "UNSUPPORTED LIBCXX CONFIGURATION DETECTED: "
+          "llvm-config not found and LLVM_PATH not defined.\n"
+          "Reconfigure with -DLLVM_CONFIG_PATH=path/to/llvm-config "
+          "or -DLLVM_PATH=path/to/llvm-source-root.")
+  endif()
 
   # LLVM Options --------------------------------------------------------------
   include(FindPythonInterp)
@@ -124,5 +141,4 @@ if (CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
       MESSAGE(SEND_ERROR "Unable to determine platform")
     endif(UNIX)
   endif(WIN32)
-
-endif()
+endmacro()

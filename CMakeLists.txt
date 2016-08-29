@@ -19,15 +19,18 @@ set(CMAKE_MODULE_PATH
   "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules"
   ${CMAKE_MODULE_PATH}
   )
-
-if (CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
-  set(LIBCXX_BUILT_STANDALONE 1)
+if (CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR OR DEFINED LIBCXX_STANDALONE_BUILD)
+  set(LIBCXX_STANDALONE_BUILD 1)
   project(libcxx CXX C)
-
   set(PACKAGE_NAME libcxx)
   set(PACKAGE_VERSION 4.0.0svn)
   set(PACKAGE_STRING "${PACKAGE_NAME} ${PACKAGE_VERSION}")
   set(PACKAGE_BUGREPORT "llvm-bugs@lists.llvm.org")
+endif()
+
+if (CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR OR LIBCXX_STANDALONE_BUILD)
+  include(HandleOutOfTreeLLVM)
+  handle_out_of_tree_llvm()
 endif()
 
 # Require out of source build.
@@ -40,74 +43,11 @@ MACRO_ENSURE_OUT_OF_SOURCE_BUILD(
 include(base-config-ix)
 include(LibcxxUtils)
 
-if (LIBCXX_BUILT_STANDALONE)
-  load_llvm_config()
-
-  # Find Python interpreter.
-  set(Python_ADDITIONAL_VERSIONS 2.7 2.6 2.5)
-  include(FindPythonInterp)
-  if(NOT PYTHONINTERP_FOUND)
-    message(FATAL_ERROR "
-      Unable to find Python interpreter required testing. Please install Python
-      or specify the PYTHON_EXECUTABLE CMake variable.")
-  endif()
-
-  if (NOT DEFINED LLVM_INCLUDE_TESTS)
-    set(LLVM_INCLUDE_TESTS ON)
-  endif()
-  if (NOT DEFINED LLVM_INCLUDE_DOCS)
-    set(LLVM_INCLUDE_DOCS OFF)
-  endif()
-  if (NOT DEFINED LLVM_ENABLE_SPHINX)
-    set(LLVM_ENABLE_SPHINX OFF)
-  endif()
-
-  # Required doc configuration
-  if (LLVM_ENABLE_SPHINX)
-    message(STATUS "Sphinx enabled.")
-    find_package(Sphinx REQUIRED)
-  else()
-    message(STATUS "Sphinx disabled.")
-  endif()
-
-  # FIXME - This is cribbed from HandleLLVMOptions.cmake.
-  if(WIN32)
-    set(LLVM_HAVE_LINK_VERSION_SCRIPT 0)
-    if(CYGWIN)
-      set(LLVM_ON_WIN32 0)
-      set(LLVM_ON_UNIX 1)
-    else(CYGWIN)
-      set(LLVM_ON_WIN32 1)
-      set(LLVM_ON_UNIX 0)
-    endif(CYGWIN)
-  else(WIN32)
-    if(UNIX)
-      set(LLVM_ON_WIN32 0)
-      set(LLVM_ON_UNIX 1)
-      if(APPLE)
-        set(LLVM_HAVE_LINK_VERSION_SCRIPT 0)
-      else(APPLE)
-        set(LLVM_HAVE_LINK_VERSION_SCRIPT 1)
-      endif(APPLE)
-    else(UNIX)
-      MESSAGE(SEND_ERROR "Unable to determine platform")
-    endif(UNIX)
-  endif(WIN32)
-
-  # Define default arguments to lit.
-  set(LIT_ARGS_DEFAULT "-sv")
-  if (MSVC OR XCODE)
-    set(LIT_ARGS_DEFAULT "${LIT_ARGS_DEFAULT} --no-progress-bar")
-  endif()
-  set(LLVM_LIT_ARGS "${LIT_ARGS_DEFAULT}" CACHE STRING "Default options for lit")
-endif()
-
 construct_libcxx_default_triple()
 if ("${LIBCXX_DEFAULT_TARGET_ABI}" STREQUAL "androideabi")
   set(ANDROID 1)
 endif()
 message(STATUS "Default Arch: ${LIBCXX_DEFAULT_TARGET_ARCH}")
-
 
 #===============================================================================
 # Setup CMake Options
@@ -121,7 +61,7 @@ option(LIBCXX_ENABLE_EXPERIMENTAL_LIBRARY "Build libc++experimental.a" ON)
 option(LIBCXX_ENABLE_FILESYSTEM
         "Build filesystem as part of libc++experimental.a" ${LIBCXX_ENABLE_EXPERIMENTAL_LIBRARY})
 option(LIBCXX_INCLUDE_TESTS "Build the libc++ tests." ${LLVM_INCLUDE_TESTS})
-option(LIBCXX_INCLUDE_BENCHMARKS "Build the libc++ benchmarks and their dependancies" OFF)
+option(LIBCXX_INCLUDE_BENCHMARKS "Build the libc++ benchmarks and their dependancies" ON)
 option(LIBCXX_BUILD_BENCHMARK_NATIVE_STDLIB "Build the benchmarks against the native STL" OFF)
 option(LIBCXX_INCLUDE_DOCS "Build the libc++ documentation." ${LLVM_INCLUDE_DOCS})
 set(LIBCXX_LIBDIR_SUFFIX "${LLVM_LIBDIR_SUFFIX}" CACHE STRING
@@ -132,6 +72,7 @@ option(LIBCXX_INSTALL_SUPPORT_HEADERS "Install libc++ support headers." ON)
 option(LIBCXX_INSTALL_EXPERIMENTAL_LIBRARY "Install libc++experimental.a" OFF)
 set(LIBCXX_ABI_VERSION 1 CACHE STRING "ABI version of libc++.")
 option(LIBCXX_ABI_UNSTABLE "Unstable ABI of libc++." OFF)
+option(LIBCXX_USE_COMPILER_RT "Use compiler-rt instead of libgcc" OFF)
 
 if (NOT LIBCXX_ENABLE_SHARED AND NOT LIBCXX_ENABLE_STATIC)
   message(FATAL_ERROR "libc++ must be built as either a shared or static library.")
@@ -145,7 +86,7 @@ set_property(CACHE LIBCXX_CXX_ABI PROPERTY STRINGS ;${CXXABIS})
 
 # Setup the default options if LIBCXX_CXX_ABI is not specified.
 if (NOT LIBCXX_CXX_ABI)
-  if (NOT DEFINED LIBCXX_BUILT_STANDALONE AND
+  if (NOT DEFINED LIBCXX_STANDALONE_BUILD AND
       IS_DIRECTORY "${CMAKE_SOURCE_DIR}/projects/libcxxabi")
     set(LIBCXX_CXX_ABI_LIBNAME "libcxxabi")
     set(LIBCXX_CXX_ABI_INCLUDE_PATHS "${CMAKE_SOURCE_DIR}/projects/libcxxabi/include")
@@ -341,7 +282,13 @@ add_target_flags_if(LIBCXX_GCC_TOOLCHAIN "-gcc-toolchain ${LIBCXX_GCC_TOOLCHAIN}
 
 # Configure compiler.
 include(config-ix)
+
 message(STATUS "Supported Arch: ${LIBCXX_SUPPORTED_ARCH}")
+
+if (LIBCXX_USE_COMPILER_RT)
+  list(APPEND LIBCXX_LINK_FLAGS "-rtlib=compiler-rt")
+endif()
+
 # Configure coverage options.
 if (LIBCXX_GENERATE_COVERAGE)
   include(CodeCoverage)
@@ -382,10 +329,19 @@ add_compile_flags_if_supported(-nostdinc++)
 # Warning flags ===============================================================
 add_definitions(-D_LIBCPP_HAS_NO_PRAGMA_SYSTEM_HEADER)
 add_compile_flags_if_supported(
-    -Wall -W -Wwrite-strings
-    -Wno-unused-parameter -Wno-long-long -Wno-user-defined-literals
-    -Wno-covered-switch-default
+    -Wall -Wextra -W -Wwrite-strings
+    -Wno-unused-parameter -Wno-long-long
     -Werror=return-type)
+if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
+    add_compile_flags_if_supported(
+        -Wno-user-defined-literals
+        -Wno-covered-switch-default)
+elseif("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU")
+    add_compile_flags_if_supported(
+        -Wno-attributes # FIXME: Fix -Wattribute warnings.
+        -Wno-literal-suffix
+        -Wno-c++14-compat)
+endif()
 if (LIBCXX_ENABLE_WERROR)
   add_compile_flags_if_supported(-Werror)
   add_compile_flags_if_supported(-WX)
@@ -432,9 +388,9 @@ define_if(MSVC -D_CRT_SECURE_NO_WARNINGS)
 
 # Sanitizer flags =============================================================
 
-# Configure for sanitizers. If LIBCXX_BUILT_STANDALONE then we have to do
+# Configure for sanitizers. If LIBCXX_STANDALONE_BUILD then we have to do
 # the flag translation ourselves. Othewise LLVM's CMakeList.txt will handle it.
-if (LIBCXX_BUILT_STANDALONE)
+if (LIBCXX_STANDALONE_BUILD)
   set(LLVM_USE_SANITIZER "" CACHE STRING
       "Define the sanitizer used to build the library and tests")
   # NOTE: LLVM_USE_SANITIZER checks for a UNIX like system instead of MSVC.
