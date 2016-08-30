@@ -537,9 +537,6 @@ class _LIBCPP_TYPE_VIS_ONLY tuple
                                  sizeof...(_Tp)>::type
                 >::value;
         }
-      template <class ..._Args>
-      struct __enable_implicit_t : integral_constant<bool, __enable_implicit<_Args...>()> {};
-
     };
 
     template <bool _MaybeEnable,
@@ -711,7 +708,7 @@ public:
                          _CheckArgsConstructor<
                              sizeof...(_Up) <= sizeof...(_Tp)
                              && !_PackExpandsToThisTuple<_Up...>::value
-                         >::template __enable_implicit_t<_Up...>::value,
+                         >::template __enable_implicit<_Up...>(),
                          bool
                       >::type = false
              >
