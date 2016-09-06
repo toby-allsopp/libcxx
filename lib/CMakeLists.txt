@@ -72,7 +72,9 @@ add_library_flags_if(LIBCXX_HAS_GCC_S_LIB gcc_s)
 add_library_flags_if(LIBCXX_HAVE_CXX_ATOMICS_WITH_LIB atomic)
 
 # Setup flags.
-add_flags_if_supported(-fPIC)
+if (NOT WIN32)
+  add_flags_if_supported(-fPIC)
+endif()
 add_link_flags_if_supported(-nodefaultlibs)
 
 if ( APPLE AND (LIBCXX_CXX_ABI_LIBNAME STREQUAL "libcxxabi" OR
@@ -105,9 +107,9 @@ if ( APPLE AND (LIBCXX_CXX_ABI_LIBNAME STREQUAL "libcxxabi" OR
       "-Wl,-unexported_symbols_list,${CMAKE_CURRENT_SOURCE_DIR}/libc++unexp.exp"
       "/usr/lib/libSystem.B.dylib")
   else()
-    if ( ${CMAKE_OSX_SYSROOT} )
-      list(FIND ${CMAKE_OSX_ARCHITECTURES} "armv7" OSX_HAS_ARMV7)
-      if (OSX_HAS_ARMV7)
+    if (DEFINED CMAKE_OSX_SYSROOT)
+      list(FIND CMAKE_OSX_ARCHITECTURES "armv7" OSX_HAS_ARMV7)
+      if (NOT OSX_HAS_ARMV7 EQUAL -1)
         set(OSX_RE_EXPORT_LINE
           "${CMAKE_OSX_SYSROOT}/usr/lib/libc++abi.dylib"
           "-Wl,-reexported_symbols_list,${CMAKE_CURRENT_SOURCE_DIR}/libc++sjlj-abi.exp")
@@ -225,8 +227,8 @@ if (LIBCXX_INSTALL_LIBRARY)
     set(experimental_lib cxx_experimental)
   endif()
   install(TARGETS ${LIBCXX_TARGETS} ${experimental_lib}
-    LIBRARY DESTINATION lib${LIBCXX_LIBDIR_SUFFIX} COMPONENT libcxx
-    ARCHIVE DESTINATION lib${LIBCXX_LIBDIR_SUFFIX} COMPONENT libcxx
+    LIBRARY DESTINATION lib${LIBCXX_LIBDIR_SUFFIX} COMPONENT cxx
+    ARCHIVE DESTINATION lib${LIBCXX_LIBDIR_SUFFIX} COMPONENT cxx
     )
   # NOTE: This install command must go after the cxx install command otherwise
   # it will not be executed after the library symlinks are installed.
@@ -248,13 +250,14 @@ if (NOT CMAKE_CONFIGURATION_TYPES AND (LIBCXX_INSTALL_LIBRARY OR
       set(experimental_lib_install_target cxx_experimental)
     endif()
     if(LIBCXX_INSTALL_HEADERS)
-      set(header_install_target install-libcxx-headers)
+      set(header_install_target install-cxx-headers)
     endif()
-    add_custom_target(install-libcxx
+    add_custom_target(install-cxx
                       DEPENDS ${lib_install_target}
                               ${experimental_lib_install_target}
                               ${header_install_target}
                       COMMAND "${CMAKE_COMMAND}"
-                      -DCMAKE_INSTALL_COMPONENT=libcxx
+                      -DCMAKE_INSTALL_COMPONENT=cxx
                       -P "${LIBCXX_BINARY_DIR}/cmake_install.cmake")
+    add_custom_target(install-libcxx DEPENDS install-cxx)
 endif()
