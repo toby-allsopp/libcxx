@@ -42,6 +42,8 @@ if (APPLE AND LLVM_USE_SANITIZER)
     set(LIBFILE "libclang_rt.asan_osx_dynamic.dylib")
   elseif("${LLVM_USE_SANITIZER}" STREQUAL "Undefined")
     set(LIBFILE "libclang_rt.ubsan_osx_dynamic.dylib")
+  elseif("${LLVM_USE_SANITIZER}" STREQUAL "Thread")
+    set(LIBFILE "libclang_rt.tsan_osx_dynamic.dylib")
   else()
     message(WARNING "LLVM_USE_SANITIZER=${LLVM_USE_SANITIZER} is not supported on OS X")
   endif()
@@ -198,6 +200,23 @@ if (LIBCXX_ENABLE_EXPERIMENTAL_LIBRARY)
     PROPERTIES
       COMPILE_FLAGS "${experimental_flags}"
       OUTPUT_NAME   "c++experimental"
+  )
+endif()
+
+if (LIBCXX_HAS_EXTERNAL_THREAD_API)
+  file(GLOB LIBCXX_EXTERNAL_THREADING_SUPPORT_SOURCES ../test/support/external_threads.cpp)
+
+  if (LIBCXX_ENABLE_SHARED)
+    add_library(cxx_external_threads SHARED ${LIBCXX_EXTERNAL_THREADING_SUPPORT_SOURCES})
+  else()
+    add_library(cxx_external_threads STATIC ${LIBCXX_EXTERNAL_THREADING_SUPPORT_SOURCES})
+  endif()
+
+  set_target_properties(cxx_external_threads
+    PROPERTIES
+      LINK_FLAGS    "${LIBCXX_LINK_FLAGS}"
+      COMPILE_FLAGS "${LIBCXX_COMPILE_FLAGS}"
+      OUTPUT_NAME   "c++external_threads"
   )
 endif()
 
