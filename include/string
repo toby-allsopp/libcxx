@@ -797,6 +797,7 @@ public:
     basic_string(initializer_list<value_type> __il, const allocator_type& __a);
 #endif  // _LIBCPP_HAS_NO_GENERALIZED_INITIALIZERS
 
+    inline _LIBCPP_EXTERN_TEMPLATE_INLINE_VISIBILITY
     ~basic_string();
 
     _LIBCPP_INLINE_VISIBILITY
@@ -1269,11 +1270,15 @@ private:
                  __align_it<sizeof(value_type) < __alignment ?
                             __alignment/sizeof(value_type) : 1 > (__s+1)) - 1;}
 
+    inline _LIBCPP_EXTERN_TEMPLATE_INLINE_VISIBILITY
     void __init(const value_type* __s, size_type __sz, size_type __reserve);
+    inline _LIBCPP_EXTERN_TEMPLATE_INLINE_VISIBILITY
     void __init(const value_type* __s, size_type __sz);
+    inline _LIBCPP_EXTERN_TEMPLATE_INLINE_VISIBILITY
     void __init(size_type __n, value_type __c);
 
     template <class _InputIterator>
+    inline _LIBCPP_EXTERN_TEMPLATE_INLINE_VISIBILITY
     typename enable_if
     <
         __is_exactly_input_iterator<_InputIterator>::value,
@@ -1282,6 +1287,7 @@ private:
     __init(_InputIterator __first, _InputIterator __last);
 
     template <class _ForwardIterator>
+    inline _LIBCPP_EXTERN_TEMPLATE_INLINE_VISIBILITY
     typename enable_if
     <
         __is_forward_iterator<_ForwardIterator>::value,
@@ -1430,7 +1436,6 @@ basic_string<_CharT, _Traits, _Allocator>::basic_string(const allocator_type& __
 }
 
 template <class _CharT, class _Traits, class _Allocator>
-inline _LIBCPP_INLINE_VISIBILITY
 void
 basic_string<_CharT, _Traits, _Allocator>::__init(const value_type* __s, size_type __sz, size_type __reserve)
 {
@@ -1455,7 +1460,6 @@ basic_string<_CharT, _Traits, _Allocator>::__init(const value_type* __s, size_ty
 }
 
 template <class _CharT, class _Traits, class _Allocator>
-inline _LIBCPP_INLINE_VISIBILITY
 void
 basic_string<_CharT, _Traits, _Allocator>::__init(const value_type* __s, size_type __sz)
 {
@@ -1593,7 +1597,6 @@ basic_string<_CharT, _Traits, _Allocator>::basic_string(basic_string&& __str, co
 #endif  // _LIBCPP_HAS_NO_RVALUE_REFERENCES
 
 template <class _CharT, class _Traits, class _Allocator>
-inline _LIBCPP_INLINE_VISIBILITY
 void
 basic_string<_CharT, _Traits, _Allocator>::__init(size_type __n, value_type __c)
 {
@@ -1690,7 +1693,6 @@ basic_string<_CharT, _Traits, _Allocator>::basic_string(__self_view __sv, const 
 
 template <class _CharT, class _Traits, class _Allocator>
 template <class _InputIterator>
-inline _LIBCPP_INLINE_VISIBILITY
 typename enable_if
 <
     __is_exactly_input_iterator<_InputIterator>::value,
@@ -1718,7 +1720,6 @@ basic_string<_CharT, _Traits, _Allocator>::__init(_InputIterator __first, _Input
 
 template <class _CharT, class _Traits, class _Allocator>
 template <class _ForwardIterator>
-inline _LIBCPP_INLINE_VISIBILITY
 typename enable_if
 <
     __is_forward_iterator<_ForwardIterator>::value,
@@ -1798,7 +1799,6 @@ basic_string<_CharT, _Traits, _Allocator>::basic_string(initializer_list<value_t
 #endif  // _LIBCPP_HAS_NO_GENERALIZED_INITIALIZERS
 
 template <class _CharT, class _Traits, class _Allocator>
-inline _LIBCPP_INLINE_VISIBILITY
 basic_string<_CharT, _Traits, _Allocator>::~basic_string()
 {
 #if _LIBCPP_DEBUG_LEVEL >= 2
