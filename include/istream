@@ -188,12 +188,12 @@ public:
     virtual ~basic_istream();
 protected:
 #ifndef _LIBCPP_HAS_NO_RVALUE_REFERENCES
-    _LIBCPP_INLINE_VISIBILITY
+    inline _LIBCPP_INLINE_VISIBILITY
     basic_istream(basic_istream&& __rhs);
 #endif
     // 27.7.1.1.2 Assign/swap:
 #ifndef _LIBCPP_HAS_NO_RVALUE_REFERENCES
-    _LIBCPP_INLINE_VISIBILITY
+    inline _LIBCPP_INLINE_VISIBILITY
     basic_istream& operator=(basic_istream&& __rhs);
 #endif
     void swap(basic_istream& __rhs);
@@ -304,7 +304,7 @@ basic_istream<_CharT, _Traits>::sentry::sentry(basic_istream<_CharT, _Traits>& _
 }
 
 template <class _CharT, class _Traits>
-inline _LIBCPP_INLINE_VISIBILITY
+inline _LIBCPP_EXTERN_TEMPLATE_INLINE_VISIBILITY
 basic_istream<_CharT, _Traits>::basic_istream(basic_streambuf<char_type, traits_type>* __sb)
     : __gc_(0)
 {
@@ -314,7 +314,6 @@ basic_istream<_CharT, _Traits>::basic_istream(basic_streambuf<char_type, traits_
 #ifndef _LIBCPP_HAS_NO_RVALUE_REFERENCES
 
 template <class _CharT, class _Traits>
-inline _LIBCPP_INLINE_VISIBILITY
 basic_istream<_CharT, _Traits>::basic_istream(basic_istream&& __rhs)
     : __gc_(__rhs.__gc_)
 {
@@ -323,7 +322,6 @@ basic_istream<_CharT, _Traits>::basic_istream(basic_istream&& __rhs)
 }
 
 template <class _CharT, class _Traits>
-inline _LIBCPP_INLINE_VISIBILITY
 basic_istream<_CharT, _Traits>&
 basic_istream<_CharT, _Traits>::operator=(basic_istream&& __rhs)
 {
@@ -339,7 +337,7 @@ basic_istream<_CharT, _Traits>::~basic_istream()
 }
 
 template <class _CharT, class _Traits>
-inline _LIBCPP_INLINE_VISIBILITY
+inline _LIBCPP_EXTERN_TEMPLATE_INLINE_VISIBILITY
 void
 basic_istream<_CharT, _Traits>::swap(basic_istream& __rhs)
 {
@@ -725,7 +723,7 @@ basic_istream<_CharT, _Traits>::operator>>(int& __n)
 }
 
 template <class _CharT, class _Traits>
-inline _LIBCPP_INLINE_VISIBILITY
+inline _LIBCPP_EXTERN_TEMPLATE_INLINE_VISIBILITY
 basic_istream<_CharT, _Traits>&
 basic_istream<_CharT, _Traits>::operator>>(basic_istream& (*__pf)(basic_istream&))
 {
@@ -733,7 +731,7 @@ basic_istream<_CharT, _Traits>::operator>>(basic_istream& (*__pf)(basic_istream&
 }
 
 template <class _CharT, class _Traits>
-inline _LIBCPP_INLINE_VISIBILITY
+inline _LIBCPP_EXTERN_TEMPLATE_INLINE_VISIBILITY
 basic_istream<_CharT, _Traits>&
 basic_istream<_CharT, _Traits>::operator>>(basic_ios<char_type, traits_type>&
                                            (*__pf)(basic_ios<char_type, traits_type>&))
@@ -743,7 +741,7 @@ basic_istream<_CharT, _Traits>::operator>>(basic_ios<char_type, traits_type>&
 }
 
 template <class _CharT, class _Traits>
-inline _LIBCPP_INLINE_VISIBILITY
+inline _LIBCPP_EXTERN_TEMPLATE_INLINE_VISIBILITY
 basic_istream<_CharT, _Traits>&
 basic_istream<_CharT, _Traits>::operator>>(ios_base& (*__pf)(ios_base&))
 {
@@ -947,7 +945,7 @@ basic_istream<_CharT, _Traits>::get()
 }
 
 template<class _CharT, class _Traits>
-inline _LIBCPP_INLINE_VISIBILITY
+inline _LIBCPP_EXTERN_TEMPLATE_INLINE_VISIBILITY
 basic_istream<_CharT, _Traits>&
 basic_istream<_CharT, _Traits>::get(char_type& __c)
 {
@@ -1006,7 +1004,7 @@ basic_istream<_CharT, _Traits>::get(char_type* __s, streamsize __n, char_type __
 }
 
 template<class _CharT, class _Traits>
-inline _LIBCPP_INLINE_VISIBILITY
+inline _LIBCPP_EXTERN_TEMPLATE_INLINE_VISIBILITY
 basic_istream<_CharT, _Traits>&
 basic_istream<_CharT, _Traits>::get(char_type* __s, streamsize __n)
 {
@@ -1068,7 +1066,7 @@ basic_istream<_CharT, _Traits>::get(basic_streambuf<char_type, traits_type>& __s
 }
 
 template<class _CharT, class _Traits>
-inline _LIBCPP_INLINE_VISIBILITY
+inline _LIBCPP_EXTERN_TEMPLATE_INLINE_VISIBILITY
 basic_istream<_CharT, _Traits>&
 basic_istream<_CharT, _Traits>::get(basic_streambuf<char_type, traits_type>& __sb)
 {
@@ -1129,7 +1127,7 @@ basic_istream<_CharT, _Traits>::getline(char_type* __s, streamsize __n, char_typ
 }
 
 template<class _CharT, class _Traits>
-inline _LIBCPP_INLINE_VISIBILITY
+inline _LIBCPP_EXTERN_TEMPLATE_INLINE_VISIBILITY
 basic_istream<_CharT, _Traits>&
 basic_istream<_CharT, _Traits>::getline(char_type* __s, streamsize __n)
 {
@@ -1507,13 +1505,13 @@ public:
     virtual ~basic_iostream();
 protected:
 #ifndef _LIBCPP_HAS_NO_RVALUE_REFERENCES
-    _LIBCPP_INLINE_VISIBILITY
+    inline _LIBCPP_INLINE_VISIBILITY
     basic_iostream(basic_iostream&& __rhs);
 #endif
 
     // assign/swap
 #ifndef _LIBCPP_HAS_NO_RVALUE_REFERENCES
-    _LIBCPP_INLINE_VISIBILITY
+    inline _LIBCPP_INLINE_VISIBILITY
     basic_iostream& operator=(basic_iostream&& __rhs);
 #endif
     void swap(basic_iostream& __rhs);
@@ -1521,7 +1519,7 @@ public:
 };
 
 template <class _CharT, class _Traits>
-inline _LIBCPP_INLINE_VISIBILITY
+inline _LIBCPP_EXTERN_TEMPLATE_INLINE_VISIBILITY
 basic_iostream<_CharT, _Traits>::basic_iostream(basic_streambuf<char_type, traits_type>* __sb)
     : basic_istream<_CharT, _Traits>(__sb)
 {
@@ -1530,14 +1528,12 @@ basic_iostream<_CharT, _Traits>::basic_iostream(basic_streambuf<char_type, trait
 #ifndef _LIBCPP_HAS_NO_RVALUE_REFERENCES
 
 template <class _CharT, class _Traits>
-inline _LIBCPP_INLINE_VISIBILITY
 basic_iostream<_CharT, _Traits>::basic_iostream(basic_iostream&& __rhs)
     : basic_istream<_CharT, _Traits>(_VSTD::move(__rhs))
 {
 }
 
 template <class _CharT, class _Traits>
-inline _LIBCPP_INLINE_VISIBILITY
 basic_iostream<_CharT, _Traits>&
 basic_iostream<_CharT, _Traits>::operator=(basic_iostream&& __rhs)
 {
@@ -1553,7 +1549,7 @@ basic_iostream<_CharT, _Traits>::~basic_iostream()
 }
 
 template <class _CharT, class _Traits>
-inline _LIBCPP_INLINE_VISIBILITY
+inline _LIBCPP_EXTERN_TEMPLATE_INLINE_VISIBILITY
 void
 basic_iostream<_CharT, _Traits>::swap(basic_iostream& __rhs)
 {
