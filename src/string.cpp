@@ -29,6 +29,22 @@ template
     string
     operator+<char, char_traits<char>, allocator<char> >(char const*, string const&);
 
+template basic_string<char>::iterator basic_string<char>::insert(
+    basic_string<char>::const_iterator, char const *, char const *);
+
+template basic_string<wchar_t>::iterator basic_string<wchar_t>::insert(
+    basic_string<wchar_t>::const_iterator, wchar_t const *, wchar_t const *);
+
+template basic_string<char> &
+basic_string<char>::replace(basic_string<char>::const_iterator,
+                               basic_string<char>::const_iterator,
+                               char const *, char const *);
+
+template basic_string<wchar_t> &
+basic_string<wchar_t>::replace(basic_string<wchar_t>::const_iterator,
+                               basic_string<wchar_t>::const_iterator,
+                               wchar_t const *, wchar_t const *);
+
 namespace
 {
 
