@@ -613,14 +613,18 @@ namespace std {
 
 #ifndef _LIBCPP_INLINE_VISIBILITY
 # if __has_attribute(__internal_linkage__)
-#   define _LIBCPP_INLINE_VISIBILITY __attribute__((__internal_linkage__))
+#   define _LIBCPP_INLINE_VISIBILITY __attribute__((__internal_linkage__, __always_inline__))
 # else
 #   define _LIBCPP_INLINE_VISIBILITY __attribute__ ((__visibility__("hidden"), __always_inline__))
 # endif
 #endif
 
 #ifndef _LIBCPP_ALWAYS_INLINE
-#define _LIBCPP_ALWAYS_INLINE  __attribute__ ((__visibility__("hidden"), __always_inline__))
+# if __has_attribute(__internal_linkage__)
+#   define _LIBCPP_ALWAYS_INLINE __attribute__((__internal_linkage__, __always_inline__))
+# else
+#   define _LIBCPP_ALWAYS_INLINE  __attribute__ ((__visibility__("hidden"), __always_inline__))
+# endif
 #endif
 
 #ifndef _LIBCPP_EXTERN_TEMPLATE_INLINE_VISIBILITY
