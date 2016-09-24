@@ -1338,16 +1338,14 @@ public:
     // 23.2.2.3 modifiers:
     void push_front(const value_type& __v);
     void push_back(const value_type& __v);
-#ifndef _LIBCPP_HAS_NO_RVALUE_REFERENCES
-#ifndef _LIBCPP_HAS_NO_VARIADICS
+#ifndef _LIBCPP_CXX03_LANG
     template <class... _Args> reference emplace_front(_Args&&... __args);
     template <class... _Args> reference emplace_back(_Args&&... __args);
     template <class... _Args> iterator emplace(const_iterator __p, _Args&&... __args);
-#endif  // _LIBCPP_HAS_NO_VARIADICS
     void push_front(value_type&& __v);
     void push_back(value_type&& __v);
     iterator insert(const_iterator __p, value_type&& __v);
-#endif  // _LIBCPP_HAS_NO_RVALUE_REFERENCES
+#endif  // _LIBCPP_CXX03_LANG
     iterator insert(const_iterator __p, const value_type& __v);
     iterator insert(const_iterator __p, size_type __n, const value_type& __v);
     template <class _InputIter>
@@ -1802,7 +1800,7 @@ deque<_Tp, _Allocator>::push_back(const value_type& __v)
     ++__base::size();
 }
 
-#ifndef _LIBCPP_HAS_NO_RVALUE_REFERENCES
+#ifndef _LIBCPP_CXX03_LANG
 
 template <class _Tp, class _Allocator>
 void
@@ -1815,8 +1813,6 @@ deque<_Tp, _Allocator>::push_back(value_type&& __v)
     __alloc_traits::construct(__a, _VSTD::addressof(*__base::end()), _VSTD::move(__v));
     ++__base::size();
 }
-
-#ifndef _LIBCPP_HAS_NO_VARIADICS
 
 template <class _Tp, class _Allocator>
 template <class... _Args>
@@ -1833,8 +1829,7 @@ deque<_Tp, _Allocator>::emplace_back(_Args&&... __args)
     return *--__base::end();
 }
 
-#endif  // _LIBCPP_HAS_NO_VARIADICS
-#endif  // _LIBCPP_HAS_NO_RVALUE_REFERENCES
+#endif  // _LIBCPP_CXX03_LANG
 
 template <class _Tp, class _Allocator>
 void
@@ -1849,7 +1844,7 @@ deque<_Tp, _Allocator>::push_front(const value_type& __v)
     ++__base::size();
 }
 
-#ifndef _LIBCPP_HAS_NO_RVALUE_REFERENCES
+#ifndef _LIBCPP_CXX03_LANG
 
 template <class _Tp, class _Allocator>
 void
@@ -1863,8 +1858,6 @@ deque<_Tp, _Allocator>::push_front(value_type&& __v)
     --__base::__start_;
     ++__base::size();
 }
-
-#ifndef _LIBCPP_HAS_NO_VARIADICS
 
 template <class _Tp, class _Allocator>
 template <class... _Args>
@@ -1881,8 +1874,7 @@ deque<_Tp, _Allocator>::emplace_front(_Args&&... __args)
     return *__base::begin();
 }
 
-#endif  // _LIBCPP_HAS_NO_VARIADICS
-#endif  // _LIBCPP_HAS_NO_RVALUE_REFERENCES
+#endif  // _LIBCPP_CXX03_LANG
 
 template <class _Tp, class _Allocator>
 typename deque<_Tp, _Allocator>::iterator
@@ -1945,7 +1937,7 @@ deque<_Tp, _Allocator>::insert(const_iterator __p, const value_type& __v)
     return __base::begin() + __pos;
 }
 
-#ifndef _LIBCPP_HAS_NO_RVALUE_REFERENCES
+#ifndef _LIBCPP_CXX03_LANG
 
 template <class _Tp, class _Allocator>
 typename deque<_Tp, _Allocator>::iterator
@@ -2001,8 +1993,6 @@ deque<_Tp, _Allocator>::insert(const_iterator __p, value_type&& __v)
     }
     return __base::begin() + __pos;
 }
-
-#ifndef _LIBCPP_HAS_NO_VARIADICS
 
 template <class _Tp, class _Allocator>
 template <class... _Args>
@@ -2062,8 +2052,7 @@ deque<_Tp, _Allocator>::emplace(const_iterator __p, _Args&&... __args)
     return __base::begin() + __pos;
 }
 
-#endif  // _LIBCPP_HAS_NO_VARIADICS
-#endif  // _LIBCPP_HAS_NO_RVALUE_REFERENCES
+#endif  // _LIBCPP_CXX03_LANG
 
 template <class _Tp, class _Allocator>
 typename deque<_Tp, _Allocator>::iterator

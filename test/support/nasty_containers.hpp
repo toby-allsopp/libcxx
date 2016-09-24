@@ -87,24 +87,20 @@ public:
     const value_type* data() const _NOEXCEPT { return v_.data(); }
 
     void push_back(const value_type& x)     { v_.push_back(x); }
-#ifndef _LIBCPP_HAS_NO_RVALUE_REFERENCES
+#if TEST_STD_VER >= 11
     void push_back(value_type&& x)          { v_.push_back(std::forward<value_type&&>(x)); }
-#ifndef _LIBCPP_HAS_NO_VARIADICS
     template <class... Args>
         void emplace_back(Args&&... args)   { v_.emplace_back(std::forward<Args>(args)...); }
 #endif
-#endif
     void pop_back()                         { v_.pop_back(); }
 
-#ifndef _LIBCPP_HAS_NO_RVALUE_REFERENCES
-#ifndef _LIBCPP_HAS_NO_VARIADICS
+#if TEST_STD_VER >= 11
     template <class... Args> iterator emplace(const_iterator pos, Args&&... args)
     { return v_.emplace(pos, std::forward<Args>(args)...); }
 #endif
-#endif
 
     iterator insert(const_iterator pos, const value_type& x) { return v_.insert(pos, x); }
-#ifndef _LIBCPP_HAS_NO_RVALUE_REFERENCES
+#if TEST_STD_VER >= 11
     iterator insert(const_iterator pos, value_type&& x)      { return v_.insert(pos, std::forward<value_type>(x)); }
 #endif
     iterator insert(const_iterator pos, size_type n, const value_type& x) { return v_.insert(pos, n, x); }
@@ -204,28 +200,24 @@ public:
 
     void push_front(const value_type& x)    { l_.push_front(x); }
     void push_back(const value_type& x)     { l_.push_back(x); }
-#ifndef _LIBCPP_HAS_NO_RVALUE_REFERENCES
+#if TEST_STD_VER >= 11
     void push_back(value_type&& x)          { l_.push_back(std::forward<value_type&&>(x)); }
     void push_front(value_type&& x)         { l_.push_back(std::forward<value_type&&>(x)); }
-#ifndef _LIBCPP_HAS_NO_VARIADICS
     template <class... Args>
         void emplace_back(Args&&... args)   { l_.emplace_back(std::forward<Args>(args)...); }
     template <class... Args>
         void emplace_front(Args&&... args)  { l_.emplace_front(std::forward<Args>(args)...); }
 #endif
-#endif
     void pop_front()                        { l_.pop_front(); }
     void pop_back()                         { l_.pop_back(); }
 
-#ifndef _LIBCPP_HAS_NO_RVALUE_REFERENCES
-#ifndef _LIBCPP_HAS_NO_VARIADICS
+#if TEST_STD_VER >= 11
     template <class... Args> iterator emplace(const_iterator pos, Args&&... args)
     { return l_.emplace(pos, std::forward<Args>(args)...); }
 #endif
-#endif
 
     iterator insert(const_iterator pos, const value_type& x) { return l_.insert(pos, x); }
-#ifndef _LIBCPP_HAS_NO_RVALUE_REFERENCES
+#if TEST_STD_VER >= 11
     iterator insert(const_iterator pos, value_type&& x)      { return l_.insert(pos, std::forward<value_type>(x)); }
 #endif
     iterator insert(const_iterator pos, size_type n, const value_type& x) { return l_.insert(pos, n, x); }

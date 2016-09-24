@@ -257,7 +257,7 @@ struct __weak_result_type<_Rp (_Cp::*)(_A1) const volatile>
 };
 
 
-#ifndef _LIBCPP_HAS_NO_VARIADICS
+#ifndef _LIBCPP_CXX03_LANG
 // 3 or more arguments
 
 template <class _Rp, class _A1, class _A2, class _A3, class ..._A4>
@@ -302,7 +302,7 @@ struct __weak_result_type<_Rp (_Cp::*)(_A1, _A2, _A3...) const volatile>
     typedef _Rp result_type;
 };
 
-#endif // _LIBCPP_HAS_NO_VARIADICS
+#endif // _LIBCPP_CXX03_LANG
 
 #ifndef _LIBCPP_CXX03_LANG
 
@@ -322,7 +322,7 @@ struct __invoke_return
 template <class _Ret>
 struct __invoke_void_return_wrapper
 {
-#ifndef _LIBCPP_HAS_NO_VARIADICS
+#ifndef _LIBCPP_CXX03_LANG
     template <class ..._Args>
     static _Ret __call(_Args&&... __args) {
         return __invoke(_VSTD::forward<_Args>(__args)...);
@@ -353,7 +353,7 @@ struct __invoke_void_return_wrapper
 template <>
 struct __invoke_void_return_wrapper<void>
 {
-#ifndef _LIBCPP_HAS_NO_VARIADICS
+#ifndef _LIBCPP_CXX03_LANG
     template <class ..._Args>
     static void __call(_Args&&... __args) {
         __invoke(_VSTD::forward<_Args>(__args)...);
@@ -403,7 +403,7 @@ public:
     _LIBCPP_INLINE_VISIBILITY operator type&    () const _NOEXCEPT {return *__f_;}
     _LIBCPP_INLINE_VISIBILITY          type& get() const _NOEXCEPT {return *__f_;}
 
-#ifndef _LIBCPP_HAS_NO_VARIADICS
+#ifndef _LIBCPP_CXX03_LANG
     // invoke
     template <class... _ArgTypes>
     _LIBCPP_INLINE_VISIBILITY
@@ -516,7 +516,7 @@ public:
     operator() (_A0 const& __a0, _A1 const& __a1, _A2 const& __a2) const {
         return __invoke(get(), __a0, __a1, __a2);
     }
-#endif // _LIBCPP_HAS_NO_VARIADICS
+#endif // _LIBCPP_CXX03_LANG
 };
 
 
@@ -612,7 +612,7 @@ struct _LIBCPP_TYPE_VIS_ONLY uses_allocator
 {
 };
 
-#ifndef _LIBCPP_HAS_NO_VARIADICS
+#ifndef _LIBCPP_CXX03_LANG
 
 // allocator construction
 
@@ -660,7 +660,7 @@ void __user_alloc_construct (_Tp *__storage, const _Allocator &__a, _Args &&... 
              __storage, __a, _VSTD::forward<_Args>(__args)...
         );
 }
-#endif  // _LIBCPP_HAS_NO_VARIADICS
+#endif  // _LIBCPP_CXX03_LANG
 
 _LIBCPP_END_NAMESPACE_STD
 

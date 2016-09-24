@@ -742,23 +742,19 @@ public:
     _LIBCPP_INLINE_VISIBILITY
     const_reference front() const {return base::__before_begin()->__next_->__value_;}
 
-#ifndef _LIBCPP_HAS_NO_RVALUE_REFERENCES
-#ifndef _LIBCPP_HAS_NO_VARIADICS
+#ifndef _LIBCPP_CXX03_LANG
     template <class... _Args> reference emplace_front(_Args&&... __args);
-#endif
     void push_front(value_type&& __v);
-#endif  // _LIBCPP_HAS_NO_RVALUE_REFERENCES
+#endif  // _LIBCPP_CXX03_LANG
     void push_front(const value_type& __v);
 
     void pop_front();
 
-#ifndef _LIBCPP_HAS_NO_RVALUE_REFERENCES
-#ifndef _LIBCPP_HAS_NO_VARIADICS
+#ifndef _LIBCPP_CXX03_LANG
     template <class... _Args>
         iterator emplace_after(const_iterator __p, _Args&&... __args);
-#endif  // _LIBCPP_HAS_NO_VARIADICS
     iterator insert_after(const_iterator __p, value_type&& __v);
-#endif  // _LIBCPP_HAS_NO_RVALUE_REFERENCES
+#endif  // _LIBCPP_CXX03_LANG
     iterator insert_after(const_iterator __p, const value_type& __v);
     iterator insert_after(const_iterator __p, size_type __n, const value_type& __v);
     template <class _InputIterator>
@@ -1092,11 +1088,6 @@ forward_list<_Tp, _Alloc>::assign(initializer_list<value_type> __il)
     assign(__il.begin(), __il.end());
 }
 
-#endif  // _LIBCPP_CXX03_LANG
-
-#ifndef _LIBCPP_HAS_NO_RVALUE_REFERENCES
-#ifndef _LIBCPP_HAS_NO_VARIADICS
-
 template <class _Tp, class _Alloc>
 template <class... _Args>
 typename forward_list<_Tp, _Alloc>::reference
@@ -1112,8 +1103,6 @@ forward_list<_Tp, _Alloc>::emplace_front(_Args&&... __args)
     return base::__before_begin()->__next_->__value_;
 }
 
-#endif  // _LIBCPP_HAS_NO_VARIADICS
-
 template <class _Tp, class _Alloc>
 void
 forward_list<_Tp, _Alloc>::push_front(value_type&& __v)
@@ -1126,7 +1115,7 @@ forward_list<_Tp, _Alloc>::push_front(value_type&& __v)
     base::__before_begin()->__next_ = __h.release();
 }
 
-#endif  // _LIBCPP_HAS_NO_RVALUE_REFERENCES
+#endif  // _LIBCPP_CXX03_LANG
 
 template <class _Tp, class _Alloc>
 void
@@ -1151,8 +1140,7 @@ forward_list<_Tp, _Alloc>::pop_front()
     __node_traits::deallocate(__a, __p, 1);
 }
 
-#ifndef _LIBCPP_HAS_NO_RVALUE_REFERENCES
-#ifndef _LIBCPP_HAS_NO_VARIADICS
+#ifndef _LIBCPP_CXX03_LANG
 
 template <class _Tp, class _Alloc>
 template <class... _Args>
@@ -1170,8 +1158,6 @@ forward_list<_Tp, _Alloc>::emplace_after(const_iterator __p, _Args&&... __args)
     return iterator(__r->__next_);
 }
 
-#endif  // _LIBCPP_HAS_NO_VARIADICS
-
 template <class _Tp, class _Alloc>
 typename forward_list<_Tp, _Alloc>::iterator
 forward_list<_Tp, _Alloc>::insert_after(const_iterator __p, value_type&& __v)
@@ -1186,7 +1172,7 @@ forward_list<_Tp, _Alloc>::insert_after(const_iterator __p, value_type&& __v)
     return iterator(__r->__next_);
 }
 
-#endif  // _LIBCPP_HAS_NO_RVALUE_REFERENCES
+#endif  // _LIBCPP_CXX03_LANG
 
 template <class _Tp, class _Alloc>
 typename forward_list<_Tp, _Alloc>::iterator

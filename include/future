@@ -1737,7 +1737,7 @@ template <class _Rp, class _Alloc>
     struct _LIBCPP_TYPE_VIS_ONLY uses_allocator<promise<_Rp>, _Alloc>
         : public true_type {};
 
-#ifndef _LIBCPP_HAS_NO_VARIADICS
+#ifndef _LIBCPP_CXX03_LANG
 
 // packaged_task
 
@@ -2359,7 +2359,7 @@ async(_Fp&& __f, _Args&&... __args)
                                     _VSTD::forward<_Args>(__args)...);
 }
 
-#endif  // _LIBCPP_HAS_NO_VARIADICS
+#endif  // _LIBCPP_CXX03_LANG
 
 // shared_future
 

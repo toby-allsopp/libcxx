@@ -474,7 +474,7 @@ public:
     _LIBCPP_INLINE_VISIBILITY
     const_iterator cend()   const _NOEXCEPT {return __table_.end();}
 
-#if !defined(_LIBCPP_HAS_NO_RVALUE_REFERENCES) && !defined(_LIBCPP_HAS_NO_VARIADICS)
+#if !defined(_LIBCPP_CXX03_LANG)
     template <class... _Args>
         _LIBCPP_INLINE_VISIBILITY
         pair<iterator, bool> emplace(_Args&&... __args)
@@ -493,7 +493,7 @@ public:
         iterator emplace_hint(const_iterator, _Args&&... __args)
             {return __table_.__emplace_unique(_VSTD::forward<_Args>(__args)...).first;}
 #endif
-#endif  // !defined(_LIBCPP_HAS_NO_RVALUE_REFERENCES) && !defined(_LIBCPP_HAS_NO_VARIADICS)
+#endif  // !defined(_LIBCPP_CXX03_LANG)
     _LIBCPP_INLINE_VISIBILITY
     pair<iterator, bool> insert(const value_type& __x)
         {return __table_.__insert_unique(__x);}
@@ -1012,7 +1012,7 @@ public:
     _LIBCPP_INLINE_VISIBILITY
     const_iterator cend()   const _NOEXCEPT {return __table_.end();}
 
-#if !defined(_LIBCPP_HAS_NO_RVALUE_REFERENCES) && !defined(_LIBCPP_HAS_NO_VARIADICS)
+#if !defined(_LIBCPP_CXX03_LANG)
     template <class... _Args>
         _LIBCPP_INLINE_VISIBILITY
         iterator emplace(_Args&&... __args)
@@ -1021,7 +1021,7 @@ public:
         _LIBCPP_INLINE_VISIBILITY
         iterator emplace_hint(const_iterator __p, _Args&&... __args)
             {return __table_.__emplace_hint_multi(__p, _VSTD::forward<_Args>(__args)...);}
-#endif  // !defined(_LIBCPP_HAS_NO_RVALUE_REFERENCES) && !defined(_LIBCPP_HAS_NO_VARIADICS)
+#endif  // !defined(_LIBCPP_CXX03_LANG)
     _LIBCPP_INLINE_VISIBILITY
     iterator insert(const value_type& __x) {return __table_.__insert_multi(__x);}
 #ifndef _LIBCPP_HAS_NO_RVALUE_REFERENCES

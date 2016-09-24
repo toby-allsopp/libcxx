@@ -95,7 +95,7 @@ void sleep_for(const chrono::duration<Rep, Period>& rel_time);
 #include <system_error>
 #include <chrono>
 #include <__mutex_base>
-#ifndef _LIBCPP_HAS_NO_VARIADICS
+#ifndef _LIBCPP_CXX03_LANG
 #include <tuple>
 #endif
 #include <__threading_support>
@@ -292,7 +292,7 @@ public:
 
     _LIBCPP_INLINE_VISIBILITY
     thread() _NOEXCEPT : __t_(0) {}
-#ifndef _LIBCPP_HAS_NO_VARIADICS
+#ifndef _LIBCPP_CXX03_LANG
     template <class _Fp, class ..._Args,
               class = typename enable_if
               <
@@ -300,7 +300,7 @@ public:
               >::type
              >
         explicit thread(_Fp&& __f, _Args&&... __args);
-#else  // _LIBCPP_HAS_NO_VARIADICS
+#else  // _LIBCPP_CXX03_LANG
     template <class _Fp> explicit thread(_Fp __f);
 #endif
     ~thread();
@@ -327,7 +327,7 @@ public:
     static unsigned hardware_concurrency() _NOEXCEPT;
 };
 
-#ifndef _LIBCPP_HAS_NO_VARIADICS
+#ifndef _LIBCPP_CXX03_LANG
 
 template <class _TSp, class _Fp, class ..._Args, size_t ..._Indices>
 inline _LIBCPP_INLINE_VISIBILITY
@@ -367,7 +367,7 @@ thread::thread(_Fp&& __f, _Args&&... __args)
         __throw_system_error(__ec, "thread constructor failed");
 }
 
-#else  // _LIBCPP_HAS_NO_VARIADICS
+#else  // _LIBCPP_CXX03_LANG
 
 template <class _Fp>
 struct __thread_invoke_pair {
@@ -402,7 +402,7 @@ thread::thread(_Fp __f)
         __throw_system_error(__ec, "thread constructor failed");
 }
 
-#endif  // _LIBCPP_HAS_NO_VARIADICS
+#endif  // _LIBCPP_CXX03_LANG
 
 #ifndef _LIBCPP_HAS_NO_RVALUE_REFERENCES
 

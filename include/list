@@ -963,19 +963,17 @@ public:
         return base::__end_.__prev_->__as_node()->__value_;
     }
 
-#ifndef _LIBCPP_HAS_NO_RVALUE_REFERENCES
+#ifndef _LIBCPP_CXX03_LANG
     void push_front(value_type&& __x);
     void push_back(value_type&& __x);
-#ifndef _LIBCPP_HAS_NO_VARIADICS
     template <class... _Args>
        reference emplace_front(_Args&&... __args);
     template <class... _Args>
         reference emplace_back(_Args&&... __args);
     template <class... _Args>
         iterator emplace(const_iterator __p, _Args&&... __args);
-#endif  // _LIBCPP_HAS_NO_VARIADICS
     iterator insert(const_iterator __p, value_type&& __x);
-#endif  // _LIBCPP_HAS_NO_RVALUE_REFERENCES
+#endif  // _LIBCPP_CXX03_LANG
 
     void push_front(const value_type& __x);
     void push_back(const value_type& __x);
@@ -1561,7 +1559,7 @@ list<_Tp, _Alloc>::push_back(const value_type& __x)
     __hold.release();
 }
 
-#ifndef _LIBCPP_HAS_NO_RVALUE_REFERENCES
+#ifndef _LIBCPP_CXX03_LANG
 
 template <class _Tp, class _Alloc>
 void
@@ -1588,8 +1586,6 @@ list<_Tp, _Alloc>::push_back(value_type&& __x)
     ++base::__sz();
     __hold.release();
 }
-
-#ifndef _LIBCPP_HAS_NO_VARIADICS
 
 template <class _Tp, class _Alloc>
 template <class... _Args>
@@ -1646,8 +1642,6 @@ list<_Tp, _Alloc>::emplace(const_iterator __p, _Args&&... __args)
 #endif
 }
 
-#endif  // _LIBCPP_HAS_NO_VARIADICS
-
 template <class _Tp, class _Alloc>
 typename list<_Tp, _Alloc>::iterator
 list<_Tp, _Alloc>::insert(const_iterator __p, value_type&& __x)
@@ -1673,7 +1667,7 @@ list<_Tp, _Alloc>::insert(const_iterator __p, value_type&& __x)
 #endif
 }
 
-#endif  // _LIBCPP_HAS_NO_RVALUE_REFERENCES
+#endif  // _LIBCPP_CXX03_LANG
 
 template <class _Tp, class _Alloc>
 void

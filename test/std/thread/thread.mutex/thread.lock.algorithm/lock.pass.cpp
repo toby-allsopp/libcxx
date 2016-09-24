@@ -18,6 +18,8 @@
 #include <mutex>
 #include <cassert>
 
+#include "test_macros.h"
+
 class L0
 {
     bool locked_;
@@ -180,7 +182,7 @@ int main()
             assert(!l1.locked());
         }
     }
-#ifndef _LIBCPP_HAS_NO_VARIADICS
+#if TEST_STD_VER >= 11
     {
         L0 l0;
         L0 l1;
@@ -504,5 +506,5 @@ int main()
             assert(!l3.locked());
         }
     }
-#endif  // _LIBCPP_HAS_NO_VARIADICS
+#endif  // TEST_STD_VER >= 11
 }

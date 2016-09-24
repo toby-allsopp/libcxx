@@ -7,6 +7,8 @@
 //
 //===----------------------------------------------------------------------===//
 
+// UNSUPPORTED: c++98, c++03
+
 // <map>
 
 // class map
@@ -16,18 +18,11 @@
 // http://llvm.org/bugs/show_bug.cgi?id=16542
 
 #include <map>
-
-#ifndef _LIBCPP_HAS_NO_VARIADICS
-
 #include <tuple>
-
-#endif
 
 int main()
 {
-#ifndef _LIBCPP_HAS_NO_VARIADICS
     using namespace std;
     map<tuple<int,int>, size_t> m;
     m[make_tuple(2,3)]=7;
-#endif
 }

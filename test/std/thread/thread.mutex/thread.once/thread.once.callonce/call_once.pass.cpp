@@ -65,7 +65,7 @@ void f3()
     }
 }
 
-#ifndef _LIBCPP_HAS_NO_VARIADICS
+#if TEST_STD_VER >= 11
 
 struct init1
 {
@@ -100,7 +100,7 @@ void f2()
     std::call_once(flg2, init2(), 4, 5);
 }
 
-#endif  // _LIBCPP_HAS_NO_VARIADICS
+#endif  // TEST_STD_VER >= 11
 
 std::once_flag flg41;
 std::once_flag flg42;
@@ -134,19 +134,11 @@ void f42()
     std::call_once(flg41, init41);
 }
 
-#ifndef _LIBCPP_HAS_NO_VARIADICS
+#if TEST_STD_VER >= 11
 
 class MoveOnly
 {
-#if !defined(__clang__)
-   // GCC 4.8 complains about the following being private
-public:
-    MoveOnly(const MoveOnly&)
-    {
-    }
-#else
-    MoveOnly(const MoveOnly&);
-#endif
+  MoveOnly(MoveOnly const&) = delete;
 public:
     MoveOnly() {}
     MoveOnly(MoveOnly&&) {}
@@ -158,22 +150,13 @@ public:
 
 class NonCopyable
 {
-#if !defined(__clang__)
-   // GCC 4.8 complains about the following being private
-public:
-    NonCopyable(const NonCopyable&)
-    {
-    }
-#else
-    NonCopyable(const NonCopyable&);
-#endif
+  NonCopyable(NonCopyable const&) = delete;
 public:
     NonCopyable() {}
 
     void operator()(int&) {}
 };
 
-#if TEST_STD_VER >= 11
 // reference qualifiers on functions are a C++11 extension
 struct RefQual
 {
@@ -184,7 +167,6 @@ struct RefQual
     void operator()() & { ++lv_called; }
     void operator()() && { ++rv_called; }
 };
-#endif
 #endif
 
 int main()
@@ -215,7 +197,7 @@ int main()
         assert(init41_called == 1);
         assert(init42_called == 1);
     }
-#ifndef _LIBCPP_HAS_NO_VARIADICS
+#if TEST_STD_VER >= 11
     // check functors with 1 arg
     {
         std::thread t0(f1);
@@ -242,7 +224,6 @@ int main()
         int i = 0;
         std::call_once(f, NonCopyable(), i);
     }
-#if TEST_STD_VER >= 11
 // reference qualifiers on functions are a C++11 extension
     {
         std::once_flag f1, f2;
@@ -253,5 +234,4 @@ int main()
         assert(rq.rv_called == 1);
     }
 #endif
-#endif  // _LIBCPP_HAS_NO_VARIADICS
 }

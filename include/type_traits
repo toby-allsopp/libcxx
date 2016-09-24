@@ -520,7 +520,7 @@ using bool_constant = integral_constant<bool, __b>;
 typedef _LIBCPP_BOOL_CONSTANT(true)  true_type;
 typedef _LIBCPP_BOOL_CONSTANT(false) false_type;
 
-#if !defined(_LIBCPP_HAS_NO_VARIADICS)
+#if !defined(_LIBCPP_CXX03_LANG)
 
 // __lazy_and
 
@@ -595,7 +595,7 @@ struct __or_<_B0, _B1, _B2, _Bn...>
 template<class _Tp> 
 struct __not_ : conditional<_Tp::value, false_type, true_type>::type {};
 
-#endif // !defined(_LIBCPP_HAS_NO_VARIADICS)
+#endif // !defined(_LIBCPP_CXX03_LANG)
 
 // is_const
 
@@ -1677,7 +1677,7 @@ _CREATE_ALIGNED_STORAGE_SPECIALIZATION(0x4000);
 
 #undef _CREATE_ALIGNED_STORAGE_SPECIALIZATION
 
-#ifndef _LIBCPP_HAS_NO_VARIADICS
+#ifndef _LIBCPP_CXX03_LANG
 
 // aligned_union
 
@@ -1711,7 +1711,7 @@ struct aligned_union
 template <size_t _Len, class ..._Types> using aligned_union_t = typename aligned_union<_Len, _Types...>::type;
 #endif
 
-#endif  // _LIBCPP_HAS_NO_VARIADICS
+#endif  // _LIBCPP_CXX03_LANG
 
 template <class _Tp>
 struct __numeric_type
@@ -1945,7 +1945,7 @@ struct _LIBCPP_TYPE_VIS_ONLY make_unsigned
 template <class _Tp> using make_unsigned_t = typename make_unsigned<_Tp>::type;
 #endif
 
-#ifdef _LIBCPP_HAS_NO_VARIADICS
+#ifdef _LIBCPP_CXX03_LANG
 
 template <class _Tp, class _Up = void, class _Vp = void>
 struct _LIBCPP_TYPE_VIS_ONLY common_type
@@ -1969,7 +1969,7 @@ struct _LIBCPP_TYPE_VIS_ONLY common_type<_Tp, _Up, void>
       )>::type type;
 };
 
-#else  // _LIBCPP_HAS_NO_VARIADICS
+#else  // _LIBCPP_CXX03_LANG
 
 // bullet 1 - sizeof...(Tp) == 0
 
@@ -2028,7 +2028,7 @@ struct _LIBCPP_TYPE_VIS_ONLY common_type<_Tp, _Up, _Vp...>
 template <class ..._Tp> using common_type_t = typename common_type<_Tp...>::type;
 #endif
 
-#endif  // _LIBCPP_HAS_NO_VARIADICS
+#endif  // _LIBCPP_CXX03_LANG
 
 // is_assignable
 
@@ -2244,7 +2244,7 @@ __decay_copy(const _Tp& __t)
 
 #endif
 
-#ifndef _LIBCPP_HAS_NO_VARIADICS
+#ifndef _LIBCPP_CXX03_LANG
 
 template <class _Rp, class _Class, class ..._Param>
 struct __member_pointer_traits_imp<_Rp (_Class::*)(_Param...), true, false>
@@ -2443,7 +2443,7 @@ struct __member_pointer_traits_imp<_Rp (_Class::*)(_Param..., ...) const volatil
 
 #endif  // __has_feature(cxx_reference_qualified_functions) || _GNUC_VER >= 409
 
-#else  // _LIBCPP_HAS_NO_VARIADICS
+#else  // _LIBCPP_CXX03_LANG
 
 template <class _Rp, class _Class>
 struct __member_pointer_traits_imp<_Rp (_Class::*)(), true, false>
@@ -2701,7 +2701,7 @@ struct __member_pointer_traits_imp<_Rp (_Class::*)(_P0, _P1, _P2, ...) const vol
     typedef _Rp (_FnType) (_P0, _P1, _P2, ...);
 };
 
-#endif  // _LIBCPP_HAS_NO_VARIADICS
+#endif  // _LIBCPP_CXX03_LANG
 
 template <class _Rp, class _Class>
 struct __member_pointer_traits_imp<_Rp _Class::*, false, true>
@@ -2734,7 +2734,7 @@ struct __member_pointer_class_type<_Ret _ClassType::*> {
 
 template <class _Callable> class result_of;
 
-#ifdef _LIBCPP_HAS_NO_VARIADICS
+#ifdef _LIBCPP_CXX03_LANG
 
 template <class _Fn, bool, bool>
 class __result_of
@@ -2880,7 +2880,7 @@ class _LIBCPP_TYPE_VIS_ONLY result_of<_Fn(_A0, _A1, _A2)>
 {
 };
 
-#endif  // _LIBCPP_HAS_NO_VARIADICS
+#endif  // _LIBCPP_CXX03_LANG
 
 // template <class T, class... Args> struct is_constructible;
 
@@ -2898,7 +2898,7 @@ struct _LIBCPP_TYPE_VIS_ONLY is_constructible
 
 #else
 
-#ifndef _LIBCPP_HAS_NO_VARIADICS
+#ifndef _LIBCPP_CXX03_LANG
 
 //      main is_constructible test
 
@@ -2972,7 +2972,7 @@ struct _LIBCPP_TYPE_VIS_ONLY is_constructible
     : public __libcpp_is_constructible<_Tp, _Args...>::type {};
 
 
-#else  // _LIBCPP_HAS_NO_VARIADICS
+#else  // _LIBCPP_CXX03_LANG
 
 // template <class T> struct is_constructible0;
 
@@ -3146,10 +3146,10 @@ struct __is_constructible2_imp<false, _Ap[], _A0, _A1>
     : public false_type
     {};
 
-#endif  // _LIBCPP_HAS_NO_VARIADICS
+#endif  // _LIBCPP_CXX03_LANG
 #endif  // __has_feature(is_constructible)
 
-#if _LIBCPP_STD_VER > 14 && !defined(_LIBCPP_HAS_NO_VARIABLE_TEMPLATES) && !defined(_LIBCPP_HAS_NO_VARIADICS)
+#if _LIBCPP_STD_VER > 14 && !defined(_LIBCPP_HAS_NO_VARIABLE_TEMPLATES)
 template <class _Tp, class ..._Args> _LIBCPP_CONSTEXPR bool is_constructible_v
     = is_constructible<_Tp, _Args...>::value;
 #endif
@@ -3196,7 +3196,7 @@ template <class _Tp> _LIBCPP_CONSTEXPR bool is_move_constructible_v
 
 // is_trivially_constructible
 
-#ifndef _LIBCPP_HAS_NO_VARIADICS
+#ifndef _LIBCPP_CXX03_LANG
 
 #if __has_feature(is_trivially_constructible) || _GNUC_VER >= 501
 
@@ -3248,7 +3248,7 @@ struct _LIBCPP_TYPE_VIS_ONLY is_trivially_constructible<_Tp, _Tp&>
 
 #endif  // !__has_feature(is_trivially_constructible)
 
-#else  // _LIBCPP_HAS_NO_VARIADICS
+#else  // _LIBCPP_CXX03_LANG
 
 template <class _Tp, class _A0 = __is_construct::__nat,
                      class _A1 = __is_construct::__nat>
@@ -3319,9 +3319,9 @@ struct _LIBCPP_TYPE_VIS_ONLY is_trivially_constructible<_Tp, _Tp&,
 
 #endif  // !__has_feature(is_trivially_constructible)
 
-#endif  // _LIBCPP_HAS_NO_VARIADICS
+#endif  // _LIBCPP_CXX03_LANG
 
-#if _LIBCPP_STD_VER > 14 && !defined(_LIBCPP_HAS_NO_VARIABLE_TEMPLATES) && !defined(_LIBCPP_HAS_NO_VARIADICS)
+#if _LIBCPP_STD_VER > 14 && !defined(_LIBCPP_HAS_NO_VARIABLE_TEMPLATES)
 template <class _Tp, class... _Args> _LIBCPP_CONSTEXPR bool is_trivially_constructible_v
     = is_trivially_constructible<_Tp, _Args...>::value;
 #endif
@@ -3470,9 +3470,9 @@ struct _LIBCPP_TYPE_VIS_ONLY is_nothrow_constructible
 
 #else
 
-#ifndef _LIBCPP_HAS_NO_VARIADICS
+#ifndef _LIBCPP_CXX03_LANG
 
-#if __has_feature(cxx_noexcept) || (_GNUC_VER >= 407 && __cplusplus >= 201103L)
+#if __has_feature(cxx_noexcept) || _GNUC_VER >= 407
 
 template <bool, bool, class _Tp, class... _Args> struct __libcpp_is_nothrow_constructible;
 
@@ -3563,7 +3563,7 @@ struct _LIBCPP_TYPE_VIS_ONLY is_nothrow_constructible<_Tp, _Tp&>
 
 #endif  // __has_feature(cxx_noexcept)
 
-#else  // _LIBCPP_HAS_NO_VARIADICS
+#else  // _LIBCPP_CXX03_LANG
 
 template <class _Tp, class _A0 = __is_construct::__nat,
                      class _A1 = __is_construct::__nat>
@@ -3616,10 +3616,10 @@ struct _LIBCPP_TYPE_VIS_ONLY is_nothrow_constructible<_Tp, _Tp&,
 {
 };
 
-#endif  // _LIBCPP_HAS_NO_VARIADICS
+#endif  // _LIBCPP_CXX03_LANG
 #endif  // __has_feature(is_nothrow_constructible)
 
-#if _LIBCPP_STD_VER > 14 && !defined(_LIBCPP_HAS_NO_VARIABLE_TEMPLATES) && !defined(_LIBCPP_HAS_NO_VARIADICS)
+#if _LIBCPP_STD_VER > 14 && !defined(_LIBCPP_HAS_NO_VARIABLE_TEMPLATES)
 template <class _Tp, class ..._Args> _LIBCPP_CONSTEXPR bool is_nothrow_constructible_v
     = is_nothrow_constructible<_Tp, _Args...>::value;
 #endif
@@ -4596,7 +4596,6 @@ struct __has_operator_addressof
 #if _LIBCPP_STD_VER > 14
 template <class...> using void_t = void;
 
-# ifndef _LIBCPP_HAS_NO_VARIADICS
 template <class... _Args>
 struct conjunction : __and_<_Args...> {};
 template<class... _Args> constexpr bool conjunction_v = conjunction<_Args...>::value;
@@ -4608,7 +4607,7 @@ template<class... _Args> constexpr bool disjunction_v = disjunction<_Args...>::v
 template <class _Tp>
 struct negation : __not_<_Tp> {};
 template<class _Tp> constexpr bool negation_v = negation<_Tp>::value;
-# endif // _LIBCPP_HAS_NO_VARIADICS
+
 #endif  // _LIBCPP_STD_VER > 14
 
 // These traits are used in __tree and __hash_table

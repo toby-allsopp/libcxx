@@ -99,14 +99,12 @@ public:
     void shrink_to_fit() _NOEXCEPT;
     void push_front(const_reference __x);
     _LIBCPP_INLINE_VISIBILITY void push_back(const_reference __x);
-#if !defined(_LIBCPP_HAS_NO_RVALUE_REFERENCES)
+#if !defined(_LIBCPP_CXX03_LANG)
     void push_front(value_type&& __x);
     void push_back(value_type&& __x);
-#if !defined(_LIBCPP_HAS_NO_VARIADICS)
     template <class... _Args>
         void emplace_back(_Args&&... __args);
-#endif  // !defined(_LIBCPP_HAS_NO_VARIADICS)
-#endif  // !defined(_LIBCPP_HAS_NO_RVALUE_REFERENCES)
+#endif  // !defined(_LIBCPP_CXX03_LANG)
 
     _LIBCPP_INLINE_VISIBILITY void pop_front() {__destruct_at_begin(__begin_+1);}
     _LIBCPP_INLINE_VISIBILITY void pop_back() {__destruct_at_end(__end_-1);}
@@ -492,7 +490,7 @@ __split_buffer<_Tp, _Allocator>::push_front(const_reference __x)
     --__begin_;
 }
 
-#ifndef _LIBCPP_HAS_NO_RVALUE_REFERENCES
+#ifndef _LIBCPP_CXX03_LANG
 
 template <class _Tp, class _Allocator>
 void
@@ -524,7 +522,7 @@ __split_buffer<_Tp, _Allocator>::push_front(value_type&& __x)
     --__begin_;
 }
 
-#endif  // _LIBCPP_HAS_NO_RVALUE_REFERENCES
+#endif  // _LIBCPP_CXX03_LANG
 
 template <class _Tp, class _Allocator>
 inline _LIBCPP_INLINE_VISIBILITY
@@ -556,7 +554,7 @@ __split_buffer<_Tp, _Allocator>::push_back(const_reference __x)
     ++__end_;
 }
 
-#ifndef _LIBCPP_HAS_NO_RVALUE_REFERENCES
+#ifndef _LIBCPP_CXX03_LANG
 
 template <class _Tp, class _Allocator>
 void
@@ -587,8 +585,6 @@ __split_buffer<_Tp, _Allocator>::push_back(value_type&& __x)
             _VSTD::move(__x));
     ++__end_;
 }
-
-#ifndef _LIBCPP_HAS_NO_VARIADICS
 
 template <class _Tp, class _Allocator>
 template <class... _Args>
@@ -621,9 +617,7 @@ __split_buffer<_Tp, _Allocator>::emplace_back(_Args&&... __args)
     ++__end_;
 }
 
-#endif  // _LIBCPP_HAS_NO_VARIADICS
-
-#endif  // _LIBCPP_HAS_NO_RVALUE_REFERENCES
+#endif  // !_LIBCPP_CXX03_LANG
 
 template <class _Tp, class _Allocator>
 inline _LIBCPP_INLINE_VISIBILITY
