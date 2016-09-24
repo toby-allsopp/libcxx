@@ -241,10 +241,6 @@ typedef __char32_t char32_t;
 #define _LIBCPP_HAS_NO_STRONG_ENUMS
 #endif
 
-#if !(__has_feature(cxx_decltype))
-#define _LIBCPP_HAS_NO_DECLTYPE
-#endif
-
 #if __has_feature(cxx_attributes)
 #  define _LIBCPP_NORETURN [[noreturn]]
 #else
@@ -394,7 +390,6 @@ namespace std {
 #endif
 
 #ifndef __GXX_EXPERIMENTAL_CXX0X__
-#define _LIBCPP_HAS_NO_DECLTYPE
 #define _LIBCPP_HAS_NO_DEFAULTED_FUNCTIONS
 #define _LIBCPP_HAS_NO_DELETED_FUNCTIONS
 #define _LIBCPP_HAS_NO_NULLPTR
@@ -411,7 +406,6 @@ namespace std {
 
 
 #if _GNUC_VER < 404
-#define _LIBCPP_HAS_NO_DECLTYPE
 #define _LIBCPP_HAS_NO_DELETED_FUNCTIONS
 #define _LIBCPP_HAS_NO_UNICODE_CHARS
 #define _LIBCPP_HAS_NO_VARIADICS
@@ -620,7 +614,7 @@ template <unsigned> struct __static_assert_check {};
 # endif // __has_extension(c_static_assert)
 #endif  // _LIBCPP_CXX03_LANG
 
-#ifdef _LIBCPP_HAS_NO_DECLTYPE
+#ifdef _LIBCPP_CXX03_LANG
 // GCC 4.6 provides __decltype in all standard modes.
 #if !__is_identifier(__decltype) || _GNUC_VER >= 406
 #  define decltype(__x) __decltype(__x)
