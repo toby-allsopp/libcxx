@@ -7,6 +7,8 @@
 //
 //===----------------------------------------------------------------------===//
 
+// UNSUPPORTED: c++98, c++03
+
 // <initializer_list>
 
 // template<class E> const E* begin(initializer_list<E> il);
@@ -14,7 +16,7 @@
 #include <initializer_list>
 #include <cassert>
 
-#ifndef _LIBCPP_HAS_NO_GENERALIZED_INITIALIZERS
+#include "test_macros.h"
 
 struct A
 {
@@ -30,7 +32,7 @@ struct A
     }
 };
 
-#if _LIBCPP_STD_VER > 11
+#if TEST_STD_VER > 11
 struct B
 {
     constexpr B(std::initializer_list<int> il)
@@ -45,15 +47,12 @@ struct B
     }
 };
 
-#endif  // _LIBCPP_STD_VER > 11
-#endif  // _LIBCPP_HAS_NO_GENERALIZED_INITIALIZERS
+#endif  // TEST_STD_VER > 11
 
 int main()
 {
-#ifndef _LIBCPP_HAS_NO_GENERALIZED_INITIALIZERS
     A test1 = {3, 2, 1};
-#endif
-#if _LIBCPP_STD_VER > 11
+#if TEST_STD_VER > 11
     constexpr B test2 = {3, 2, 1};
 #endif  // _LIBCPP_STD_VER > 11
 }

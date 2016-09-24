@@ -14,6 +14,8 @@
 #include <vector>
 #include <list>
 
+#include "test_macros.h"
+
 template <class T>
 class nasty_vector
 {
@@ -37,7 +39,7 @@ public:
     explicit nasty_vector(size_type n) : v_(n) {}
     nasty_vector(size_type n, const value_type& value) : v_(n, value) {}
     template <class InputIterator> nasty_vector(InputIterator first, InputIterator last) : v_(first, last) {}
-#ifndef _LIBCPP_HAS_NO_GENERALIZED_INITIALIZERS
+#if TEST_STD_VER >= 11
     nasty_vector(std::initializer_list<value_type> il) : v_(il) {}
 #endif
     ~nasty_vector() {}
@@ -45,7 +47,7 @@ public:
     template <class InputIterator>
         void assign(InputIterator first, InputIterator last) { v_.assign(first, last); }
     void assign(size_type n, const value_type& u) { v_.assign(n, u); }
-#ifndef _LIBCPP_HAS_NO_GENERALIZED_INITIALIZERS
+#if TEST_STD_VER >= 11
     void assign(std::initializer_list<value_type> il)  { v_.assign(il); }
 #endif
 
@@ -110,7 +112,7 @@ public:
         iterator insert(const_iterator pos, InputIterator first, InputIterator last)
     { return v_.insert(pos, first, last); }
 
-#ifndef _LIBCPP_HAS_NO_GENERALIZED_INITIALIZERS
+#if TEST_STD_VER >= 11
     iterator insert(const_iterator pos, std::initializer_list<value_type> il) { return v_.insert(pos, il); }
 #endif
 
@@ -159,19 +161,19 @@ public:
     nasty_list(size_type n, const value_type& value)  : l_(n,value) {}
     template <class Iter>
         nasty_list(Iter first, Iter last)  : l_(first, last) {}
-#ifndef _LIBCPP_HAS_NO_GENERALIZED_INITIALIZERS
+#if TEST_STD_VER >= 11
     nasty_list(std::initializer_list<value_type> il) : l_(il) {}
 #endif
 
     ~nasty_list() {}
 
-#ifndef _LIBCPP_HAS_NO_GENERALIZED_INITIALIZERS
+#if TEST_STD_VER >= 11
     nasty_list& operator=(std::initializer_list<value_type> il) { l_ = il; return *this; }
 #endif
     template <class Iter>
         void assign(Iter first, Iter last) { l_.assign(first, last); }
     void assign(size_type n, const value_type& t) { l_.assign(n, t); }
-#ifndef _LIBCPP_HAS_NO_GENERALIZED_INITIALIZERS
+#if TEST_STD_VER >= 11
     void assign(std::initializer_list<value_type> il) { l_.assign(il); }
 #endif
 
@@ -231,7 +233,7 @@ public:
         iterator insert(const_iterator pos, InputIterator first, InputIterator last)
     { return l_.insert(pos, first, last); }
 
-#ifndef _LIBCPP_HAS_NO_GENERALIZED_INITIALIZERS
+#if TEST_STD_VER >= 11
     iterator insert(const_iterator pos, std::initializer_list<value_type> il) { return l_.insert(pos, il); }
 #endif
 

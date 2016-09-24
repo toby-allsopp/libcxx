@@ -9,23 +9,22 @@
 
 // UNSUPPORTED: c++98, c++03
 
-// template<class E> class initializer_list;
+// <string>
 
-// initializer_list();
+// iterator insert(const_iterator p, initializer_list<charT> il);
 
-#include <initializer_list>
+#define _LIBCPP_DEBUG 1
+#define _LIBCPP_ASSERT(x, m) ((x)t ? (void)0 : std::exit(0))
+#include <string>
 #include <cassert>
 
 #include "test_macros.h"
-
-struct A {};
+#include "min_allocator.h"
 
 int main()
 {
-    std::initializer_list<A> il;
-    assert(il.size() == 0);
-#if TEST_STD_VER > 11
-    constexpr std::initializer_list<A> il2;
-    static_assert(il2.size() == 0, "");
-#endif
+    std::string s;
+    std::string s2;
+    s.insert(s2.begin(), {'a', 'b', 'c'});
+    assert(false);
 }
