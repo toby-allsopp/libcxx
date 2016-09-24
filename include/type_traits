@@ -4416,7 +4416,7 @@ struct __swappable_with<_Tp, _Up,  false> : false_type {};
 template <class _Tp, class _Up = _Tp, bool _Swappable = __swappable_with<_Tp, _Up>::value>
 struct __nothrow_swappable_with {
   static const bool value =
-#ifndef _LIBCPP_HAS_NO_NOEXCEPT
+#ifndef _LIBCPP_CXX03_LANG
       noexcept(swap(_VSTD::declval<_Tp>(), _VSTD::declval<_Up>()))
   &&  noexcept(swap(_VSTD::declval<_Up>(), _VSTD::declval<_Tp>()));
 #else

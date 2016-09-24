@@ -582,7 +582,7 @@ _LIBCPP_EXTERN_TEMPLATE(class _LIBCPP_EXTERN_TEMPLATE_TYPE_VIS __basic_string_co
 #ifdef _LIBCPP_NO_EXCEPTIONS
 template <class _Iter>
 struct __libcpp_string_gets_noexcept_iterator_impl : public true_type {};
-#elif defined(_LIBCPP_HAS_NO_NOEXCEPT)
+#elif defined(_LIBCPP_CXX03_LANG)
 template <class _Iter>
 struct __libcpp_string_gets_noexcept_iterator_impl : public false_type {};
 #else
