@@ -279,10 +279,6 @@ typedef __char32_t char32_t;
 #define _LIBCPP_HAS_NO_VARIADICS
 #endif
 
-#if !(__has_feature(cxx_generalized_initializers))
-#define _LIBCPP_HAS_NO_GENERALIZED_INITIALIZERS
-#endif
-
 #if __has_feature(is_base_of)
 #  define _LIBCPP_HAS_IS_BASE_OF
 #endif
@@ -429,7 +425,6 @@ namespace std {
 #define _LIBCPP_HAS_NO_DELETED_FUNCTIONS
 #define _LIBCPP_HAS_NO_UNICODE_CHARS
 #define _LIBCPP_HAS_NO_VARIADICS
-#define _LIBCPP_HAS_NO_GENERALIZED_INITIALIZERS
 #endif  // _GNUC_VER < 404
 
 #if _GNUC_VER < 406
@@ -488,7 +483,6 @@ namespace std {
 #define _ATTRIBUTE(x) __attribute__((x))
 #define _LIBCPP_NORETURN __attribute__((noreturn))
 
-#define _LIBCPP_HAS_NO_GENERALIZED_INITIALIZERS
 #define _LIBCPP_HAS_NO_NOEXCEPT
 #define _LIBCPP_HAS_NO_NULLPTR
 #define _LIBCPP_HAS_NO_UNICODE_CHARS

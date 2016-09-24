@@ -812,9 +812,9 @@ public:
     _LIBCPP_INLINE_VISIBILITY
     valarray(valarray&& __v) _NOEXCEPT;
 #endif  // _LIBCPP_HAS_NO_RVALUE_REFERENCES
-#ifndef _LIBCPP_HAS_NO_GENERALIZED_INITIALIZERS
+#ifndef _LIBCPP_CXX03_LANG
     valarray(initializer_list<value_type> __il);
-#endif  // _LIBCPP_HAS_NO_GENERALIZED_INITIALIZERS
+#endif  // _LIBCPP_CXX03_LANG
     valarray(const slice_array<value_type>& __sa);
     valarray(const gslice_array<value_type>& __ga);
     valarray(const mask_array<value_type>& __ma);
@@ -828,10 +828,10 @@ public:
     _LIBCPP_INLINE_VISIBILITY
     valarray& operator=(valarray&& __v) _NOEXCEPT;
 #endif  // _LIBCPP_HAS_NO_RVALUE_REFERENCES
-#ifndef _LIBCPP_HAS_NO_GENERALIZED_INITIALIZERS
+#ifndef _LIBCPP_CXX03_LANG
     _LIBCPP_INLINE_VISIBILITY
     valarray& operator=(initializer_list<value_type>);
-#endif  // _LIBCPP_HAS_NO_GENERALIZED_INITIALIZERS
+#endif  // _LIBCPP_CXX03_LANG
     _LIBCPP_INLINE_VISIBILITY
     valarray& operator=(const value_type& __x);
     _LIBCPP_INLINE_VISIBILITY
@@ -2828,7 +2828,7 @@ valarray<_Tp>::valarray(valarray&& __v) _NOEXCEPT
 
 #endif  // _LIBCPP_HAS_NO_RVALUE_REFERENCES
 
-#ifndef _LIBCPP_HAS_NO_GENERALIZED_INITIALIZERS
+#ifndef _LIBCPP_CXX03_LANG
 
 template <class _Tp>
 valarray<_Tp>::valarray(initializer_list<value_type> __il)
@@ -2856,7 +2856,7 @@ valarray<_Tp>::valarray(initializer_list<value_type> __il)
     }
 }
 
-#endif  // _LIBCPP_HAS_NO_GENERALIZED_INITIALIZERS
+#endif  // _LIBCPP_CXX03_LANG
 
 template <class _Tp>
 valarray<_Tp>::valarray(const slice_array<value_type>& __sa)
@@ -3008,7 +3008,7 @@ valarray<_Tp>::operator=(valarray&& __v) _NOEXCEPT
 
 #endif  // _LIBCPP_HAS_NO_RVALUE_REFERENCES
 
-#ifndef _LIBCPP_HAS_NO_GENERALIZED_INITIALIZERS
+#ifndef _LIBCPP_CXX03_LANG
 
 template <class _Tp>
 inline
@@ -3021,7 +3021,7 @@ valarray<_Tp>::operator=(initializer_list<value_type> __il)
     return *this;
 }
 
-#endif  // _LIBCPP_HAS_NO_GENERALIZED_INITIALIZERS
+#endif  // _LIBCPP_CXX03_LANG
 
 template <class _Tp>
 inline

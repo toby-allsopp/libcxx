@@ -829,14 +829,14 @@ public:
         _NOEXCEPT_(is_nothrow_move_constructible<__table>::value);
     unordered_map(unordered_map&& __u, const allocator_type& __a);
 #endif  // _LIBCPP_HAS_NO_RVALUE_REFERENCES
-#ifndef _LIBCPP_HAS_NO_GENERALIZED_INITIALIZERS
+#ifndef _LIBCPP_CXX03_LANG
     unordered_map(initializer_list<value_type> __il);
     unordered_map(initializer_list<value_type> __il, size_type __n,
                   const hasher& __hf = hasher(), const key_equal& __eql = key_equal());
     unordered_map(initializer_list<value_type> __il, size_type __n,
                   const hasher& __hf, const key_equal& __eql,
                   const allocator_type& __a);
-#endif  // _LIBCPP_HAS_NO_GENERALIZED_INITIALIZERS
+#endif  // _LIBCPP_CXX03_LANG
 #if _LIBCPP_STD_VER > 11
     _LIBCPP_INLINE_VISIBILITY
     unordered_map(size_type __n, const allocator_type& __a)
@@ -884,10 +884,10 @@ public:
     unordered_map& operator=(unordered_map&& __u)
         _NOEXCEPT_(is_nothrow_move_assignable<__table>::value);
 #endif
-#ifndef _LIBCPP_HAS_NO_GENERALIZED_INITIALIZERS
+#ifndef _LIBCPP_CXX03_LANG
     _LIBCPP_INLINE_VISIBILITY
     unordered_map& operator=(initializer_list<value_type> __il);
-#endif  // _LIBCPP_HAS_NO_GENERALIZED_INITIALIZERS
+#endif  // _LIBCPP_CXX03_LANG
 
     _LIBCPP_INLINE_VISIBILITY
     allocator_type get_allocator() const _NOEXCEPT
@@ -930,11 +930,11 @@ public:
         _LIBCPP_INLINE_VISIBILITY
         void insert(_InputIterator __first, _InputIterator __last);
 
-#ifndef _LIBCPP_HAS_NO_GENERALIZED_INITIALIZERS
+#ifndef _LIBCPP_CXX03_LANG
     _LIBCPP_INLINE_VISIBILITY
     void insert(initializer_list<value_type> __il)
         {insert(__il.begin(), __il.end());}
-#endif  // _LIBCPP_HAS_NO_GENERALIZED_INITIALIZERS
+#endif  // _LIBCPP_CXX03_LANG
 
 #ifndef _LIBCPP_CXX03_LANG
     _LIBCPP_INLINE_VISIBILITY
@@ -1306,7 +1306,7 @@ unordered_map<_Key, _Tp, _Hash, _Pred, _Alloc>::unordered_map(
 
 #endif  // _LIBCPP_HAS_NO_RVALUE_REFERENCES
 
-#ifndef _LIBCPP_HAS_NO_GENERALIZED_INITIALIZERS
+#ifndef _LIBCPP_CXX03_LANG
 
 template <class _Key, class _Tp, class _Hash, class _Pred, class _Alloc>
 unordered_map<_Key, _Tp, _Hash, _Pred, _Alloc>::unordered_map(
@@ -1344,7 +1344,7 @@ unordered_map<_Key, _Tp, _Hash, _Pred, _Alloc>::unordered_map(
     insert(__il.begin(), __il.end());
 }
 
-#endif  // _LIBCPP_HAS_NO_GENERALIZED_INITIALIZERS
+#endif  // _LIBCPP_CXX03_LANG
 
 #ifndef _LIBCPP_HAS_NO_RVALUE_REFERENCES
 
@@ -1360,7 +1360,7 @@ unordered_map<_Key, _Tp, _Hash, _Pred, _Alloc>::operator=(unordered_map&& __u)
 
 #endif  // _LIBCPP_HAS_NO_RVALUE_REFERENCES
 
-#ifndef _LIBCPP_HAS_NO_GENERALIZED_INITIALIZERS
+#ifndef _LIBCPP_CXX03_LANG
 
 template <class _Key, class _Tp, class _Hash, class _Pred, class _Alloc>
 inline
@@ -1372,7 +1372,7 @@ unordered_map<_Key, _Tp, _Hash, _Pred, _Alloc>::operator=(
     return *this;
 }
 
-#endif  // _LIBCPP_HAS_NO_GENERALIZED_INITIALIZERS
+#endif  // _LIBCPP_CXX03_LANG
 
 #ifdef _LIBCPP_CXX03_LANG
 template <class _Key, class _Tp, class _Hash, class _Pred, class _Alloc>
@@ -1582,7 +1582,7 @@ public:
         _NOEXCEPT_(is_nothrow_move_constructible<__table>::value);
     unordered_multimap(unordered_multimap&& __u, const allocator_type& __a);
 #endif  // _LIBCPP_HAS_NO_RVALUE_REFERENCES
-#ifndef _LIBCPP_HAS_NO_GENERALIZED_INITIALIZERS
+#ifndef _LIBCPP_CXX03_LANG
     unordered_multimap(initializer_list<value_type> __il);
     unordered_multimap(initializer_list<value_type> __il, size_type __n,
                        const hasher& __hf = hasher(),
@@ -1590,7 +1590,7 @@ public:
     unordered_multimap(initializer_list<value_type> __il, size_type __n,
                        const hasher& __hf, const key_equal& __eql,
                        const allocator_type& __a);
-#endif  // _LIBCPP_HAS_NO_GENERALIZED_INITIALIZERS
+#endif  // _LIBCPP_CXX03_LANG
 #if _LIBCPP_STD_VER > 11
     _LIBCPP_INLINE_VISIBILITY
     unordered_multimap(size_type __n, const allocator_type& __a)
@@ -1638,10 +1638,10 @@ public:
     unordered_multimap& operator=(unordered_multimap&& __u)
         _NOEXCEPT_(is_nothrow_move_assignable<__table>::value);
 #endif
-#ifndef _LIBCPP_HAS_NO_GENERALIZED_INITIALIZERS
+#ifndef _LIBCPP_CXX03_LANG
     _LIBCPP_INLINE_VISIBILITY
     unordered_multimap& operator=(initializer_list<value_type> __il);
-#endif  // _LIBCPP_HAS_NO_GENERALIZED_INITIALIZERS
+#endif  // _LIBCPP_CXX03_LANG
 
     _LIBCPP_INLINE_VISIBILITY
     allocator_type get_allocator() const _NOEXCEPT
@@ -1678,11 +1678,11 @@ public:
     _LIBCPP_INLINE_VISIBILITY
     void insert(_InputIterator __first, _InputIterator __last);
 
-#ifndef _LIBCPP_HAS_NO_GENERALIZED_INITIALIZERS
+#ifndef _LIBCPP_CXX03_LANG
     _LIBCPP_INLINE_VISIBILITY
     void insert(initializer_list<value_type> __il)
         {insert(__il.begin(), __il.end());}
-#endif  // _LIBCPP_HAS_NO_GENERALIZED_INITIALIZERS
+#endif  // _LIBCPP_CXX03_LANG
 
 #ifndef _LIBCPP_CXX03_LANG
     _LIBCPP_INLINE_VISIBILITY
@@ -1943,7 +1943,7 @@ unordered_multimap<_Key, _Tp, _Hash, _Pred, _Alloc>::unordered_multimap(
 
 #endif  // _LIBCPP_HAS_NO_RVALUE_REFERENCES
 
-#ifndef _LIBCPP_HAS_NO_GENERALIZED_INITIALIZERS
+#ifndef _LIBCPP_CXX03_LANG
 
 template <class _Key, class _Tp, class _Hash, class _Pred, class _Alloc>
 unordered_multimap<_Key, _Tp, _Hash, _Pred, _Alloc>::unordered_multimap(
@@ -1981,7 +1981,7 @@ unordered_multimap<_Key, _Tp, _Hash, _Pred, _Alloc>::unordered_multimap(
     insert(__il.begin(), __il.end());
 }
 
-#endif  // _LIBCPP_HAS_NO_GENERALIZED_INITIALIZERS
+#endif  // _LIBCPP_CXX03_LANG
 
 #ifndef _LIBCPP_HAS_NO_RVALUE_REFERENCES
 
@@ -1997,7 +1997,7 @@ unordered_multimap<_Key, _Tp, _Hash, _Pred, _Alloc>::operator=(unordered_multima
 
 #endif  // _LIBCPP_HAS_NO_RVALUE_REFERENCES
 
-#ifndef _LIBCPP_HAS_NO_GENERALIZED_INITIALIZERS
+#ifndef _LIBCPP_CXX03_LANG
 
 template <class _Key, class _Tp, class _Hash, class _Pred, class _Alloc>
 inline
@@ -2009,7 +2009,7 @@ unordered_multimap<_Key, _Tp, _Hash, _Pred, _Alloc>::operator=(
     return *this;
 }
 
-#endif  // _LIBCPP_HAS_NO_GENERALIZED_INITIALIZERS
+#endif  // _LIBCPP_CXX03_LANG
 
 
 
