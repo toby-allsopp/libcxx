@@ -247,10 +247,6 @@ typedef __char32_t char32_t;
 #  define _LIBCPP_NORETURN __attribute__ ((noreturn))
 #endif
 
-#if !(__has_feature(cxx_default_function_template_args))
-#define _LIBCPP_HAS_NO_DEFAULT_FUNCTION_TEMPLATE_ARGS
-#endif
-
 #if !(__has_feature(cxx_defaulted_functions))
 #define _LIBCPP_HAS_NO_DEFAULTED_FUNCTIONS
 #endif  // !(__has_feature(cxx_defaulted_functions))
@@ -411,7 +407,6 @@ namespace std {
 
 #ifndef __GXX_EXPERIMENTAL_CXX0X__
 #define _LIBCPP_HAS_NO_DECLTYPE
-#define _LIBCPP_HAS_NO_DEFAULT_FUNCTION_TEMPLATE_ARGS
 #define _LIBCPP_HAS_NO_DEFAULTED_FUNCTIONS
 #define _LIBCPP_HAS_NO_DELETED_FUNCTIONS
 #define _LIBCPP_HAS_NO_NULLPTR
@@ -425,7 +420,6 @@ namespace std {
 #else  // __GXX_EXPERIMENTAL_CXX0X__
 
 #if _GNUC_VER < 403
-#define _LIBCPP_HAS_NO_DEFAULT_FUNCTION_TEMPLATE_ARGS
 #define _LIBCPP_HAS_NO_RVALUE_REFERENCES
 #define _LIBCPP_HAS_NO_STATIC_ASSERT
 #endif
@@ -495,7 +489,6 @@ namespace std {
 #define _ATTRIBUTE(x) __attribute__((x))
 #define _LIBCPP_NORETURN __attribute__((noreturn))
 
-#define _LIBCPP_HAS_NO_DEFAULT_FUNCTION_TEMPLATE_ARGS
 #define _LIBCPP_HAS_NO_GENERALIZED_INITIALIZERS
 #define _LIBCPP_HAS_NO_NOEXCEPT
 #define _LIBCPP_HAS_NO_NULLPTR
