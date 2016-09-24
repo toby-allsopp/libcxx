@@ -220,10 +220,6 @@
 #  define _ALIGNAS(x) __attribute__((__aligned__(x)))
 #endif
 
-#if !__has_feature(cxx_alias_templates)
-#define _LIBCPP_HAS_NO_TEMPLATE_ALIASES
-#endif
-
 #if __cplusplus < 201103L
 typedef __char16_t char16_t;
 typedef __char32_t char32_t;
@@ -430,7 +426,6 @@ namespace std {
 #define _LIBCPP_HAS_NO_VARIADICS
 #define _LIBCPP_HAS_NO_RVALUE_REFERENCES
 #define _LIBCPP_HAS_NO_STRONG_ENUMS
-#define _LIBCPP_HAS_NO_TEMPLATE_ALIASES
 #define _LIBCPP_HAS_NO_NOEXCEPT
 
 #else  // __GXX_EXPERIMENTAL_CXX0X__
@@ -453,7 +448,6 @@ namespace std {
 #if _GNUC_VER < 406
 #define _LIBCPP_HAS_NO_NOEXCEPT
 #define _LIBCPP_HAS_NO_NULLPTR
-#define _LIBCPP_HAS_NO_TEMPLATE_ALIASES
 #endif
 
 #if _GNUC_VER < 407
@@ -479,7 +473,6 @@ using namespace _LIBCPP_NAMESPACE __attribute__((__strong__));
 
 #elif defined(_LIBCPP_MSVC)
 
-#define _LIBCPP_HAS_NO_TEMPLATE_ALIASES
 #define _LIBCPP_HAS_NO_CONSTEXPR
 #define _LIBCPP_HAS_NO_CXX14_CONSTEXPR
 #define _LIBCPP_HAS_NO_VARIABLE_TEMPLATES
@@ -510,7 +503,6 @@ namespace std {
 #define _LIBCPP_NORETURN __attribute__((noreturn))
 
 #define _LIBCPP_HAS_NO_DEFAULT_FUNCTION_TEMPLATE_ARGS
-#define _LIBCPP_HAS_NO_TEMPLATE_ALIASES
 #define _LIBCPP_HAS_NO_ADVANCED_SFINAE
 #define _LIBCPP_HAS_NO_GENERALIZED_INITIALIZERS
 #define _LIBCPP_HAS_NO_NOEXCEPT
