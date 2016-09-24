@@ -279,10 +279,6 @@ typedef __char32_t char32_t;
 #define _LIBCPP_HAS_NO_AUTO_TYPE
 #endif
 
-#if !(__has_feature(cxx_access_control_sfinae)) || !__has_feature(cxx_trailing_return)
-#define _LIBCPP_HAS_NO_ADVANCED_SFINAE
-#endif
-
 #if !(__has_feature(cxx_variadic_templates))
 #define _LIBCPP_HAS_NO_VARIADICS
 #endif
@@ -414,8 +410,6 @@ namespace std {
 #endif
 
 #ifndef __GXX_EXPERIMENTAL_CXX0X__
-
-#define _LIBCPP_HAS_NO_ADVANCED_SFINAE
 #define _LIBCPP_HAS_NO_DECLTYPE
 #define _LIBCPP_HAS_NO_DEFAULT_FUNCTION_TEMPLATE_ARGS
 #define _LIBCPP_HAS_NO_DEFAULTED_FUNCTIONS
@@ -451,7 +445,6 @@ namespace std {
 #endif
 
 #if _GNUC_VER < 407
-#define _LIBCPP_HAS_NO_ADVANCED_SFINAE
 #define _LIBCPP_HAS_NO_DEFAULTED_FUNCTIONS
 #endif
 
@@ -503,7 +496,6 @@ namespace std {
 #define _LIBCPP_NORETURN __attribute__((noreturn))
 
 #define _LIBCPP_HAS_NO_DEFAULT_FUNCTION_TEMPLATE_ARGS
-#define _LIBCPP_HAS_NO_ADVANCED_SFINAE
 #define _LIBCPP_HAS_NO_GENERALIZED_INITIALIZERS
 #define _LIBCPP_HAS_NO_NOEXCEPT
 #define _LIBCPP_HAS_NO_NULLPTR
