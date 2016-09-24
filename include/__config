@@ -271,10 +271,6 @@ typedef __char32_t char32_t;
 #define _LIBCPP_HAS_NO_RVALUE_REFERENCES
 #endif
 
-#if !(__has_feature(cxx_static_assert))
-#define _LIBCPP_HAS_NO_STATIC_ASSERT
-#endif
-
 #if !(__has_feature(cxx_variadic_templates))
 #define _LIBCPP_HAS_NO_VARIADICS
 #endif
@@ -402,7 +398,6 @@ namespace std {
 #define _LIBCPP_HAS_NO_DEFAULTED_FUNCTIONS
 #define _LIBCPP_HAS_NO_DELETED_FUNCTIONS
 #define _LIBCPP_HAS_NO_NULLPTR
-#define _LIBCPP_HAS_NO_STATIC_ASSERT
 #define _LIBCPP_HAS_NO_UNICODE_CHARS
 #define _LIBCPP_HAS_NO_VARIADICS
 #define _LIBCPP_HAS_NO_RVALUE_REFERENCES
@@ -610,7 +605,7 @@ typedef unsigned int   char32_t;
 #define _LIBCPP_HAS_NO_INT128
 #endif
 
-#ifdef _LIBCPP_HAS_NO_STATIC_ASSERT
+#ifdef _LIBCPP_CXX03_LANG
 # if __has_extension(c_static_assert)
 #   define static_assert(__b, __m) _Static_assert(__b, __m)
 # else
@@ -623,7 +618,7 @@ template <unsigned> struct __static_assert_check {};
     typedef __static_assert_check<sizeof(__static_assert_test<(__b)>)> \
     _LIBCPP_CONCAT(__t, __LINE__)
 # endif // __has_extension(c_static_assert)
-#endif  // _LIBCPP_HAS_NO_STATIC_ASSERT
+#endif  // _LIBCPP_CXX03_LANG
 
 #ifdef _LIBCPP_HAS_NO_DECLTYPE
 // GCC 4.6 provides __decltype in all standard modes.
