@@ -11,14 +11,6 @@
 
 _LIBCPP_BEGIN_NAMESPACE_EXPERIMENTAL
 
-#ifdef _LIBCPP_HAS_NO_DEFAULTED_FUNCTIONS
-
-bad_optional_access::~bad_optional_access() _NOEXCEPT {}
-
-#else
-
 bad_optional_access::~bad_optional_access() _NOEXCEPT = default;
-
-#endif
 
 _LIBCPP_END_NAMESPACE_EXPERIMENTAL

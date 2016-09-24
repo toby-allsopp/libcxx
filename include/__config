@@ -247,10 +247,6 @@ typedef __char32_t char32_t;
 #  define _LIBCPP_NORETURN __attribute__ ((noreturn))
 #endif
 
-#if !(__has_feature(cxx_defaulted_functions))
-#define _LIBCPP_HAS_NO_DEFAULTED_FUNCTIONS
-#endif  // !(__has_feature(cxx_defaulted_functions))
-
 #if !(__has_feature(cxx_lambdas))
 #define _LIBCPP_HAS_NO_LAMBDAS
 #endif
@@ -386,7 +382,6 @@ namespace std {
 #endif
 
 #ifndef __GXX_EXPERIMENTAL_CXX0X__
-#define _LIBCPP_HAS_NO_DEFAULTED_FUNCTIONS
 #define _LIBCPP_HAS_NO_NULLPTR
 #define _LIBCPP_HAS_NO_UNICODE_CHARS
 #define _LIBCPP_HAS_NO_VARIADICS
@@ -409,9 +404,6 @@ namespace std {
 #define _LIBCPP_HAS_NO_NULLPTR
 #endif
 
-#if _GNUC_VER < 407
-#define _LIBCPP_HAS_NO_DEFAULTED_FUNCTIONS
-#endif
 
 #endif  // __GXX_EXPERIMENTAL_CXX0X__
 
@@ -435,7 +427,6 @@ using namespace _LIBCPP_NAMESPACE __attribute__((__strong__));
 #define _LIBCPP_HAS_NO_CXX14_CONSTEXPR
 #define _LIBCPP_HAS_NO_VARIABLE_TEMPLATES
 #define _LIBCPP_HAS_NO_UNICODE_CHARS
-#define _LIBCPP_HAS_NO_DEFAULTED_FUNCTIONS
 #define __alignof__ __alignof
 #define _LIBCPP_NORETURN __declspec(noreturn)
 #define _ALIGNAS(x) __declspec(align(x))
@@ -622,7 +613,7 @@ template <unsigned> struct __static_assert_check {};
 #define _LIBCPP_CONSTEXPR constexpr
 #endif
 
-#ifdef _LIBCPP_HAS_NO_DEFAULTED_FUNCTIONS
+#ifdef _LIBCPP_CXX03_LANG
 #define _LIBCPP_DEFAULT {}
 #else
 #define _LIBCPP_DEFAULT = default;
