@@ -17,7 +17,7 @@
 #pragma GCC system_header
 #endif
 
-#ifdef _LIBCPP_HAS_NO_NULLPTR
+#if defined(_LIBCPP_CXX03_LANG)
 
 _LIBCPP_BEGIN_NAMESPACE_STD
 
@@ -54,13 +54,13 @@ inline _LIBCPP_ALWAYS_INLINE _LIBCPP_CONSTEXPR nullptr_t __get_nullptr_t() {retu
 
 _LIBCPP_END_NAMESPACE_STD
 
-#else  // _LIBCPP_HAS_NO_NULLPTR
+#else  // _LIBCPP_CXX03_LANG
 
 namespace std
 {
     typedef decltype(nullptr) nullptr_t;
 }
 
-#endif  // _LIBCPP_HAS_NO_NULLPTR
+#endif  // _LIBCPP_CXX03_LANG
 
 #endif  // _LIBCPP_NULLPTR

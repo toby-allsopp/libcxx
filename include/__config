@@ -251,10 +251,6 @@ typedef __char32_t char32_t;
 #define _LIBCPP_HAS_NO_LAMBDAS
 #endif
 
-#if !(__has_feature(cxx_nullptr))
-#define _LIBCPP_HAS_NO_NULLPTR
-#endif
-
 #if !(__has_feature(cxx_rvalue_references))
 #define _LIBCPP_HAS_NO_RVALUE_REFERENCES
 #endif
@@ -378,7 +374,6 @@ namespace std {
 #endif
 
 #ifndef __GXX_EXPERIMENTAL_CXX0X__
-#define _LIBCPP_HAS_NO_NULLPTR
 #define _LIBCPP_HAS_NO_UNICODE_CHARS
 #define _LIBCPP_HAS_NO_RVALUE_REFERENCES
 #define _LIBCPP_HAS_NO_STRONG_ENUMS
@@ -393,11 +388,6 @@ namespace std {
 #if _GNUC_VER < 404
 #define _LIBCPP_HAS_NO_UNICODE_CHARS
 #endif  // _GNUC_VER < 404
-
-#if _GNUC_VER < 406
-#define _LIBCPP_HAS_NO_NULLPTR
-#endif
-
 
 #endif  // __GXX_EXPERIMENTAL_CXX0X__
 
@@ -441,7 +431,6 @@ namespace std {
 #define _ALIGNAS_TYPE(x) __attribute__((__aligned__(__alignof(x))))
 #define _ATTRIBUTE(x) __attribute__((x))
 #define _LIBCPP_NORETURN __attribute__((noreturn))
-#define _LIBCPP_HAS_NO_NULLPTR
 #define _LIBCPP_HAS_NO_UNICODE_CHARS
 #define _LIBCPP_HAS_IS_BASE_OF
 #define _LIBCPP_HAS_IS_FINAL
