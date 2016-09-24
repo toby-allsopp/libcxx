@@ -7,6 +7,8 @@
 //
 //===----------------------------------------------------------------------===//
 
+// UNSUPPORTED: c++98, c++03
+
 // <vector>
 
 // void assign(initializer_list<value_type> il);
@@ -14,21 +16,20 @@
 #include <vector>
 #include <cassert>
 
+#include "test_macros.h"
 #include "min_allocator.h"
 #include "asan_testing.h"
 
 template <typename Vec>
 void test ( Vec &v )
 {
-#ifndef _LIBCPP_HAS_NO_GENERALIZED_INITIALIZERS
     v.assign({3, 4, 5, 6});
     assert(v.size() == 4);
-    assert(is_contiguous_container_asan_correct(v));
+    LIBCPP_ASSERT(is_contiguous_container_asan_correct(v));
     assert(v[0] == 3);
     assert(v[1] == 4);
     assert(v[2] == 5);
     assert(v[3] == 6);
-#endif
 }
 
 int main()
@@ -41,8 +42,6 @@ int main()
     test(d1);
     test(d2);
     }
-
-#if TEST_STD_VER >= 11
     {
     typedef std::vector<int, min_allocator<int>> V;
     V d1;
@@ -51,5 +50,4 @@ int main()
     test(d1);
     test(d2);
     }
-#endif
 }

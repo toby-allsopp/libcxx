@@ -7,6 +7,8 @@
 //
 //===----------------------------------------------------------------------===//
 
+// UNSUPPORTED: c++98, c++03
+
 // <set>
 
 // class set
@@ -21,7 +23,6 @@
 
 int main()
 {
-#ifndef _LIBCPP_HAS_NO_GENERALIZED_INITIALIZERS
     {
     typedef test_compare<std::less<int> > Cmp;
     typedef test_allocator<int> A;
@@ -40,7 +41,6 @@ int main()
     assert(m.key_comp() == Cmp(10));
     assert(m.get_allocator() == A(4));
     }
-#if _LIBCPP_STD_VER > 11
     {
     typedef test_compare<std::less<int> > Cmp;
     typedef test_allocator<int> A;
@@ -58,6 +58,4 @@ int main()
     assert(*++i == V(6));
     assert(m.get_allocator() == A(4));
     }
-#endif
-#endif  // _LIBCPP_HAS_NO_GENERALIZED_INITIALIZERS
 }

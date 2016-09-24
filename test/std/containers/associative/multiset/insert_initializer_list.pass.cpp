@@ -7,6 +7,8 @@
 //
 //===----------------------------------------------------------------------===//
 
+// UNSUPPORTED: c++98, c++03
+
 // <set>
 
 // class multiset
@@ -20,7 +22,6 @@
 
 int main()
 {
-#ifndef _LIBCPP_HAS_NO_GENERALIZED_INITIALIZERS
     {
     typedef std::multiset<int> C;
     typedef C::value_type V;
@@ -38,8 +39,6 @@ int main()
     assert(*++i == V(8));
     assert(*++i == V(10));
     }
-#endif  // _LIBCPP_HAS_NO_GENERALIZED_INITIALIZERS
-#if TEST_STD_VER >= 11
     {
     typedef std::multiset<int, std::less<int>, min_allocator<int>> C;
     typedef C::value_type V;
@@ -57,5 +56,4 @@ int main()
     assert(*++i == V(8));
     assert(*++i == V(10));
     }
-#endif
 }
