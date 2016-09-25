@@ -40,7 +40,6 @@ struct suspend_always;
 template <class T> struct hash;
 template <class P> struct hash<coroutine_handle<P>>;
 
-
 } // namespace coroutines_v1
 } // namespace experimental
 } // namespace std
