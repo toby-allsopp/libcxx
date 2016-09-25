@@ -49,6 +49,7 @@ template <class P> struct hash<coroutine_handle<P>>;
 
 #include <experimental/__config>
 #include <type_traits>
+#include <functional>
 #include <cstddef>
 #include <__debug>
 
@@ -76,15 +77,14 @@ template <>
 class _LIBCPP_TYPE_VIS_ONLY coroutine_handle<void> {
 public:
     // 18.11.2.1 construct/reset
-    constexpr coroutine_handle() noexcept {}
-
+    constexpr coroutine_handle() noexcept = default;
     constexpr coroutine_handle(nullptr_t) noexcept : __handle_(nullptr) {}
-
     _LIBCPP_ALWAYS_INLINE
     coroutine_handle& operator=(nullptr_t) noexcept {
         __handle_ = nullptr;
         return *this;
     }
+
     // 18.11.2.2 export/import
     _LIBCPP_ALWAYS_INLINE
     void* address() const noexcept { return __handle_; }
@@ -130,16 +130,16 @@ bool operator<(coroutine_handle<> __x, coroutine_handle<> __y) noexcept {
     return less<void*>()(__x.address(), __y.address());
 }
 inline _LIBCPP_ALWAYS_INLINE
+bool operator>(coroutine_handle<> __x, coroutine_handle<> __y) noexcept {
+    return __y < __x;
+}
+inline _LIBCPP_ALWAYS_INLINE
 bool operator<=(coroutine_handle<> __x, coroutine_handle<> __y) noexcept {
     return !(__x > __y);
 }
 inline _LIBCPP_ALWAYS_INLINE
 bool operator>=(coroutine_handle<> __x, coroutine_handle<> __y) noexcept {
     return !(__x < __y);
-}
-inline _LIBCPP_ALWAYS_INLINE
-bool operator>(coroutine_handle<> __x, coroutine_handle<> __y) noexcept {
-    return __y < __x;
 }
 
 template <typename _Promise>
@@ -188,7 +188,17 @@ struct _LIBCPP_TYPE_VIS suspend_always {
   void await_resume() {}
 };
 
-
 _LIBCPP_END_NAMESPACE_EXPERIMENTAL_COROUTINES
+
+_LIBCPP_BEGIN_NAMESPACE_STD
+
+template <class _Tp>
+struct hash<_VSTD_CORO::coroutine_handle<_Tp> > {
+    using value_type = _VSTD_CORO::coroutine_handle<_Tp>;
+    _LIBCPP_INLINE_VISIBILITY
+    size_t operator()(value_type const& __v) const _NOEXCEPT {return static_cast<uintptr_t>(__v.address());}
+};
+
+_LIBCPP_END_NAMESPACE_STD
 
 #endif /* _LIBCPP_EXPERIMENTAL_COROUTINES */
