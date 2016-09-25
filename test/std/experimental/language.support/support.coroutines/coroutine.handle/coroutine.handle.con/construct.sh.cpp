@@ -14,31 +14,36 @@
 // RUN: %build -fcoroutines
 // RUN: %run
 
+// <experimental/coroutine>
+
+// template <class Promise = void>
+// struct coroutine_handle;
+
+// constexpr coroutine_handle() noexcept
+// constexpr coroutine_handle(nullptr_t) noexcept
+
 #include <experimental/coroutines>
 #include <type_traits>
 #include <cassert>
 
 namespace coro = std::experimental;
 
+template <class C>
+void do_test() {
+  {
+    constexpr C c;
+    static_assert(std::is_nothrow_default_constructible<C>::value, "");
+    assert(c.address() == nullptr);
+  }
+  {
+    constexpr C c(nullptr);
+    static_assert(std::is_nothrow_constructible<C, std::nullptr_t>::value, "");
+    assert(c.address() == nullptr);
+  }
+}
+
 int main()
 {
-  using H = coro::coroutine_handle<>;
-  using S = coro::suspend_never;
-  H h{};
-  S s{};
-  {
-    static_assert(noexcept(s.await_ready()) == false, "");
-    static_assert(std::is_same<decltype(s.await_ready()), bool>::value, "");
-    assert(s.await_ready() == true);
-  }
-  {
-    static_assert(noexcept(s.await_suspend(h)) == false, "");
-    static_assert(std::is_same<decltype(s.await_suspend(h)), void>::value, "");
-    s.await_suspend(h);
-  }
-  {
-    static_assert(noexcept(s.await_resume()) == false, "");
-    static_assert(std::is_same<decltype(s.await_resume()), void>::value, "");
-    s.await_resume();
-  }
+  do_test<coro::coroutine_handle<>>();
+  do_test<coro::coroutine_handle<int>>();
 }
