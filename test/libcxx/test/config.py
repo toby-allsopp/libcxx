@@ -295,6 +295,9 @@ class Configuration(object):
         if self.get_lit_bool('has_libatomic', False):
             self.config.available_features.add('libatomic')
 
+        if self.cxx.hasCompileFlag('-fcoroutines'):
+            self.config.available_features.add('fcoroutines')
+
     def configure_compile_flags(self):
         no_default_flags = self.get_lit_bool('no_default_flags', False)
         if not no_default_flags:
