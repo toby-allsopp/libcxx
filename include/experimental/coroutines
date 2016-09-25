@@ -76,16 +76,16 @@ class _LIBCPP_TYPE_VIS_ONLY coroutine_handle;
 template <>
 class _LIBCPP_TYPE_VIS_ONLY coroutine_handle<void> {
 public:
-    // 18.11.2.1 construct/reset
     constexpr coroutine_handle() noexcept = default;
+
     constexpr coroutine_handle(nullptr_t) noexcept : __handle_(nullptr) {}
+
     _LIBCPP_ALWAYS_INLINE
     coroutine_handle& operator=(nullptr_t) noexcept {
         __handle_ = nullptr;
         return *this;
     }
 
-    // 18.11.2.2 export/import
     _LIBCPP_ALWAYS_INLINE
     void* address() const noexcept { return __handle_; }
 
@@ -94,6 +94,7 @@ public:
 
     _LIBCPP_ALWAYS_INLINE
     void operator()() const { resume(); }
+
     _LIBCPP_ALWAYS_INLINE
     void resume() const { __builtin_coro_resume(__handle_); }
 
