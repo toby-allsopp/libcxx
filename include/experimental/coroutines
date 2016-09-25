@@ -1,0 +1,194 @@
+// -*- C++ -*-
+//===----------------------------- coroutines -----------------------------===//
+//
+//                     The LLVM Compiler Infrastructure
+//
+// This file is distributed under the University of Illinois Open Source
+// License. See LICENSE.TXT for details.
+//
+//===----------------------------------------------------------------------===//
+
+#ifndef _LIBCPP_EXPERIMENTAL_COROUTINES
+#define _LIBCPP_EXPERIMENTAL_COROUTINES
+
+/**
+    experimental/coroutines synopsis
+
+// C++next
+
+namespace std {
+namespace experimental {
+inline namespace coroutines_v1 {
+
+  // 18.11.1 coroutine traits
+template <typename R, typename... ArgTypes>
+class coroutine_traits;
+// 18.11.2 coroutine handle
+template <typename Promise = void>
+class coroutine_handle;
+// 18.11.2.7 comparison operators:
+bool operator==(coroutine_handle<> x, coroutine_handle<> y) noexcept;
+bool operator!=(coroutine_handle<> x, coroutine_handle<> y) noexcept;
+bool operator<(coroutine_handle<> x, coroutine_handle<> y) noexcept;
+bool operator<=(coroutine_handle<> x, coroutine_handle<> y) noexcept;
+bool operator>=(coroutine_handle<> x, coroutine_handle<> y) noexcept;
+bool operator>(coroutine_handle<> x, coroutine_handle<> y) noexcept;
+// 18.11.3 trivial awaitables
+struct suspend_never;
+struct suspend_always;
+// 18.11.2.8 hash support:
+template <class T> struct hash;
+template <class P> struct hash<coroutine_handle<P>>;
+
+
+} // namespace coroutines_v1
+} // namespace experimental
+} // namespace std
+
+ */
+
+#include <experimental/__config>
+#include <type_traits>
+#include <cstddef>
+#include <__debug>
+
+#if !defined(_LIBCPP_HAS_NO_PRAGMA_SYSTEM_HEADER)
+#pragma GCC system_header
+#endif
+
+#ifndef __cpp_coroutines
+#warning <experimental/coroutines> cannot be used with this compiler
+#endif
+
+_LIBCPP_BEGIN_NAMESPACE_EXPERIMENTAL_COROUTINES
+
+template <typename _Ret, typename... _Args>
+struct _LIBCPP_TYPE_VIS_ONLY coroutine_traits {
+    using promise_type = typename _Ret::promise_type;
+};
+
+template <typename Promise = void>
+class _LIBCPP_TYPE_VIS_ONLY coroutine_handle;
+
+#if defined(__cpp_coroutines)
+
+template <>
+class _LIBCPP_TYPE_VIS_ONLY coroutine_handle<void> {
+public:
+    // 18.11.2.1 construct/reset
+    constexpr coroutine_handle() noexcept {}
+
+    constexpr coroutine_handle(nullptr_t) noexcept : __handle_(nullptr) {}
+
+    _LIBCPP_ALWAYS_INLINE
+    coroutine_handle& operator=(nullptr_t) noexcept {
+        __handle_ = nullptr;
+        return *this;
+    }
+    // 18.11.2.2 export/import
+    _LIBCPP_ALWAYS_INLINE
+    void* address() const noexcept { return __handle_; }
+
+    _LIBCPP_ALWAYS_INLINE
+    explicit operator bool() const noexcept { return __handle_; }
+
+    _LIBCPP_ALWAYS_INLINE
+    void operator()() const { resume(); }
+    _LIBCPP_ALWAYS_INLINE
+    void resume() const { __builtin_coro_resume(__handle_); }
+
+    _LIBCPP_ALWAYS_INLINE
+    void destroy() const { __builtin_coro_destroy(__handle_); }
+
+    _LIBCPP_ALWAYS_INLINE
+    bool done() const noexcept { return __builtin_coro_done(__handle_); }
+
+public:
+    _LIBCPP_ALWAYS_INLINE
+    static coroutine_handle from_address(void* __addr) noexcept {
+        coroutine_handle __tmp;
+        __tmp.__handle_ = __addr;
+        return __tmp;
+    }
+
+private:
+  template <class _PromiseT> friend class coroutine_handle;
+  void* __handle_ = nullptr;
+};
+
+// 18.11.2.7 comparison operators:
+inline _LIBCPP_ALWAYS_INLINE
+bool operator==(coroutine_handle<> __x, coroutine_handle<> __y) noexcept {
+    return __x.address() == __y.address();
+}
+inline _LIBCPP_ALWAYS_INLINE
+bool operator!=(coroutine_handle<> __x, coroutine_handle<> __y) noexcept {
+    return !(__x == __y);
+}
+inline _LIBCPP_ALWAYS_INLINE
+bool operator<(coroutine_handle<> __x, coroutine_handle<> __y) noexcept {
+    return less<void*>()(__x.address(), __y.address());
+}
+inline _LIBCPP_ALWAYS_INLINE
+bool operator<=(coroutine_handle<> __x, coroutine_handle<> __y) noexcept {
+    return !(__x > __y);
+}
+inline _LIBCPP_ALWAYS_INLINE
+bool operator>=(coroutine_handle<> __x, coroutine_handle<> __y) noexcept {
+    return !(__x < __y);
+}
+inline _LIBCPP_ALWAYS_INLINE
+bool operator>(coroutine_handle<> __x, coroutine_handle<> __y) noexcept {
+    return __y < __x;
+}
+
+template <typename _Promise>
+class _LIBCPP_TYPE_VIS_ONLY coroutine_handle : coroutine_handle<> {
+    using _Base = coroutine_handle<>;
+public:
+    // 18.11.2.1 construct/reset
+    using coroutine_handle<>::coroutine_handle;
+
+    _LIBCPP_INLINE_VISIBILITY
+    coroutine_handle& operator=(nullptr_t) noexcept {
+        _Base::operator=(nullptr);
+        return *this;
+    }
+
+    _LIBCPP_INLINE_VISIBILITY
+    _Promise& promise() const noexcept {
+        return *reinterpret_cast<_Promise*>(
+            __builtin_coro_promise(this->__handle_, alignof(_Promise), false));
+    }
+public:
+    static coroutine_handle from_promise(_Promise& __promise) noexcept {
+        coroutine_handle __tmp;
+        __tmp.__handle_ = __builtin_coro_promise(_VSTD::addressof(__promise), alignof(_Promise), true);
+        return __tmp;
+    }
+};
+
+#endif // defined(__cpp_coroutines)
+
+struct _LIBCPP_TYPE_VIS suspend_never {
+  _LIBCPP_ALWAYS_INLINE
+  bool await_ready() { return true; }
+  _LIBCPP_ALWAYS_INLINE
+  void await_suspend(coroutine_handle<>) {}
+  _LIBCPP_ALWAYS_INLINE
+  void await_resume() {}
+};
+
+struct _LIBCPP_TYPE_VIS suspend_always {
+  _LIBCPP_ALWAYS_INLINE
+  bool await_ready() { return false; }
+  _LIBCPP_ALWAYS_INLINE
+  void await_suspend(coroutine_handle<>) {}
+  _LIBCPP_ALWAYS_INLINE
+  void await_resume() {}
+};
+
+
+_LIBCPP_END_NAMESPACE_EXPERIMENTAL_COROUTINES
+
+#endif /* _LIBCPP_EXPERIMENTAL_COROUTINES */
