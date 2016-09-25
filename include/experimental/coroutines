@@ -143,7 +143,7 @@ bool operator>=(coroutine_handle<> __x, coroutine_handle<> __y) noexcept {
 }
 
 template <typename _Promise>
-class _LIBCPP_TYPE_VIS_ONLY coroutine_handle : coroutine_handle<> {
+class _LIBCPP_TYPE_VIS_ONLY coroutine_handle : public coroutine_handle<> {
     using _Base = coroutine_handle<>;
 public:
     // 18.11.2.1 construct/reset
@@ -163,7 +163,8 @@ public:
 public:
     static coroutine_handle from_promise(_Promise& __promise) noexcept {
         coroutine_handle __tmp;
-        __tmp.__handle_ = __builtin_coro_promise(_VSTD::addressof(__promise), alignof(_Promise), true);
+        __tmp.__handle_ = __builtin_coro_promise(_VSTD::addressof(__promise),
+                                                 alignof(_Promise), true);
         return __tmp;
     }
 };
@@ -194,9 +195,10 @@ _LIBCPP_BEGIN_NAMESPACE_STD
 
 template <class _Tp>
 struct hash<_VSTD_CORO::coroutine_handle<_Tp> > {
-    using value_type = _VSTD_CORO::coroutine_handle<_Tp>;
+    using __arg_type = _VSTD_CORO::coroutine_handle<_Tp>;
     _LIBCPP_INLINE_VISIBILITY
-    size_t operator()(value_type const& __v) const _NOEXCEPT {return static_cast<uintptr_t>(__v.address());}
+    size_t operator()(__arg_type const& __v) const noexcept
+    {return static_cast<uintptr_t>(__v.address());}
 };
 
 _LIBCPP_END_NAMESPACE_STD
