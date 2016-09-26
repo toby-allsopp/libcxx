@@ -70,13 +70,15 @@ struct _LIBCPP_TYPE_VIS_ONLY coroutine_traits {
 template <typename Promise = void>
 class _LIBCPP_TYPE_VIS_ONLY coroutine_handle;
 
-#if defined(__cpp_coroutines)
+#if defined(__cpp_coroutines) || 1 // FIXME: remove this
 
 template <>
 class _LIBCPP_TYPE_VIS_ONLY coroutine_handle<void> {
 public:
+    _LIBCPP_ALWAYS_INLINE
     constexpr coroutine_handle() noexcept = default;
 
+    _LIBCPP_ALWAYS_INLINE
     constexpr coroutine_handle(nullptr_t) noexcept : __handle_(nullptr) {}
 
     _LIBCPP_ALWAYS_INLINE
@@ -113,7 +115,7 @@ public:
 
 private:
   template <class _PromiseT> friend class coroutine_handle;
-  void* __handle_ = nullptr;
+  void* __handle_;
 };
 
 // 18.11.2.7 comparison operators:
@@ -160,6 +162,7 @@ public:
         return *reinterpret_cast<_Promise*>(
             __builtin_coro_promise(this->__handle_, alignof(_Promise), false));
     }
+
 public:
     static coroutine_handle from_promise(_Promise& __promise) noexcept {
         coroutine_handle __tmp;
