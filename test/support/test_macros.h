@@ -114,6 +114,12 @@
 #define TEST_NORETURN [[noreturn]]
 #endif
 
+#if defined(_LIBCPP_SAFE_STATIC)
+#define TEST_SAFE_STATIC _LIBCPP_SAFE_STATIC
+#else
+#define TEST_SAFE_STATIC
+#endif
+
 /* Macros for testing libc++ specific behavior and extensions */
 #if defined(_LIBCPP_VERSION)
 #define LIBCPP_ASSERT(...) assert(__VA_ARGS__)

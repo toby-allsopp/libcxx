@@ -50,6 +50,7 @@ template <class P> struct hash<coroutine_handle<P>>;
 #include <type_traits>
 #include <functional>
 #include <cstddef>
+#include <cassert>
 #include <__debug>
 
 #if !defined(_LIBCPP_HAS_NO_PRAGMA_SYSTEM_HEADER)
@@ -76,7 +77,7 @@ template <>
 class _LIBCPP_TYPE_VIS_ONLY coroutine_handle<void> {
 public:
     _LIBCPP_ALWAYS_INLINE
-    constexpr coroutine_handle() noexcept = default;
+    constexpr coroutine_handle() noexcept : __handle_(nullptr) {}
 
     _LIBCPP_ALWAYS_INLINE
     constexpr coroutine_handle(nullptr_t) noexcept : __handle_(nullptr) {}
@@ -97,13 +98,29 @@ public:
     void operator()() const { resume(); }
 
     _LIBCPP_ALWAYS_INLINE
-    void resume() const { __builtin_coro_resume(__handle_); }
+    void resume() const {
+#if __has_builtin(__builtin_coro_resume)
+      __builtin_coro_resume(__handle_);
+#endif
+    }
 
     _LIBCPP_ALWAYS_INLINE
-    void destroy() const { __builtin_coro_destroy(__handle_); }
+    void destroy() const {
+#if __has_builtin(__builtin_coro_destroy)
+      __builtin_coro_destroy(__handle_);
+#endif
+    }
 
     _LIBCPP_ALWAYS_INLINE
-    bool done() const noexcept { return __builtin_coro_done(__handle_); }
+    bool done() const noexcept {
+      // FIXME
+#if __has_builtin(__builtin_coro_done)
+      return __builtin_coro_done(__handle_);
+#else
+      assert(false && "Method unimplemented");
+      return true;
+#endif
+    }
 
 public:
     _LIBCPP_ALWAYS_INLINE

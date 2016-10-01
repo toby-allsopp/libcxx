@@ -9,22 +9,36 @@
 //===----------------------------------------------------------------------===//
 
 // UNSUPPORTED: c++98, c++03, c++11
-// REQUIRES: fcoroutines
+// REQUIRES: fcoroutines-ts
 
-// RUN: %build -fcoroutines
+// RUN: %build -fcoroutines-ts
 // RUN: %run
 
 #include <experimental/coroutines>
 #include <type_traits>
 #include <cassert>
 
+#include "test_macros.h"
+
 namespace coro = std::experimental;
 
+using SuspendT = std::experimental::coroutines_v1::suspend_always;
+
+TEST_SAFE_STATIC SuspendT safe_sa;
+
+constexpr bool check_suspend_constexpr() {
+  SuspendT s{};
+  const SuspendT scopy(s); ((void)scopy);
+  SuspendT smove(std::move(s)); ((void)smove);
+  s = scopy;
+  s = std::move(smove);
+  return true;
+}
 
 int main()
 {
   using H = coro::coroutine_handle<>;
-  using S = coro::suspend_always;
+  using S = SuspendT;
   H h{};
   S s{};
   {
@@ -41,5 +55,14 @@ int main()
     static_assert(noexcept(s.await_resume()) == false, "");
     static_assert(std::is_same<decltype(s.await_resume()), void>::value, "");
     s.await_resume();
+  }
+  {
+    static_assert(std::is_nothrow_default_constructible<S>::value, "");
+    static_assert(std::is_nothrow_copy_constructible<S>::value, "");
+    static_assert(std::is_nothrow_move_constructible<S>::value, "");
+    static_assert(std::is_nothrow_copy_assignable<S>::value, "");
+    static_assert(std::is_nothrow_move_assignable<S>::value, "");
+    static_assert(std::is_trivially_copyable<S>::value, "");
+    static_assert(check_suspend_constexpr(), "");
   }
 }

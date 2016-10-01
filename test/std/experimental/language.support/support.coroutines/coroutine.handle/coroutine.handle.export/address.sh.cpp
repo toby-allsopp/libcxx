@@ -9,9 +9,9 @@
 //===----------------------------------------------------------------------===//
 
 // UNSUPPORTED: c++98, c++03, c++11
-// REQUIRES: fcoroutines
+// REQUIRES: fcoroutines-ts
 
-// RUN: %build -fcoroutines
+// RUN: %build -fcoroutines-ts
 // RUN: %run
 
 // <experimental/coroutine>
