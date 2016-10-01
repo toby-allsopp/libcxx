@@ -19,35 +19,30 @@
 // template <class Promise = void>
 // struct coroutine_handle;
 
-// void* address() const noexcept
+// bool done() const noexcept
 
 #include <experimental/coroutines>
 #include <type_traits>
+#include <memory>
+#include <utility>
+#include <cstdint>
 #include <cassert>
+
+#include "test_macros.h"
 
 namespace coro = std::experimental;
 
-template <class C>
-void do_test() {
-  { // null case
-    const C c = {}; ((void)c);
-    static_assert(noexcept(bool(c)), "");
-    // FIXME: Should the return type not be 'C'?
-    static_assert(std::is_same<decltype(bool(c)), bool>::value, "");
-    static_assert(!std::is_convertible<C, bool>::value, "");
-    assert(c.address() == nullptr);
-    assert(bool(c) == false);
-  }
-  { // non-null case
-    int dummy = 42;
-    C c = C::from_address(&dummy);
-    assert(c.address() == &dummy);
-    assert(bool(c) == true);
+template <class Promise>
+void do_test(coro::coroutine_handle<Promise> const& H) {
+  // FIXME Add a runtime test
+  {
+    ASSERT_SAME_TYPE(decltype(H.done()), bool);
+    ASSERT_NOEXCEPT(H.done());
   }
 }
 
 int main()
 {
-  do_test<coro::coroutine_handle<>>();
-  do_test<coro::coroutine_handle<int>>();
+  do_test(coro::coroutine_handle<>{});
+  do_test(coro::coroutine_handle<int>{});
 }

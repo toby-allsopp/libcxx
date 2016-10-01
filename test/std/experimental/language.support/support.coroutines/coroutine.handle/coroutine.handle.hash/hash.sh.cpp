@@ -40,7 +40,6 @@ void do_test(uintptr_t LHSVal, uintptr_t RHSVal) {
   const size_t ExpectRHS = std::hash<void*>{}(reinterpret_cast<void*>(RHSVal));
   const C LHS = C::from_address(reinterpret_cast<void*>(LHSVal));
   const C RHS = C::from_address(reinterpret_cast<void*>(RHSVal));
-
   const std::hash<C> h;
   // FIXME: libc++'s implementation hash's the result of LHS.address(), so we
   // expect that value. However this is not required.

@@ -100,6 +100,10 @@ public:
 
     _LIBCPP_ALWAYS_INLINE
     void resume() const {
+      _LIBCPP_ASSERT(__is_suspended(),
+                     "resume() can only be called on suspended coroutines");
+      _LIBCPP_ASSERT(!done,
+                "resume() has undefined behavior when the coroutine is done");
 #if __has_builtin(__builtin_coro_resume)
       __builtin_coro_resume(__handle_);
 #endif
@@ -107,6 +111,8 @@ public:
 
     _LIBCPP_ALWAYS_INLINE
     void destroy() const {
+      _LIBCPP_ASSERT(__is_suspended(),
+                     "destroy() can only be called on suspended coroutines");
 #if __has_builtin(__builtin_coro_destroy)
       __builtin_coro_destroy(__handle_);
 #endif
@@ -114,6 +120,8 @@ public:
 
     _LIBCPP_ALWAYS_INLINE
     bool done() const noexcept {
+      _LIBCPP_ASSERT(__is_suspended(),
+                     "done() can only be called on suspended coroutines");
       // FIXME
 #if __has_builtin(__builtin_coro_done)
       return __builtin_coro_done(__handle_);
@@ -132,6 +140,11 @@ public:
     }
 
 private:
+  bool __is_suspended() const noexcept  {
+    // FIXME actually implement a check for if the coro is suspended.
+    return __handle_;
+  }
+
   template <class _PromiseT> friend class coroutine_handle;
   void* __handle_;
 };
