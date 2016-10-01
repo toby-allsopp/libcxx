@@ -72,7 +72,7 @@ struct _LIBCPP_TYPE_VIS_ONLY coroutine_traits {
 template <typename Promise = void>
 class _LIBCPP_TYPE_VIS_ONLY coroutine_handle;
 
-#if defined(__cpp_coroutines) || 1 // FIXME: remove this
+#if defined(__cpp_coroutines)
 
 template <>
 class _LIBCPP_TYPE_VIS_ONLY coroutine_handle<void> {
@@ -104,31 +104,21 @@ public:
                      "resume() can only be called on suspended coroutines");
       _LIBCPP_ASSERT(!done,
                 "resume() has undefined behavior when the coroutine is done");
-#if __has_builtin(__builtin_coro_resume)
       __builtin_coro_resume(__handle_);
-#endif
     }
 
     _LIBCPP_ALWAYS_INLINE
     void destroy() const {
       _LIBCPP_ASSERT(__is_suspended(),
                      "destroy() can only be called on suspended coroutines");
-#if __has_builtin(__builtin_coro_destroy)
       __builtin_coro_destroy(__handle_);
-#endif
     }
 
     _LIBCPP_ALWAYS_INLINE
     bool done() const noexcept {
       _LIBCPP_ASSERT(__is_suspended(),
                      "done() can only be called on suspended coroutines");
-      // FIXME
-#if __has_builtin(__builtin_coro_done)
       return __builtin_coro_done(__handle_);
-#else
-      assert(false && "Method unimplemented");
-      return true;
-#endif
     }
 
 public:
