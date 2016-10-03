@@ -29,6 +29,8 @@ Types:
     max_align_t
     nullptr_t
 
+    byte   // C++17
+
 }  // std
 
 */
@@ -55,6 +57,13 @@ using ::max_align_t;
 typedef long double max_align_t;
 #endif
 
+#if _LIBCPP_STD_VER > 14
+
+enum class byte : unsigned char {};
+
+#endif // _LIBCPP_STD_VER > 14
+
 _LIBCPP_END_NAMESPACE_STD
 
+#include <type_traits>  // for the rest of std::byte
 #endif  // _LIBCPP_CSTDDEF

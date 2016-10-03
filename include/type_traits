@@ -4644,6 +4644,53 @@ struct __can_extract_map_key<_ValTy, _Key, _Key, _RawValTy>
 
 #endif
 
+#if _LIBCPP_STD_VER > 14
+
+// byte
+template <class _Integer>
+_LIBCPP_CONSTEXPR typename enable_if<is_integral_v<_Integer>, byte>::type &
+operator<<=(byte& __lhs, _Integer __shift) _NOEXCEPT
+{ return __lhs = byte(static_cast<unsigned char>(__lhs) << __shift); }
+  
+template <class _Integer>
+_LIBCPP_CONSTEXPR typename enable_if<is_integral_v<_Integer>, byte>::type
+operator<< (byte  __lhs, _Integer __shift) _NOEXCEPT
+{ return         byte(static_cast<unsigned char>(__lhs) << __shift); }
+
+template <class _Integer>
+_LIBCPP_CONSTEXPR typename enable_if<is_integral_v<_Integer>, byte>::type &
+operator>>=(byte& __lhs, _Integer __shift) _NOEXCEPT
+{ return __lhs = byte(static_cast<unsigned char>(__lhs) >> __shift); }
+
+template <class _Integer>
+_LIBCPP_CONSTEXPR typename enable_if<is_integral_v<_Integer>, byte>::type
+operator>> (byte  __lhs, _Integer __shift) _NOEXCEPT
+{ return         byte(static_cast<unsigned char>(__lhs) >> __shift); }
+  
+_LIBCPP_CONSTEXPR byte& operator|=(byte& __lhs, byte __rhs) _NOEXCEPT
+{ return __lhs = byte(static_cast<unsigned char>(__lhs) | static_cast<unsigned char>(__rhs)); }
+_LIBCPP_CONSTEXPR byte  operator| (byte  __lhs, byte __rhs) _NOEXCEPT
+{ return         byte(static_cast<unsigned char>(__lhs) | static_cast<unsigned char>(__rhs)); }
+
+_LIBCPP_CONSTEXPR byte& operator&=(byte& __lhs, byte __rhs) _NOEXCEPT
+{ return __lhs = byte(static_cast<unsigned char>(__lhs) & static_cast<unsigned char>(__rhs)); }
+_LIBCPP_CONSTEXPR byte  operator& (byte  __lhs, byte __rhs) _NOEXCEPT
+{ return         byte(static_cast<unsigned char>(__lhs) & static_cast<unsigned char>(__rhs)); }
+
+_LIBCPP_CONSTEXPR byte& operator^=(byte& __lhs, byte __rhs) _NOEXCEPT 
+{ return __lhs = byte(static_cast<unsigned char>(__lhs) ^ static_cast<unsigned char>(__rhs)); }
+_LIBCPP_CONSTEXPR byte  operator^ (byte  __lhs, byte __rhs) _NOEXCEPT
+{ return         byte(static_cast<unsigned char>(__lhs) ^ static_cast<unsigned char>(__rhs)); }
+
+_LIBCPP_CONSTEXPR byte  operator~ (byte __b) _NOEXCEPT
+{ return  byte(~static_cast<unsigned char>(__b)); }
+
+template <class _Integer>
+_LIBCPP_CONSTEXPR typename enable_if<is_integral_v<_Integer>, _Integer>::type
+  to_integer(byte __b) _NOEXCEPT { return _Integer(__b); }
+
+#endif // _LIBCPP_STD_VER > 14
+
 _LIBCPP_END_NAMESPACE_STD
 
 #endif  // _LIBCPP_TYPE_TRAITS
