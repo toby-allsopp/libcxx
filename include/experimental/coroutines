@@ -58,8 +58,6 @@ template <class P> struct hash<coroutine_handle<P>>;
 #pragma GCC system_header
 #endif
 
-#define __cpp_coroutines // FIXME remove this
-
 #ifndef __cpp_coroutines
 #warning <experimental/coroutines> cannot be used with this compiler
 #endif
