@@ -9,14 +9,21 @@
 //===----------------------------------------------------------------------===//
 
 // UNSUPPORTED: c++98, c++03, c++11
-// REQUIRES: fcoroutines
+// REQUIRES: fcoroutines-ts
 
-// RUN: %build -fcoroutines
+// RUN: %build -fcoroutines-ts
 // RUN: %run
 
 #include <experimental/coroutines>
 
 namespace coro = std::experimental;
+
+template <class T, class = typename T::promise_type>
+constexpr bool has_promise_type(int) { return true; }
+template <class>
+constexpr bool has_promise_type(long) { return false; }
+template <class T>
+constexpr bool has_promise_type() { return has_promise_type<T>(0); }
 
 struct A {
   using promise_type = A*;
@@ -24,6 +31,11 @@ struct A {
 
 struct B {};
 struct C {};
+struct D {
+private:
+  using promise_type = void;
+};
+struct E {};
 
 namespace std { namespace experimental {
   template <>
@@ -42,14 +54,28 @@ namespace std { namespace experimental {
 
 template <class Expect, class T, class ...Args>
 void check_type() {
-  using P = typename coro::coroutine_traits<T, Args...>::promise_type ;
-  static_assert(std::is_same<P, Expect>::value, "");
-};
+  using Traits = coro::coroutine_traits<T, Args...>;
+  static_assert(has_promise_type<Traits>(), "");
+  static_assert(std::is_same<typename Traits::promise_type, Expect>::value, "");
+}
+
+template <class T, class ...Args>
+void check_no_type() {
+  using Traits = coro::coroutine_traits<T, Args...>;
+  static_assert(!has_promise_type<Traits>(), "");
+}
 
 int main()
 {
-  check_type<A*, A>();
-  check_type<int*, A, int>();
-  check_type<B*, B>();
-  check_type<void, C>();
+  {
+    check_type<A*, A>();
+    check_type<int*, A, int>();
+    check_type<B*, B>();
+    check_type<void, C>();
+  }
+  {
+    check_no_type<D>();
+    check_no_type<E>();
+    check_no_type<C, int>();
+  }
 }

@@ -25,6 +25,7 @@ namespace coro = std::experimental;
 using SuspendT = std::experimental::coroutines_v1::suspend_always;
 
 TEST_SAFE_STATIC SuspendT safe_sa;
+constexpr SuspendT constexpr_sa;
 
 constexpr bool check_suspend_constexpr() {
   SuspendT s{};
@@ -41,20 +42,24 @@ int main()
   using S = SuspendT;
   H h{};
   S s{};
+  S const& cs = s;
   {
-    static_assert(noexcept(s.await_ready()) == false, "");
+    LIBCPP_STATIC_ASSERT(noexcept(s.await_ready()), "");
     static_assert(std::is_same<decltype(s.await_ready()), bool>::value, "");
     assert(s.await_ready() == false);
+    assert(cs.await_ready() == false);
   }
   {
-    static_assert(noexcept(s.await_suspend(h)) == false, "");
+    LIBCPP_STATIC_ASSERT(noexcept(s.await_suspend(h)), "");
     static_assert(std::is_same<decltype(s.await_suspend(h)), void>::value, "");
     s.await_suspend(h);
+    cs.await_suspend(h);
   }
   {
-    static_assert(noexcept(s.await_resume()) == false, "");
+    LIBCPP_STATIC_ASSERT(noexcept(s.await_resume()), "");
     static_assert(std::is_same<decltype(s.await_resume()), void>::value, "");
     s.await_resume();
+    cs.await_resume();
   }
   {
     static_assert(std::is_nothrow_default_constructible<S>::value, "");

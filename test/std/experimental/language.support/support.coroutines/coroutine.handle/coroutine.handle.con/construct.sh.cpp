@@ -33,11 +33,19 @@ void do_test() {
   {
     constexpr C c;
     static_assert(std::is_nothrow_default_constructible<C>::value, "");
-    assert(c.address() == nullptr);
+    static_assert(c.address() == nullptr, "");
   }
   {
     constexpr C c(nullptr);
     static_assert(std::is_nothrow_constructible<C, std::nullptr_t>::value, "");
+    static_assert(c.address() == nullptr, "");
+  }
+  {
+    C c;
+    assert(c.address() == nullptr);
+  }
+  {
+    C c(nullptr);
     assert(c.address() == nullptr);
   }
 }

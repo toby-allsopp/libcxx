@@ -30,11 +30,10 @@ namespace coro = std::experimental;
 template <class C>
 void do_test() {
   {
-    using Expect = coro::coroutine_handle<>;
     C c = C::from_address(nullptr);
     static_assert(noexcept(C::from_address(nullptr)), "");
     // FIXME: Should the return type not be 'C'?
-    static_assert(std::is_same<decltype(C::from_address(nullptr)), Expect>::value, "");
+    static_assert(std::is_same<decltype(C::from_address(nullptr)), C>::value, "");
     assert(c.address() == nullptr);
   }
   {
