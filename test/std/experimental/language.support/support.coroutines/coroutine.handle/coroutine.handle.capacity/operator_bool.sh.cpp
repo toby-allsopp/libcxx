@@ -19,22 +19,31 @@
 // template <class Promise = void>
 // struct coroutine_handle;
 
-// void* address() const noexcept
+// constexpr explicit operator bool() const noexcept
 
 #include <experimental/coroutines>
 #include <type_traits>
 #include <cassert>
 
+#include "test_macros.h"
+
 namespace coro = std::experimental;
 
 template <class C>
 void do_test() {
+  static_assert(std::is_nothrow_constructible<bool, C>::value, "");
+  static_assert(!std::is_convertible<C, bool>::value, "");
+  {
+    constexpr C c; ((void)c);
+    static_assert(bool(c) == false, "");
+  }
   { // null case
     const C c = {}; ((void)c);
-    static_assert(noexcept(bool(c)), "");
-    // FIXME: Should the return type not be 'C'?
-    static_assert(std::is_same<decltype(bool(c)), bool>::value, "");
-    static_assert(!std::is_convertible<C, bool>::value, "");
+    ASSERT_NOEXCEPT(bool(c));
+    if (c)
+      assert(false);
+    else
+      assert(true);
     assert(c.address() == nullptr);
     assert(bool(c) == false);
   }

@@ -19,21 +19,26 @@
 // template <class Promise = void>
 // struct coroutine_handle;
 
-// void* address() const noexcept
+// constexpr void* address() const noexcept
 
 #include <experimental/coroutines>
 #include <type_traits>
 #include <cassert>
+
+#include "test_macros.h"
 
 namespace coro = std::experimental;
 
 template <class C>
 void do_test() {
   {
+    constexpr C c; ((void)c);
+    static_assert(c.address() == nullptr, "");
+  }
+  {
     const C c = {}; ((void)c);
-    static_assert(noexcept(c.address()), "");
-    // FIXME: Should the return type not be 'C'?
-    static_assert(std::is_same<decltype(c.address()), void*>::value, "");
+    ASSERT_NOEXCEPT(c.address());
+    ASSERT_SAME_TYPE(decltype(c.address()), void*);
     assert(c.address() == nullptr);
   }
   {
