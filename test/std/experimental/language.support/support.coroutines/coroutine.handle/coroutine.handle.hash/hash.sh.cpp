@@ -23,7 +23,7 @@
 //  template <class P> struct hash<experimental::coroutine_handle<P>>;
 // }
 
-#include <experimental/coroutines>
+#include <experimental/coroutine>
 #include <type_traits>
 #include <memory>
 #include <utility>

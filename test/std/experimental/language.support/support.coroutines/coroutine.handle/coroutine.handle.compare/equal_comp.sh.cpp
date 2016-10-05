@@ -22,7 +22,7 @@
 // bool operator==(coroutine_handle<>, coroutine_handle<>) noexcept
 // bool operator!=(coroutine_handle<>, coroutine_handle<>) noexcept
 
-#include <experimental/coroutines>
+#include <experimental/coroutine>
 #include <type_traits>
 #include <utility>
 #include <cstdint>

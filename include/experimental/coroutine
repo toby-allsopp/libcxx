@@ -1,5 +1,5 @@
 // -*- C++ -*-
-//===----------------------------- coroutines -----------------------------===//
+//===----------------------------- coroutine -----------------------------===//
 //
 //                     The LLVM Compiler Infrastructure
 //
@@ -8,11 +8,11 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef _LIBCPP_EXPERIMENTAL_COROUTINES
-#define _LIBCPP_EXPERIMENTAL_COROUTINES
+#ifndef _LIBCPP_EXPERIMENTAL_COROUTINE
+#define _LIBCPP_EXPERIMENTAL_COROUTINE
 
 /**
-    experimental/coroutines synopsis
+    experimental/coroutine synopsis
 
 // C++next
 
@@ -59,7 +59,7 @@ template <class P> struct hash<coroutine_handle<P>>;
 #endif
 
 #ifndef __cpp_coroutines
-#warning <experimental/coroutines> cannot be used with this compiler
+#warning <experimental/coroutine> cannot be used with this compiler
 #endif
 
 _LIBCPP_BEGIN_NAMESPACE_EXPERIMENTAL_COROUTINES
@@ -252,4 +252,4 @@ struct hash<_VSTD_CORO::coroutine_handle<_Tp> > {
 
 _LIBCPP_END_NAMESPACE_STD
 
-#endif /* _LIBCPP_EXPERIMENTAL_COROUTINES */
+#endif /* _LIBCPP_EXPERIMENTAL_COROUTINE */

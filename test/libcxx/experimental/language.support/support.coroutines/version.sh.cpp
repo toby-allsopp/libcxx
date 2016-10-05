@@ -14,7 +14,7 @@
 // RUN: %build -fcoroutines-ts
 // RUN: %run
 
-#include <experimental/coroutines>
+#include <experimental/coroutine>
 
 #ifndef _LIBCPP_VERSION
 #error _LIBCPP_VERSION must be defined

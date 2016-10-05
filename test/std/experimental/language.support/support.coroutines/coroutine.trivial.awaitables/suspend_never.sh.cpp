@@ -14,7 +14,7 @@
 // RUN: %build -fcoroutines-ts
 // RUN: %run
 
-#include <experimental/coroutines>
+#include <experimental/coroutine>
 #include <type_traits>
 #include <cassert>
 
