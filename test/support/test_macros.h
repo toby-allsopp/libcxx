@@ -22,6 +22,12 @@
 #define TEST_HAS_FEATURE(X) 0
 #endif
 
+#ifdef __has_include
+#define TEST_HAS_INCLUDE(X) __has_include(X)
+#else
+#define TEST_HAS_INCLUDE(X) 0
+#endif
+
 #ifdef __has_extension
 #define TEST_HAS_EXTENSION(X) __has_extension(X)
 #else
@@ -63,7 +69,7 @@
 #endif
 
 // Attempt to deduce GCC version
-#if defined(_LIBCPP_VERSION) && __has_include(<features.h>)
+#if defined(_LIBCPP_VERSION) && TEST_HAS_INCLUDE(<features.h>)
 #include <features.h>
 #define TEST_HAS_GLIBC
 #define TEST_GLIBC_PREREQ(major, minor) __GLIBC_PREREQ(major, minor)
@@ -139,5 +145,16 @@ struct is_same<T, T> { enum {value = 1}; };
 #define ASSERT_SAME_TYPE(...) \
     static_assert(test_macros_detail::is_same<__VA_ARGS__>::value, \
                  "Types differ uexpectedly")
+
+#ifndef TEST_HAS_NO_EXCEPTIONS
+#define TEST_THROW(...) throw __VA_ARGS__
+#else
+#if defined(__GNUC__)
+#define TEST_THROW(...) __builtin_abort()
+#else
+#include <stdlib.h>
+#define TEST_THROW(...) ::abort()
+#endif
+#endif
 
 #endif // SUPPORT_TEST_MACROS_HPP
