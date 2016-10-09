@@ -270,9 +270,13 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${LIBCXX_LIBRARY_DIR})
 # LIBCXX_CXX_FLAGS: General flags for both the compiler and linker.
 # LIBCXX_COMPILE_FLAGS: Compile only flags.
 # LIBCXX_LINK_FLAGS: Linker only flags.
+# LIBCXX_LIBRARIES: libraries libc++ is linked to.
+# LIBCXX_INTERFACE_LIBRARIES: Libraries that must be linked when using libc++
+#                             There libraries are exposed in the linker script.
 set(LIBCXX_COMPILE_FLAGS "")
 set(LIBCXX_LINK_FLAGS "")
 set(LIBCXX_LIBRARIES "")
+set(LIBCXX_INTERFACE_LIBRARIES "")
 
 # Include macros for adding and removing libc++ flags.
 include(HandleLibcxxFlags)
@@ -307,9 +311,12 @@ string(TOUPPER "${CMAKE_BUILD_TYPE}" uppercase_CMAKE_BUILD_TYPE)
 
 include(HandleLibCXXABI) # Setup the ABI library flags
 
-# Remove flags that may have snuck in.
-remove_flags(-DNDEBUG -UNDEBUG -D_DEBUG
-             -stdlib=libc++ -stdlib=libstdc++ -lc++abi -m32)
+if (NOT LIBCXX_STANDALONE_BUILD)
+  # Remove flags that may have snuck in.
+  remove_flags(-DNDEBUG -UNDEBUG -D_DEBUG
+               -lc++abi -m32)
+endif()
+remove_flags(-stdlib=libc++ -stdlib=libstdc++)
 
 # FIXME(EricWF): See the FIXME on LIBCXX_ENABLE_PEDANTIC.
 # Remove the -pedantic flag and -Wno-pedantic and -pedantic-errors
@@ -330,6 +337,8 @@ endif()
 # headers
 add_compile_flags_if_supported(-nostdinc++)
 
+# Let the library headers know they are currently being used to build the
+# library.
 add_definitions(-D_LIBCPP_BUILDING_LIBRARY)
 
 # Warning flags ===============================================================
@@ -454,6 +463,14 @@ config_define_if_not(LIBCXX_ENABLE_THREAD_UNSAFE_C_FUNCTIONS _LIBCPP_HAS_NO_THRE
 config_define_if(LIBCXX_HAS_PTHREAD_API _LIBCPP_HAS_THREAD_API_PTHREAD)
 config_define_if(LIBCXX_HAS_EXTERNAL_THREAD_API _LIBCPP_HAS_THREAD_API_EXTERNAL)
 config_define_if(LIBCXX_HAS_MUSL_LIBC _LIBCPP_HAS_MUSL_LIBC)
+
+# By default libc++ on Windows expects to use a shared library, which requires
+# the headers to use DLL import/export semantics. However when building a
+# static library only we modify the headers to disable DLL import/export.
+if (DEFINED WIN32 AND LIBCXX_ENABLE_STATIC AND NOT LIBCXX_ENABLE_SHARED)
+  message(STATUS "Generating custom __config for non-DLL Windows build")
+  config_define(ON _LIBCPP_DISABLE_DLL_IMPORT_EXPORT)
+endif()
 
 if (LIBCXX_NEEDS_SITE_CONFIG)
   configure_file(
