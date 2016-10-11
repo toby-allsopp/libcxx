@@ -165,10 +165,19 @@ _LIBCPP_BEGIN_NAMESPACE_STD
 
 #if _LIBCPP_STD_VER > 14
 
+_LIBCPP_NORETURN inline _LIBCPP_INLINE_VISIBILITY
+void __throw_bad_variant_access() {
+#ifndef _LIBCPP_NO_EXCEPTIONS
+  throw bad_variant_access();
+#else
+    _VSTD::abort();
+#endif
+}
+
 _LIBCPP_INLINE_VISIBILITY inline constexpr void
 __bad_variant_access_if(bool __val)
 {
-  return __val ? __libcpp_throw(bad_variant_access()) : ((void)0);
+  return __val ? __throw_bad_variant_access() : ((void)0);
 }
 
 template <class... _Types>
@@ -471,7 +480,7 @@ get(const variant<_Types...>&& __v)
   using _VUA = __variant_detail::__variant_access;
   using _Tp = variant_alternative_t<_Idx, variant<_Types...>>;
   if (__v.index() != _Idx)
-    __libcpp_throw(bad_variant_access());
+    __throw_bad_variant_access();
   return static_cast<_Tp const&&>(
     _VUA::__get<_Idx>(__v));
 }
