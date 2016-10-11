@@ -17,7 +17,7 @@
 
 #include "test_macros.h"
 #include "test_iterators.h"
-#include "../../../stack_allocator.h"
+#include "test_allocator.h"
 #include "min_allocator.h"
 #include "asan_testing.h"
 
@@ -40,6 +40,9 @@ struct implicit_conv_allocator : min_allocator<T>
 {
     implicit_conv_allocator(void*) {}
     implicit_conv_allocator(const implicit_conv_allocator&) = default;
+
+    template <class U>
+    implicit_conv_allocator(implicit_conv_allocator<U>) {}
 };
 
 #endif
