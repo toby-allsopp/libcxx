@@ -7,15 +7,17 @@
 //
 //===----------------------------------------------------------------------===//
 
-// <utility>
+// UNSUPPORTED: c++98, c++03, c++11, c++14
 
-// template<class T, T N>
-//   using make_integer_sequence = integer_sequence<T, 0, 1, ..., N-1>;
+// <optional>
 
-// UNSUPPORTED: c++98, c++03, c++11
+// class bad_optional_access is default constructible
 
-// This test hangs during recursive template instantiation with libstdc++
-// UNSUPPORTED: libstdc++
+#include <optional>
+#include <type_traits>
 
-#define _LIBCPP_TESTING_FALLBACK_MAKE_INTEGER_SEQUENCE
-#include "make_integer_seq.fail.cpp"
+int main()
+{
+    using std::bad_optional_access;
+    bad_optional_access ex;
+}

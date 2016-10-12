@@ -7,15 +7,19 @@
 //
 //===----------------------------------------------------------------------===//
 
-// <utility>
+// UNSUPPORTED: c++98, c++03, c++11, c++14
+// <optional>
 
-// template<class T, T N>
-//   using make_integer_sequence = integer_sequence<T, 0, 1, ..., N-1>;
+// struct nullopt_t{see below};
 
-// UNSUPPORTED: c++98, c++03, c++11
+#include <optional>
 
-// This test hangs during recursive template instantiation with libstdc++
-// UNSUPPORTED: libstdc++
+using std::optional;
+using std::nullopt_t;
 
-#define _LIBCPP_TESTING_FALLBACK_MAKE_INTEGER_SEQUENCE
-#include "make_integer_seq.fail.cpp"
+int main()
+{
+    // I roughly interpret LWG2736 as "it shall not be possible to copy-list-initialize nullopt_t with an
+    // empty braced-init-list."
+    nullopt_t foo = {};
+}

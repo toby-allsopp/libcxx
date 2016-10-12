@@ -7,15 +7,16 @@
 //
 //===----------------------------------------------------------------------===//
 
-// <utility>
+// UNSUPPORTED: c++98, c++03, c++11, c++14
+// <optional>
 
-// template<class T, T N>
-//   using make_integer_sequence = integer_sequence<T, 0, 1, ..., N-1>;
+// #include <initializer_list>
 
-// UNSUPPORTED: c++98, c++03, c++11
+#include <optional>
 
-// This test hangs during recursive template instantiation with libstdc++
-// UNSUPPORTED: libstdc++
+int main()
+{
+    using std::optional;
 
-#define _LIBCPP_TESTING_FALLBACK_MAKE_INTEGER_SEQUENCE
-#include "make_integer_seq.fail.cpp"
+    std::initializer_list<int> list;
+}

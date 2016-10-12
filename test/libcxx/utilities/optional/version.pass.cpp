@@ -7,15 +7,14 @@
 //
 //===----------------------------------------------------------------------===//
 
-// <utility>
+// <optional>
 
-// template<class T, T N>
-//   using make_integer_sequence = integer_sequence<T, 0, 1, ..., N-1>;
+#include <optional>
 
-// UNSUPPORTED: c++98, c++03, c++11
+#ifndef _LIBCPP_VERSION
+#error _LIBCPP_VERSION not defined
+#endif
 
-// This test hangs during recursive template instantiation with libstdc++
-// UNSUPPORTED: libstdc++
-
-#define _LIBCPP_TESTING_FALLBACK_MAKE_INTEGER_SEQUENCE
-#include "make_integer_seq.fail.cpp"
+int main()
+{
+}
