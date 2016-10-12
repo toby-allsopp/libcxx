@@ -325,6 +325,9 @@ typedef __char32_t char32_t;
 #if defined(__FreeBSD__)
 #define _LIBCPP_HAS_QUICK_EXIT
 #define _LIBCPP_HAS_C11_FEATURES
+#elif defined(__Fuchsia__)
+#define _LIBCPP_HAS_QUICK_EXIT
+#define _LIBCPP_HAS_C11_FEATURES
 #elif defined(__linux__)
 #if !defined(_LIBCPP_HAS_MUSL_LIBC)
 #if __GLIBC_PREREQ(2, 15) || defined(__BIONIC__)
@@ -832,6 +835,7 @@ extern "C" void __sanitizer_annotate_contiguous_container(
     !defined(_LIBCPP_HAS_THREAD_API_PTHREAD) && \
     !defined(_LIBCPP_HAS_THREAD_API_EXTERNAL)
 # if defined(__FreeBSD__) || \
+    defined(__Fuchsia__) || \
     defined(__NetBSD__) || \
     defined(__linux__) || \
     defined(__APPLE__) || \
@@ -908,6 +912,10 @@ extern "C" void __sanitizer_annotate_contiguous_container(
 #define _LIBCPP_SAFE_STATIC __attribute__((__require_constant_initialization__))
 #else
 #define _LIBCPP_SAFE_STATIC
+#endif
+
+#if !__has_builtin(__builtin_addressof) && _GNUC_VER < 700
+#define _LIBCPP_HAS_NO_BUILTIN_ADDRESSOF
 #endif
 
 #endif // __cplusplus
