@@ -1,4 +1,3 @@
-{'type': 'FUNC', 'name': '__ZNKSt12bad_any_cast4whatEv'}
 {'type': 'FUNC', 'name': '__ZNKSt12experimental15fundamentals_v112bad_any_cast4whatEv'}
 {'type': 'FUNC', 'name': '__ZNKSt16nested_exception14rethrow_nestedEv'}
 {'type': 'FUNC', 'name': '__ZNKSt3__110__time_put8__do_putEPcRS1_PK2tmcc'}
@@ -447,9 +446,6 @@
 {'type': 'FUNC', 'name': '__ZNSt16nested_exceptionD0Ev'}
 {'type': 'FUNC', 'name': '__ZNSt16nested_exceptionD1Ev'}
 {'type': 'FUNC', 'name': '__ZNSt16nested_exceptionD2Ev'}
-{'type': 'FUNC', 'name': '__ZNSt19bad_optional_accessD0Ev'}
-{'type': 'FUNC', 'name': '__ZNSt19bad_optional_accessD1Ev'}
-{'type': 'FUNC', 'name': '__ZNSt19bad_optional_accessD2Ev'}
 {'type': 'FUNC', 'name': '__ZNSt3__110__time_getC1EPKc'}
 {'type': 'FUNC', 'name': '__ZNSt3__110__time_getC1ERKNS_12basic_stringIcNS_11char_traitsIcEENS_9allocatorIcEEEE'}
 {'type': 'FUNC', 'name': '__ZNSt3__110__time_getC2EPKc'}
@@ -1853,9 +1849,7 @@
 {'type': 'OBJECT', 'name': '__ZTINSt3__19money_putIwNS_19ostreambuf_iteratorIwNS_11char_traitsIwEEEEEE', 'size': 0}
 {'type': 'OBJECT', 'name': '__ZTINSt3__19strstreamE', 'size': 0}
 {'type': 'OBJECT', 'name': '__ZTINSt3__19time_baseE', 'size': 0}
-{'type': 'OBJECT', 'name': '__ZTISt12bad_any_cast', 'size': 0}
 {'type': 'OBJECT', 'name': '__ZTISt16nested_exception', 'size': 0}
-{'type': 'OBJECT', 'name': '__ZTISt19bad_optional_access', 'size': 0}
 {'type': 'OBJECT', 'name': '__ZTSNSt12experimental15fundamentals_v112bad_any_castE', 'size': 0}
 {'type': 'OBJECT', 'name': '__ZTSNSt12experimental19bad_optional_accessE', 'size': 0}
 {'type': 'OBJECT', 'name': '__ZTSNSt3__110ctype_baseE', 'size': 0}
@@ -1933,9 +1927,7 @@
 {'type': 'OBJECT', 'name': '__ZTSNSt3__19money_putIwNS_19ostreambuf_iteratorIwNS_11char_traitsIwEEEEEE', 'size': 0}
 {'type': 'OBJECT', 'name': '__ZTSNSt3__19strstreamE', 'size': 0}
 {'type': 'OBJECT', 'name': '__ZTSNSt3__19time_baseE', 'size': 0}
-{'type': 'OBJECT', 'name': '__ZTSSt12bad_any_cast', 'size': 0}
 {'type': 'OBJECT', 'name': '__ZTSSt16nested_exception', 'size': 0}
-{'type': 'OBJECT', 'name': '__ZTSSt19bad_optional_access', 'size': 0}
 {'type': 'OBJECT', 'name': '__ZTTNSt3__110istrstreamE', 'size': 0}
 {'type': 'OBJECT', 'name': '__ZTTNSt3__110ostrstreamE', 'size': 0}
 {'type': 'OBJECT', 'name': '__ZTTNSt3__113basic_istreamIcNS_11char_traitsIcEEEE', 'size': 0}
@@ -2035,9 +2027,7 @@
 {'type': 'OBJECT', 'name': '__ZTVNSt3__19money_putIcNS_19ostreambuf_iteratorIcNS_11char_traitsIcEEEEEE', 'size': 0}
 {'type': 'OBJECT', 'name': '__ZTVNSt3__19money_putIwNS_19ostreambuf_iteratorIwNS_11char_traitsIwEEEEEE', 'size': 0}
 {'type': 'OBJECT', 'name': '__ZTVNSt3__19strstreamE', 'size': 0}
-{'type': 'OBJECT', 'name': '__ZTVSt12bad_any_cast', 'size': 0}
 {'type': 'OBJECT', 'name': '__ZTVSt16nested_exception', 'size': 0}
-{'type': 'OBJECT', 'name': '__ZTVSt19bad_optional_access', 'size': 0}
 {'type': 'U', 'name': '__DefaultRuneLocale'}
 {'type': 'U', 'name': '__Unwind_Resume'}
 {'type': 'U', 'name': '__ZNKSt10bad_typeid4whatEv'}
@@ -2408,7 +2398,6 @@
 {'type': 'U', 'name': '_pthread_mutexattr_init'}
 {'type': 'U', 'name': '_pthread_mutexattr_settype'}
 {'type': 'U', 'name': '_pthread_self'}
-{'type': 'U', 'name': '_pthread_setspecific'}
 {'type': 'U', 'name': '_read'}
 {'type': 'U', 'name': '_realloc'}
 {'type': 'U', 'name': '_sched_yield'}
