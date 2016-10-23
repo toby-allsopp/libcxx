@@ -6,7 +6,7 @@ if(WIN32)
   file(GLOB LIBCXX_WIN32_SOURCES ../src/support/win32/*.cpp)
   list(APPEND LIBCXX_SOURCES ${LIBCXX_WIN32_SOURCES})
 elseif("${CMAKE_SYSTEM_NAME}" STREQUAL "SunOS")
-  file(GLOB LIBCXX_SOLARIS_SOURCES ../src/support/solaris/*.c)
+  file(GLOB LIBCXX_SOLARIS_SOURCES ../src/support/solaris/*.cpp)
   list(APPEND LIBCXX_SOURCES ${LIBCXX_SOLARIS_SOURCES})
 endif()
 
@@ -197,10 +197,6 @@ endif()
 
 # Add a meta-target for both libraries.
 add_custom_target(cxx DEPENDS ${LIBCXX_TARGETS})
-
-if (DEFINED LIBCXX_CXX_ABI_DEPS)
-  add_dependencies(cxx LIBCXX_CXX_ABI_DEPS)
-endif()
 
 if (LIBCXX_ENABLE_EXPERIMENTAL_LIBRARY)
   file(GLOB LIBCXX_EXPERIMENTAL_SOURCES ../src/experimental/*.cpp)

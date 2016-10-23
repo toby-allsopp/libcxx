@@ -8,13 +8,11 @@
 //===----------------------------------------------------------------------===//
 
 // UNSUPPORTED: c++98, c++03, c++11, c++14
-
-// test operator new nothrow by replacing only operator new
-
 // UNSUPPORTED: sanitizer-new-delete
 
-// TODO Investigate why UBSAN prevents nothrow new from calling our replacement.
-// XFAIL: ubsan
+// XFAIL: no-aligned-allocation
+
+// test operator new nothrow by replacing only operator new
 
 #include <new>
 #include <cstddef>
