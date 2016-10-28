@@ -78,7 +78,7 @@ public:
 
     switch (State) {
     case PS_BeforeBegin: {
-      PosPtr TkEnd = consumeSeperator(Start, End);
+      PosPtr TkEnd = consumeSeparator(Start, End);
       if (TkEnd && TkEnd == Start + 2) {
         auto NameEnd = consumeName(TkEnd, End);
         if (NameEnd)
@@ -96,7 +96,7 @@ public:
     }
 
     case PS_InRootName: {
-      PosPtr TkPtr = consumeSeperator(Start, End);
+      PosPtr TkPtr = consumeSeparator(Start, End);
       assert(TkPtr);
       return makeState(PS_InRootDir, Start, TkPtr);
     }
@@ -108,7 +108,7 @@ public:
     }
 
     case PS_InPaths: {
-      PosPtr SepEnd = consumeSeperator(Start, End);
+      PosPtr SepEnd = consumeSeparator(Start, End);
       assert(SepEnd);
       if (SepEnd != End) {
         PosPtr TkEnd = consumeName(SepEnd, End);
@@ -134,7 +134,7 @@ public:
     switch (State) {
     case PS_AfterEnd: {
       PosPtr TkStart = nullptr;
-      PosPtr SepEnd = consumeSeperator(RStart, REnd);
+      PosPtr SepEnd = consumeSeparator(RStart, REnd);
       if (SepEnd) {
         if (SepEnd == REnd)
           return makeState((RStart == REnd + 2) ? PS_InRootName : PS_InRootDir,
@@ -148,7 +148,7 @@ public:
         assert(TkStart);
         if (RStart - TkStart == 1 && *TkStart == '.')
           return makeState(PS_InTrailingSep, TkStart + 1, RStart + 1);
-        else if (TkStart == REnd + 2 && consumeSeperator(TkStart, REnd) == REnd)
+        else if (TkStart == REnd + 2 && consumeSeparator(TkStart, REnd) == REnd)
           return makeState(PS_InRootName, Path.data(), RStart + 1);
         else
           return makeState(PS_InPaths, TkStart + 1, RStart + 1);
@@ -161,14 +161,14 @@ public:
       return makeState(PS_InPaths, TkEnd + 1, RStart + 1);
     }
     case PS_InPaths: {
-      PosPtr SepEnd = consumeSeperator(RStart, REnd);
+      PosPtr SepEnd = consumeSeparator(RStart, REnd);
       assert(SepEnd);
       if (SepEnd == REnd)
         return makeState((RStart == REnd + 2) ? PS_InRootName : PS_InRootDir,
                          Path.data(), RStart + 1);
       PosPtr TkEnd = consumeName(SepEnd, REnd);
       assert(TkEnd);
-      if (TkEnd == REnd + 2 && consumeSeperator(TkEnd, REnd) == REnd)
+      if (TkEnd == REnd + 2 && consumeSeparator(TkEnd, REnd) == REnd)
         return makeState(PS_InRootDir, SepEnd + 1, RStart + 1);
       return makeState(PS_InPaths, TkEnd + 1, SepEnd + 1);
     }
@@ -241,7 +241,7 @@ private:
     }
   }
 
-  PosPtr consumeSeperator(PosPtr P, PosPtr End) const {
+  PosPtr consumeSeparator(PosPtr P, PosPtr End) const {
     if (P == End || *P != '/')
       return nullptr;
     const int Inc = P < End ? 1 : -1;
