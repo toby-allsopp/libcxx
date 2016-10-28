@@ -14,22 +14,17 @@
 
 #define PRINT(x) std::cout << #x << " = " << x << std::endl
 
-_LIBCPP_BEGIN_NAMESPACE_EXPERIMENTAL_FILESYSTEM
-
-_LIBCPP_CONSTEXPR path::value_type path::preferred_separator;
-
-
-using string_view_t = path::__string_view;
-using string_type_t = path::string_type;
-
 namespace { namespace parser
 {
+using namespace std;
+using namespace std::experimental::filesystem;
 
-using value_type = path::value_type;
+using string_view_t = path::__string_view;
 using string_view_pair = pair<string_view_t, string_view_t>;
 
 struct PathParser {
   enum ParserState : unsigned char {
+    // Zero is a special sentinel value used by default constructed iterators.
     PS_BeforeBegin = 1,
     PS_InRootName,
     PS_InRootDir,
@@ -79,7 +74,10 @@ public:
     switch (State) {
     case PS_BeforeBegin: {
       PosPtr TkEnd = consumeSeparator(Start, End);
+      // If we consumed exactly two separators we have a root name.
       if (TkEnd && TkEnd == Start + 2) {
+        // FIXME Do we need to consume a name or is '//' a root name on its own?
+        // what about '//.', '//..', '//...'?
         auto NameEnd = consumeName(TkEnd, End);
         if (NameEnd)
           TkEnd = NameEnd;
@@ -87,25 +85,14 @@ public:
       }
       else if (TkEnd)
         return makeState(PS_InRootDir, Start, TkEnd);
-      else {
-        TkEnd = consumeName(Start, End);
-        assert(TkEnd);
-        return makeState(PS_InPaths, Start, TkEnd);
-      }
-      _LIBCPP_UNREACHABLE();
+      else
+        return makeState(PS_InPaths, Start, consumeName(Start, End));
     }
 
-    case PS_InRootName: {
-      PosPtr TkPtr = consumeSeparator(Start, End);
-      assert(TkPtr);
-      return makeState(PS_InRootDir, Start, TkPtr);
-    }
-
-    case PS_InRootDir: {
-      PosPtr TkPtr = consumeName(Start, End);
-      assert(TkPtr);
-      return makeState(PS_InPaths, Start, TkPtr);
-    }
+    case PS_InRootName:
+      return makeState(PS_InRootDir, Start, consumeSeparator(Start, End));
+    case PS_InRootDir:
+      return makeState(PS_InPaths, Start, consumeName(Start, End));
 
     case PS_InPaths: {
       PosPtr SepEnd = consumeSeparator(Start, End);
@@ -133,33 +120,28 @@ public:
 
     switch (State) {
     case PS_AfterEnd: {
-      PosPtr TkStart = nullptr;
-      PosPtr SepEnd = consumeSeparator(RStart, REnd);
-      if (SepEnd) {
+      // Try to consume a trailing separator or root directory first.
+      // Otherwi
+      if (PosPtr SepEnd = consumeSeparator(RStart, REnd)) {
         if (SepEnd == REnd)
           return makeState((RStart == REnd + 2) ? PS_InRootName : PS_InRootDir,
                            Path.data(), RStart + 1);
-        // Check if we're seeing the root directory seperator
+        // Check if we're seeing the root directory separator
         auto PP = CreateBegin(Path);
         bool InRootDir = PP.State == PS_InRootName && &PP.Entry.back() == SepEnd;
-        return makeState(InRootDir ? PS_InRootDir : PS_InTrailingSep, SepEnd + 1, RStart + 1);
+        return makeState(InRootDir ? PS_InRootDir : PS_InTrailingSep,
+                         SepEnd + 1, RStart + 1);
       } else {
-        TkStart = consumeName(RStart, REnd);
+        PosPtr TkStart = consumeName(RStart, REnd);
         assert(TkStart);
-        if (RStart - TkStart == 1 && *TkStart == '.')
-          return makeState(PS_InTrailingSep, TkStart + 1, RStart + 1);
-        else if (TkStart == REnd + 2 && consumeSeparator(TkStart, REnd) == REnd)
+        if (TkStart == REnd + 2 && consumeSeparator(TkStart, REnd) == REnd)
           return makeState(PS_InRootName, Path.data(), RStart + 1);
         else
           return makeState(PS_InPaths, TkStart + 1, RStart + 1);
       }
-      _LIBCPP_UNREACHABLE();
     }
-    case PS_InTrailingSep: {
-      PosPtr TkEnd = consumeName(RStart, REnd);
-      assert(TkEnd);
-      return makeState(PS_InPaths, TkEnd + 1, RStart + 1);
-    }
+    case PS_InTrailingSep:
+      return makeState(PS_InPaths, consumeName(RStart, REnd) + 1, RStart + 1);
     case PS_InPaths: {
       PosPtr SepEnd = consumeSeparator(RStart, REnd);
       assert(SepEnd);
@@ -225,6 +207,7 @@ private:
     case PS_AfterEnd:
       return &Path.back() + 1;
     }
+    _LIBCPP_UNREACHABLE();
   }
 
   PosPtr getLastTokenStartPos() const {
@@ -239,6 +222,7 @@ private:
     case PS_AfterEnd:
       return &Path.back() + 1;
     }
+    _LIBCPP_UNREACHABLE();
   }
 
   PosPtr consumeSeparator(PosPtr P, PosPtr End) const {
@@ -248,18 +232,6 @@ private:
     P += Inc;
     while (P != End && *P == '/')
       P += Inc;
-    return P;
-  }
-
-  PosPtr consumeDotOrDotDot(PosPtr P, PosPtr End) const {
-    const int Inc = P < End ? 1 : -1;
-    int Consumed = 0;
-    while (P != End && Consumed < 2 && *P == '.') {
-      P += Inc;
-      Consumed += 1;
-    }
-    if (Consumed == 0 || (P != End && *P != '/'))
-      return nullptr;
     return P;
   }
 
@@ -281,12 +253,19 @@ string_view_pair separate_filename(string_view_t const & s) {
     return string_view_pair{s.substr(0, pos), s.substr(pos)};
 }
 
-
 }} // namespace parser
+
+_LIBCPP_BEGIN_NAMESPACE_EXPERIMENTAL_FILESYSTEM
+
+using parser::string_view_t;
+using parser::string_view_pair;
+using parser::PathParser;
 
 ///////////////////////////////////////////////////////////////////////////////
 //                            path definitions
 ///////////////////////////////////////////////////////////////////////////////
+
+constexpr path::value_type path::preferred_separator;
 
 path & path::replace_extension(path const & replacement)
 {
@@ -305,8 +284,6 @@ path & path::replace_extension(path const & replacement)
 
 ///////////////////////////////////////////////////////////////////////////////
 // path.decompose
-
-using parser::PathParser;
 
 string_view_t path::__root_name() const
 {
@@ -442,7 +419,6 @@ path::iterator path::end() const
     iterator it{};
     it.__state_ = PathParser::PS_AfterEnd;
     it.__path_ptr_ = this;
-
     return it;
 }
 
