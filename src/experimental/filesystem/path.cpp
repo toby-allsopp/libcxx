@@ -9,6 +9,10 @@
 #include "experimental/filesystem"
 #include "string_view"
 #include "utility"
+#include "cassert"
+#include "iostream"
+
+#define PRINT(x) std::cout << #x << " = " << x << std::endl
 
 _LIBCPP_BEGIN_NAMESPACE_EXPERIMENTAL_FILESYSTEM
 
@@ -16,12 +20,253 @@ _LIBCPP_CONSTEXPR path::value_type path::preferred_separator;
 
 
 using string_view_t = path::__string_view;
+using string_type_t = path::string_type;
 
 namespace { namespace parser
 {
 
 using value_type = path::value_type;
 using string_view_pair = pair<string_view_t, string_view_t>;
+
+struct PathParser {
+  enum ParserState {
+    PS_BeforeBegin,
+    PS_InRootName,
+    PS_InRootDir,
+    PS_InPaths,
+    PS_InTrailingSep,
+    PS_AfterEnd
+  };
+  using StrPtr = const path::string_type*;
+  const StrPtr Path;
+  string_view_t Entry;
+  ParserState State;
+
+  using PosPtr = path::value_type const*;
+private:
+  PathParser(StrPtr P, ParserState State)
+      : Path(P), State(State) {}
+
+public:
+  static PathParser CreateBegin(StrPtr P) {
+    PathParser PP(P, PS_BeforeBegin);
+    PP.increment();
+    return PP;
+  }
+
+  static PathParser CreateEnd(StrPtr P) {
+    PathParser PP(P, PS_AfterEnd);
+    return PP;
+  }
+
+  PosPtr peek() const {
+    auto End = &Path->back() + 1;
+    auto TkEnd = getLastTokenEndPos();
+    return TkEnd == End ? nullptr : TkEnd;
+  }
+
+  bool canIncrement() const {
+    return !Path->empty() && State != PS_AfterEnd;
+  }
+  bool canDecrement() const {
+    return !Path->empty() && State != PS_BeforeBegin && Entry.data() != Path->data();
+  }
+
+  void increment() {
+    const PosPtr End = &Path->back() + 1;
+    const PosPtr Start = getLastTokenEndPos();
+    if (Start == End)
+      return makeState(PS_AfterEnd);
+
+    switch (State) {
+    case PS_BeforeBegin: {
+      PosPtr TkEnd = consumeSeperator(Start, End);
+      if (TkEnd && TkEnd == Start + 2) {
+        auto NameEnd = consumeName(TkEnd, End);
+        if (NameEnd)
+          TkEnd = NameEnd;
+        return makeState(PS_InRootName, Start, TkEnd);
+      }
+      else if (TkEnd)
+        return makeState(PS_InRootDir, Start, TkEnd);
+      else {
+        TkEnd = consumeName(Start, End);
+        assert(TkEnd);
+        return makeState(PS_InPaths, Start, TkEnd);
+      }
+      _LIBCPP_UNREACHABLE();
+    }
+
+    case PS_InRootName: {
+      PosPtr TkPtr = consumeSeperator(Start, End);
+      assert(TkPtr);
+      return makeState(PS_InRootDir, Start, TkPtr);
+    }
+
+    case PS_InRootDir: {
+      PosPtr TkPtr = consumeName(Start, End);
+      assert(TkPtr);
+      return makeState(PS_InPaths, Start, End);
+    }
+
+    case PS_InPaths: {
+      PosPtr SepEnd = consumeSeperator(Start, End);
+      assert(SepEnd);
+      if (SepEnd != End) {
+        PosPtr TkEnd = consumeName(SepEnd, End);
+        if (TkEnd)
+          return makeState(PS_InPaths, SepEnd, TkEnd);
+      }
+      return makeState(PS_InTrailingSep, Start, SepEnd);
+    }
+
+    case PS_InTrailingSep:
+      return makeState(PS_AfterEnd);
+
+    case PS_AfterEnd:
+      _LIBCPP_UNREACHABLE();
+    }
+  }
+
+  void decrement() {
+    const PosPtr REnd = &Path->front() - 1;
+    const PosPtr RStart = getLastTokenStartPos() - 1;
+    assert(RStart != REnd);
+
+    switch (State) {
+    case PS_AfterEnd: {
+      PosPtr TkStart = nullptr;
+      PosPtr SepEnd = consumeSeperator(RStart, REnd);
+      if (SepEnd) {
+        if (SepEnd == REnd)
+          return makeState((RStart == REnd + 2) ? PS_InRootName : PS_InRootDir,
+                           Path->data(), RStart + 1);
+        return makeState(PS_InTrailingSep, SepEnd + 1, RStart + 1);
+      } else {
+        TkStart = consumeName(RStart, REnd);
+        assert(TkStart);
+        if (RStart - TkStart == 1 && *TkStart == '.')
+          return makeState(PS_InTrailingSep, TkStart + 1, RStart + 1);
+        else if (TkStart == REnd + 2 && consumeSeperator(TkStart, REnd) == REnd)
+          return makeState(PS_InRootName, Path->data(), RStart + 1);
+        else
+          return makeState(PS_InPaths, TkStart + 1, RStart + 1);
+      }
+      _LIBCPP_UNREACHABLE();
+    }
+    case PS_InTrailingSep: {
+      PosPtr TkEnd = consumeName(RStart, REnd);
+      assert(TkEnd);
+      return makeState(PS_InPaths, TkEnd + 1, RStart + 1);
+    }
+    case PS_InPaths: {
+      PosPtr SepEnd = consumeSeperator(RStart, REnd);
+      assert(SepEnd);
+      if (SepEnd == REnd)
+        return makeState((RStart == REnd + 2) ? PS_InRootName : PS_InRootDir,
+                         Path->data(), RStart + 1);
+      PosPtr TkEnd = consumeName(SepEnd, REnd);
+      assert(TkEnd);
+      return makeState(PS_InPaths, TkEnd + 1, SepEnd + 1);
+    }
+    case PS_InRootDir:
+      return makeState(PS_InRootName, Path->data(), RStart + 1);
+    case PS_InRootName:
+    case PS_BeforeBegin:
+      _LIBCPP_UNREACHABLE();
+    }
+  }
+
+  string_view_t extract_preferred() const {
+    switch (State) {
+    case PS_BeforeBegin:
+    case PS_AfterEnd:
+      return "";
+    case PS_InRootDir:
+      return "/";
+    case PS_InTrailingSep:
+      return ".";
+    case PS_InRootName:
+    case PS_InPaths:
+      return Entry;
+    }
+    _LIBCPP_UNREACHABLE();
+  }
+
+private:
+  void makeState(ParserState NewState, PosPtr Start, PosPtr End) {
+    assert(NewState != PS_BeforeBegin && NewState != PS_AfterEnd);
+    State = NewState;
+    assert(Start < End);
+    assert(Start >= &Path->front() && End <= &Path->back() + 1);
+    Entry = string_view_t(Start, End - Start);
+  }
+  void makeState(ParserState NewState) {
+    assert(NewState == PS_BeforeBegin || NewState == PS_AfterEnd);
+    State = NewState;
+    Entry = {};
+  }
+
+  PosPtr getLastTokenEndPos() const {
+    switch (State) {
+    case PS_BeforeBegin:
+      return &Path->front();
+    case PS_InRootName:
+    case PS_InRootDir:
+    case PS_InPaths:
+      return &Entry.back() + 1;
+    case PS_InTrailingSep:
+    case PS_AfterEnd:
+      return &Path->back() + 1;
+    }
+  }
+
+  PosPtr getLastTokenStartPos() const {
+    switch (State) {
+    case PS_BeforeBegin:
+    case PS_InRootName:
+      return &Path->front();
+    case PS_InRootDir:
+    case PS_InPaths:
+    case PS_InTrailingSep:
+      return &Entry.front();
+    case PS_AfterEnd:
+      return &Path->back() + 1;
+    }
+  }
+
+  PosPtr consumeSeperator(PosPtr P, PosPtr End) const {
+    if (P == End || *P != '/')
+      return nullptr;
+    const int Inc = P < End ? 1 : -1;
+    P += Inc;
+    while (P != End && *P == '/')
+      P += Inc;
+    return P;
+  }
+
+  PosPtr consumeDotOrDotDot(PosPtr P, PosPtr End) const {
+    const int Inc = P < End ? 1 : -1;
+    int Consumed = 0;
+    while (P != End && Consumed < 2 && *P == '.') {
+      P += Inc;
+      Consumed += 1;
+    }
+    if (Consumed == 0 || (P != End && *P != '/'))
+      return nullptr;
+    return P;
+  }
+
+  PosPtr consumeName(PosPtr P, PosPtr End) const {
+    if (P == End || *P == '/')
+      return nullptr;
+    const int Inc = P < End ? 1 : -1;
+    P += Inc;
+    while (P != End && *P != '/')
+      P += Inc;
+    return P;
+  }
+};
 
 // status reporting
 constexpr size_t npos = static_cast<size_t>(-1);
@@ -261,60 +506,78 @@ path & path::replace_extension(path const & replacement)
 ///////////////////////////////////////////////////////////////////////////////
 // path.decompose
 
+using parser::PathParser;
+
 string_view_t path::__root_name() const
 {
-    return parser::is_root_name(__pn_, 0)
-      ? parser::extract_preferred(__pn_, 0)
-      : string_view_t{};
+    auto PP = PathParser::CreateBegin(&__pn_);
+    if (PP.State == PathParser::PS_InRootName)
+      return PP.extract_preferred();
+    return {};
 }
 
 string_view_t path::__root_directory() const
 {
-    auto start_i = parser::root_directory_start(__pn_);
-    if(!parser::good(start_i)) {
-        return {};
-    }
-    return parser::extract_preferred(__pn_, start_i);
+    auto PP = PathParser::CreateBegin(&__pn_);
+    if (PP.State == PathParser::PS_InRootName)
+      PP.increment();
+    if (PP.State == PathParser::PS_InRootDir)
+      return PP.extract_preferred();
+    return {};
 }
 
 string_view_t path::__root_path_raw() const
 {
-    size_t e = parser::root_directory_end(__pn_);
-    if (!parser::good(e))
-      e = parser::root_name_end(__pn_);
-    if (parser::good(e))
-      return string_view_t{__pn_}.substr(0, e + 1);
+    auto PP = PathParser::CreateBegin(&__pn_);
+    if (PP.State == PathParser::PS_InRootName) {
+      auto NextCh = PP.peek();
+      if (NextCh && *NextCh == '/')
+        return {__pn_.data(), (size_t)(NextCh - __pn_.data())};
+      return PP.Entry;
+    }
+    if (PP.State == PathParser::PS_InRootDir)
+      return PP.extract_preferred();
     return {};
 }
 
 string_view_t path::__relative_path() const
 {
-    if (empty()) {
-        return __pn_;
-    }
-    auto end_i = parser::root_directory_end(__pn_);
-    if (not parser::good(end_i)) {
-        end_i = parser::root_name_end(__pn_);
-    }
-    if (not parser::good(end_i)) {
-        return __pn_;
-    }
-    return string_view_t(__pn_).substr(end_i+1);
+    auto PP = PathParser::CreateBegin(&__pn_);
+    while (PP.State <= PathParser::PS_InRootDir)
+      PP.increment();
+    if (PP.State == PathParser::PS_AfterEnd)
+      return {};
+    auto Data = PP.Entry.data();
+    assert(Data);
+    const size_t DataSize = __pn_.size() - static_cast<size_t>(Data - __pn_.data());
+    return {Data, DataSize};
 }
 
 string_view_t path::__parent_path() const
 {
-    if (empty() || pbegin(*this) == --pend(*this)) {
-        return {};
-    }
-    auto end_it = --(--pend(*this));
-    auto end_i = parser::end_of(__pn_, end_it.__pos_);
-    return string_view_t(__pn_).substr(0, end_i+1);
+    PRINT(__pn_);
+    if (empty())
+      return {};
+    auto PP = PathParser::CreateEnd(&__pn_);
+    PP.decrement();
+    PRINT(PP.Entry);
+    if (PP.Entry.data() == __pn_.data())
+      return {};
+    PP.decrement();
+    assert(PP.State != PathParser::PS_BeforeBegin);
+    PRINT(PP.Entry);
+    size_t DataSize = size_t(&PP.Entry.back() - __pn_.data()) + 1;
+    string_view_t SV{__pn_.data(), DataSize};
+    PRINT(SV);
+    return SV;
 }
 
 string_view_t path::__filename() const
 {
-    return empty() ? string_view_t{} : *--pend(*this);
+    if (empty()) return {};
+    auto PP = PathParser::CreateEnd(&__pn_);
+    PP.decrement();
+    return PP.extract_preferred();
 }
 
 string_view_t path::__stem() const
