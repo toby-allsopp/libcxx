@@ -168,12 +168,10 @@ public:
       if (SepEnd == REnd)
         return makeState((RStart == REnd + 2) ? PS_InRootName : PS_InRootDir,
                          Path->data(), RStart + 1);
-      // Check if we're seeing the root directory seperator
-      auto PP = CreateBegin(Path);
-      if (PP.State == PS_InRootName && &PP.Entry.back() == SepEnd)
-        return makeState(PS_InRootDir, SepEnd + 1, RStart + 1);
       PosPtr TkEnd = consumeName(SepEnd, REnd);
       assert(TkEnd);
+      if (TkEnd == REnd + 2 && consumeSeperator(TkEnd, REnd) == REnd)
+        return makeState(PS_InRootDir, SepEnd + 1, RStart + 1);
       return makeState(PS_InPaths, TkEnd + 1, SepEnd + 1);
     }
     case PS_InRootDir:
