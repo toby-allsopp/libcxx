@@ -37,48 +37,41 @@ struct PathParser {
     PS_InTrailingSep,
     PS_AfterEnd
   };
-  using StrPtr = const path::string_type*;
-  const StrPtr Path;
+  const string_view_t Path;
   string_view_t Entry;
   ParserState State;
 
   using PosPtr = path::value_type const*;
 private:
-  PathParser(StrPtr P, ParserState State)
+  using StrPtr = string const*;
+  PathParser(string_view_t P, ParserState State)
       : Path(P), State(State) {}
 
 public:
-  PathParser(StrPtr P, string_view_t E, unsigned char S)
+  PathParser(string_view_t P, string_view_t E, unsigned char S)
       : Path(P), Entry(E), State(static_cast<ParserState>(S)) {
     assert(S != 0);
   }
 
-  static PathParser CreateBegin(StrPtr P) {
+  static PathParser CreateBegin(string_view_t P) {
     PathParser PP(P, PS_BeforeBegin);
     PP.increment();
     return PP;
   }
 
-  static PathParser CreateEnd(StrPtr P) {
+  static PathParser CreateEnd(string_view_t P) {
     PathParser PP(P, PS_AfterEnd);
     return PP;
   }
 
   PosPtr peek() const {
-    auto End = &Path->back() + 1;
+    auto End = &Path.back() + 1;
     auto TkEnd = getLastTokenEndPos();
     return TkEnd == End ? nullptr : TkEnd;
   }
 
-  bool canIncrement() const {
-    return !Path->empty() && State != PS_AfterEnd;
-  }
-  bool canDecrement() const {
-    return !Path->empty() && State != PS_BeforeBegin && Entry.data() != Path->data();
-  }
-
   void increment() {
-    const PosPtr End = &Path->back() + 1;
+    const PosPtr End = &Path.back() + 1;
     const PosPtr Start = getLastTokenEndPos();
     if (Start == End)
       return makeState(PS_AfterEnd);
@@ -134,7 +127,7 @@ public:
   }
 
   void decrement() {
-    const PosPtr REnd = &Path->front() - 1;
+    const PosPtr REnd = &Path.front() - 1;
     const PosPtr RStart = getLastTokenStartPos() - 1;
     assert(RStart != REnd);
 
@@ -145,7 +138,7 @@ public:
       if (SepEnd) {
         if (SepEnd == REnd)
           return makeState((RStart == REnd + 2) ? PS_InRootName : PS_InRootDir,
-                           Path->data(), RStart + 1);
+                           Path.data(), RStart + 1);
         // Check if we're seeing the root directory seperator
         auto PP = CreateBegin(Path);
         bool InRootDir = PP.State == PS_InRootName && &PP.Entry.back() == SepEnd;
@@ -156,7 +149,7 @@ public:
         if (RStart - TkStart == 1 && *TkStart == '.')
           return makeState(PS_InTrailingSep, TkStart + 1, RStart + 1);
         else if (TkStart == REnd + 2 && consumeSeperator(TkStart, REnd) == REnd)
-          return makeState(PS_InRootName, Path->data(), RStart + 1);
+          return makeState(PS_InRootName, Path.data(), RStart + 1);
         else
           return makeState(PS_InPaths, TkStart + 1, RStart + 1);
       }
@@ -172,7 +165,7 @@ public:
       assert(SepEnd);
       if (SepEnd == REnd)
         return makeState((RStart == REnd + 2) ? PS_InRootName : PS_InRootDir,
-                         Path->data(), RStart + 1);
+                         Path.data(), RStart + 1);
       PosPtr TkEnd = consumeName(SepEnd, REnd);
       assert(TkEnd);
       if (TkEnd == REnd + 2 && consumeSeperator(TkEnd, REnd) == REnd)
@@ -180,7 +173,7 @@ public:
       return makeState(PS_InPaths, TkEnd + 1, SepEnd + 1);
     }
     case PS_InRootDir:
-      return makeState(PS_InRootName, Path->data(), RStart + 1);
+      return makeState(PS_InRootName, Path.data(), RStart + 1);
     case PS_InRootName:
     case PS_BeforeBegin:
       _LIBCPP_UNREACHABLE();
@@ -203,12 +196,15 @@ public:
     _LIBCPP_UNREACHABLE();
   }
 
+  bool good() const {
+    return State != PS_BeforeBegin && State != PS_AfterEnd;
+  }
 private:
   void makeState(ParserState NewState, PosPtr Start, PosPtr End) {
     assert(NewState != PS_BeforeBegin && NewState != PS_AfterEnd);
     State = NewState;
     assert(Start < End);
-    assert(Start >= &Path->front() && End <= &Path->back() + 1);
+    assert(Start >= &Path.front() && End <= &Path.back() + 1);
     Entry = string_view_t(Start, End - Start);
   }
   void makeState(ParserState NewState) {
@@ -220,14 +216,14 @@ private:
   PosPtr getLastTokenEndPos() const {
     switch (State) {
     case PS_BeforeBegin:
-      return &Path->front();
+      return &Path.front();
     case PS_InRootName:
     case PS_InRootDir:
     case PS_InPaths:
       return &Entry.back() + 1;
     case PS_InTrailingSep:
     case PS_AfterEnd:
-      return &Path->back() + 1;
+      return &Path.back() + 1;
     }
   }
 
@@ -235,13 +231,13 @@ private:
     switch (State) {
     case PS_BeforeBegin:
     case PS_InRootName:
-      return &Path->front();
+      return &Path.front();
     case PS_InRootDir:
     case PS_InPaths:
     case PS_InTrailingSep:
       return &Entry.front();
     case PS_AfterEnd:
-      return &Path->back() + 1;
+      return &Path.back() + 1;
     }
   }
 
@@ -520,7 +516,7 @@ using parser::PathParser;
 
 string_view_t path::__root_name() const
 {
-    auto PP = PathParser::CreateBegin(&__pn_);
+    auto PP = PathParser::CreateBegin(__pn_);
     if (PP.State == PathParser::PS_InRootName)
       return PP.extract_preferred();
     return {};
@@ -528,7 +524,7 @@ string_view_t path::__root_name() const
 
 string_view_t path::__root_directory() const
 {
-    auto PP = PathParser::CreateBegin(&__pn_);
+    auto PP = PathParser::CreateBegin(__pn_);
     if (PP.State == PathParser::PS_InRootName)
       PP.increment();
     if (PP.State == PathParser::PS_InRootDir)
@@ -538,11 +534,14 @@ string_view_t path::__root_directory() const
 
 string_view_t path::__root_path_raw() const
 {
-    auto PP = PathParser::CreateBegin(&__pn_);
+    auto PP = PathParser::CreateBegin(__pn_);
     if (PP.State == PathParser::PS_InRootName) {
       auto NextCh = PP.peek();
-      if (NextCh && *NextCh == '/')
-        return {__pn_.data(), (size_t)(NextCh - __pn_.data())};
+      if (NextCh && *NextCh == '/') {
+        PP.increment();
+        assert(PP.State == PathParser::PS_InRootDir);
+        return {__pn_.data(), (size_t)(&PP.Entry.back() - __pn_.data()) + 1};
+      }
       return PP.Entry;
     }
     if (PP.State == PathParser::PS_InRootDir)
@@ -552,7 +551,7 @@ string_view_t path::__root_path_raw() const
 
 string_view_t path::__relative_path() const
 {
-    auto PP = PathParser::CreateBegin(&__pn_);
+    auto PP = PathParser::CreateBegin(__pn_);
     while (PP.State <= PathParser::PS_InRootDir)
       PP.increment();
     if (PP.State == PathParser::PS_AfterEnd)
@@ -567,7 +566,7 @@ string_view_t path::__parent_path() const
 {
     if (empty())
       return {};
-    auto PP = PathParser::CreateEnd(&__pn_);
+    auto PP = PathParser::CreateEnd(__pn_);
     PP.decrement();
     if (PP.Entry.data() == __pn_.data())
       return {};
@@ -579,7 +578,7 @@ string_view_t path::__parent_path() const
 string_view_t path::__filename() const
 {
     if (empty()) return {};
-    auto PP = PathParser::CreateEnd(&__pn_);
+    auto PP = PathParser::CreateEnd(__pn_);
     PP.decrement();
     return PP.extract_preferred();
 }
@@ -597,16 +596,17 @@ string_view_t path::__extension() const
 ////////////////////////////////////////////////////////////////////////////
 // path.comparisons
 int path::__compare(string_view_t __s) const {
-    path_view_iterator thisIter(this->native());
-    path_view_iterator sIter(__s);
-    while (!thisIter.is_end() && !sIter.is_end()) {
-        int res = (*thisIter).compare(*sIter);
+    auto PP = PathParser::CreateBegin(__pn_);
+    auto PP2 = PathParser::CreateBegin(__s);
+
+    while (PP.good() && PP2.good()) {
+        int res = PP.extract_preferred().compare(PP2.extract_preferred());
         if (res != 0) return res;
-        ++thisIter; ++sIter;
+        PP.increment(); PP2.increment();
     }
-    if (thisIter.is_end() && sIter.is_end())
+    if (PP.State == PP2.State && PP.State == PathParser::PS_AfterEnd)
         return 0;
-    if (thisIter.is_end())
+    if (PP.State == PathParser::PS_AfterEnd)
         return -1;
     return 1;
 }
@@ -614,7 +614,7 @@ int path::__compare(string_view_t __s) const {
 ////////////////////////////////////////////////////////////////////////////
 // path.nonmembers
 size_t hash_value(const path& __p) _NOEXCEPT {
-  path_view_iterator thisIter(__p.native());
+  auto PP = PathParser::CreateBegin(__p.native());
   struct HashPairT {
     size_t first;
     size_t second;
@@ -622,10 +622,10 @@ size_t hash_value(const path& __p) _NOEXCEPT {
   HashPairT hp = {0, 0};
   std::hash<string_view> hasher;
   std::__scalar_hash<decltype(hp)> pair_hasher;
-  while (!thisIter.is_end()) {
-    hp.second = hasher(*thisIter);
+  while (PP.good()) {
+    hp.second = hasher(PP.extract_preferred());
     hp.first = pair_hasher(hp);
-    ++thisIter;
+    PP.increment();
   }
   return hp.first;
 }
@@ -634,7 +634,7 @@ size_t hash_value(const path& __p) _NOEXCEPT {
 // path.itr
 path::iterator path::begin() const
 {
-    auto PP = PathParser::CreateBegin(&__pn_);
+    auto PP = PathParser::CreateBegin(__pn_);
     iterator it;
     it.__path_ptr_ = this;
     it.__state_ = PP.State;
@@ -653,7 +653,7 @@ path::iterator path::end() const
 }
 
 path::iterator& path::iterator::__increment() {
-  PathParser PP(&__path_ptr_->native(), __entry_, __state_);
+  PathParser PP(__path_ptr_->native(), __entry_, __state_);
   PP.increment();
   __state_ = PP.State;
   __entry_ = PP.Entry;
@@ -662,7 +662,7 @@ path::iterator& path::iterator::__increment() {
 }
 
 path::iterator& path::iterator::__decrement() {
-  PathParser PP(&__path_ptr_->native(), __entry_, __state_);
+  PathParser PP(__path_ptr_->native(), __entry_, __state_);
   PP.decrement();
   __state_ = PP.State;
   __entry_ = PP.Entry;
