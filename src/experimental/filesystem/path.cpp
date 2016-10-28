@@ -29,8 +29,8 @@ using value_type = path::value_type;
 using string_view_pair = pair<string_view_t, string_view_t>;
 
 struct PathParser {
-  enum ParserState {
-    PS_BeforeBegin,
+  enum ParserState : unsigned char {
+    PS_BeforeBegin = 1,
     PS_InRootName,
     PS_InRootDir,
     PS_InPaths,
@@ -48,6 +48,11 @@ private:
       : Path(P), State(State) {}
 
 public:
+  PathParser(StrPtr P, string_view_t E, unsigned char S)
+      : Path(P), Entry(E), State(static_cast<ParserState>(S)) {
+    assert(S != 0);
+  }
+
   static PathParser CreateBegin(StrPtr P) {
     PathParser PP(P, PS_BeforeBegin);
     PP.increment();
@@ -106,7 +111,7 @@ public:
     case PS_InRootDir: {
       PosPtr TkPtr = consumeName(Start, End);
       assert(TkPtr);
-      return makeState(PS_InPaths, Start, End);
+      return makeState(PS_InPaths, Start, TkPtr);
     }
 
     case PS_InPaths: {
@@ -560,21 +565,15 @@ string_view_t path::__relative_path() const
 
 string_view_t path::__parent_path() const
 {
-    PRINT(__pn_);
     if (empty())
       return {};
     auto PP = PathParser::CreateEnd(&__pn_);
     PP.decrement();
-    PRINT(PP.Entry);
     if (PP.Entry.data() == __pn_.data())
       return {};
     PP.decrement();
-    assert(PP.State != PathParser::PS_BeforeBegin);
-    PRINT(PP.Entry);
     size_t DataSize = size_t(&PP.Entry.back() - __pn_.data()) + 1;
-    string_view_t SV{__pn_.data(), DataSize};
-    PRINT(SV);
-    return SV;
+    return {__pn_.data(), DataSize};
 }
 
 string_view_t path::__filename() const
@@ -635,35 +634,39 @@ size_t hash_value(const path& __p) _NOEXCEPT {
 // path.itr
 path::iterator path::begin() const
 {
-    path_view_iterator pit = pbegin(*this);
+    auto PP = PathParser::CreateBegin(&__pn_);
     iterator it;
     it.__path_ptr_ = this;
-    it.__pos_ = pit.__pos_;
-    it.__elem_.__assign_view(*pit);
+    it.__state_ = PP.State;
+    it.__entry_ = PP.Entry;
+    it.__elem_.__assign_view(PP.extract_preferred());
     return it;
 }
 
 path::iterator path::end() const
 {
     iterator it{};
+    it.__state_ = PathParser::PS_AfterEnd;
     it.__path_ptr_ = this;
-    it.__pos_ = parser::npos;
+
     return it;
 }
 
 path::iterator& path::iterator::__increment() {
-  path_view_iterator it(__path_ptr_->native(), __pos_);
-  it.increment();
-  __pos_ = it.__pos_;
-  __elem_.__assign_view(*it);
+  PathParser PP(&__path_ptr_->native(), __entry_, __state_);
+  PP.increment();
+  __state_ = PP.State;
+  __entry_ = PP.Entry;
+  __elem_.__assign_view(PP.extract_preferred());
   return *this;
 }
 
 path::iterator& path::iterator::__decrement() {
-  path_view_iterator it(__path_ptr_->native(), __pos_);
-  it.decrement();
-  __pos_ = it.__pos_;
-  __elem_.__assign_view(*it);
+  PathParser PP(&__path_ptr_->native(), __entry_, __state_);
+  PP.decrement();
+  __state_ = PP.State;
+  __entry_ = PP.Entry;
+  __elem_.__assign_view(PP.extract_preferred());
   return *this;
 }
 

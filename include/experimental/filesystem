@@ -1083,7 +1083,7 @@ public:
     typedef const path&                reference;
 public:
     _LIBCPP_INLINE_VISIBILITY
-    iterator() : __elem_(), __path_ptr_(nullptr), __pos_(0) {}
+    iterator() : __elem_(), __path_ptr_(nullptr), __entry_(), __state_(0) {}
 
     iterator(const iterator&) = default;
     ~iterator() = default;
@@ -1135,13 +1135,14 @@ private:
 
     path __elem_;
     const path* __path_ptr_;
-    size_t __pos_;
+    path::__string_view __entry_;
+    unsigned char __state_;
 };
 
 inline _LIBCPP_INLINE_VISIBILITY
 bool operator==(const path::iterator& __lhs, const path::iterator& __rhs) {
     return __lhs.__path_ptr_ == __rhs.__path_ptr_ &&
-           __lhs.__pos_      == __rhs.__pos_;
+           __lhs.__entry_.data() == __rhs.__entry_.data();
 }
 
 inline _LIBCPP_INLINE_VISIBILITY
