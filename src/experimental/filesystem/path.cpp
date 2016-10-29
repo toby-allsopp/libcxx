@@ -38,7 +38,6 @@ struct PathParser {
 
   using PosPtr = path::value_type const*;
 private:
-  using StrPtr = string const*;
   PathParser(string_view_t P, ParserState State)
       : Path(P), State(State) {}
 
