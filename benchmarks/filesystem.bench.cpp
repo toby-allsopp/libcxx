@@ -63,5 +63,28 @@ void BM_PathIterateOnce(benchmark::State &st, GenInputs gen) {
 BENCHMARK_CAPTURE(BM_PathIterateOnce, iterate_elements,
   getRandomStringInputs)->Arg(TestNumInputs);
 
+template <class GenInputs>
+void BM_PathIterateOnceBackwards(benchmark::State &st, GenInputs gen) {
+  using namespace fs;
+  const auto in = gen(st.range(0));
+  path PP;
+  for (auto& Part : in)
+    PP /= Part;
+  benchmark::DoNotOptimize(PP.native().data());
+  while (st.KeepRunning()) {
+    const path P = PP.native();
+    const auto B = P.begin();
+    auto I = P.end();
+    while (I != B) {
+      --I;
+      benchmark::DoNotOptimize(*I);
+    }
+    benchmark::DoNotOptimize(*I);
+  }
+}
+BENCHMARK_CAPTURE(BM_PathIterateOnceBackwards, iterate_elements,
+  getRandomStringInputs)->Arg(TestNumInputs);
+
+
 
 BENCHMARK_MAIN()
