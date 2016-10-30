@@ -138,6 +138,5 @@ inline std::vector<const char*> getRandomCStringInputs(size_t N) {
     return cinputs;
 }
 
-inline std::vector<std::string>
 
 #endif // BENCHMARK_GENERATE_INPUT_HPP

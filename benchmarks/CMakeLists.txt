@@ -72,12 +72,21 @@ set(BENCHMARK_TEST_LIBCXX_LINK_FLAGS
     -nodefaultlibs
     -L${BENCHMARK_LIBCXX_INSTALL}/lib/
 )
+set(BENCHMARK_TEST_NATIVE_COMPILE_FLAGS
+  ${BENCHMARK_TEST_COMPILE_FLAGS}
+  -nostdinc++
+  -cxx-isystem /opt/gcc-tot/include/c++/7.0.0
+  -cxx-isystem /opt/gcc-tot/include/c++/7.0.0/x86_64-pc-linux-gnu/
+  )
 set(BENCHMARK_TEST_NATIVE_LINK_FLAGS
     -L${BENCHMARK_NATIVE_INSTALL}/lib/
+    -L/opt/gcc-tot/lib64
+    -Wl,-rpath,/opt/gcc-tot/lib64
 )
 split_list(BENCHMARK_TEST_COMPILE_FLAGS)
 split_list(BENCHMARK_TEST_LIBCXX_COMPILE_FLAGS)
 split_list(BENCHMARK_TEST_LIBCXX_LINK_FLAGS)
+split_list(BENCHMARK_TEST_NATIVE_COMPILE_FLAGS)
 split_list(BENCHMARK_TEST_NATIVE_LINK_FLAGS)
 macro(add_benchmark_test name source_file)
   set(libcxx_target ${name}_libcxx)
@@ -89,6 +98,9 @@ macro(add_benchmark_test name source_file)
   else()
     target_link_libraries(${libcxx_target} cxx_static)
   endif()
+  if (TARGET cxx_experimental)
+    target_link_libraries(${libcxx_target} cxx_experimental)
+  endif()
   target_link_libraries(${libcxx_target} -lbenchmark)
   set_target_properties(${libcxx_target}
     PROPERTIES
@@ -99,7 +111,7 @@ macro(add_benchmark_test name source_file)
     set(native_target ${name}_native)
     add_executable(${native_target} EXCLUDE_FROM_ALL ${source_file})
     add_dependencies(${native_target} google-benchmark-native)
-    target_link_libraries(${native_target} -lbenchmark)
+    target_link_libraries(${native_target} -lbenchmark -lstdc++fs)
     if (LIBCXX_HAS_PTHREAD_LIB)
       target_link_libraries(${native_target} -pthread)
     endif()
@@ -108,7 +120,7 @@ macro(add_benchmark_test name source_file)
       PROPERTIES
           OUTPUT_NAME "${name}.native.out"
           INCLUDE_DIRECTORIES ""
-          COMPILE_FLAGS "${BENCHMARK_TEST_COMPILE_FLAGS}"
+          COMPILE_FLAGS "${BENCHMARK_TEST_NATIVE_COMPILE_FLAGS}"
           LINK_FLAGS "${BENCHMARK_TEST_NATIVE_LINK_FLAGS}")
   endif()
 endmacro()

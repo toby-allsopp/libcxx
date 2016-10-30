@@ -5,22 +5,62 @@
 
 namespace fs = std::experimental::filesystem;
 
-static const size_t NumTestInputs = 1024;
+static const size_t TestNumInputs = 1024;
+
 
 template <class GenInputs>
-void BM_PathIterate(benchmark::State &st, GenInputs gen) {
+void BM_PathConstructString(benchmark::State &st, GenInputs gen) {
   using namespace fs;
   const auto in = gen(st.range(0));
-  path PP(in.begin(), in.end());
+  path PP;
+  for (auto& Part : in)
+    PP /= Part;
   benchmark::DoNotOptimize(PP.native().data());
   while (st.KeepRunning()) {
-    for (auto &E : *it) {
-      benchmark::DoNotOptimize(E.data());
+    const path P(PP.native());
+    benchmark::DoNotOptimize(P.native().data());
+  }
+}
+BENCHMARK_CAPTURE(BM_PathConstructString, iterate_elements,
+  getRandomStringInputs)->Arg(TestNumInputs);
+
+
+template <class GenInputs>
+void BM_PathIterateMultipleTimes(benchmark::State &st, GenInputs gen) {
+  using namespace fs;
+  const auto in = gen(st.range(0));
+  path PP;
+  for (auto& Part : in)
+    PP /= Part;
+  benchmark::DoNotOptimize(PP.native().data());
+  while (st.KeepRunning()) {
+    for (auto &E : PP) {
+      benchmark::DoNotOptimize(E.native().data());
     }
     benchmark::ClobberMemory();
   }
 }
-BENCHMARK_CAPTURE(BM_PathIterate, iterate_elements,
+BENCHMARK_CAPTURE(BM_PathIterateMultipleTimes, iterate_elements,
+  getRandomStringInputs)->Arg(TestNumInputs);
+
+
+template <class GenInputs>
+void BM_PathIterateOnce(benchmark::State &st, GenInputs gen) {
+  using namespace fs;
+  const auto in = gen(st.range(0));
+  path PP;
+  for (auto& Part : in)
+    PP /= Part;
+  benchmark::DoNotOptimize(PP.native().data());
+  while (st.KeepRunning()) {
+    const path P = PP.native();
+    for (auto &E : P) {
+      benchmark::DoNotOptimize(E.native().data());
+    }
+    benchmark::ClobberMemory();
+  }
+}
+BENCHMARK_CAPTURE(BM_PathIterateOnce, iterate_elements,
   getRandomStringInputs)->Arg(TestNumInputs);
 
 
