@@ -609,11 +609,7 @@ namespace std {
 #endif
 
 #ifndef _LIBCPP_EXTERN_TEMPLATE_INLINE_VISIBILITY
-# ifdef _LIBCPP_BUILDING_LIBRARY
-#   define _LIBCPP_EXTERN_TEMPLATE_INLINE_VISIBILITY __attribute__((__visibility__("default"), __always_inline__))
-# else
-#   define _LIBCPP_EXTERN_TEMPLATE_INLINE_VISIBILITY _LIBCPP_INLINE_VISIBILITY
-# endif
+# define _LIBCPP_EXTERN_TEMPLATE_INLINE_VISIBILITY __attribute__((__visibility__("default"), __always_inline__))
 #endif
 
 #ifndef _LIBCPP_PREFERRED_OVERLOAD
@@ -906,6 +902,12 @@ extern "C" void __sanitizer_annotate_contiguous_container(
 
 #if !__has_builtin(__builtin_addressof) && _GNUC_VER < 700
 #define _LIBCPP_HAS_NO_BUILTIN_ADDRESSOF
+#endif
+
+#if !defined(_LIBCPP_HAS_NO_OFF_T_FUNCTIONS)
+#if defined(_WIN32) || defined(_NEWLIB_VERSION)
+#define _LIBCPP_HAS_NO_OFF_T_FUNCTIONS
+#endif
 #endif
 
 #endif // __cplusplus

@@ -19,16 +19,17 @@ set(CMAKE_MODULE_PATH
   ${CMAKE_MODULE_PATH}
   )
 
-# Find the LLVM sources and simulate LLVM CMake options.
-include(HandleOutOfTreeLLVM)
 
-if (LIBCXX_STANDALONE_BUILD)
+if (CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
   project(libcxx CXX C)
 
   set(PACKAGE_NAME libcxx)
   set(PACKAGE_VERSION 4.0.0svn)
   set(PACKAGE_STRING "${PACKAGE_NAME} ${PACKAGE_VERSION}")
   set(PACKAGE_BUGREPORT "llvm-bugs@lists.llvm.org")
+
+  # Find the LLVM sources and simulate LLVM CMake options.
+  include(HandleOutOfTreeLLVM)
 endif()
 
 if (LIBCXX_STANDALONE_BUILD AND NOT LLVM_FOUND)
@@ -58,8 +59,23 @@ option(LIBCXX_ENABLE_EXPERIMENTAL_LIBRARY "Build libc++experimental.a" ON)
 option(LIBCXX_ENABLE_FILESYSTEM
         "Build filesystem as part of libc++experimental.a" ${LIBCXX_ENABLE_EXPERIMENTAL_LIBRARY})
 option(LIBCXX_INCLUDE_TESTS "Build the libc++ tests." ${LLVM_INCLUDE_TESTS})
+
+# Benchmark options -----------------------------------------------------------
 option(LIBCXX_INCLUDE_BENCHMARKS "Build the libc++ benchmarks and their dependancies" ON)
-option(LIBCXX_BUILD_BENCHMARK_NATIVE_STDLIB "Build the benchmarks against the native STL" OFF)
+set(LIBCXX_BENCHMARK_NATIVE_STDLIB "" CACHE STRING
+        "Build the benchmarks against the specified native STL.
+         The value must be one of libc++/libstdc++")
+set(LIBCXX_BENCHMARK_NATIVE_GCC_TOOLCHAIN "" CACHE STRING
+    "Use alternate GCC toolchain when building the native benchmarks")
+
+if (LIBCXX_BENCHMARK_NATIVE_STDLIB)
+  if (NOT (LIBCXX_BENCHMARK_NATIVE_STDLIB STREQUAL "libc++"
+        OR LIBCXX_BENCHMARK_NATIVE_STDLIB STREQUAL "libstdc++"))
+    message(FATAL_ERROR "Invalid value for LIBCXX_BENCHMARK_NATIVE_STDLIB: "
+            "'${LIBCXX_BENCHMARK_NATIVE_STDLIB}'")
+  endif()
+endif()
+
 option(LIBCXX_INCLUDE_DOCS "Build the libc++ documentation." ${LLVM_INCLUDE_DOCS})
 set(LIBCXX_LIBDIR_SUFFIX "${LLVM_LIBDIR_SUFFIX}" CACHE STRING
     "Define suffix of library directory name (32/64)")
@@ -85,10 +101,17 @@ set_property(CACHE LIBCXX_CXX_ABI PROPERTY STRINGS ;${CXXABIS})
 
 # Setup the default options if LIBCXX_CXX_ABI is not specified.
 if (NOT LIBCXX_CXX_ABI)
+  find_path(
+    LIBCXX_LIBCXXABI_INCLUDES_INTERNAL
+    cxxabi.h
+    PATHS ${LLVM_MAIN_SRC_DIR}/projects/libcxxabi/include
+          ${LLVM_MAIN_SRC_DIR}/runtimes/libcxxabi/include
+    NO_DEFAULT_PATH
+  )
   if (NOT DEFINED LIBCXX_STANDALONE_BUILD AND
-      IS_DIRECTORY "${CMAKE_SOURCE_DIR}/projects/libcxxabi")
+      IS_DIRECTORY "${LIBCXX_LIBCXXABI_INCLUDES_INTERNAL}")
     set(LIBCXX_CXX_ABI_LIBNAME "libcxxabi")
-    set(LIBCXX_CXX_ABI_INCLUDE_PATHS "${CMAKE_SOURCE_DIR}/projects/libcxxabi/include")
+    set(LIBCXX_CXX_ABI_INCLUDE_PATHS "${LIBCXX_LIBCXXABI_INCLUDES_INTERNAL}")
     set(LIBCXX_CXX_ABI_INTREE 1)
   else()
     set(LIBCXX_CXX_ABI_LIBNAME "none")
@@ -289,6 +312,9 @@ add_target_flags_if(LIBCXX_BUILD_32_BITS "-m32")
 add_target_flags_if(LIBCXX_TARGET_TRIPLE "-target ${LIBCXX_TARGET_TRIPLE}")
 add_target_flags_if(LIBCXX_SYSROOT "--sysroot=${LIBCXX_SYSROOT}")
 add_target_flags_if(LIBCXX_GCC_TOOLCHAIN "-gcc-toolchain ${LIBCXX_GCC_TOOLCHAIN}")
+if (LIBCXX_TARGET_TRIPLE)
+  set(TARGET_TRIPLE "${LIBCXX_TARGET_TRIPLE}")
+endif()
 
 # Configure compiler.
 include(config-ix)
@@ -509,11 +535,13 @@ include_directories(include)
 add_subdirectory(include)
 add_subdirectory(lib)
 
+
 if (LIBCXX_INCLUDE_BENCHMARKS)
   add_subdirectory(benchmarks)
 endif()
 if (LIBCXX_INCLUDE_TESTS)
   add_subdirectory(test)
+  add_subdirectory(lib/abi)
 endif()
 if (LIBCXX_INCLUDE_DOCS)
   add_subdirectory(docs)
