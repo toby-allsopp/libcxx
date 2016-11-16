@@ -1868,7 +1868,7 @@ public:
         {seed(__q);}
     _LIBCPP_INLINE_VISIBILITY
     void seed(result_type __s = default_seed)
-        {seed(integral_constant<bool, __m == 0>(),
+        {__seed(integral_constant<bool, __m == 0>(),
               integral_constant<bool, __c == 0>(), __s);}
     template<class _Sseq>
         _LIBCPP_INLINE_VISIBILITY
@@ -2570,7 +2570,7 @@ public:
         {seed(__q);}
     _LIBCPP_INLINE_VISIBILITY
     void seed(result_type __sd = default_seed)
-        {seed(__sd, integral_constant<unsigned, 1 + (__w - 1) / 32>());}
+        {__seed(__sd, integral_constant<unsigned, 1 + (__w - 1) / 32>());}
     template<class _Sseq>
         _LIBCPP_INLINE_VISIBILITY
         typename enable_if

@@ -2932,7 +2932,7 @@ vector<bool, _Allocator>::reserve(size_type __n)
     if (__n > capacity())
     {
         vector __v(this->__alloc());
-        __v.allocate(__n);
+        __v.__allocate(__n);
         __v.__construct_at_end(this->begin(), this->end());
         swap(__v);
         __invalidate_all_iterators();
