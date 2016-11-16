@@ -473,9 +473,9 @@ struct __tuple_impl<__tuple_indices<_Indx...>, _Tp...>
 template <class ..._Tp>
 class _LIBCPP_TYPE_VIS_ONLY tuple
 {
-    typedef __tuple_impl<typename __make_tuple_indices<sizeof...(_Tp)>::type, _Tp...> base;
+    typedef __tuple_impl<typename __make_tuple_indices<sizeof...(_Tp)>::type, _Tp...> _BaseT;
 
-    base __base_;
+    _BaseT __base_;
 
     template <class ..._Args>
     struct _PackExpandsToThisTuple : false_type {};
@@ -715,7 +715,7 @@ public:
         _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX11
         tuple(_Up&&... __u)
             _NOEXCEPT_((
-                is_nothrow_constructible<base,
+                is_nothrow_constructible<_BaseT,
                     typename __make_tuple_indices<sizeof...(_Up)>::type,
                     typename __make_tuple_types<tuple, sizeof...(_Up)>::type,
                     typename __make_tuple_indices<sizeof...(_Tp), sizeof...(_Up)>::type,
@@ -743,7 +743,7 @@ public:
         explicit
         tuple(_Up&&... __u)
             _NOEXCEPT_((
-                is_nothrow_constructible<base,
+                is_nothrow_constructible<_BaseT,
                     typename __make_tuple_indices<sizeof...(_Up)>::type,
                     typename __make_tuple_types<tuple, sizeof...(_Up)>::type,
                     typename __make_tuple_indices<sizeof...(_Tp), sizeof...(_Up)>::type,
@@ -807,7 +807,7 @@ public:
                       >::type = false
              >
         _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX11
-        tuple(_Tuple&& __t) _NOEXCEPT_((is_nothrow_constructible<base, _Tuple>::value))
+        tuple(_Tuple&& __t) _NOEXCEPT_((is_nothrow_constructible<_BaseT, _Tuple>::value))
             : __base_(_VSTD::forward<_Tuple>(__t)) {}
 
     template <class _Tuple,
@@ -822,7 +822,7 @@ public:
              >
         _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX11
         explicit
-        tuple(_Tuple&& __t) _NOEXCEPT_((is_nothrow_constructible<base, _Tuple>::value))
+        tuple(_Tuple&& __t) _NOEXCEPT_((is_nothrow_constructible<_BaseT, _Tuple>::value))
             : __base_(_VSTD::forward<_Tuple>(__t)) {}
 
     template <class _Alloc, class _Tuple,
@@ -867,7 +867,7 @@ public:
     tuple& operator=(typename conditional<_CanMoveAssign::value, tuple, __nat>::type&& __t)
         _NOEXCEPT_((__all<is_nothrow_move_assignable<_Tp>::value...>::value))
     {
-        __base_.operator=(static_cast<base&&>(__t.__base_));
+        __base_.operator=(static_cast<_BaseT&&>(__t.__base_));
         return *this;
     }
 
@@ -879,7 +879,7 @@ public:
              >
         _LIBCPP_INLINE_VISIBILITY
         tuple&
-        operator=(_Tuple&& __t) _NOEXCEPT_((is_nothrow_assignable<base&, _Tuple>::value))
+        operator=(_Tuple&& __t) _NOEXCEPT_((is_nothrow_assignable<_BaseT&, _Tuple>::value))
         {
             __base_.operator=(_VSTD::forward<_Tuple>(__t));
             return *this;

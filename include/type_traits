@@ -2015,7 +2015,7 @@ struct _LIBCPP_TYPE_VIS_ONLY common_type<_Tp, _Up>
 
 // bullet 4 - sizeof...(Tp) > 2
 
-template <class ...Tp> struct __common_types;
+template <class ..._Tp> struct __common_types;
 
 template <class, class = void>
 struct __common_type_impl {};

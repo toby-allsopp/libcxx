@@ -28,8 +28,8 @@ struct __lfts_uses_allocator : public false_type {};
 template <class _Tp, class _Alloc>
 struct __lfts_uses_allocator<_Tp, _Alloc, false, false> : public false_type {};
 
-template <class _Tp, class _Alloc, bool HasAlloc>
-struct __lfts_uses_allocator<_Tp, _Alloc, true, HasAlloc> : public true_type {};
+template <class _Tp, class _Alloc, bool _HasAlloc>
+struct __lfts_uses_allocator<_Tp, _Alloc, true, _HasAlloc> : public true_type {};
 
 template <class _Tp, class _Alloc>
 struct __lfts_uses_allocator<_Tp, _Alloc, false, true>
