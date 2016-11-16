@@ -1241,12 +1241,12 @@ _LIBCPP_FUNC_VIS
 void __copy_symlink(const path& __existing_symlink, const path& __new_symlink,
         error_code *__ec=nullptr);
 _LIBCPP_FUNC_VIS
-bool __create_directories(const path& p, error_code *ec=nullptr);
+bool __create_directories(const path& __p, error_code *__ec=nullptr);
 _LIBCPP_FUNC_VIS
-bool __create_directory(const path& p, error_code *ec=nullptr);
+bool __create_directory(const path& __p, error_code *__ec=nullptr);
 _LIBCPP_FUNC_VIS
-bool __create_directory(const path& p, const path & attributes,
-        error_code *ec=nullptr);
+bool __create_directory(const path& __p, const path & __attributes,
+        error_code *__ec=nullptr);
 _LIBCPP_FUNC_VIS
 void __create_directory_symlink(const path& __to, const path& __new_symlink,
         error_code *__ec=nullptr);
@@ -1267,24 +1267,24 @@ uintmax_t __file_size(const path&, error_code *__ec=nullptr);
 _LIBCPP_FUNC_VIS
 uintmax_t __hard_link_count(const path&, error_code *__ec=nullptr);
 _LIBCPP_FUNC_VIS
-bool __fs_is_empty(const path& p, error_code *ec=nullptr);
+bool __fs_is_empty(const path& __p, error_code *__ec=nullptr);
 _LIBCPP_FUNC_VIS
-file_time_type __last_write_time(const path& p, error_code *ec=nullptr);
+file_time_type __last_write_time(const path& __p, error_code *__ec=nullptr);
 _LIBCPP_FUNC_VIS
-void __last_write_time(const path& p, file_time_type new_time,
-        error_code *ec=nullptr);
+void __last_write_time(const path& __p, file_time_type __new_time,
+        error_code *__ec=nullptr);
 _LIBCPP_FUNC_VIS
-void __permissions(const path& p, perms prms, error_code *ec=nullptr);
+void __permissions(const path& __p, perms __prms, error_code *__ec=nullptr);
 _LIBCPP_FUNC_VIS
-path __read_symlink(const path& p, error_code *ec=nullptr);
+path __read_symlink(const path& __p, error_code *__ec=nullptr);
 _LIBCPP_FUNC_VIS
-bool __remove(const path& p, error_code *ec=nullptr);
+bool __remove(const path& __p, error_code *__ec=nullptr);
 _LIBCPP_FUNC_VIS
-uintmax_t __remove_all(const path& p, error_code *ec=nullptr);
+uintmax_t __remove_all(const path& __p, error_code *__ec=nullptr);
 _LIBCPP_FUNC_VIS
-void __rename(const path& from, const path& to, error_code *ec=nullptr);
+void __rename(const path& __from, const path& __to, error_code *__ec=nullptr);
 _LIBCPP_FUNC_VIS
-void __resize_file(const path& p, uintmax_t size, error_code *ec=nullptr);
+void __resize_file(const path& __p, uintmax_t __size, error_code *__ec=nullptr);
 _LIBCPP_FUNC_VIS
 space_info __space(const path&, error_code *__ec=nullptr);
 _LIBCPP_FUNC_VIS

@@ -547,7 +547,7 @@ __quoted_input ( basic_istream<_CharT, _Traits> &__is, _String & __string, _Char
         return __is;
     }
 
-    __save_flags<_CharT, _Traits> sf(__is);
+    __save_flags<_CharT, _Traits> __sf(__is);
     noskipws (__is);
     while (true)
         {

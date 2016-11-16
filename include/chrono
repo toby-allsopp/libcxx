@@ -501,7 +501,7 @@ class _LIBCPP_TYPE_VIS_ONLY duration
         static const intmax_t __d1 = _R1::den / __gcd_d1_d2;
         static const intmax_t __n2 = _R2::num / __gcd_n1_n2;
         static const intmax_t __d2 = _R2::den / __gcd_d1_d2;
-        static const intmax_t max = -((intmax_t(1) << (sizeof(intmax_t) * CHAR_BIT - 1)) + 1);
+        static const intmax_t __max = -((intmax_t(1) << (sizeof(intmax_t) * CHAR_BIT - 1)) + 1);
 
         template <intmax_t _Xp, intmax_t _Yp, bool __overflow>
         struct __mul    // __overflow == false
@@ -516,7 +516,7 @@ class _LIBCPP_TYPE_VIS_ONLY duration
         };
 
     public:
-        static const bool value = (__n1 <= max / __d2) && (__n2 <= max / __d1);
+        static const bool value = (__n1 <= __max / __d2) && (__n2 <= __max / __d1);
         typedef ratio<__mul<__n1, __d2, !value>::value,
                       __mul<__n2, __d1, !value>::value> type;
     };
@@ -575,10 +575,10 @@ public:
     _LIBCPP_INLINE_VISIBILITY duration& operator+=(const duration& __d) {__rep_ += __d.count(); return *this;}
     _LIBCPP_INLINE_VISIBILITY duration& operator-=(const duration& __d) {__rep_ -= __d.count(); return *this;}
 
-    _LIBCPP_INLINE_VISIBILITY duration& operator*=(const rep& rhs) {__rep_ *= rhs; return *this;}
-    _LIBCPP_INLINE_VISIBILITY duration& operator/=(const rep& rhs) {__rep_ /= rhs; return *this;}
-    _LIBCPP_INLINE_VISIBILITY duration& operator%=(const rep& rhs) {__rep_ %= rhs; return *this;}
-    _LIBCPP_INLINE_VISIBILITY duration& operator%=(const duration& rhs) {__rep_ %= rhs.count(); return *this;}
+    _LIBCPP_INLINE_VISIBILITY duration& operator*=(const rep& __rhs) {__rep_ *= __rhs; return *this;}
+    _LIBCPP_INLINE_VISIBILITY duration& operator/=(const rep& __rhs) {__rep_ /= __rhs; return *this;}
+    _LIBCPP_INLINE_VISIBILITY duration& operator%=(const rep& __rhs) {__rep_ %= __rhs; return *this;}
+    _LIBCPP_INLINE_VISIBILITY duration& operator%=(const duration& __rhs) {__rep_ %= __rhs.count(); return *this;}
 
     // special values
 
@@ -847,12 +847,12 @@ public:
     // conversions
     template <class _Duration2>
     _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX11
-    time_point(const time_point<clock, _Duration2>& t,
+    time_point(const time_point<clock, _Duration2>& __t,
         typename enable_if
         <
             is_convertible<_Duration2, duration>::value
         >::type* = 0)
-            : __d_(t.time_since_epoch()) {}
+            : __d_(__t.time_since_epoch()) {}
 
     // observer
 

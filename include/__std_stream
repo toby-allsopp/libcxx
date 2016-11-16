@@ -274,20 +274,20 @@ __stdoutbuf<_CharT>::overflow(int_type __c)
         {
             char* __extbe = __extbuf;
             codecvt_base::result __r;
-            char_type* pbase = &__1buf;
-            char_type* pptr = pbase + 1;
+            char_type* __pbase = &__1buf;
+            char_type* __pptr = __pbase + 1;
             do
             {
                 const char_type* __e;
-                __r = __cv_->out(*__st_, pbase, pptr, __e,
+                __r = __cv_->out(*__st_, __pbase, __pptr, __e,
                                         __extbuf,
                                         __extbuf + sizeof(__extbuf),
                                         __extbe);
-                if (__e == pbase)
+                if (__e == __pbase)
                     return traits_type::eof();
                 if (__r == codecvt_base::noconv)
                 {
-                    if (fwrite(pbase, 1, 1, __file_) != 1)
+                    if (fwrite(__pbase, 1, 1, __file_) != 1)
                         return traits_type::eof();
                 }
                 else if (__r == codecvt_base::ok || __r == codecvt_base::partial)
@@ -297,7 +297,7 @@ __stdoutbuf<_CharT>::overflow(int_type __c)
                         return traits_type::eof();
                     if (__r == codecvt_base::partial)
                     {
-                        pbase = (char_type*)__e;
+                        __pbase = (char_type*)__e;
                     }
                 }
                 else

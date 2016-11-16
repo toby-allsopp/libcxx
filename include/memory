@@ -3558,28 +3558,28 @@ struct _LIBCPP_TYPE_VIS_ONLY hash<unique_ptr<_Tp, _Dp> >
 struct __destruct_n
 {
 private:
-    size_t size;
+    size_t __size_;
 
     template <class _Tp>
     _LIBCPP_INLINE_VISIBILITY void __process(_Tp* __p, false_type) _NOEXCEPT
-        {for (size_t __i = 0; __i < size; ++__i, ++__p) __p->~_Tp();}
+        {for (size_t __i = 0; __i < __size_; ++__i, ++__p) __p->~_Tp();}
 
     template <class _Tp>
     _LIBCPP_INLINE_VISIBILITY void __process(_Tp*, true_type) _NOEXCEPT
         {}
 
     _LIBCPP_INLINE_VISIBILITY void __incr(false_type) _NOEXCEPT
-        {++size;}
+        {++__size_;}
     _LIBCPP_INLINE_VISIBILITY void __incr(true_type) _NOEXCEPT
         {}
 
     _LIBCPP_INLINE_VISIBILITY void __set(size_t __s, false_type) _NOEXCEPT
-        {size = __s;}
+        {__size_ = __s;}
     _LIBCPP_INLINE_VISIBILITY void __set(size_t, true_type) _NOEXCEPT
         {}
 public:
     _LIBCPP_INLINE_VISIBILITY explicit __destruct_n(size_t __s) _NOEXCEPT
-        : size(__s) {}
+        : __size_(__s) {}
 
     template <class _Tp>
     _LIBCPP_INLINE_VISIBILITY void __incr(_Tp*) _NOEXCEPT

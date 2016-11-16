@@ -1156,7 +1156,7 @@ future<_Rp>::future(__assoc_state<_Rp>* __state)
 
 struct __release_shared_count
 {
-    void operator()(__shared_count* p) {p->__release_shared();}
+    void operator()(__shared_count* __p) {__p->__release_shared();}
 };
 
 template <class _Rp>

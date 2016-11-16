@@ -910,8 +910,8 @@ bitset<_Size>::flip(size_t __pos)
     if (__pos >= _Size)
         __throw_out_of_range("bitset flip argument out of range");
 
-    reference r = base::__make_ref(__pos);
-    r = ~r;
+    reference __r = base::__make_ref(__pos);
+    __r = ~__r;
     return *this;
 }
 

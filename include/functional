@@ -1583,8 +1583,8 @@ class _LIBCPP_TYPE_VIS_ONLY function<_Rp(_ArgTypes...)>
     typename aligned_storage<3*sizeof(void*)>::type __buf_;
     __base* __f_;
 
-    _LIBCPP_NO_CFI static __base *__as_base(void *p) {
-      return reinterpret_cast<__base*>(p);
+    _LIBCPP_NO_CFI static __base *__as_base(void *__p) {
+      return reinterpret_cast<__base*>(__p);
     }
 
     template <class _Fp, bool = !is_same<_Fp, function>::value &&

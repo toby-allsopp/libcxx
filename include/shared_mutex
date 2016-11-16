@@ -286,11 +286,11 @@ shared_timed_mutex::try_lock_shared_until(
     {
         while (true)
         {
-            cv_status status = __base.__gate1_.wait_until(__lk, __abs_time);
+            cv_status __status = __base.__gate1_.wait_until(__lk, __abs_time);
             if ((__base.__state_ & __base.__write_entered_) == 0 &&
                                        (__base.__state_ & __base.__n_readers_) < __base.__n_readers_)
                 break;
-            if (status == cv_status::timeout)
+            if (__status == cv_status::timeout)
                 return false;
         }
     }
@@ -393,9 +393,9 @@ public:
     void lock();
     bool try_lock();
     template <class Rep, class Period>
-        bool try_lock_for(const chrono::duration<Rep, Period>& rel_time);
+        bool try_lock_for(const chrono::duration<Rep, Period>& __rel_time);
     template <class Clock, class Duration>
-        bool try_lock_until(const chrono::time_point<Clock, Duration>& abs_time);
+        bool try_lock_until(const chrono::time_point<Clock, Duration>& __abs_time);
     void unlock();
 
     // Setters
