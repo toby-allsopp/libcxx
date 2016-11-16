@@ -290,7 +290,10 @@ module std [system] {
         PTRDIFF_MIN, PTRDIFF_MAX, SIG_ATOMIC_MIN, SIG_ATOMIC_MAX, WCHAR_MIN, WCHAR_MAX, WINT_MIN, WINT_MAX,
         SIZE_MAX
 */
+      export stdint_h
+      export depr.inttypes_h
       export *
+
     }
     module cstdio {
       header "cstdio"
@@ -593,6 +596,25 @@ module std [system] {
 */
     export *
   }
+
+
+
+  // FIXME: These should be private.
+  module __bit_reference { header "__bit_reference" export * }
+  module __debug { header "__debug" export * }
+  module __functional_base { header "__functional_base" export * }
+  module __hash_table { header "__hash_table" export * }
+  module __locale { header "__locale" export * }
+  module __mutex_base { header "__mutex_base" export * }
+  module __split_buffer { header "__split_buffer" export * }
+  module __sso_allocator { header "__sso_allocator" export * }
+  module __std_stream { header "__std_stream" export * }
+  module __tree { header "__tree" export * }
+  module __tuple { header "__tuple" export * }
+  module __undef_min_max { header "__undef_min_max" export * }
+  module __undef___deallocate { header "__undef___deallocate" export * }
+
+
   module deque {
     header "deque"
     export initializer_list
@@ -664,6 +686,7 @@ module std [system] {
   }
   module locale {
     header "locale"
+    export __locale
     export *
   }
   module map {
@@ -802,18 +825,4 @@ module std [system] {
   // cycle. For the same reason, we don't have a module for __config.
   //module __config { header "__config" export * }
 
-  // FIXME: These should be private.
-  module __bit_reference { header "__bit_reference" export * }
-  module __debug { header "__debug" export * }
-  module __functional_base { header "__functional_base" export * }
-  module __hash_table { header "__hash_table" export * }
-  module __locale { header "__locale" export * }
-  module __mutex_base { header "__mutex_base" export * }
-  module __split_buffer { header "__split_buffer" export * }
-  module __sso_allocator { header "__sso_allocator" export * }
-  module __std_stream { header "__std_stream" export * }
-  module __tree { header "__tree" export * }
-  module __tuple { header "__tuple" export * }
-  module __undef_min_max { header "__undef_min_max" export * }
-  module __undef___deallocate { header "__undef___deallocate" export * }
 }
