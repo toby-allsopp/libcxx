@@ -1394,12 +1394,12 @@ template <class _CharT>
 class __owns_one_state
     : public __has_one_state<_CharT>
 {
-    typedef __has_one_state<_CharT> base;
+    typedef __has_one_state<_CharT> _BaseT;
 
 public:
     _LIBCPP_INLINE_VISIBILITY
     explicit __owns_one_state(__node<_CharT>* __s)
-        : base(__s) {}
+        : _BaseT(__s) {}
 
     virtual ~__owns_one_state();
 };
@@ -1416,14 +1416,14 @@ template <class _CharT>
 class __empty_state
     : public __owns_one_state<_CharT>
 {
-    typedef __owns_one_state<_CharT> base;
+    typedef __owns_one_state<_CharT> _BaseT;
 
 public:
     typedef _VSTD::__state<_CharT> __state;
 
     _LIBCPP_INLINE_VISIBILITY
     explicit __empty_state(__node<_CharT>* __s)
-        : base(__s) {}
+        : _BaseT(__s) {}
 
     virtual void __exec(__state&) const;
 };
@@ -1442,14 +1442,14 @@ template <class _CharT>
 class __empty_non_own_state
     : public __has_one_state<_CharT>
 {
-    typedef __has_one_state<_CharT> base;
+    typedef __has_one_state<_CharT> _BaseT;
 
 public:
     typedef _VSTD::__state<_CharT> __state;
 
     _LIBCPP_INLINE_VISIBILITY
     explicit __empty_non_own_state(__node<_CharT>* __s)
-        : base(__s) {}
+        : _BaseT(__s) {}
 
     virtual void __exec(__state&) const;
 };
@@ -1468,14 +1468,14 @@ template <class _CharT>
 class __repeat_one_loop
     : public __has_one_state<_CharT>
 {
-    typedef __has_one_state<_CharT> base;
+    typedef __has_one_state<_CharT> _BaseT;
 
 public:
     typedef _VSTD::__state<_CharT> __state;
 
     _LIBCPP_INLINE_VISIBILITY
     explicit __repeat_one_loop(__node<_CharT>* __s)
-        : base(__s) {}
+        : _BaseT(__s) {}
 
     virtual void __exec(__state&) const;
 };
@@ -1494,21 +1494,21 @@ template <class _CharT>
 class __owns_two_states
     : public __owns_one_state<_CharT>
 {
-    typedef __owns_one_state<_CharT> base;
+    typedef __owns_one_state<_CharT> _BaseT;
 
-    base* __second_;
+    _BaseT* __second_;
 
 public:
     _LIBCPP_INLINE_VISIBILITY
-    explicit __owns_two_states(__node<_CharT>* __s1, base* __s2)
-        : base(__s1), __second_(__s2) {}
+    explicit __owns_two_states(__node<_CharT>* __s1, _BaseT* __s2)
+        : _BaseT(__s1), __second_(__s2) {}
 
     virtual ~__owns_two_states();
 
     _LIBCPP_INLINE_VISIBILITY
-    base*  second() const {return __second_;}
+    _BaseT*  second() const {return __second_;}
     _LIBCPP_INLINE_VISIBILITY
-    base*& second()       {return __second_;}
+    _BaseT*& second()       {return __second_;}
 };
 
 template <class _CharT>
@@ -1523,7 +1523,7 @@ template <class _CharT>
 class __loop
     : public __owns_two_states<_CharT>
 {
-    typedef __owns_two_states<_CharT> base;
+    typedef __owns_two_states<_CharT> _BaseT;
 
     size_t __min_;
     size_t __max_;
@@ -1542,7 +1542,7 @@ public:
                           bool __greedy = true,
                           size_t __min = 0,
                           size_t __max = numeric_limits<size_t>::max())
-        : base(__s1, __s2), __min_(__min), __max_(__max), __loop_id_(__loop_id),
+        : _BaseT(__s1, __s2), __min_(__min), __max_(__max), __loop_id_(__loop_id),
           __mexp_begin_(__mexp_begin), __mexp_end_(__mexp_end),
           __greedy_(__greedy) {}
 
@@ -1629,7 +1629,7 @@ template <class _CharT>
 class __alternate
     : public __owns_two_states<_CharT>
 {
-    typedef __owns_two_states<_CharT> base;
+    typedef __owns_two_states<_CharT> _BaseT;
 
 public:
     typedef _VSTD::__state<_CharT> __state;
@@ -1637,7 +1637,7 @@ public:
     _LIBCPP_INLINE_VISIBILITY
     explicit __alternate(__owns_one_state<_CharT>* __s1,
                          __owns_one_state<_CharT>* __s2)
-        : base(__s1, __s2) {}
+        : _BaseT(__s1, __s2) {}
 
     virtual void __exec(__state& __s) const;
     virtual void __exec_split(bool __second, __state& __s) const;
@@ -1667,7 +1667,7 @@ template <class _CharT>
 class __begin_marked_subexpression
     : public __owns_one_state<_CharT>
 {
-    typedef __owns_one_state<_CharT> base;
+    typedef __owns_one_state<_CharT> _BaseT;
 
     unsigned __mexp_;
 public:
@@ -1675,7 +1675,7 @@ public:
 
     _LIBCPP_INLINE_VISIBILITY
     explicit __begin_marked_subexpression(unsigned __mexp, __node<_CharT>* __s)
-        : base(__s), __mexp_(__mexp) {}
+        : _BaseT(__s), __mexp_(__mexp) {}
 
     virtual void __exec(__state&) const;
 };
@@ -1695,7 +1695,7 @@ template <class _CharT>
 class __end_marked_subexpression
     : public __owns_one_state<_CharT>
 {
-    typedef __owns_one_state<_CharT> base;
+    typedef __owns_one_state<_CharT> _BaseT;
 
     unsigned __mexp_;
 public:
@@ -1703,7 +1703,7 @@ public:
 
     _LIBCPP_INLINE_VISIBILITY
     explicit __end_marked_subexpression(unsigned __mexp, __node<_CharT>* __s)
-        : base(__s), __mexp_(__mexp) {}
+        : _BaseT(__s), __mexp_(__mexp) {}
 
     virtual void __exec(__state&) const;
 };
@@ -1724,7 +1724,7 @@ template <class _CharT>
 class __back_ref
     : public __owns_one_state<_CharT>
 {
-    typedef __owns_one_state<_CharT> base;
+    typedef __owns_one_state<_CharT> _BaseT;
 
     unsigned __mexp_;
 public:
@@ -1732,7 +1732,7 @@ public:
 
     _LIBCPP_INLINE_VISIBILITY
     explicit __back_ref(unsigned __mexp, __node<_CharT>* __s)
-        : base(__s), __mexp_(__mexp) {}
+        : _BaseT(__s), __mexp_(__mexp) {}
 
     virtual void __exec(__state&) const;
 };
@@ -1773,7 +1773,7 @@ template <class _CharT, class _Traits>
 class __back_ref_icase
     : public __owns_one_state<_CharT>
 {
-    typedef __owns_one_state<_CharT> base;
+    typedef __owns_one_state<_CharT> _BaseT;
 
     _Traits __traits_;
     unsigned __mexp_;
@@ -1783,7 +1783,7 @@ public:
     _LIBCPP_INLINE_VISIBILITY
     explicit __back_ref_icase(const _Traits& __traits, unsigned __mexp,
                               __node<_CharT>* __s)
-        : base(__s), __traits_(__traits), __mexp_(__mexp) {}
+        : _BaseT(__s), __traits_(__traits), __mexp_(__mexp) {}
 
     virtual void __exec(__state&) const;
 };
@@ -1828,7 +1828,7 @@ template <class _CharT, class _Traits>
 class __back_ref_collate
     : public __owns_one_state<_CharT>
 {
-    typedef __owns_one_state<_CharT> base;
+    typedef __owns_one_state<_CharT> _BaseT;
 
     _Traits __traits_;
     unsigned __mexp_;
@@ -1838,7 +1838,7 @@ public:
     _LIBCPP_INLINE_VISIBILITY
     explicit __back_ref_collate(const _Traits& __traits, unsigned __mexp,
                               __node<_CharT>* __s)
-        : base(__s), __traits_(__traits), __mexp_(__mexp) {}
+        : _BaseT(__s), __traits_(__traits), __mexp_(__mexp) {}
 
     virtual void __exec(__state&) const;
 };
@@ -1883,7 +1883,7 @@ template <class _CharT, class _Traits>
 class __word_boundary
     : public __owns_one_state<_CharT>
 {
-    typedef __owns_one_state<_CharT> base;
+    typedef __owns_one_state<_CharT> _BaseT;
 
     _Traits __traits_;
     bool __invert_;
@@ -1893,7 +1893,7 @@ public:
     _LIBCPP_INLINE_VISIBILITY
     explicit __word_boundary(const _Traits& __traits, bool __invert,
                              __node<_CharT>* __s)
-        : base(__s), __traits_(__traits), __invert_(__invert) {}
+        : _BaseT(__s), __traits_(__traits), __invert_(__invert) {}
 
     virtual void __exec(__state&) const;
 };
@@ -1953,14 +1953,14 @@ template <class _CharT>
 class __l_anchor
     : public __owns_one_state<_CharT>
 {
-    typedef __owns_one_state<_CharT> base;
+    typedef __owns_one_state<_CharT> _BaseT;
 
 public:
     typedef _VSTD::__state<_CharT> __state;
 
     _LIBCPP_INLINE_VISIBILITY
     __l_anchor(__node<_CharT>* __s)
-        : base(__s) {}
+        : _BaseT(__s) {}
 
     virtual void __exec(__state&) const;
 };
@@ -1988,14 +1988,14 @@ template <class _CharT>
 class __r_anchor
     : public __owns_one_state<_CharT>
 {
-    typedef __owns_one_state<_CharT> base;
+    typedef __owns_one_state<_CharT> _BaseT;
 
 public:
     typedef _VSTD::__state<_CharT> __state;
 
     _LIBCPP_INLINE_VISIBILITY
     __r_anchor(__node<_CharT>* __s)
-        : base(__s) {}
+        : _BaseT(__s) {}
 
     virtual void __exec(__state&) const;
 };
@@ -2023,14 +2023,14 @@ template <class _CharT>
 class __match_any
     : public __owns_one_state<_CharT>
 {
-    typedef __owns_one_state<_CharT> base;
+    typedef __owns_one_state<_CharT> _BaseT;
 
 public:
     typedef _VSTD::__state<_CharT> __state;
 
     _LIBCPP_INLINE_VISIBILITY
     __match_any(__node<_CharT>* __s)
-        : base(__s) {}
+        : _BaseT(__s) {}
 
     virtual void __exec(__state&) const;
 };
@@ -2058,14 +2058,14 @@ template <class _CharT>
 class __match_any_but_newline
     : public __owns_one_state<_CharT>
 {
-    typedef __owns_one_state<_CharT> base;
+    typedef __owns_one_state<_CharT> _BaseT;
 
 public:
     typedef _VSTD::__state<_CharT> __state;
 
     _LIBCPP_INLINE_VISIBILITY
     __match_any_but_newline(__node<_CharT>* __s)
-        : base(__s) {}
+        : _BaseT(__s) {}
 
     virtual void __exec(__state&) const;
 };
@@ -2079,7 +2079,7 @@ template <class _CharT>
 class __match_char
     : public __owns_one_state<_CharT>
 {
-    typedef __owns_one_state<_CharT> base;
+    typedef __owns_one_state<_CharT> _BaseT;
 
     _CharT __c_;
 
@@ -2090,7 +2090,7 @@ public:
 
     _LIBCPP_INLINE_VISIBILITY
     __match_char(_CharT __c, __node<_CharT>* __s)
-        : base(__s), __c_(__c) {}
+        : _BaseT(__s), __c_(__c) {}
 
     virtual void __exec(__state&) const;
 };
@@ -2118,7 +2118,7 @@ template <class _CharT, class _Traits>
 class __match_char_icase
     : public __owns_one_state<_CharT>
 {
-    typedef __owns_one_state<_CharT> base;
+    typedef __owns_one_state<_CharT> _BaseT;
 
     _Traits __traits_;
     _CharT __c_;
@@ -2130,7 +2130,7 @@ public:
 
     _LIBCPP_INLINE_VISIBILITY
     __match_char_icase(const _Traits& __traits, _CharT __c, __node<_CharT>* __s)
-        : base(__s), __traits_(__traits), __c_(__traits.translate_nocase(__c)) {}
+        : _BaseT(__s), __traits_(__traits), __c_(__traits.translate_nocase(__c)) {}
 
     virtual void __exec(__state&) const;
 };
@@ -2159,7 +2159,7 @@ template <class _CharT, class _Traits>
 class __match_char_collate
     : public __owns_one_state<_CharT>
 {
-    typedef __owns_one_state<_CharT> base;
+    typedef __owns_one_state<_CharT> _BaseT;
 
     _Traits __traits_;
     _CharT __c_;
@@ -2171,7 +2171,7 @@ public:
 
     _LIBCPP_INLINE_VISIBILITY
     __match_char_collate(const _Traits& __traits, _CharT __c, __node<_CharT>* __s)
-        : base(__s), __traits_(__traits), __c_(__traits.translate(__c)) {}
+        : _BaseT(__s), __traits_(__traits), __c_(__traits.translate(__c)) {}
 
     virtual void __exec(__state&) const;
 };
@@ -2200,7 +2200,7 @@ template <class _CharT, class _Traits>
 class __bracket_expression
     : public __owns_one_state<_CharT>
 {
-    typedef __owns_one_state<_CharT> base;
+    typedef __owns_one_state<_CharT> _BaseT;
     typedef typename _Traits::string_type string_type;
 
     _Traits __traits_;
@@ -2224,7 +2224,7 @@ public:
     _LIBCPP_INLINE_VISIBILITY
     __bracket_expression(const _Traits& __traits, __node<_CharT>* __s,
                                  bool __negate, bool __icase, bool __collate)
-        : base(__s), __traits_(__traits), __mask_(), __neg_mask_(),
+        : _BaseT(__s), __traits_(__traits), __mask_(), __neg_mask_(),
           __negate_(__negate), __icase_(__icase), __collate_(__collate),
           __might_have_digraph_(__traits_.getloc().name() != "C") {}
 
@@ -2961,7 +2961,7 @@ template <class _CharT, class _Traits>
 class __lookahead
     : public __owns_one_state<_CharT>
 {
-    typedef __owns_one_state<_CharT> base;
+    typedef __owns_one_state<_CharT> _BaseT;
 
     basic_regex<_CharT, _Traits> __exp_;
     unsigned __mexp_;
@@ -2974,7 +2974,7 @@ public:
 
     _LIBCPP_INLINE_VISIBILITY
     __lookahead(const basic_regex<_CharT, _Traits>& __exp, bool __invert, __node<_CharT>* __s, unsigned __mexp)
-        : base(__s), __exp_(__exp), __mexp_(__mexp), __invert_(__invert) {}
+        : _BaseT(__s), __exp_(__exp), __mexp_(__mexp), __invert_(__invert) {}
 
     virtual void __exec(__state&) const;
 };
