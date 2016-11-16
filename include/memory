@@ -1527,7 +1527,7 @@ struct _LIBCPP_TYPE_VIS_ONLY allocator_traits
         {return __a.allocate(__n);}
     _LIBCPP_INLINE_VISIBILITY
     static pointer allocate(allocator_type& __a, size_type __n, const_void_pointer __hint)
-        {return allocate(__a, __n, __hint,
+        {return __allocate(__a, __n, __hint,
             __has_allocate_hint<allocator_type, size_type, const_void_pointer>());}
 
     _LIBCPP_INLINE_VISIBILITY
@@ -1581,7 +1581,7 @@ struct _LIBCPP_TYPE_VIS_ONLY allocator_traits
     _LIBCPP_INLINE_VISIBILITY
     static allocator_type
         select_on_container_copy_construction(const allocator_type& __a)
-            {return select_on_container_copy_construction(
+            {return __select_on_container_copy_construction(
                 __has_select_on_container_copy_construction<const allocator_type>(),
                 __a);}
 
@@ -1680,11 +1680,11 @@ struct _LIBCPP_TYPE_VIS_ONLY allocator_traits
 private:
 
     _LIBCPP_INLINE_VISIBILITY
-    static pointer allocate(allocator_type& __a, size_type __n,
+    static pointer __allocate(allocator_type& __a, size_type __n,
         const_void_pointer __hint, true_type)
         {return __a.allocate(__n, __hint);}
     _LIBCPP_INLINE_VISIBILITY
-    static pointer allocate(allocator_type& __a, size_type __n,
+    static pointer __allocate(allocator_type& __a, size_type __n,
         const_void_pointer, false_type)
         {return __a.allocate(__n);}
 
@@ -1721,11 +1721,11 @@ private:
 
     _LIBCPP_INLINE_VISIBILITY
     static allocator_type
-        select_on_container_copy_construction(true_type, const allocator_type& __a)
+        __select_on_container_copy_construction(true_type, const allocator_type& __a)
             {return __a.select_on_container_copy_construction();}
     _LIBCPP_INLINE_VISIBILITY
     static allocator_type
-        select_on_container_copy_construction(false_type, const allocator_type& __a)
+        __select_on_container_copy_construction(false_type, const allocator_type& __a)
             {return __a;}
 };
 

@@ -1901,14 +1901,14 @@ public:
 private:
 
     _LIBCPP_INLINE_VISIBILITY
-    void seed(true_type, true_type, result_type __s) {__x_ = __s == 0 ? 1 : __s;}
+    void __seed(true_type, true_type, result_type __s) {__x_ = __s == 0 ? 1 : __s;}
     _LIBCPP_INLINE_VISIBILITY
-    void seed(true_type, false_type, result_type __s) {__x_ = __s;}
+    void __seed(true_type, false_type, result_type __s) {__x_ = __s;}
     _LIBCPP_INLINE_VISIBILITY
-    void seed(false_type, true_type, result_type __s) {__x_ = __s % __m == 0 ?
+    void __seed(false_type, true_type, result_type __s) {__x_ = __s % __m == 0 ?
                                                                  1 : __s % __m;}
     _LIBCPP_INLINE_VISIBILITY
-    void seed(false_type, false_type, result_type __s) {__x_ = __s % __m;}
+    void __seed(false_type, false_type, result_type __s) {__x_ = __s % __m;}
 
     template<class _Sseq>
         void __seed(_Sseq& __q, integral_constant<unsigned, 1>);
@@ -2616,8 +2616,8 @@ public:
 
 private:
 
-    void seed(result_type __sd, integral_constant<unsigned, 1>);
-    void seed(result_type __sd, integral_constant<unsigned, 2>);
+    void __seed(result_type __sd, integral_constant<unsigned, 1>);
+    void __seed(result_type __sd, integral_constant<unsigned, 2>);
     template<class _Sseq>
         void __seed(_Sseq& __q, integral_constant<unsigned, 1>);
     template<class _Sseq>
@@ -2639,7 +2639,7 @@ template<class _UIntType, size_t __w, size_t __s, size_t __r>
 
 template<class _UIntType, size_t __w, size_t __s, size_t __r>
 void
-subtract_with_carry_engine<_UIntType, __w, __s, __r>::seed(result_type __sd,
+subtract_with_carry_engine<_UIntType, __w, __s, __r>::__seed(result_type __sd,
         integral_constant<unsigned, 1>)
 {
     linear_congruential_engine<result_type, 40014u, 0u, 2147483563u>
@@ -2652,7 +2652,7 @@ subtract_with_carry_engine<_UIntType, __w, __s, __r>::seed(result_type __sd,
 
 template<class _UIntType, size_t __w, size_t __s, size_t __r>
 void
-subtract_with_carry_engine<_UIntType, __w, __s, __r>::seed(result_type __sd,
+subtract_with_carry_engine<_UIntType, __w, __s, __r>::__seed(result_type __sd,
         integral_constant<unsigned, 2>)
 {
     linear_congruential_engine<result_type, 40014u, 0u, 2147483563u>

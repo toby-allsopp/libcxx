@@ -927,7 +927,7 @@ private:
     // --- Member data end ---
 
     _LIBCPP_INLINE_VISIBILITY
-    size_type& size() _NOEXCEPT {return __p2_.first();}
+    size_type& __size() _NOEXCEPT {return __p2_.first();}
 public:
     _LIBCPP_INLINE_VISIBILITY
     size_type  size() const _NOEXCEPT {return __p2_.first();}

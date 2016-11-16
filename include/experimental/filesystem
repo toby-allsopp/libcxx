@@ -702,7 +702,7 @@ public:
              >
         path(const _Source& __src, const locale& __loc);
     template <class _InputIt>
-        path(_InputIt __first, _InputIt _last, const locale& __loc);
+        path(_InputIt __first, _InputIt __last, const locale& __loc);
 
     _LIBCPP_INLINE_VISIBILITY
     ~path() = default;
