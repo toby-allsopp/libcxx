@@ -2084,11 +2084,6 @@ class __libcpp_compressed_pair_imp;
 struct __first_tag {};
 struct __second_tag {};
 struct __args_tag {};
-#if !defined(_LIBCPP_CXX03_LANG) || defined(__clang__)
-#define _LIBCPP_RVAL(_Type) _Type&&
-#else
-#define _LIBCPP_RVAL(_Type) _Type&
-#endif
 
 template <class _T1, class _T2>
 class __libcpp_compressed_pair_imp<_T1, _T2, 0>
@@ -2106,40 +2101,52 @@ public:
     typedef const typename remove_reference<_T1>::type& _T1_const_reference;
     typedef const typename remove_reference<_T2>::type& _T2_const_reference;
 
-    _LIBCPP_INLINE_VISIBILITY __libcpp_compressed_pair_imp() : __first_(), __second_() {}
-
 #ifndef _LIBCPP_CXX03_LANG
+    _LIBCPP_INLINE_VISIBILITY
+    __libcpp_compressed_pair_imp() = default;
+  
     template <class _Arg>
-    _LIBCPP_INLINE_VISIBILITY explicit __libcpp_compressed_pair_imp(__first_tag, _Arg&& __a)
-        : __first_(std::forward<_Arg>(__a)) {}
+    _LIBCPP_INLINE_VISIBILITY
+    constexpr __libcpp_compressed_pair_imp(__first_tag, _Arg&& __a)
+        : __first_(std::forward<_Arg>(__a)), __second_() {}
+  
     template <class _Arg>
-    _LIBCPP_INLINE_VISIBILITY explicit __libcpp_compressed_pair_imp(__second_tag, _Arg&& __a)
-        : __second_(std::forward<_Arg>(__a)) {}
+    _LIBCPP_INLINE_VISIBILITY
+    constexpr __libcpp_compressed_pair_imp(__second_tag, _Arg&& __a)
+        : __first_(), __second_(std::forward<_Arg>(__a)) {}
+
     template <class _U1, class _U2>
-    _LIBCPP_INLINE_VISIBILITY __libcpp_compressed_pair_imp(__args_tag,
-                                                           _U1&& __t1,
-                                                           _U2&& __t2)
+    _LIBCPP_INLINE_VISIBILITY
+    constexpr __libcpp_compressed_pair_imp(__args_tag, _U1&& __t1, _U2&& __t2)
       : __first_(std::forward<_U1>(__t1)), __second_(std::forward<_U2>(__t2)) {}
 
     template <class... _Args1, class... _Args2, size_t... _I1, size_t... _I2>
-        _LIBCPP_INLINE_VISIBILITY
-        __libcpp_compressed_pair_imp(piecewise_construct_t __pc,
-                                     tuple<_Args1...> __first_args,
-                                     tuple<_Args2...> __second_args,
-                                     __tuple_indices<_I1...>,
-                                     __tuple_indices<_I2...>)
+    _LIBCPP_INLINE_VISIBILITY
+    constexpr __libcpp_compressed_pair_imp(piecewise_construct_t __pc,
+                                           tuple<_Args1...> __first_args,
+                                           tuple<_Args2...> __second_args,
+                                           __tuple_indices<_I1...>,
+                                           __tuple_indices<_I2...>)
             : __first_(_VSTD::forward<_Args1>(_VSTD::get<_I1>(__first_args))...),
               __second_(_VSTD::forward<_Args2>(_VSTD::get<_I2>(__second_args))...)
             {}
 #else
+    _LIBCPP_INLINE_VISIBILITY
+    __libcpp_compressed_pair_imp() : __first_(), __second_() {}
+    
     template <class _Arg>
-    _LIBCPP_INLINE_VISIBILITY explicit __libcpp_compressed_pair_imp(__first_tag, _Arg& __a)
+    _LIBCPP_INLINE_VISIBILITY
+    __libcpp_compressed_pair_imp(__first_tag, _Arg& __a)
         : __first_(__a), __second_() {}
+
     template <class _Arg>
-    _LIBCPP_INLINE_VISIBILITY explicit __libcpp_compressed_pair_imp(__second_tag, _Arg& __a)
+    _LIBCPP_INLINE_VISIBILITY 
+    __libcpp_compressed_pair_imp(__second_tag, _Arg& __a)
         : __first_(), __second_(__a) {}
+
     template <class _U1, class _U2>
-    _LIBCPP_INLINE_VISIBILITY __libcpp_compressed_pair_imp(__args_tag, _U1& __t1, _U2& __t2)
+    _LIBCPP_INLINE_VISIBILITY
+    __libcpp_compressed_pair_imp(__args_tag, _U1& __t1, _U2& __t2)
       : __first_(__t1), __second_(__t2) {}
 #endif  // _LIBCPP_CXX03_LANG
 
@@ -2176,40 +2183,52 @@ public:
     typedef const _T1&                                        _T1_const_reference;
     typedef const typename remove_reference<_T2>::type& _T2_const_reference;
 
-    _LIBCPP_INLINE_VISIBILITY __libcpp_compressed_pair_imp() : __second_() {}
-
 #ifndef _LIBCPP_CXX03_LANG
+    _LIBCPP_INLINE_VISIBILITY
+    __libcpp_compressed_pair_imp() = default;
+  
     template <class _Arg>
-    _LIBCPP_INLINE_VISIBILITY explicit __libcpp_compressed_pair_imp(__first_tag, _Arg&& __a)
-        : __first_(std::forward<_Arg>(__a)) {}
+    _LIBCPP_INLINE_VISIBILITY
+    constexpr __libcpp_compressed_pair_imp(__first_tag, _Arg&& __a)
+        : __first_(std::forward<_Arg>(__a)), __second_() {}
+  
     template <class _Arg>
-    _LIBCPP_INLINE_VISIBILITY explicit __libcpp_compressed_pair_imp(__second_tag, _Arg&& __a)
-        : __second_(std::forward<_Arg>(__a)) {}
+    _LIBCPP_INLINE_VISIBILITY
+    constexpr __libcpp_compressed_pair_imp(__second_tag, _Arg&& __a)
+        : __first_(), __second_(std::forward<_Arg>(__a)) {}
+
     template <class _U1, class _U2>
-    _LIBCPP_INLINE_VISIBILITY __libcpp_compressed_pair_imp(__args_tag,
-                                                           _U1&& __t1,
-                                                           _U2&& __t2)
+    _LIBCPP_INLINE_VISIBILITY
+    constexpr __libcpp_compressed_pair_imp(__args_tag, _U1&& __t1, _U2&& __t2)
       : __first_(std::forward<_U1>(__t1)), __second_(std::forward<_U2>(__t2)) {}
 
     template <class... _Args1, class... _Args2, size_t... _I1, size_t... _I2>
-        _LIBCPP_INLINE_VISIBILITY
-        __libcpp_compressed_pair_imp(piecewise_construct_t __pc,
-                                     tuple<_Args1...> __first_args,
-                                     tuple<_Args2...> __second_args,
-                                     __tuple_indices<_I1...>,
-                                     __tuple_indices<_I2...>)
+    _LIBCPP_INLINE_VISIBILITY
+    constexpr __libcpp_compressed_pair_imp(piecewise_construct_t __pc,
+                                           tuple<_Args1...> __first_args,
+                                           tuple<_Args2...> __second_args,
+                                           __tuple_indices<_I1...>,
+                                           __tuple_indices<_I2...>)
             : __first_(_VSTD::forward<_Args1>(_VSTD::get<_I1>(__first_args))...),
               __second_(_VSTD::forward<_Args2>(_VSTD::get<_I2>(__second_args))...)
             {}
 #else
+    _LIBCPP_INLINE_VISIBILITY
+    __libcpp_compressed_pair_imp() : __first_(), __second_() {}
+    
     template <class _Arg>
-    _LIBCPP_INLINE_VISIBILITY explicit __libcpp_compressed_pair_imp(__first_tag, _Arg& __a)
+    _LIBCPP_INLINE_VISIBILITY
+    __libcpp_compressed_pair_imp(__first_tag, _Arg& __a)
         : __first_(__a), __second_() {}
+
     template <class _Arg>
-    _LIBCPP_INLINE_VISIBILITY explicit __libcpp_compressed_pair_imp(__second_tag, _Arg& __a)
+    _LIBCPP_INLINE_VISIBILITY 
+    __libcpp_compressed_pair_imp(__second_tag, _Arg& __a)
         : __first_(), __second_(__a) {}
+
     template <class _U1, class _U2>
-    _LIBCPP_INLINE_VISIBILITY __libcpp_compressed_pair_imp(__args_tag, _U1& __t1, _U2& __t2)
+    _LIBCPP_INLINE_VISIBILITY
+    __libcpp_compressed_pair_imp(__args_tag, _U1& __t1, _U2& __t2)
       : __first_(__t1), __second_(__t2) {}
 #endif  // _LIBCPP_CXX03_LANG
 
@@ -2246,39 +2265,54 @@ public:
     typedef const _T2&                                        _T2_const_reference;
 
 #ifndef _LIBCPP_CXX03_LANG
+    _LIBCPP_INLINE_VISIBILITY
+    __libcpp_compressed_pair_imp() = default;
+  
     template <class _Arg>
-    _LIBCPP_INLINE_VISIBILITY explicit __libcpp_compressed_pair_imp(__first_tag, _Arg&& __a)
-        : __first_(std::forward<_Arg>(__a)) {}
+    _LIBCPP_INLINE_VISIBILITY
+    constexpr __libcpp_compressed_pair_imp(__first_tag, _Arg&& __a)
+        : __second_(), __first_(std::forward<_Arg>(__a)) {}
+  
     template <class _Arg>
-    _LIBCPP_INLINE_VISIBILITY explicit __libcpp_compressed_pair_imp(__second_tag, _Arg&& __a)
-        : __second_(std::forward<_Arg>(__a)) {}
+    _LIBCPP_INLINE_VISIBILITY
+    constexpr __libcpp_compressed_pair_imp(__second_tag, _Arg&& __a)
+        : __second_(std::forward<_Arg>(__a)), __first_() {}
+
     template <class _U1, class _U2>
-    _LIBCPP_INLINE_VISIBILITY __libcpp_compressed_pair_imp(__args_tag,
-                                                           _U1&& __t1,
-                                                           _U2&& __t2)
-      : __first_(std::forward<_U1>(__t1)), __second_(std::forward<_U2>(__t2)) {}
+    _LIBCPP_INLINE_VISIBILITY
+    constexpr __libcpp_compressed_pair_imp(__args_tag, _U1&& __t1, _U2&& __t2)
+      : __second_(std::forward<_U2>(__t2)), __first_(std::forward<_U1>(__t1)) {}
 
     template <class... _Args1, class... _Args2, size_t... _I1, size_t... _I2>
-        _LIBCPP_INLINE_VISIBILITY
-        __libcpp_compressed_pair_imp(piecewise_construct_t __pc,
-                                     tuple<_Args1...> __first_args,
-                                     tuple<_Args2...> __second_args,
-                                     __tuple_indices<_I1...>,
-                                     __tuple_indices<_I2...>)
-            : __first_(_VSTD::forward<_Args1>(_VSTD::get<_I1>(__first_args))...),
-              __second_(_VSTD::forward<_Args2>(_VSTD::get<_I2>(__second_args))...)
+    _LIBCPP_INLINE_VISIBILITY
+    constexpr __libcpp_compressed_pair_imp(piecewise_construct_t __pc,
+                                           tuple<_Args1...> __first_args,
+                                           tuple<_Args2...> __second_args,
+                                           __tuple_indices<_I1...>,
+                                           __tuple_indices<_I2...>)
+            : __second_(_VSTD::forward<_Args2>(_VSTD::get<_I2>(__second_args))...),
+              __first_(_VSTD::forward<_Args1>(_VSTD::get<_I1>(__first_args))...)
             {}
 #else
+    _LIBCPP_INLINE_VISIBILITY
+    __libcpp_compressed_pair_imp() : __second_(), __first_() {}
+    
     template <class _Arg>
-    _LIBCPP_INLINE_VISIBILITY explicit __libcpp_compressed_pair_imp(__first_tag, _Arg& __a)
-        : __first_(__a), __second_() {}
+    _LIBCPP_INLINE_VISIBILITY
+    __libcpp_compressed_pair_imp(__first_tag, _Arg& __a)
+        : __second_(), __first_(__a) {}
+
     template <class _Arg>
-    _LIBCPP_INLINE_VISIBILITY explicit __libcpp_compressed_pair_imp(__second_tag, _Arg& __a)
-        : __first_(), __second_(__a) {}
+    _LIBCPP_INLINE_VISIBILITY 
+    __libcpp_compressed_pair_imp(__second_tag, _Arg& __a)
+        : __second_(__a), __first_() {}
+
     template <class _U1, class _U2>
-    _LIBCPP_INLINE_VISIBILITY __libcpp_compressed_pair_imp(__args_tag, _U1& __t1, _U2& __t2)
-      : __first_(__t1), __second_(__t2) {}
+    _LIBCPP_INLINE_VISIBILITY
+    __libcpp_compressed_pair_imp(__args_tag, _U1& __t1, _U2& __t2)
+      : __second_(__t2), __first_(__t1) {}
 #endif  // _LIBCPP_CXX03_LANG
+
 
     _LIBCPP_INLINE_VISIBILITY _T1_reference       first() _NOEXCEPT       {return __first_;}
     _LIBCPP_INLINE_VISIBILITY _T1_const_reference first() const _NOEXCEPT {return __first_;}
@@ -2313,40 +2347,52 @@ public:
     typedef const _T1& _T1_const_reference;
     typedef const _T2& _T2_const_reference;
 
-    _LIBCPP_INLINE_VISIBILITY __libcpp_compressed_pair_imp() {}
-
 #ifndef _LIBCPP_CXX03_LANG
+    _LIBCPP_INLINE_VISIBILITY
+    __libcpp_compressed_pair_imp() = default;
+
     template <class _Arg>
-    _LIBCPP_INLINE_VISIBILITY explicit __libcpp_compressed_pair_imp(__first_tag, _Arg&& __a)
-        : __first_(std::forward<_Arg>(__a)) {}
+    _LIBCPP_INLINE_VISIBILITY
+    constexpr __libcpp_compressed_pair_imp(__first_tag, _Arg&& __a)
+        : __first_(std::forward<_Arg>(__a)), __second_() {}
+
     template <class _Arg>
-    _LIBCPP_INLINE_VISIBILITY explicit __libcpp_compressed_pair_imp(__second_tag, _Arg&& __a)
-        : __second_(std::forward<_Arg>(__a)) {}
+    _LIBCPP_INLINE_VISIBILITY
+    constexpr __libcpp_compressed_pair_imp(__second_tag, _Arg&& __a)
+        : __first_(), __second_(std::forward<_Arg>(__a)) {}
+
     template <class _U1, class _U2>
-    _LIBCPP_INLINE_VISIBILITY __libcpp_compressed_pair_imp(__args_tag,
-                                                           _U1&& __t1,
-                                                           _U2&& __t2)
+    _LIBCPP_INLINE_VISIBILITY
+    constexpr __libcpp_compressed_pair_imp(__args_tag, _U1&& __t1, _U2&& __t2)
       : __first_(std::forward<_U1>(__t1)), __second_(std::forward<_U2>(__t2)) {}
 
     template <class... _Args1, class... _Args2, size_t... _I1, size_t... _I2>
-        _LIBCPP_INLINE_VISIBILITY
-        __libcpp_compressed_pair_imp(piecewise_construct_t __pc,
-                                     tuple<_Args1...> __first_args,
-                                     tuple<_Args2...> __second_args,
-                                     __tuple_indices<_I1...>,
-                                     __tuple_indices<_I2...>)
+    _LIBCPP_INLINE_VISIBILITY
+    constexpr __libcpp_compressed_pair_imp(piecewise_construct_t __pc,
+                                           tuple<_Args1...> __first_args,
+                                           tuple<_Args2...> __second_args,
+                                           __tuple_indices<_I1...>,
+                                           __tuple_indices<_I2...>)
             : __first_(_VSTD::forward<_Args1>(_VSTD::get<_I1>(__first_args))...),
               __second_(_VSTD::forward<_Args2>(_VSTD::get<_I2>(__second_args))...)
             {}
 #else
+    _LIBCPP_INLINE_VISIBILITY
+    __libcpp_compressed_pair_imp() : __first_(), __second_() {}
+
     template <class _Arg>
-    _LIBCPP_INLINE_VISIBILITY explicit __libcpp_compressed_pair_imp(__first_tag, _Arg& __a)
+    _LIBCPP_INLINE_VISIBILITY
+    __libcpp_compressed_pair_imp(__first_tag, _Arg& __a)
         : __first_(__a), __second_() {}
+
     template <class _Arg>
-    _LIBCPP_INLINE_VISIBILITY explicit __libcpp_compressed_pair_imp(__second_tag, _Arg& __a)
+    _LIBCPP_INLINE_VISIBILITY
+    __libcpp_compressed_pair_imp(__second_tag, _Arg& __a)
         : __first_(), __second_(__a) {}
+
     template <class _U1, class _U2>
-    _LIBCPP_INLINE_VISIBILITY __libcpp_compressed_pair_imp(__args_tag, _U1& __t1, _U2& __t2)
+    _LIBCPP_INLINE_VISIBILITY
+    __libcpp_compressed_pair_imp(__args_tag, _U1& __t1, _U2& __t2)
       : __first_(__t1), __second_(__t2) {}
 #endif  // _LIBCPP_CXX03_LANG
 
@@ -2373,36 +2419,51 @@ public:
     typedef typename base::_T2_param _T2_param;
 
 #ifndef _LIBCPP_CXX03_LANG
+  _LIBCPP_INLINE_VISIBILITY
+  __compressed_pair() = default;
 
-  _LIBCPP_INLINE_VISIBILITY __compressed_pair() = default;
   template <class _Tp, typename enable_if<
       !is_same<typename decay<_Tp>::type, __compressed_pair>::value, bool>::type = true
   >
-  explicit __compressed_pair(_Tp&& __t) : base(__first_tag(), std::forward<_Tp>(__t)) {  }
+  _LIBCPP_INLINE_VISIBILITY
+  constexpr explicit __compressed_pair(_Tp&& __t)
+      : base(__first_tag(), std::forward<_Tp>(__t)) {  }
+
   template <class _Tp>
-  __compressed_pair(__second_tag __tag, _Tp&& __t)
+  _LIBCPP_INLINE_VISIBILITY
+  constexpr __compressed_pair(__second_tag __tag, _Tp&& __t)
       : base(__tag, std::forward<_Tp>(__t)) {}
+
   template <class _U1, class _U2>
-  _LIBCPP_INLINE_VISIBILITY __compressed_pair(_U1&& __t1, _U2&& __t2)
+  _LIBCPP_INLINE_VISIBILITY
+  constexpr __compressed_pair(_U1&& __t1, _U2&& __t2)
       : base(__args_tag{}, std::forward<_U1>(__t1), std::forward<_U2>(__t2)) {}
 
     template <class... _Args1, class... _Args2>
-        _LIBCPP_INLINE_VISIBILITY
-        __compressed_pair(piecewise_construct_t __pc, tuple<_Args1...> __first_args,
-                                                      tuple<_Args2...> __second_args)
-            : base(__pc, _VSTD::move(__first_args), _VSTD::move(__second_args),
-                   typename __make_tuple_indices<sizeof...(_Args1)>::type(),
-                   typename __make_tuple_indices<sizeof...(_Args2) >::type())
-            {}
+    _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_CONSTEXPR_AFTER_CXX14
+    __compressed_pair(piecewise_construct_t __pc, tuple<_Args1...> __first_args,
+                                                  tuple<_Args2...> __second_args)
+        : base(__pc, _VSTD::move(__first_args), _VSTD::move(__second_args),
+               typename __make_tuple_indices<sizeof...(_Args1)>::type(),
+               typename __make_tuple_indices<sizeof...(_Args2) >::type())
+        {}
 
 #else
   _LIBCPP_INLINE_VISIBILITY __compressed_pair() {}
-    _LIBCPP_INLINE_VISIBILITY explicit __compressed_pair(_T1_param __t1)
+
+    _LIBCPP_INLINE_VISIBILITY
+    explicit __compressed_pair(_T1_param __t1)
         : base(__first_tag(), _VSTD::forward<_T1_param>(__t1)) {}
-    _LIBCPP_INLINE_VISIBILITY explicit __compressed_pair(__second_tag __tag, _T2_param __t2)
+
+    _LIBCPP_INLINE_VISIBILITY
+    __compressed_pair(__second_tag __tag, _T2_param __t2)
         : base(__tag, _VSTD::forward<_T2_param>(__t2)) {}
-    _LIBCPP_INLINE_VISIBILITY __compressed_pair(_T1_param __t1, _T2_param __t2)
-        : base(__args_tag(), _VSTD::forward<_T1_param>(__t1), _VSTD::forward<_T2_param>(__t2)) {}
+
+    _LIBCPP_INLINE_VISIBILITY
+    __compressed_pair(_T1_param __t1, _T2_param __t2)
+        : base(__args_tag(), _VSTD::forward<_T1_param>(__t1),
+                             _VSTD::forward<_T2_param>(__t2)) {}
 #endif
     using base::first;
     using base::second;
