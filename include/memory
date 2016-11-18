@@ -2374,15 +2374,14 @@ public:
 
 #ifndef _LIBCPP_CXX03_LANG
 
-    _LIBCPP_INLINE_VISIBILITY __compressed_pair() = default;
-  __compressed_pair(_T2_param) = delete;
-  __compressed_pair(__second_tag __tag, _Tp&& __t)
-      : base(__tag, std::forward<_Tp>(__t)) {}
+  _LIBCPP_INLINE_VISIBILITY __compressed_pair() = default;
   template <class _Tp, typename enable_if<
       !is_same<typename decay<_Tp>::type, __compressed_pair>::value, bool>::type = true
   >
-  __compressed_pair(_Tp&& __t) : base(
-      __first_tag(), std::forward<_Tp>(__t)) {  }
+  explicit __compressed_pair(_Tp&& __t) : base(__first_tag(), std::forward<_Tp>(__t)) {  }
+  template <class _Tp>
+  __compressed_pair(__second_tag __tag, _Tp&& __t)
+      : base(__tag, std::forward<_Tp>(__t)) {}
   template <class _U1, class _U2>
   _LIBCPP_INLINE_VISIBILITY __compressed_pair(_U1&& __t1, _U2&& __t2)
       : base(__args_tag{}, std::forward<_U1>(__t1), std::forward<_U2>(__t2)) {}
