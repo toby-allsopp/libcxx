@@ -21,7 +21,6 @@
 class Deleter
 {
     // expected-error@memory:* {{base class 'Deleter' has private default constructor}}
-    // expected-note@memory:* + {{in instantiation of member function}}
     Deleter() {} // expected-note {{implicitly declared private here}}
 
 public:
