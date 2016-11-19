@@ -7,6 +7,11 @@ module std [system] {
   // Deprecated C-compatibility headers. These can all be included from within
   // an 'extern "C"' context.
   module depr [extern_c] {
+   module stdint_h {
+      header "stdint.h"
+      export stddef_h
+      export stdlib_h
+    }
     // <assert.h> provided by C library.
     module ctype_h {
       header "ctype.h"
@@ -20,6 +25,8 @@ module std [system] {
     // <float.h> provided by compiler or C library.
     module inttypes_h {
       header "inttypes.h"
+      export stddef_h
+      export stdlib_h
       export stdint_h
       export *
     }
@@ -38,26 +45,28 @@ module std [system] {
       export *
     }
     // FIXME: <stdalign.h> is missing.
-    // <signal.h> provided by C library.
+    module signal_h {
+      // <signal.h> __need_* macros require textual inclusion.
+      textual header "signal.h"
+      export stddef_h
+      export stdlib_h
+    }
     // <stdarg.h> provided by compiler.
     // <stdbool.h> provided by compiler.
     module stddef_h {
       // <stddef.h>'s __need_* macros require textual inclusion.
       textual header "stddef.h"
     }
-    module stdint_h {
-      header "stdint.h"
-      export *
-    }
     module stdio_h {
       // <stdio.h>'s __need_* macros require textual inclusion.
       textual header "stdio.h"
-      export *
+      export stddef_h
+      export stdlib_h
     }
     module stdlib_h {
       // <stdlib.h>'s __need_* macros require textual inclusion.
       textual header "stdlib.h"
-      export *
+      export stddef_h
     }
     module string_h {
       header "string.h"
@@ -68,7 +77,8 @@ module std [system] {
     module wchar_h {
       // <wchar.h>'s __need_* macros require textual inclusion.
       textual header "wchar.h"
-      export *
+      export stddef_h
+      export stdlib_h
     }
     module wctype_h {
       header "wctype.h"
@@ -143,8 +153,8 @@ module std [system] {
       export *
     }
     module csignal {
-      header "csignal"
-      export *
+      textual header "csignal"
+
     }
     // FIXME: <cstdalign> is missing.
     module cstdarg {
@@ -157,7 +167,7 @@ module std [system] {
     }
     module cstddef {
       header "cstddef"
-      export *
+      export depr.stddef_h
     }
     module cstdint {
       header "cstdint"
@@ -170,7 +180,8 @@ module std [system] {
     }
     module cstdlib {
       header "cstdlib"
-      export *
+      export cstddef
+      export depr.stdlib_h
     }
     module cstring {
       header "cstring"
@@ -189,6 +200,11 @@ module std [system] {
     // FIXME: <cuchar> is missing.
     module cwchar {
       header "cwchar"
+      export cstddef
+      export cstddef
+      export depr.wchar_h
+      export depr.stddef_h
+      export depr.stdint_h
       export *
     }
     module cwctype {
