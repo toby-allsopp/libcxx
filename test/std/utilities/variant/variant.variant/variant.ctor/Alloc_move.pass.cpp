@@ -74,33 +74,33 @@ void test_move_ctor_basic()
     const auto atag = std::allocator_arg;
     std::allocator<void> a{};
     {
-        std::variant<int> v(std::in_place<0>, 42);
+        std::variant<int> v(std::in_place_index<0>, 42);
         std::variant<int> v2(atag, a, std::move(v));
         assert(v2.index() == 0);
         assert(std::get<0>(v2) == 42);
     }
     {
-        std::variant<int, long> v(std::in_place<1>, 42);
+        std::variant<int, long> v(std::in_place_index<1>, 42);
         std::variant<int, long> v2(atag, a, std::move(v));
         assert(v2.index() == 1);
         assert(std::get<1>(v2) == 42);
     }
     {
-        std::variant<MoveOnly> v(std::in_place<0>, 42);
+        std::variant<MoveOnly> v(std::in_place_index<0>, 42);
         assert(v.index() == 0);
         std::variant<MoveOnly> v2(atag, a, std::move(v));
         assert(v2.index() == 0);
         assert(std::get<0>(v2).value == 42);
     }
     {
-        std::variant<int, MoveOnly> v(std::in_place<1>, 42);
+        std::variant<int, MoveOnly> v(std::in_place_index<1>, 42);
         assert(v.index() == 1);
         std::variant<int, MoveOnly> v2(atag, a, std::move(v));
         assert(v2.index() == 1);
         assert(std::get<1>(v2).value == 42);
     }
     {
-        std::variant<MoveOnlyNT> v(std::in_place<0>, 42);
+        std::variant<MoveOnlyNT> v(std::in_place_index<0>, 42);
         assert(v.index() == 0);
         std::variant<MoveOnlyNT> v2(atag, a, std::move(v));
         assert(v2.index() == 0);
@@ -108,7 +108,7 @@ void test_move_ctor_basic()
         assert(std::get<0>(v2).value == 42);
     }
     {
-        std::variant<int, MoveOnlyNT> v(std::in_place<1>, 42);
+        std::variant<int, MoveOnlyNT> v(std::in_place_index<1>, 42);
         assert(v.index() == 1);
         std::variant<int, MoveOnlyNT> v2(atag, a, std::move(v));
         assert(v2.index() == 1);
@@ -130,49 +130,49 @@ void test_move_ctor_uses_alloc()
     const A a;
     const A2 a2;
     {
-        V v(std::in_place<0>);
+        V v(std::in_place_index<0>);
         V v2(std::allocator_arg, a, std::move(v));
         assert(v2.index() == 0);
         assert(checkConstruct<UA1 &&>(std::get<0>(v2), UA_AllocArg));
     }
     {
-        V v(std::in_place<0>);
+        V v(std::in_place_index<0>);
         V v2(std::allocator_arg, a2, std::move(v));
         assert(v2.index() == 0);
         assert(checkConstruct<UA1 &&>(std::get<0>(v2), UA_None));
     }
     {
-        V v(std::in_place<1>);
+        V v(std::in_place_index<1>);
         V v2(std::allocator_arg, a, std::move(v));
         assert(v2.index() == 1);
         assert(checkConstruct<UA2 &&>(std::get<1>(v2), UA_AllocLast));
     }
     {
-        V v(std::in_place<1>);
+        V v(std::in_place_index<1>);
         V v2(std::allocator_arg, a2, std::move(v));
         assert(v2.index() == 1);
         assert(checkConstruct<UA2 &&>(std::get<1>(v2), UA_None));
     }
     {
-        V v(std::in_place<2>);
+        V v(std::in_place_index<2>);
         V v2(std::allocator_arg, a, std::move(v));
         assert(v2.index() == 2);
         assert(checkConstruct<UA3 &&>(std::get<2>(v2), UA_AllocArg));
     }
     {
-        V v(std::in_place<2>);
+        V v(std::in_place_index<2>);
         V v2(std::allocator_arg, a2, std::move(v));
         assert(v2.index() == 2);
         assert(checkConstruct<UA3 &&>(std::get<2>(v2), UA_None));
     }
     {
-        V v(std::in_place<3>);
+        V v(std::in_place_index<3>);
         V v3(std::allocator_arg, a, std::move(v));
         assert(v3.index() == 3);
         assert(checkConstruct<NUA &&>(std::get<3>(v3), UA_None));
     }
     {
-        V v(std::in_place<3>);
+        V v(std::in_place_index<3>);
         V v3(std::allocator_arg, a2, std::move(v));
         assert(v3.index() == 3);
         assert(checkConstruct<NUA &&>(std::get<3>(v3), UA_None));

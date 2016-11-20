@@ -155,7 +155,7 @@ using namespace RuntimeHelpers;
 #ifndef TEST_HAS_NO_EXCEPTIONS
     {
         using V = std::variant<std::string, ThrowsCtorT>;
-        V v(std::in_place<std::string>, "hello");
+        V v(std::in_place_type<std::string>, "hello");
         try {
             v = 42;
         } catch (...) { /* ... */ }
@@ -163,7 +163,7 @@ using namespace RuntimeHelpers;
     }
     {
         using V = std::variant<ThrowsAssignT, std::string>;
-        V v(std::in_place<std::string>, "hello");
+        V v(std::in_place_type<std::string>, "hello");
         v = 42;
         assert(v.index() == 0);
         assert(std::get<0>(v).value == 42);

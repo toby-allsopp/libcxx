@@ -72,7 +72,7 @@ int MakeEmptyT::alive = 0;
 
 template <class Variant>
 void makeEmpty(Variant& v) {
-    Variant v2(std::in_place<MakeEmptyT>);
+    Variant v2(std::in_place_type<MakeEmptyT>);
     try {
         v = v2;
         assert(false);
@@ -123,33 +123,33 @@ void test_move_ctor_sfinae() {
 void test_move_ctor_basic()
 {
     {
-        std::variant<int> v(std::in_place<0>, 42);
+        std::variant<int> v(std::in_place_index<0>, 42);
         std::variant<int> v2 = std::move(v);
         assert(v2.index() == 0);
         assert(std::get<0>(v2) == 42);
     }
     {
-        std::variant<int, long> v(std::in_place<1>, 42);
+        std::variant<int, long> v(std::in_place_index<1>, 42);
         std::variant<int, long> v2 = std::move(v);
         assert(v2.index() == 1);
         assert(std::get<1>(v2) == 42);
     }
     {
-        std::variant<MoveOnly> v(std::in_place<0>, 42);
+        std::variant<MoveOnly> v(std::in_place_index<0>, 42);
         assert(v.index() == 0);
         std::variant<MoveOnly> v2(std::move(v));
         assert(v2.index() == 0);
         assert(std::get<0>(v2).value == 42);
     }
     {
-        std::variant<int, MoveOnly> v(std::in_place<1>, 42);
+        std::variant<int, MoveOnly> v(std::in_place_index<1>, 42);
         assert(v.index() == 1);
         std::variant<int, MoveOnly> v2(std::move(v));
         assert(v2.index() == 1);
         assert(std::get<1>(v2).value == 42);
     }
     {
-        std::variant<MoveOnlyNT> v(std::in_place<0>, 42);
+        std::variant<MoveOnlyNT> v(std::in_place_index<0>, 42);
         assert(v.index() == 0);
         std::variant<MoveOnlyNT> v2(std::move(v));
         assert(v2.index() == 0);
@@ -157,7 +157,7 @@ void test_move_ctor_basic()
         assert(std::get<0>(v2).value == 42);
     }
     {
-        std::variant<int, MoveOnlyNT> v(std::in_place<1>, 42);
+        std::variant<int, MoveOnlyNT> v(std::in_place_index<1>, 42);
         assert(v.index() == 1);
         std::variant<int, MoveOnlyNT> v2(std::move(v));
         assert(v2.index() == 1);

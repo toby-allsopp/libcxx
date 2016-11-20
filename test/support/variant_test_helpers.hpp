@@ -10,6 +10,9 @@
 #ifndef SUPPORT_VARIANT_TEST_HELPERS_HPP
 #define SUPPORT_VARIANT_TEST_HELPERS_HPP
 
+#include <utility>
+#include <cassert>
+
 #include "test_macros.h"
 
 #if TEST_STD_VER <= 14
@@ -61,7 +64,7 @@ int MakeEmptyT::alive = 0;
 
 template <class Variant>
 void makeEmpty(Variant& v) {
-    Variant v2(std::in_place<MakeEmptyT>);
+    Variant v2(std::in_place_type<MakeEmptyT>);
     try {
         v = v2;
         assert(false);

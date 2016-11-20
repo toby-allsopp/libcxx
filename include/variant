@@ -324,7 +324,7 @@ using __variant_sfinae_base_t =
 template <size_t _Idx, class _PossibleTp>
 struct _CheckCtorImp
 {
-  static constexpr in_place_index_t<_Idx> __ip = std::in_place<_Idx>;
+  static constexpr in_place_index_t<_Idx> __ip = std::in_place_index<_Idx>;
   static constexpr size_t __index = _Idx;
   using type = typename _PossibleTp::type;
   template <class... _Args>
@@ -871,7 +871,7 @@ union _LIBCPP_TYPE_VIS_ONLY __variant_union<true, _Idx, _T0, _TRest...>
   template <class _Tag, size_t _OtherIdx, class... _Args>
   constexpr __variant_union(_Tag __tag, in_place_index_t<_OtherIdx>,
                             _Args&&... __args)
-    : __tail_(__tag, in_place<_OtherIdx - 1>,
+    : __tail_(__tag, in_place_index<_OtherIdx - 1>,
               _VSTD::forward<_Args>(__args)...)
   {
   }
@@ -915,7 +915,7 @@ union _LIBCPP_TYPE_VIS_ONLY __variant_union<false, _Idx, _T0, _TRest...>
   template <class _Tag, size_t _OtherIdx, class... _Args>
   inline _LIBCPP_INLINE_VISIBILITY constexpr __variant_union(
     _Tag __tag, in_place_index_t<_OtherIdx>, _Args&&... __args)
-    : __tail_(__tag, in_place<_OtherIdx - 1>,
+    : __tail_(__tag, in_place_index<_OtherIdx - 1>,
               _VSTD::forward<_Args>(__args)...)
   {
   }
@@ -1034,7 +1034,7 @@ struct __variant_base_imp<false, _Types...>
   inline _LIBCPP_INLINE_VISIBILITY constexpr __variant_base_imp(
     _Tag __tag, in_place_index_t<_OtherIdx>, _Args&&... __args)
     : __which_(_OtherIdx)
-    , __imp_(__tag, in_place<_OtherIdx>, _VSTD::forward<_Args>(__args)...)
+    , __imp_(__tag, in_place_index<_OtherIdx>, _VSTD::forward<_Args>(__args)...)
 
   {
   }
@@ -1070,7 +1070,7 @@ struct __variant_base_imp<true, _Types...>
   inline _LIBCPP_INLINE_VISIBILITY constexpr __variant_base_imp(
     _Tag __tag, in_place_index_t<_OtherIdx>, _Args&&... __args)
     : __which_(_OtherIdx)
-    , __imp_(__tag, in_place<_OtherIdx>, _VSTD::forward<_Args>(__args)...)
+    , __imp_(__tag, in_place_index<_OtherIdx>, _VSTD::forward<_Args>(__args)...)
   {
   }
 
@@ -1240,7 +1240,7 @@ class _LIBCPP_TYPE_VIS_ONLY variant
   {
     __base_.__destroy();
     ::new ((void*)_VSTD::addressof(__base_.__imp_))
-      typename _Base::_Imp(__variant_inplace_tag{}, in_place<_Idx>,
+      typename _Base::_Imp(__variant_inplace_tag{}, in_place_index<_Idx>,
                            _VSTD::forward<_Args>(__args)...);
     __base_.__which_ = _Idx;
   }
@@ -1252,7 +1252,7 @@ public:
               is_default_constructible<_First>, _Dummy>::value>>
   inline _LIBCPP_INLINE_VISIBILITY constexpr variant() noexcept(
     is_nothrow_default_constructible<_First>::value)
-    : __base_(__variant_inplace_tag{}, in_place<0>)
+    : __base_(__variant_inplace_tag{}, in_place_index<0>)
   {
   }
 
@@ -1263,7 +1263,7 @@ public:
             class = enable_if_t<_Found::template __can_construct<_Tp>()>>
   inline _LIBCPP_INLINE_VISIBILITY constexpr variant(_Tp&& __t) noexcept(
     is_nothrow_constructible<typename _Found::type, _Tp>::value)
-    : __base_(__variant_inplace_tag{}, in_place<_Found::__index>,
+    : __base_(__variant_inplace_tag{}, in_place_index<_Found::__index>,
               _VSTD::forward<_Tp>(__t))
   {
   }
@@ -1306,7 +1306,7 @@ public:
             class = enable_if_t<__dependent_type<
               is_default_constructible<_First>, _Dummy>::value>>
   inline _LIBCPP_INLINE_VISIBILITY variant(allocator_arg_t, const _Alloc& __a)
-    : __base_(__variant_alloc_tag{}, in_place<0>, __a)
+    : __base_(__variant_alloc_tag{}, in_place_index<0>, __a)
   {
   }
 
@@ -1356,7 +1356,7 @@ public:
     class = enable_if_t<_CheckArg<_Tp>::template __can_construct<_Tp>()>>
   inline _LIBCPP_INLINE_VISIBILITY variant(allocator_arg_t, const _Alloc& __a,
                                            _Tp&& __tp)
-    : __base_(__variant_alloc_tag{}, in_place<_CheckArg<_Tp>::__index>,
+    : __base_(__variant_alloc_tag{}, in_place_index<_CheckArg<_Tp>::__index>,
               __a, _VSTD::forward<_Tp>(__tp))
   {
   }
