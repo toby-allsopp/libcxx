@@ -751,7 +751,6 @@ struct __variant_alloc_tag
 template <size_t _Idx, class _Tp>
 struct _LIBCPP_TYPE_VIS_ONLY __variant_element
 {
-  static_assert(!is_void_v<_Tp>, "variant cannot be instantiated with void");
   using element_type = _Tp;
 
   __variant_element() = delete;
@@ -1153,10 +1152,25 @@ class _LIBCPP_TYPE_VIS_ONLY variant<>
   variant& operator=(variant const&) = delete;
 };
 
+template <class _Tp>
+struct __variant_static_assert {
+  static_assert(!is_void_v<_Tp>, "variant cannot be instantiated with void");
+  static_assert(!is_array_v<_Tp>, "variant cannot be instantiated with array types");
+};
+
 template <class... _Types>
 class _LIBCPP_TYPE_VIS_ONLY variant
   : public __variant_detail::__variant_sfinae_base_t<_Types...>
 {
+
+  static_assert(__all<!is_void_v<_Types>...>::value,
+    "variant cannot be instantiated with void");
+  static_assert(__all<!is_array_v<_Types>...>::value,
+    "variant cannot be instantiated with an array type");
+#if 0
+    static_assert(__all<!is_reference_v<_Types>...>::value,
+      "variant cannot be instantiated with a reference type");
+#endif
 
   // private typedefs
   using _CtorBase = __variant_detail::__variant_sfinae_base_t<_Types...>;
