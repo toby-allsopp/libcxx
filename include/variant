@@ -1276,7 +1276,7 @@ public:
               _VSTD::forward<_Args>(__args)...)
   {
   }
-
+#if 0
   // allocator-extended constructors
   template <class _Alloc, bool _Dummy = true,
             class = enable_if_t<__dependent_type<
@@ -1377,6 +1377,7 @@ public:
               _VSTD::forward<_Args>(__args)...)
   {
   }
+#endif
 
   // ?.3.2, Destructor
   ~variant() = default;
