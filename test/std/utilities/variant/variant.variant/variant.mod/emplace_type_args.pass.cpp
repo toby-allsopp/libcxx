@@ -24,6 +24,7 @@
 #include <cassert>
 
 #include "test_macros.h"
+#include "archetypes.hpp"
 #include "test_convertible.hpp"
 
 template <class Var, class T, class ...Args>
@@ -38,8 +39,7 @@ constexpr bool emplace_exists() { return test_emplace_exists_imp<Args...>(0); }
 
 void test_emplace_sfinae() {
     using V = std::variant<int, int&, int const&, int&&,
-                           long, long,
-                           void>;
+                           long, long, TestTypes::NoCtors>;
     static_assert(emplace_exists<V, int>(), "");
     static_assert(emplace_exists<V, int, int>(), "");
     static_assert(emplace_exists<V, int, long long>(), "");
@@ -57,7 +57,7 @@ void test_emplace_sfinae() {
     static_assert(!emplace_exists<V, int&&, int const&>(), "cannot bind ref");
     static_assert(!emplace_exists<V, int&&, int const&&>(), "cannot bind ref");
     static_assert(!emplace_exists<V, long, long>(), "ambiguous");
-    static_assert(!emplace_exists<V, void>(), "cannot construct void");
+    static_assert(!emplace_exists<V, TestTypes::NoCtors>(), "cannot construct void");
 }
 
 void test_basic() {
@@ -70,7 +70,7 @@ void test_basic() {
         assert(std::get<0>(v) == 42);
     }
     {
-        using V = std::variant<int, long, int const&, int &&, void, std::string>;
+        using V = std::variant<int, long, int const&, int &&, TestTypes::NoCtors, std::string>;
         const int x = 100;
         int y = 42;
         int z = 43;

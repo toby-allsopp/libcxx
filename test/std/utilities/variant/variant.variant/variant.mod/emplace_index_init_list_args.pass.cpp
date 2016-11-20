@@ -25,6 +25,7 @@
 #include <cassert>
 
 #include "test_macros.h"
+#include "archetypes.hpp"
 #include "test_convertible.hpp"
 
 struct InitList {
@@ -49,8 +50,9 @@ template <class Var, size_t I, class ...Args>
 constexpr bool emplace_exists() { return test_emplace_exists_imp<Var, I, Args...>(0); }
 
 void test_emplace_sfinae() {
-    using V = std::variant<int, void, InitList, InitListArg, long, long>;
+    using V = std::variant<int, TestTypes::NoCtors, InitList, InitListArg, long, long>;
     using IL = std::initializer_list<int>;
+    static_assert(!emplace_exists<V, 1, IL>(), "no such constructor");
     static_assert(emplace_exists<V, 2, IL>(), "");
     static_assert(!emplace_exists<V, 2, int>(), "args don't match");
     static_assert(!emplace_exists<V, 2, IL, int>(), "too many args");
@@ -61,7 +63,7 @@ void test_emplace_sfinae() {
 }
 
 void test_basic() {
-    using V = std::variant<int, InitList, InitListArg, void>;
+    using V = std::variant<int, InitList, InitListArg, TestTypes::NoCtors>;
     V v;
     v.emplace<1>({1, 2, 3});
     assert(std::get<1>(v).size == 3);

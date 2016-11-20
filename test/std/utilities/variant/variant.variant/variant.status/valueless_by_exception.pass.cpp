@@ -22,12 +22,13 @@
 #include <cassert>
 
 #include "test_macros.h"
+#include "archetypes.hpp"
 #include "variant_test_helpers.hpp"
 
 int main()
 {
     {
-        using V = std::variant<int, void>;
+        using V = std::variant<int, ConstexprTestTypes::NoCtors>;
         constexpr V v;
         static_assert(!v.valueless_by_exception(), "");
     }

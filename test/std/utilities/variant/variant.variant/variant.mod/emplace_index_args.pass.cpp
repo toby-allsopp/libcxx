@@ -22,6 +22,7 @@
 #include <cassert>
 
 #include "test_macros.h"
+#include "archetypes.hpp"
 #include "test_convertible.hpp"
 
 template <class Var, size_t I, class ...Args>
@@ -35,8 +36,7 @@ template <class Var, size_t I, class ...Args>
 constexpr bool emplace_exists() { return test_emplace_exists_imp<Var, I, Args...>(0); }
 
 void test_emplace_sfinae() {
-    using V = std::variant<int, int&, int const&, int&&,
-                           void>;
+    using V = std::variant<int, int&, int const&, int&&, TestTypes::NoCtors>;
     static_assert(emplace_exists<V, 0>(), "");
     static_assert(emplace_exists<V, 0, int>(), "");
     static_assert(emplace_exists<V, 0, long long>(), "");
@@ -53,7 +53,7 @@ void test_emplace_sfinae() {
     static_assert(!emplace_exists<V, 3, int&>(), "cannot bind ref");
     static_assert(!emplace_exists<V, 3, int const&>(), "cannot bind ref");
     static_assert(!emplace_exists<V, 3, int const&&>(), "cannot bind ref");
-    static_assert(!emplace_exists<V, 4>(), "cannot construct void");
+    static_assert(!emplace_exists<V, 4>(), "no ctors");
 }
 
 void test_basic() {
@@ -66,7 +66,8 @@ void test_basic() {
         assert(std::get<0>(v) == 42);
     }
     {
-        using V = std::variant<int, long, int const&, int &&, void, std::string>;
+        using V = std::variant<int, long, int const&, int &&,
+            TestTypes::NoCtors, std::string>;
         const int x = 100;
         int y = 42;
         int z = 43;

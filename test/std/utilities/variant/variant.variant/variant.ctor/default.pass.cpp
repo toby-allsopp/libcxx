@@ -86,12 +86,12 @@ void test_default_ctor_basic()
         assert(std::get<0>(v) == 0);
     }
     {
-        std::variant<int, long, const void> v;
+        std::variant<int, long> v;
         assert(v.index() == 0);
         assert(std::get<0>(v) == 0);
     }
     {
-        using V = std::variant<int, void, long>;
+        using V = std::variant<int, long>;
         constexpr V v;
         static_assert(v.index() == 0, "");
         static_assert(std::get<0>(v) == 0, "");

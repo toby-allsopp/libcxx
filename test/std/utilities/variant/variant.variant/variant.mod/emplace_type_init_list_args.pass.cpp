@@ -25,6 +25,7 @@
 #include <cassert>
 
 #include "test_macros.h"
+#include "archetypes.hpp"
 #include "test_convertible.hpp"
 
 struct InitList {
@@ -49,7 +50,7 @@ template <class ...Args>
 constexpr bool emplace_exists() { return test_emplace_exists_imp<Args...>(0); }
 
 void test_emplace_sfinae() {
-    using V = std::variant<int, void, InitList, InitListArg, long, long>;
+    using V = std::variant<int, TestTypes::NoCtors, InitList, InitListArg, long, long>;
     using IL = std::initializer_list<int>;
     static_assert(emplace_exists<V, InitList, IL>(), "");
     static_assert(!emplace_exists<V, InitList, int>(), "args don't match");
@@ -61,7 +62,7 @@ void test_emplace_sfinae() {
 }
 
 void test_basic() {
-    using V = std::variant<int, InitList, InitListArg, void>;
+    using V = std::variant<int, InitList, InitListArg, TestTypes::NoCtors>;
     V v;
     v.emplace<InitList>({1, 2, 3});
     assert(std::get<InitList>(v).size == 3);
