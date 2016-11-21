@@ -25,6 +25,9 @@
 #include <variant>
 #include <memory>
 
+#include "test_macros.h"
+#include "variant_test_helpers.hpp"
+
 template <class V, size_t I, class E>
 void test() {
     static_assert(std::is_same_v<
@@ -47,11 +50,21 @@ void test() {
 
 int main()
 {
-    test<std::variant<void>, 0, void>();
-    using V = std::variant<int, int&, int const&, int&&, long double>;
-    test<V, 0, int>();
-    test<V, 1, int&>();
-    test<V, 2, int const&>();
-    test<V, 3, int&&>();
-    test<V, 4, long double>();
+    {
+        using V = std::variant<int, void*, const void*, long double>;
+        test<V, 0, int>();
+        test<V, 1, void*>();
+        test<V, 2, const void*>();
+        test<V, 3, long double>();
+    }
+#if !defined(TEST_VARIANT_REFERENCES)
+    {
+        using V = std::variant<int, int&, int const&, int&&, long double>;
+        test<V, 0, int>();
+        test<V, 1, int&>();
+        test<V, 2, int const&>();
+        test<V, 3, int&&>();
+        test<V, 4, long double>();
+    }
+#endif
 }

@@ -39,6 +39,6 @@ void test() {
 int main()
 {
     test<std::variant<>, 0>();
-    test<std::variant<void>, 1>();
-    test<std::variant<long, long, void, double>, 4>();
+    test<std::variant<void*>, 1>();
+    test<std::variant<long, long, void*, double>, 4>();
 }
