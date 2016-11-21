@@ -551,11 +551,6 @@ get_if(const variant<_Types...>* __v) noexcept
                                               : nullptr;
 }
 
-template <class... _Types, class _Alloc>
-struct _LIBCPP_TYPE_VIS_ONLY uses_allocator<variant<_Types...>, _Alloc>
-  : true_type
-{
-};
 
 namespace __variant_detail {
 
