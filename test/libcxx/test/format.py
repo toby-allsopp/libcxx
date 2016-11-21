@@ -124,7 +124,6 @@ class LibcxxTestFormat(object):
         with open(source_path, 'r') as f:
             contents = f.read()
         is_flaky = 'FLAKY_TEST' in contents
-        no_modules = 'DISABLE_MODULES' in contents
         exec_path = tmpBase + '.exe'
         object_path = tmpBase + '.o'
         # Create the output directory if it does not already exist.
@@ -179,7 +178,6 @@ class LibcxxTestFormat(object):
                        'expected-error', 'expected-no-diagnostics']
         use_verify = self.use_verify_for_fail and \
                      any([tag in contents for tag in verify_tags])
-
         # FIXME(EricWF): GCC 5 does not evaluate static assertions that
         # are dependant on a template parameter when '-fsyntax-only' is passed.
         # This is fixed in GCC 6. However for now we only pass "-fsyntax-only"
