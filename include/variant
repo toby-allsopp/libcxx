@@ -1548,7 +1548,7 @@ template <class... _Types, class = enable_if_t<
   __all<
     is_swappable<_Types>::value...,
     is_move_constructible<_Types>::value...
-  >>
+  >::value>
 >
 inline _LIBCPP_INLINE_VISIBILITY
 void swap(variant<_Types...>& __lhs, variant<_Types...>& __rhs)
