@@ -11,7 +11,7 @@
 #ifndef _LIBCPP_UTILITY
 #define _LIBCPP_UTILITY
 
-/*N
+/*
     utility synopsis
 
 namespace std
