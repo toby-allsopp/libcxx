@@ -15,7 +15,7 @@
 // template <class T, class... Types> constexpr T& get(variant<Types...>& v);
 // template <class T, class... Types> constexpr T&& get(variant<Types...>&& v);
 // template <class T, class... Types> constexpr const T& get(const variant<Types...>& v);
-// template <class T, class... Types> constexpr const T&& get(const variant<Types...>&& v); 
+// template <class T, class... Types> constexpr const T&& get(const variant<Types...>&& v);
 
 #include <variant>
 #include <cassert>
