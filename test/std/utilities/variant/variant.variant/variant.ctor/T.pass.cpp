@@ -24,6 +24,7 @@
 
 #include "test_macros.h"
 #include "test_convertible.hpp"
+#include "variant_test_helpers.hpp"
 
 struct Dummy {
   Dummy() = default;
@@ -50,14 +51,6 @@ void test_T_ctor_noexcept() {
 
 void test_T_ctor_sfinae() {
     {
-        using V = std::variant<int, int&&>;
-        static_assert(!std::is_constructible<V, int>::value, "ambiguous");
-    }
-    {
-        using V = std::variant<int, int const&>;
-        static_assert(!std::is_constructible<V, int>::value, "ambiguous");
-    }
-    {
         using V = std::variant<long, unsigned>;
         static_assert(!std::is_constructible<V, int>::value, "ambiguous");
     }
@@ -69,6 +62,16 @@ void test_T_ctor_sfinae() {
         using V = std::variant<std::string, void*>;
         static_assert(!std::is_constructible<V, int>::value, "no matching constructor");
     }
+#if defined(VARIANT_TEST_REFERENCES)
+    {
+        using V = std::variant<int, int&&>;
+        static_assert(!std::is_constructible<V, int>::value, "ambiguous");
+    }
+    {
+        using V = std::variant<int, int const&>;
+        static_assert(!std::is_constructible<V, int>::value, "ambiguous");
+    }
+#endif
 }
 
 void test_T_ctor_basic()
@@ -83,6 +86,7 @@ void test_T_ctor_basic()
         static_assert(v.index() == 1, "");
         static_assert(std::get<1>(v) == 42, "");
     }
+#if !defined(TEST_VARIANT_HAS_NO_REFERENCES)
     {
         using V = std::variant<int const&, int&&, long>;
         static_assert(std::is_convertible<int&, V>::value, "must be implicit");
@@ -99,6 +103,7 @@ void test_T_ctor_basic()
         assert(v.index() == 1);
         assert(&std::get<1>(v) == &x);
     }
+#endif
 }
 
 int main()

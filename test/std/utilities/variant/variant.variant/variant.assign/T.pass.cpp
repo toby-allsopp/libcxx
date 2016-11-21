@@ -23,6 +23,7 @@
 #include <cassert>
 
 #include "test_macros.h"
+#include "variant_test_helpers.hpp"
 
 namespace MetaHelpers {
 
@@ -92,14 +93,6 @@ void test_T_assignment_noexcept() {
 
 void test_T_assignment_sfinae() {
     {
-        using V = std::variant<int, int&&>;
-        static_assert(!std::is_assignable<V, int>::value, "ambiguous");
-    }
-    {
-        using V = std::variant<int, int const&>;
-        static_assert(!std::is_assignable<V, int>::value, "ambiguous");
-    }
-    {
         using V = std::variant<long, unsigned>;
         static_assert(!std::is_assignable<V, int>::value, "ambiguous");
     }
@@ -111,6 +104,16 @@ void test_T_assignment_sfinae() {
         using V = std::variant<std::string, void*>;
         static_assert(!std::is_assignable<V, int>::value, "no matching operator=");
     }
+#if !defined(TEST_VARIANT_HAS_NO_REFERENCES)
+    {
+        using V = std::variant<int, int&&>;
+        static_assert(!std::is_assignable<V, int>::value, "ambiguous");
+    }
+    {
+        using V = std::variant<int, int const&>;
+        static_assert(!std::is_assignable<V, int>::value, "ambiguous");
+    }
+#endif
 }
 
 void test_T_assignment_basic()
@@ -130,6 +133,7 @@ void test_T_assignment_basic()
         assert(v.index() == 1);
         assert(std::get<1>(v) == 43);
     }
+#if !defined(TEST_VARIANT_HAS_NO_REFERENCES)
     {
         using V = std::variant<int &, int&&, long>;
         int x = 42;
@@ -147,6 +151,7 @@ void test_T_assignment_basic()
         assert(v.index() == 2);
         assert(std::get<2>(v) == 42);
     }
+#endif
 }
 
 void test_T_assignment_performs_construction()

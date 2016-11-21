@@ -19,6 +19,8 @@
 #error This file requires C++17
 #endif
 
+// FIXME: Currently the variant<T&> tests are disabled using this macro.
+#define TEST_VARIANT_HAS_NO_REFERENCES
 
 #ifndef TEST_HAS_NO_EXCEPTIONS
 struct CopyThrows {

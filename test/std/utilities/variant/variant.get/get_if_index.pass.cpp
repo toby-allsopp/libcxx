@@ -22,6 +22,7 @@
 #include <variant>
 #include <cassert>
 #include "test_macros.h"
+#include "variant_test_helpers.hpp"
 
 void test_const_get_if() {
     {
@@ -44,6 +45,8 @@ void test_const_get_if() {
         static_assert(*std::get_if<1>(&v) == 42, "");
         static_assert(std::get_if<0>(&v) == nullptr, "");
     }
+    // FIXME: Remove these once reference support is reinstated
+#if !defined(TEST_VARIANT_HAS_NO_REFERENCES)
     {
         using V = std::variant<int&>;
         int x = 42;
@@ -65,6 +68,7 @@ void test_const_get_if() {
         ASSERT_SAME_TYPE(decltype(std::get_if<0>(std::addressof(v))), const int*);
         assert(std::get_if<0>(std::addressof(v)) == &x);
     }
+#endif
 }
 
 void test_get_if()
@@ -89,6 +93,8 @@ void test_get_if()
         assert(*std::get_if<1>(std::addressof(v)) == 42);
         assert(std::get_if<0>(std::addressof(v)) == nullptr);
     }
+    // FIXME: Remove these once reference support is reinstated
+#if !defined(TEST_VARIANT_HAS_NO_REFERENCES)
     {
         using V = std::variant<int&>;
         int x = 42;
@@ -117,6 +123,7 @@ void test_get_if()
         ASSERT_SAME_TYPE(decltype(std::get_if<0>(std::addressof(v))), const int*);
         assert(std::get_if<0>(std::addressof(v)) == &x);
     }
+#endif
 }
 
 int main()

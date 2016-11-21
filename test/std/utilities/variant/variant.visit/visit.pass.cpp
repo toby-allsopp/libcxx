@@ -21,29 +21,7 @@
 
 #include "test_macros.h"
 #include "type_id.h"
-
-
-#ifndef TEST_HAS_NO_EXCEPTIONS
-struct MakeEmptyT {
-  MakeEmptyT() = default;
-  MakeEmptyT(MakeEmptyT&&) {
-    throw 42;
-  }
-  MakeEmptyT& operator=(MakeEmptyT&&) {
-      throw 42;
-  }
-};
-template <class Variant>
-void makeEmpty(Variant& v) {
-    Variant v2(std::in_place_type<MakeEmptyT>);
-    try {
-        v = std::move(v2);
-        assert(false);
-    }  catch (...) {
-        assert(v.valueless_by_exception());
-    }
-}
-#endif // TEST_HAS_NO_EXCEPTIONS
+#include "variant_test_helpers.hpp"
 
 
 enum CallType : unsigned {
@@ -175,6 +153,7 @@ void test_argument_forwarding()
         std::visit(obj, std::move(cv));
         assert(Fn::check_call<const int &&>(Val));
     }
+#if !defined(TEST_VARIANT_HAS_NO_REFERENCES)
     { // single argument - lvalue reference
         using V = std::variant<int&>;
         int x = 42;
@@ -216,6 +195,7 @@ void test_argument_forwarding()
         std::visit(obj, cv1, cv2, std::move(v3));
         assert((Fn::check_call<const int&, S, long&&>(Val)));
     }
+#endif
 }
 
 struct ReturnFirst {

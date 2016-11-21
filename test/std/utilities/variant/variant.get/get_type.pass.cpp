@@ -20,6 +20,7 @@
 #include <variant>
 #include <cassert>
 #include "test_macros.h"
+#include "variant_test_helpers.hpp"
 
 void test_const_lvalue_get() {
     {
@@ -35,6 +36,8 @@ void test_const_lvalue_get() {
         ASSERT_SAME_TYPE(decltype(std::get<long>(v)), long const&);
         static_assert(std::get<long>(v) == 42, "");
     }
+// FIXME: Remove these once reference support is reinstated
+#if !defined(TEST_VARIANT_HAS_NO_REFERENCES)
     {
         using V = std::variant<int&>;
         int x = 42;
@@ -56,6 +59,7 @@ void test_const_lvalue_get() {
         ASSERT_SAME_TYPE(decltype(std::get<const int&&>(v)), const int&);
         assert(&std::get<const int&&>(v) == &x);
     }
+#endif
 }
 
 void test_lvalue_get()
@@ -73,6 +77,8 @@ void test_lvalue_get()
         ASSERT_SAME_TYPE(decltype(std::get<long>(v)), long&);
         assert(std::get<long>(v) == 42);
     }
+    // FIXME: Remove these once reference support is reinstated
+#if !defined(TEST_VARIANT_HAS_NO_REFERENCES)
     {
         using V = std::variant<int&>;
         int x = 42;
@@ -101,6 +107,7 @@ void test_lvalue_get()
         ASSERT_SAME_TYPE(decltype(std::get<const int&&>(v)), const int&);
         assert(&std::get<const int&&>(v) == &x);
     }
+#endif
 }
 
 
@@ -119,6 +126,8 @@ void test_rvalue_get()
         ASSERT_SAME_TYPE(decltype(std::get<long>(std::move(v))), long&&);
         assert(std::get<long>(std::move(v)) == 42);
     }
+    // FIXME: Remove these once reference support is reinstated
+#if !defined(TEST_VARIANT_HAS_NO_REFERENCES)
     {
         using V = std::variant<int&>;
         int x = 42;
@@ -149,6 +158,7 @@ void test_rvalue_get()
         const int&& xref = std::get<const int&&>(std::move(v));
         assert(&xref == &x);
     }
+#endif
 }
 
 
@@ -167,6 +177,8 @@ void test_const_rvalue_get()
         ASSERT_SAME_TYPE(decltype(std::get<long>(std::move(v))), const long&&);
         assert(std::get<long>(std::move(v)) == 42);
     }
+// FIXME: Remove these once reference support is reinstated
+#if !defined(TEST_VARIANT_HAS_NO_REFERENCES)
     {
         using V = std::variant<int&>;
         int x = 42;
@@ -197,6 +209,7 @@ void test_const_rvalue_get()
         const int&& xref = std::get<const int&&>(std::move(v));
         assert(&xref == &x);
     }
+#endif
 }
 
 template <class Tp> struct identity { using type = Tp; };

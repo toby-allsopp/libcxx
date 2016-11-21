@@ -24,6 +24,7 @@
 #include "test_macros.h"
 #include "archetypes.hpp"
 #include "test_convertible.hpp"
+#include "variant_test_helpers.hpp"
 
 template <class Var, size_t I, class ...Args>
 constexpr auto test_emplace_exists_imp(int) -> decltype(std::declval<Var>().template emplace<I>(std::declval<Args>()...), true)
@@ -36,6 +37,21 @@ template <class Var, size_t I, class ...Args>
 constexpr bool emplace_exists() { return test_emplace_exists_imp<Var, I, Args...>(0); }
 
 void test_emplace_sfinae() {
+    {
+        using V = std::variant<int, void*, const void*, TestTypes::NoCtors>;
+        static_assert(emplace_exists<V, 0>(), "");
+        static_assert(emplace_exists<V, 0, int>(), "");
+        static_assert(!emplace_exists<V, 0, decltype(nullptr)>(), "cannot construct");
+        static_assert(emplace_exists<V, 1, decltype(nullptr)>(), "");
+        static_assert(emplace_exists<V, 1, int*>(), "");
+        static_assert(!emplace_exists<V, 1, const int*>(), "");
+        static_assert(!emplace_exists<V, 1, int>(), "cannot construct");
+        static_assert(emplace_exists<V, 2, const int*>(), "");
+        static_assert(emplace_exists<V, 2, int*>(), "");
+        static_assert(!emplace_exists<V, 3>(), "cannot construct");
+    }
+#if !defined(TEST_VARIANT_HAS_NO_REFERENCES)
+    {
     using V = std::variant<int, int&, int const&, int&&, TestTypes::NoCtors>;
     static_assert(emplace_exists<V, 0>(), "");
     static_assert(emplace_exists<V, 0, int>(), "");
@@ -54,6 +70,9 @@ void test_emplace_sfinae() {
     static_assert(!emplace_exists<V, 3, int const&>(), "cannot bind ref");
     static_assert(!emplace_exists<V, 3, int const&&>(), "cannot bind ref");
     static_assert(!emplace_exists<V, 4>(), "no ctors");
+    }
+#endif
+
 }
 
 void test_basic() {
@@ -65,6 +84,23 @@ void test_basic() {
         v.emplace<0>(42);
         assert(std::get<0>(v) == 42);
     }
+    {
+        using V = std::variant<int, long, const void*,
+            TestTypes::NoCtors, std::string>;
+        const int x = 100;
+        int y = 42;
+        int z = 43;
+        V v(std::in_place_index<0>, -1);
+        // default emplace a value
+        v.emplace<1>();
+        assert(std::get<1>(v) == 0);
+        v.emplace<2>(&x);
+        assert(std::get<2>(v) == &x);
+        // emplace with multiple args
+        v.emplace<4>(3, 'a');
+        assert(std::get<4>(v) == "aaa");
+    }
+#if !defined(TEST_VARIANT_HAS_NO_REFERENCES)
     {
         using V = std::variant<int, long, int const&, int &&,
             TestTypes::NoCtors, std::string>;
@@ -88,6 +124,7 @@ void test_basic() {
         v.emplace<5>(3, 'a');
         assert(std::get<5>(v) == "aaa");
     }
+#endif
 }
 
 

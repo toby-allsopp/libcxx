@@ -1144,30 +1144,18 @@ public:
 
 //-------------------------------- variant -----------------------------------//
 
-template <>
-class _LIBCPP_TYPE_VIS_ONLY variant<>
-{
-  variant() = delete;
-  variant(variant const&) = delete;
-  variant& operator=(variant const&) = delete;
-};
-
-template <class _Tp>
-struct __variant_static_assert {
-  static_assert(!is_void_v<_Tp>, "variant cannot be instantiated with void");
-  static_assert(!is_array_v<_Tp>, "variant cannot be instantiated with array types");
-};
-
 template <class... _Types>
 class _LIBCPP_TYPE_VIS_ONLY variant
   : public __variant_detail::__variant_sfinae_base_t<_Types...>
 {
 
+  static_assert(sizeof...(_Types) != 0,
+    "variant<> cannot be instantiated");
   static_assert(__all<!is_void_v<_Types>...>::value,
     "variant cannot be instantiated with void");
   static_assert(__all<!is_array_v<_Types>...>::value,
     "variant cannot be instantiated with an array type");
-#if 0
+#if 1
     static_assert(__all<!is_reference_v<_Types>...>::value,
       "variant cannot be instantiated with a reference type");
 #endif
