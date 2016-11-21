@@ -13,43 +13,23 @@
 
 // size_type max_size() const;
 
-#include <cassert>
-#include <limits>
 #include <set>
-#include <type_traits>
+#include <cassert>
 
-#include "test_allocator.h"
-#include "test_macros.h"
-
-template <class Alloc> size_t alloc_max_size(Alloc const &a) {
-  typedef std::allocator_traits<Alloc> AT;
-  return AT::max_size(a);
-}
+#include "min_allocator.h"
 
 int main()
 {
     {
-      typedef limited_allocator<int, 10> A;
-      typedef std::multiset<int, std::less<int>, A> C;
-      C c;
-      assert(c.max_size() <= 10);
-      LIBCPP_ASSERT(c.max_size() == 10);
+    typedef std::multiset<int> M;
+    M m;
+    assert(m.max_size() != 0);
     }
+#if TEST_STD_VER >= 11
     {
-      typedef limited_allocator<int, (size_t)-1> A;
-      typedef std::multiset<int, std::less<int>, A> C;
-      const C::difference_type max_dist =
-          std::numeric_limits<C::difference_type>::max();
-      C c;
-      assert(c.max_size() <= max_dist);
-      LIBCPP_ASSERT(c.max_size() == max_dist);
+    typedef std::multiset<int, std::less<int>, min_allocator<int>> M;
+    M m;
+    assert(m.max_size() != 0);
     }
-    {
-      typedef std::multiset<char> C;
-      const C::difference_type max_dist =
-          std::numeric_limits<C::difference_type>::max();
-      C c;
-      assert(c.max_size() <= max_dist);
-      assert(c.max_size() <= alloc_max_size(c.get_allocator()));
-    }
+#endif
 }
