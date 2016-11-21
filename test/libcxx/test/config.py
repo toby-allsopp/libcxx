@@ -252,6 +252,8 @@ class Configuration(object):
                 ['-Xclang', '-verify-ignore-unexpected'])
             self.lit_config.note(
                 "inferred use_clang_verify as: %r" % self.use_clang_verify)
+        if self.use_clang_verify:
+            self.config.available_features.add('clang-verify')
 
     def configure_use_thread_safety(self):
         '''If set, run clang with -verify on failing tests.'''
@@ -763,19 +765,21 @@ class Configuration(object):
         if not self.module_cache_path is None:
             module_flags = '-fmodules -fmodules-cache-path=' \
                            + self.module_cache_path + ' '
-
-
         # Add compile and link shortcuts
         compile_str = (self.cxx.path + ' -o %t.o %s -c ' + flags_str
-                       + compile_flags_str)
+                       + ' ' + compile_flags_str)
         link_str = (self.cxx.path + ' -o %t.exe %t.o ' + flags_str
-                    + link_flags_str)
+                    + ' ' +  link_flags_str)
         assert type(link_str) is str
         build_str = self.cxx.path + ' -o %t.exe %s ' + all_flags
+        # Add modules build/verify subsitutions
+        if not module_flags is None:
+            if self.use_clang_verify:
+                sub.append(('%compile_module_verify', compile_str +
+                            ' -fsyntax-only -Xclang -verify ' + module_flags))
+            sub.append(('%build_module', build_str + ' ' + module_flags))
         sub.append(('%compile', compile_str))
         sub.append(('%link', link_str))
-        if not module_flags is None:
-            sub.append(('%build_module', build_str + ' ' + module_flags))
         sub.append(('%build', build_str))
         # Configure exec prefix substitutions.
         exec_env_str = 'env ' if len(self.env) != 0 else ''
