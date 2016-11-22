@@ -12,7 +12,7 @@
 
 // <variant>
 
-// template <class ..._Types> struct hash<variant<Types...>>;
+// template <class... Types> struct hash<variant<Types...>>;
 // template <> struct hash<monostate>;
 
 #include <variant>
@@ -34,13 +34,16 @@ namespace std {
 void test_hash_variant()
 {
     {
-        using V = std::variant<int>;
+        using V = std::variant<int, long, int>;
         using H = std::hash<V>;
-        const V v(42);
-        V v2(100);
+        const V v(std::in_place_index<0>, 42);
+        const V v_copy = v;
+        V v2(std::in_place_index<0>, 100);
+        const V v3(std::in_place_index<2>, 42);
         const H h{};
-        assert(h(v) == std::hash<int>{}(42));
-        assert(h(v2) == std::hash<int>{}(100));
+        assert(h(v) == h(v));
+        assert(h(v) != h(v2));
+        assert(h(v) == h(v_copy));
         {
             ASSERT_SAME_TYPE(decltype(h(v)), std::size_t);
             static_assert(std::is_copy_constructible<H>::value, "");
@@ -51,14 +54,28 @@ void test_hash_variant()
         using H = std::hash<V>;
         const char* str = "hello";
         const V v0;
+        const V v0_other;
         const V v1(42);
+        const V v1_other(100);
         V v2(100l);
+        V v2_other(999l);
         V v3(str);
+        V v3_other("not hello");
         const H h{};
-        assert(h(v0) == std::hash<std::monostate>{}(std::monostate{}));
-        assert(h(v1) == std::hash<int>{}(42));
-        assert(h(v2) == std::hash<long>{}(100));
-        assert(h(v3) == std::hash<const char*>{}(str));
+        assert(h(v0) == h(v0));
+        assert(h(v0) == h(v0_other));
+        assert(h(v1) == h(v1));
+        assert(h(v1) != h(v1_other));
+        assert(h(v2) == h(v2));
+        assert(h(v2) != h(v2_other));
+        assert(h(v3) == h(v3));
+        assert(h(v3) != h(v3_other));
+        assert(h(v0) != h(v1));
+        assert(h(v0) != h(v2));
+        assert(h(v0) != h(v3));
+        assert(h(v1) != h(v2));
+        assert(h(v1) != h(v3));
+        assert(h(v2) != h(v3));
     }
 #ifndef TEST_HAS_NO_EXCEPTIONS
     {
