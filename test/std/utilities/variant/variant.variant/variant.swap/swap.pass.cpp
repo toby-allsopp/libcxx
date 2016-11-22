@@ -453,6 +453,9 @@ constexpr auto has_swap_member_imp(long) -> bool { return false; }
 template <class Var>
 constexpr bool has_swap_member() { return has_swap_member_imp<Var>(0); }
 
+// This is why variant should SFINAE member hash. :-)
+template class std::variant<int, NotSwappable>;
+
 void test_swap_sfinae()
 {
     {
