@@ -483,9 +483,6 @@ template <class Var> constexpr bool has_swap_member() {
   return has_swap_member_imp<Var>(0);
 }
 
-// This is why variant should SFINAE member hash. :-)
-template class std::variant<int, NotSwappable>;
-
 void test_swap_sfinae() {
   {
     // This variant type does not provide either a member or non-member swap
@@ -579,6 +576,11 @@ void test_swap_noexcept() {
     swap(v1, v2);
   }
 }
+
+
+// This is why variant should SFINAE member swap. :-)
+LIBCPP_ONLY(template class std::variant<int, NotSwappable>;)
+
 
 int main() {
   test_swap_valueless_by_exception();
