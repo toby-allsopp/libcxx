@@ -14,17 +14,15 @@
 
 // struct monostate {};
 
-
-#include <variant>
 #include <type_traits>
+#include <variant>
 
-int main()
-{
-    using M = std::monostate;
-    static_assert(std::is_trivially_default_constructible<M>::value, "");
-    static_assert(std::is_trivially_copy_constructible<M>::value, "");
-    static_assert(std::is_trivially_copy_assignable<M>::value, "");
-    static_assert(std::is_trivially_destructible<M>::value, "");
-    constexpr M m{};
-    ((void)m);
+int main() {
+  using M = std::monostate;
+  static_assert(std::is_trivially_default_constructible<M>::value, "");
+  static_assert(std::is_trivially_copy_constructible<M>::value, "");
+  static_assert(std::is_trivially_copy_assignable<M>::value, "");
+  static_assert(std::is_trivially_destructible<M>::value, "");
+  constexpr M m{};
+  ((void)m);
 }

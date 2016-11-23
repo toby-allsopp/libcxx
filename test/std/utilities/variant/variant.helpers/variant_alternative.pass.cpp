@@ -22,50 +22,56 @@
 // template <size_t I, class... Types>
 //    struct variant_alternative<I, variant<Types...>>;
 
-#include <variant>
 #include <memory>
 #include <type_traits>
+#include <variant>
 
 #include "test_macros.h"
 #include "variant_test_helpers.hpp"
 
-template <class V, size_t I, class E>
-void test() {
-    static_assert(std::is_same_v<
-        typename std::variant_alternative<I, V>::type, E>, "");
-    static_assert(std::is_same_v<
-        typename std::variant_alternative<I, const V>::type, const E>, "");
-    static_assert(std::is_same_v<
-        typename std::variant_alternative<I, volatile V>::type, volatile E>, "");
-    static_assert(std::is_same_v<
-        typename std::variant_alternative<I, const volatile V>::type, const volatile E>, "");
-    static_assert(std::is_same_v<
-        std::variant_alternative_t<I, V>, E>, "");
-    static_assert(std::is_same_v<
-        std::variant_alternative_t<I, const V>, const E>, "");
-    static_assert(std::is_same_v<
-        std::variant_alternative_t<I, volatile V>, volatile E>, "");
-    static_assert(std::is_same_v<
-        std::variant_alternative_t<I, const volatile V>, const volatile E>, "");
+template <class V, size_t I, class E> void test() {
+  static_assert(
+      std::is_same_v<typename std::variant_alternative<I, V>::type, E>, "");
+  static_assert(
+      std::is_same_v<typename std::variant_alternative<I, const V>::type,
+                     const E>,
+      "");
+  static_assert(
+      std::is_same_v<typename std::variant_alternative<I, volatile V>::type,
+                     volatile E>,
+      "");
+  static_assert(
+      std::is_same_v<
+          typename std::variant_alternative<I, const volatile V>::type,
+          const volatile E>,
+      "");
+  static_assert(std::is_same_v<std::variant_alternative_t<I, V>, E>, "");
+  static_assert(std::is_same_v<std::variant_alternative_t<I, const V>, const E>,
+                "");
+  static_assert(
+      std::is_same_v<std::variant_alternative_t<I, volatile V>, volatile E>,
+      "");
+  static_assert(std::is_same_v<std::variant_alternative_t<I, const volatile V>,
+                               const volatile E>,
+                "");
 }
 
-int main()
-{
-    {
-        using V = std::variant<int, void*, const void*, long double>;
-        test<V, 0, int>();
-        test<V, 1, void*>();
-        test<V, 2, const void*>();
-        test<V, 3, long double>();
-    }
+int main() {
+  {
+    using V = std::variant<int, void *, const void *, long double>;
+    test<V, 0, int>();
+    test<V, 1, void *>();
+    test<V, 2, const void *>();
+    test<V, 3, long double>();
+  }
 #if !defined(TEST_VARIANT_HAS_NO_REFERENCES)
-    {
-        using V = std::variant<int, int&, int const&, int&&, long double>;
-        test<V, 0, int>();
-        test<V, 1, int&>();
-        test<V, 2, int const&>();
-        test<V, 3, int&&>();
-        test<V, 4, long double>();
-    }
+  {
+    using V = std::variant<int, int &, int const &, int &&, long double>;
+    test<V, 0, int>();
+    test<V, 1, int &>();
+    test<V, 2, int const &>();
+    test<V, 3, int &&>();
+    test<V, 4, long double>();
+  }
 #endif
 }

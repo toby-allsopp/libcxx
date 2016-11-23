@@ -22,17 +22,16 @@ public:
 
 */
 
-#include <variant>
+#include <cassert>
 #include <exception>
 #include <type_traits>
-#include <cassert>
+#include <variant>
 
-int main()
-{
-    static_assert(std::is_base_of<std::exception, std::bad_variant_access>::value, "");
-    static_assert(noexcept(std::bad_variant_access{}), "must be noexcept");
-    static_assert(noexcept(std::bad_variant_access{}.what()), "must be noexcept");
-    std::bad_variant_access ex;
-    assert(ex.what());
-
+int main() {
+  static_assert(std::is_base_of<std::exception, std::bad_variant_access>::value,
+                "");
+  static_assert(noexcept(std::bad_variant_access{}), "must be noexcept");
+  static_assert(noexcept(std::bad_variant_access{}.what()), "must be noexcept");
+  std::bad_variant_access ex;
+  assert(ex.what());
 }

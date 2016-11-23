@@ -16,10 +16,9 @@
 
 // constexpr variant() noexcept(see below);
 
-
-#include <variant>
-#include <type_traits>
 #include <cassert>
+#include <type_traits>
+#include <variant>
 
 #include "test_macros.h"
 #include "variant_test_helpers.hpp"
@@ -39,78 +38,75 @@ struct DefaultCtorThrows {
 #endif
 
 void test_default_ctor_sfinae() {
-    {
-        using V = std::variant<std::monostate, int>;
-        static_assert(std::is_default_constructible<V>::value, "");
-    }
-    {
-        using V = std::variant<NonDefaultConstructible, int>;
-        static_assert(!std::is_default_constructible<V>::value, "");
-    }
+  {
+    using V = std::variant<std::monostate, int>;
+    static_assert(std::is_default_constructible<V>::value, "");
+  }
+  {
+    using V = std::variant<NonDefaultConstructible, int>;
+    static_assert(!std::is_default_constructible<V>::value, "");
+  }
 #if !defined(TEST_VARIANT_HAS_NO_REFERENCES)
-    {
-        using V = std::variant<int&, int>;
-        static_assert(!std::is_default_constructible<V>::value, "");
-    }
+  {
+    using V = std::variant<int &, int>;
+    static_assert(!std::is_default_constructible<V>::value, "");
+  }
 #endif
 }
 
 void test_default_ctor_noexcept() {
-    {
-        using V = std::variant<int>;
-        static_assert(std::is_nothrow_default_constructible<V>::value, "");
-    }
-    {
-        using V = std::variant<NotNoexcept>;
-        static_assert(!std::is_nothrow_default_constructible<V>::value, "");
-    }
+  {
+    using V = std::variant<int>;
+    static_assert(std::is_nothrow_default_constructible<V>::value, "");
+  }
+  {
+    using V = std::variant<NotNoexcept>;
+    static_assert(!std::is_nothrow_default_constructible<V>::value, "");
+  }
 }
 
-void test_default_ctor_throws()
-{
+void test_default_ctor_throws() {
 #ifndef TEST_HAS_NO_EXCEPTIONS
-    using V = std::variant<DefaultCtorThrows, int>;
-    try {
-        V v;
-        assert(false);
-    } catch (int const& ex) {
-        assert(ex == 42);
-    } catch (...) {
-        assert(false);
-    }
+  using V = std::variant<DefaultCtorThrows, int>;
+  try {
+    V v;
+    assert(false);
+  } catch (int const &ex) {
+    assert(ex == 42);
+  } catch (...) {
+    assert(false);
+  }
 #endif
 }
 
-void test_default_ctor_basic()
-{
-    {
-        std::variant<int> v;
-        assert(v.index() == 0);
-        assert(std::get<0>(v) == 0);
-    }
-    {
-        std::variant<int, long> v;
-        assert(v.index() == 0);
-        assert(std::get<0>(v) == 0);
-    }
-    {
-        using V = std::variant<int, long>;
-        constexpr V v;
-        static_assert(v.index() == 0, "");
-        static_assert(std::get<0>(v) == 0, "");
-    }
-    {
-        using V = std::variant<int, long>;
-        constexpr V v;
-        static_assert(v.index() == 0, "");
-        static_assert(std::get<0>(v) == 0, "");
-    }
+void test_default_ctor_basic() {
+  {
+    std::variant<int> v;
+    assert(v.index() == 0);
+    assert(std::get<0>(v) == 0);
+  }
+  {
+    std::variant<int, long> v;
+    assert(v.index() == 0);
+    assert(std::get<0>(v) == 0);
+  }
+  {
+    using V = std::variant<int, long>;
+    constexpr V v;
+    static_assert(v.index() == 0, "");
+    static_assert(std::get<0>(v) == 0, "");
+  }
+  {
+    using V = std::variant<int, long>;
+    constexpr V v;
+    static_assert(v.index() == 0, "");
+    static_assert(std::get<0>(v) == 0, "");
+  }
 }
 
-int main()
-{
-    test_default_ctor_basic();
-    test_default_ctor_sfinae();
-    test_default_ctor_noexcept();
-    test_default_ctor_throws();
+int main() {
+  test_default_ctor_basic();
+  test_default_ctor_sfinae();
+  test_default_ctor_noexcept();
+  test_default_ctor_throws();
 }

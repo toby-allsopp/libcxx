@@ -17,22 +17,21 @@
 
 #include <variant>
 
-int main()
-{
-    {
-        using V = std::variant<int>;
-        constexpr V v;
-        static_assert(std::holds_alternative<int>(v), "");
-    }
-    {
-        using V = std::variant<int, long>;
-        constexpr V v;
-        static_assert(std::holds_alternative<int>(v), "");
-        static_assert(!std::holds_alternative<long>(v), "");
-    }
-    { // noexcept test
-        using V = std::variant<int>;
-        const V v;
-        static_assert(noexcept(std::holds_alternative<int>(v)), "must be noexcept");
-    }
+int main() {
+  {
+    using V = std::variant<int>;
+    constexpr V v;
+    static_assert(std::holds_alternative<int>(v), "");
+  }
+  {
+    using V = std::variant<int, long>;
+    constexpr V v;
+    static_assert(std::holds_alternative<int>(v), "");
+    static_assert(!std::holds_alternative<long>(v), "");
+  }
+  { // noexcept test
+    using V = std::variant<int>;
+    const V v;
+    static_assert(noexcept(std::holds_alternative<int>(v)), "must be noexcept");
+  }
 }

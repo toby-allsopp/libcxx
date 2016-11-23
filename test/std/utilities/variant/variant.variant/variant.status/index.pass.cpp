@@ -16,41 +16,40 @@
 
 // constexpr size_t index() const noexcept;
 
-#include <variant>
+#include <cassert>
 #include <string>
 #include <type_traits>
-#include <cassert>
+#include <variant>
 
-#include "test_macros.h"
 #include "archetypes.hpp"
+#include "test_macros.h"
 #include "variant_test_helpers.hpp"
 
-int main()
-{
-    {
-        using V = std::variant<int, ConstexprTestTypes::NoCtors>;
-        constexpr V v;
-        static_assert(v.index() == 0, "");
-    }
-    {
-        using V = std::variant<int, long>;
-        constexpr V v(std::in_place_index<1>);
-        static_assert(v.index() == 1, "");
-    }
-    {
-        using V = std::variant<int, std::string>;
-        V v("abc");
-        assert(v.index() == 1);
-        v = 42;
-        assert(v.index() == 0);
-    }
+int main() {
+  {
+    using V = std::variant<int, ConstexprTestTypes::NoCtors>;
+    constexpr V v;
+    static_assert(v.index() == 0, "");
+  }
+  {
+    using V = std::variant<int, long>;
+    constexpr V v(std::in_place_index<1>);
+    static_assert(v.index() == 1, "");
+  }
+  {
+    using V = std::variant<int, std::string>;
+    V v("abc");
+    assert(v.index() == 1);
+    v = 42;
+    assert(v.index() == 0);
+  }
 #ifndef TEST_HAS_NO_EXCEPTIONS
-    {
-        using V = std::variant<int, MakeEmptyT>;
-        V v;
-        assert(v.index() == 0);
-        makeEmpty(v);
-        assert(v.index() == std::variant_npos);
-    }
+  {
+    using V = std::variant<int, MakeEmptyT>;
+    V v;
+    assert(v.index() == 0);
+    makeEmpty(v);
+    assert(v.index() == std::variant_npos);
+  }
 #endif
 }

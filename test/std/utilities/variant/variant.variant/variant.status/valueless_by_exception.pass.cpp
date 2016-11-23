@@ -16,34 +16,33 @@
 
 // constexpr bool valueless_by_exception() const noexcept;
 
-#include <variant>
+#include <cassert>
 #include <string>
 #include <type_traits>
-#include <cassert>
+#include <variant>
 
-#include "test_macros.h"
 #include "archetypes.hpp"
+#include "test_macros.h"
 #include "variant_test_helpers.hpp"
 
-int main()
-{
-    {
-        using V = std::variant<int, ConstexprTestTypes::NoCtors>;
-        constexpr V v;
-        static_assert(!v.valueless_by_exception(), "");
-    }
-    {
-        using V = std::variant<int, long, std::string>;
-        const V v("abc");
-        assert(!v.valueless_by_exception());
-    }
+int main() {
+  {
+    using V = std::variant<int, ConstexprTestTypes::NoCtors>;
+    constexpr V v;
+    static_assert(!v.valueless_by_exception(), "");
+  }
+  {
+    using V = std::variant<int, long, std::string>;
+    const V v("abc");
+    assert(!v.valueless_by_exception());
+  }
 #ifndef TEST_HAS_NO_EXCEPTIONS
-    {
-        using V = std::variant<int, MakeEmptyT>;
-        V v;
-        assert(!v.valueless_by_exception());
-        makeEmpty(v);
-        assert(v.valueless_by_exception());
-    }
+  {
+    using V = std::variant<int, MakeEmptyT>;
+    V v;
+    assert(!v.valueless_by_exception());
+    makeEmpty(v);
+    assert(v.valueless_by_exception());
+  }
 #endif
 }
