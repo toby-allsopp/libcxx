@@ -283,7 +283,7 @@ void test_swap_same_alternative()
         }
         assert(T::move_called == 1); // call threw
         assert(T::move_assign_called == 0);
-        assert(std::get<0>(v1).value == 42); // throw happend before v1 was moved from
+        assert(std::get<0>(v1).value == 42); // throw happened before v1 was moved from
         assert(std::get<0>(v2).value == 100);
     }
     {
@@ -318,14 +318,16 @@ void test_swap_different_alternatives()
         assert(T::swap_called == 0);
         // The libc++ implementation double copies the argument, and not
         // the variant swap is called on.
-        assert(T::move_called == 1);
+        LIBCPP_ASSERT(T::move_called == 1);
+        assert(T::move_called <= 2);
         assert(T::move_assign_called == 0);
         assert(std::get<1>(v1) == 100);
         assert(std::get<0>(v2).value == 42);
         T::reset();
         swap(v1, v2);
         assert(T::swap_called == 0);
-        assert(T::move_called == 2);
+        LIBCPP_ASSERT(T::move_called == 2);
+        assert(T::move_called <= 2);
         assert(T::move_assign_called == 0);
         assert(std::get<0>(v1).value == 42);
         assert(std::get<1>(v2) == 100);
@@ -346,10 +348,15 @@ void test_swap_different_alternatives()
         }
         assert(T1::swap_called == 0);
         assert(T1::move_called == 1); // throws
-        assert(T1::move_assign_called  == 0);
-        assert(T2::move_called == 1);
+        assert(T1::move_assign_called == 0);
+         // FIXME: libc++ shouldn't move from T2 here.
+        LIBCPP_ASSERT(T2::move_called == 1);
+        assert(T2::move_called <= 1);
         assert(std::get<0>(v1).value == 42);
-        assert(v2.valueless_by_exception());
+        if (T2::move_called != 0)
+            assert(v2.valueless_by_exception());
+        else
+            assert(std::get<1>(v2).value == 100);
     }
     {
         using T1 = NonThrowingNonNoexceptType;
@@ -364,13 +371,19 @@ void test_swap_different_alternatives()
             assert(false);
         } catch (int) {
         }
-        assert(T2::move_called == 1);
+        LIBCPP_ASSERT(T1::move_called == 0);
+        assert(T1::move_called <= 1);
         assert(T2::swap_called == 0);
         assert(T2::move_called == 1); // throws
-        assert(T2::move_assign_called  == 0);
-        assert(std::get<0>(v1).value == 42);
+        assert(T2::move_assign_called == 0);
+        if (T1::move_called != 0)
+            assert(v1.valueless_by_exception());
+        else
+            assert(std::get<0>(v1).value == 42);
         assert(std::get<1>(v2).value == 100);
     }
+// FIXME: The tests below are just very libc++ specific
+#ifdef _LIBCPP_VERSION
     {
         using T1 = ThrowsOnSecondMove;
         using T2 = NonThrowingNonNoexceptType;
@@ -399,10 +412,13 @@ void test_swap_different_alternatives()
         assert(v1.valueless_by_exception());
         assert(std::get<0>(v2).value == 42);
     }
+#endif
+// testing libc++ extension. If either variant stores a nothrow move
+// constructible type v1.swap(v2) provides the strong exception safety
+// guarantee.
+#ifdef _LIBCPP_VERSION
     {
-        // testing libc++ extension. If either variant stores a nothrow move
-        // constructible type v1.swap(v2) provides the strong exception safety
-        // guarentee.
+
         using T1 = ThrowingTypeWithNothrowSwap;
         using T2 = NothrowMoveable;
         using V = std::variant<T1, T2>;
@@ -440,6 +456,7 @@ void test_swap_different_alternatives()
         assert(std::get<0>(v1).value == 42);
         assert(std::get<1>(v2).value == 100);
     }
+#endif // _LIBCPP_VERSION
 #endif
 }
 
@@ -544,7 +561,7 @@ void test_swap_noexcept()
         // but is still swappable via the generic swap algorithm, since the
         // variant is move constructible and move assignable.
         using V = std::variant<int, NotSwappable>;
-        static_assert(!has_swap_member<V>());
+        LIBCPP_STATIC_ASSERT(!has_swap_member<V>());
         static_assert(std::is_swappable_v<V>, "");
         static_assert(std::is_nothrow_swappable_v<V>, "");
         V v1, v2;

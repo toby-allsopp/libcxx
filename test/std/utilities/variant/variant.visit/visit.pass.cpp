@@ -15,6 +15,8 @@
 // constexpr see below visit(Visitor&& vis, Variants&&... vars);
 
 #include <variant>
+#include <memory>
+#include <utility>
 #include <type_traits>
 #include <string>
 #include <cassert>
@@ -39,26 +41,26 @@ inline constexpr CallType operator|(CallType LHS, CallType RHS) {
 struct ForwardingCallObject {
 
   template <class ...Args>
-  bool operator()(Args&&... args) & {
+  bool operator()(Args&&...) & {
       set_call<Args&&...>(CT_NonConst | CT_LValue);
       return true;
   }
 
   template <class ...Args>
-  bool operator()(Args&&... args) const & {
+  bool operator()(Args&&...) const & {
       set_call<Args&&...>(CT_Const | CT_LValue);
       return true;
   }
 
   // Don't allow the call operator to be invoked as an rvalue.
   template <class ...Args>
-  bool operator()(Args&&... args) && {
+  bool operator()(Args&&...) && {
       set_call<Args&&...>(CT_NonConst | CT_RValue);
       return true;
   }
 
   template <class ...Args>
-  bool operator()(Args&&... args) const && {
+  bool operator()(Args&&...) const && {
       set_call<Args&&...>(CT_Const | CT_RValue);
       return true;
   }
@@ -199,14 +201,14 @@ void test_argument_forwarding()
 }
 
 struct ReturnFirst {
-  template <class ...Args>
+  template <class... Args>
   constexpr int operator()(int f, Args&&...) const {
       return f;
   }
 };
 
 struct ReturnArity {
-  template <class ...Args>
+  template <class... Args>
   constexpr int operator()(Args&&...) const {
       return sizeof...(Args);
   }

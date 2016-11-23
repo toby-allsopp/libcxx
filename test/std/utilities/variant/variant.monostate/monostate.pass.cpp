@@ -17,7 +17,6 @@
 
 #include <variant>
 #include <type_traits>
-#include <cassert>
 
 int main()
 {

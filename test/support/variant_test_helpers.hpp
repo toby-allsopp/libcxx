@@ -10,6 +10,7 @@
 #ifndef SUPPORT_VARIANT_TEST_HELPERS_HPP
 #define SUPPORT_VARIANT_TEST_HELPERS_HPP
 
+#include <type_traits>
 #include <utility>
 #include <cassert>
 
@@ -50,7 +51,7 @@ struct MakeEmptyT {
       // operator performs a copy before committing to the assignment.
   }
   MakeEmptyT(MakeEmptyT &&) {
-    throw 42;
+      throw 42;
   }
   MakeEmptyT& operator=(MakeEmptyT const&) {
       throw 42;

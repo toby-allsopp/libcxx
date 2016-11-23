@@ -22,6 +22,8 @@
 //  constexpr variant_alternative_t<I, variant<Types...>> const&& get(const variant<Types...>&& v);
 
 #include <variant>
+#include <utility>
+#include <type_traits>
 #include <cassert>
 #include "test_macros.h"
 #include "variant_test_helpers.hpp"

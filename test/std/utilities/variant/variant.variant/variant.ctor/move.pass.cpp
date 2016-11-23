@@ -60,10 +60,10 @@ struct MakeEmptyT {
     throw 42;
   }
   MakeEmptyT& operator=(MakeEmptyT const&) {
-      throw 42;
+    throw 42;
   }
   MakeEmptyT& operator=(MakeEmptyT&&) {
-      throw 42;
+    throw 42;
   }
    ~MakeEmptyT() { --alive; }
 };

@@ -77,6 +77,15 @@ int CopyAssign::copy_assign = 0;
 int CopyAssign::move_construct = 0;
 int CopyAssign::move_assign = 0;
 
+struct CopyMaybeThrows {
+  CopyMaybeThrows(CopyMaybeThrows const&);
+  CopyMaybeThrows& operator=(CopyMaybeThrows const&);
+};
+struct CopyDoesThrow {
+  CopyDoesThrow(CopyDoesThrow const&) noexcept(false);
+  CopyDoesThrow &operator=(CopyDoesThrow const&) noexcept(false);
+};
+
 #ifndef TEST_HAS_NO_EXCEPTIONS
 struct CopyThrows {
   CopyThrows() = default;
@@ -132,19 +141,11 @@ void makeEmpty(Variant& v) {
 
 void test_copy_assignment_not_noexcept() {
     {
-        using V = std::variant<int>;
+        using V = std::variant<CopyMaybeThrows>;
         static_assert(!std::is_nothrow_copy_assignable<V>::value, "");
     }
     {
-        using V = std::variant<NothrowCopy>;
-        static_assert(!std::is_nothrow_copy_assignable<V>::value, "");
-    }
-    {
-        using V = std::variant<int, long>;
-        static_assert(!std::is_nothrow_copy_assignable<V>::value, "");
-    }
-    {
-        using V = std::variant<int, NothrowCopy>;
+        using V = std::variant<int, CopyDoesThrow>;
         static_assert(!std::is_nothrow_copy_assignable<V>::value, "");
     }
 }

@@ -17,10 +17,11 @@
 // template <class T> struct variant_size<volatile T>;
 // template <class T> struct variant_size<const volatile T>;
 // template <class T> constexpr size_t variant_size_v
-// = variant_size<T>::value;
+//     = variant_size<T>::value;
 
 #include <variant>
 #include <memory>
+#include <type_traits>
 
 template <class V, size_t E>
 void test() {

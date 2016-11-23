@@ -24,6 +24,7 @@
 
 #include <variant>
 #include <memory>
+#include <type_traits>
 
 #include "test_macros.h"
 #include "variant_test_helpers.hpp"
@@ -57,7 +58,7 @@ int main()
         test<V, 2, const void*>();
         test<V, 3, long double>();
     }
-#if !defined(TEST_VARIANT_REFERENCES)
+#if !defined(TEST_VARIANT_HAS_NO_REFERENCES)
     {
         using V = std::variant<int, int&, int const&, int&&, long double>;
         test<V, 0, int>();

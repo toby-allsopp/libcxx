@@ -16,7 +16,6 @@
 
 // template <class T> constexpr variant(T&&) noexcept(see below);
 
-
 #include <variant>
 #include <type_traits>
 #include <string>
@@ -62,7 +61,7 @@ void test_T_ctor_sfinae() {
         using V = std::variant<std::string, void*>;
         static_assert(!std::is_constructible<V, int>::value, "no matching constructor");
     }
-#if defined(VARIANT_TEST_REFERENCES)
+#if !defined(TEST_VARIANT_HAS_NO_REFERENCES)
     {
         using V = std::variant<int, int&&>;
         static_assert(!std::is_constructible<V, int>::value, "ambiguous");

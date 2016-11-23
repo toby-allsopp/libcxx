@@ -38,6 +38,7 @@
 
 #include <variant>
 #include <type_traits>
+#include <utility>
 #include <cassert>
 
 #include "test_macros.h"
@@ -52,12 +53,12 @@ struct MakeEmptyT {
       throw 42;
   }
 };
-inline bool operator==(MakeEmptyT const&, MakeEmptyT const&) { assert(false); }
-inline bool operator!=(MakeEmptyT const&, MakeEmptyT const&) { assert(false); }
-inline bool operator< (MakeEmptyT const&, MakeEmptyT const&) { assert(false); }
-inline bool operator<=(MakeEmptyT const&, MakeEmptyT const&) { assert(false); }
-inline bool operator>(MakeEmptyT const&, MakeEmptyT const&)  { assert(false); }
-inline bool operator>=(MakeEmptyT const&, MakeEmptyT const&) { assert(false); }
+inline bool operator==(MakeEmptyT const&, MakeEmptyT const&) { assert(false); return false; }
+inline bool operator!=(MakeEmptyT const&, MakeEmptyT const&) { assert(false); return false; }
+inline bool operator< (MakeEmptyT const&, MakeEmptyT const&) { assert(false); return false; }
+inline bool operator<=(MakeEmptyT const&, MakeEmptyT const&) { assert(false); return false; }
+inline bool operator> (MakeEmptyT const&, MakeEmptyT const&) { assert(false); return false; }
+inline bool operator>=(MakeEmptyT const&, MakeEmptyT const&) { assert(false); return false; }
 
 template <class Variant>
 void makeEmpty(Variant& v) {
@@ -186,13 +187,13 @@ void test_relational()
         using V = std::variant<int, MakeEmptyT>;
         V v1;
         V v2; makeEmpty(v2);
-        assert(test_less(v1, v2, true, false));
+        assert(test_less(v1, v2, false, true));
     }
     { // LHS.index() > RHS.index(), LHS is empty
         using V = std::variant<int, MakeEmptyT>;
         V v1; makeEmpty(v1);
         V v2;
-        assert(test_less(v1, v2, false, true));
+        assert(test_less(v1, v2, true, false));
     }
     { // LHS.index() == RHS.index(), LHS and RHS are empty
         using V = std::variant<int, MakeEmptyT>;

@@ -1515,9 +1515,11 @@ inline _LIBCPP_INLINE_VISIBILITY constexpr bool
 operator<(variant<_Types...> const& _LHS,
           variant<_Types...> const& _RHS) noexcept
 {
-  return (_LHS.index() < _RHS.index()) ||
-         (_LHS.index() == _RHS.index() && !_LHS.valueless_by_exception() &&
-          __variant_detail::__binary_visit(less<>{}, _LHS, _RHS));
+  return (_RHS.valueless_by_exception() ? false
+       : (_LHS.valueless_by_exception() ? true
+       : (_LHS.index() < _RHS.index() ? true
+       : (_LHS.index() > _RHS.index() ? false
+       : __variant_detail::__binary_visit(less<>{}, _LHS, _RHS)))));
 }
 
 template <class... _Types>

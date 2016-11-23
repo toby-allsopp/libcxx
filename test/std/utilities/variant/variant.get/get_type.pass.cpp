@@ -18,6 +18,8 @@
 // template <class T, class... Types> constexpr const T&& get(const variant<Types...>&& v);
 
 #include <variant>
+#include <type_traits>
+#include <utility>
 #include <cassert>
 #include "test_macros.h"
 #include "variant_test_helpers.hpp"

@@ -86,11 +86,9 @@ void test_basic() {
         assert(std::get<0>(v) == 42);
     }
     {
-        using V = std::variant<int, long, const void*,
-            TestTypes::NoCtors, std::string>;
+        using V = std::variant<int, long, const void*, TestTypes::NoCtors,
+                               std::string>;
         const int x = 100;
-        int y = 42;
-        int z = 43;
         V v(std::in_place_type<int>, -1);
         // default emplace a value
         v.emplace<long>();

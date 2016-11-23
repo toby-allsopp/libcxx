@@ -20,7 +20,6 @@
 
 #include <variant>
 #include <type_traits>
-#include <string>
 #include <cassert>
 
 #include "test_macros.h"

@@ -18,6 +18,7 @@
 
 #include <variant>
 #include <type_traits>
+#include <utility>
 #include <string>
 #include <cassert>
 
@@ -111,8 +112,8 @@ void test_move_assignment_sfinae() {
         static_assert(std::is_move_assignable<V>::value, "");
     }
     {
-        // variant only provides move assignment when beth the move and move
-        // constructors are well formed
+        // variant only provides move assignment when both the move constructor
+        // and move assignment operator are well formed.
         using V = std::variant<int, CopyOnly>;
         static_assert(!std::is_move_assignable<V>::value, "");
     }
