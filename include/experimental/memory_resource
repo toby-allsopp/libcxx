@@ -570,11 +570,6 @@ typedef __basic_chunk_allocator<__single_linked_chunk_node>
 class _LIBCPP_TYPE_VIS_ONLY monotonic_buffer_resource : public memory_resource {
   static constexpr size_t __min_buf_size = 512;
 
-  static size_t __adjust_buf_size(size_t __init_size) _NOEXCEPT {
-    return __init_size < __min_buf_size ? __min_buf_size
-                                        : __round_up_pow_2(__init_size);
-  }
-
 public:
   explicit monotonic_buffer_resource(memory_resource *__res)
       : __buf_(nullptr), __left_(0), __next_buf_size_(__min_buf_size),
@@ -582,7 +577,7 @@ public:
 
   monotonic_buffer_resource(size_t __init_size, memory_resource *__res)
       : __buf_(nullptr), __left_(0),
-        __next_buf_size_(__adjust_buf_size(__init_size)), __res_(__res) {}
+        __next_buf_size_(__init_size), __res_(__res) {}
 
   monotonic_buffer_resource(void *__buf, size_t __buf_size,
                             memory_resource *__res)

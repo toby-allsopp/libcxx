@@ -13,7 +13,7 @@
 
 // class monotonic_buffer_resource
 
-// void release()
+// void do_deallocate(void *p, size_t size, size_t align)
 
 #include <experimental/memory_resource>
 #include <type_traits>
@@ -29,56 +29,23 @@ int main() {
   Res R1;
   AllocController &P = R1.getController();
   {
-    DisableAllocationGuard g;
-    ex::monotonic_buffer_resource res;
-    res.release();
-  }
-  {
     ex::monotonic_buffer_resource res(&R1);
-    assert(res.allocate(1));
+    const size_t size = 2056;
+    void *mem = res.allocate(size);
+    assert(mem);
     assert(P.alive == 1);
     assert(P.alloc_count == 1);
     assert(P.dealloc_count == 0);
-    assert(P.last_alloc_size > 1);
-    int count = 0;
-    while (P.alive == 1) {
-      ++count;
-      assert(res.allocate(1));
-    }
-    assert(count > 1);
-    assert(P.alive == 2);
-    assert(P.alloc_count == 2);
-    assert(P.dealloc_count == 0);
-    res.release();
-    assert(P.alive == 0);
-    assert(P.alloc_count == 2);
-    assert(P.dealloc_count == 2);
-  }
-  assert(P.alive == 0);
-  assert(P.alloc_count == 2);
-  assert(P.dealloc_count == 2);
-  P.reset();
-  {
-    const size_t S = 1024;
-    alignas(std::max_align_t) char Buff[S];
-    ex::monotonic_buffer_resource res(Buff, S, &R1);
-    res.allocate(1024, alignof(std::max_align_t));
-    assert(P.alloc_count == 0);
-    assert(P.dealloc_count == 0);
+    assert(P.last_alloc_size > size);
 
-    res.allocate(1);
+    res.deallocate(mem, size);
     assert(P.alive == 1);
     assert(P.alloc_count == 1);
     assert(P.dealloc_count == 0);
-
-    res.release();
-    assert(P.alive == 0);
-    assert(P.alloc_count == 1);
-    assert(P.dealloc_count == 1);
-    assert(P.checkDeallocMatchesAlloc());
   }
   assert(P.alive == 0);
   assert(P.alloc_count == 1);
   assert(P.dealloc_count == 1);
+  assert(P.checkDeallocMatchesAlloc());
   P.reset();
 }
