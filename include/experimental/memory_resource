@@ -84,14 +84,6 @@ namespace pmr {
 
 _LIBCPP_BEGIN_NAMESPACE_LFTS_PMR
 
-// Round __s up to next multiple of __a.
-inline _LIBCPP_INLINE_VISIBILITY
-size_t __aligned_allocation_size(size_t __s, size_t __a) _NOEXCEPT
-{
-    _LIBCPP_ASSERT(__s + __a > __s, "aligned allocation size overflows");
-    return (__s + __a - 1) & ~(__a - 1);
-}
-
 // 8.5, memory.resource
 class _LIBCPP_TYPE_VIS_ONLY memory_resource
 {
@@ -416,6 +408,217 @@ template <class _Alloc>
 using resource_adaptor = __resource_adaptor_imp<
     typename allocator_traits<_Alloc>::template rebind_alloc<char>
   >;
+
+
+struct _LIBCPP_TYPE_VIS_ONLY pool_options
+{
+    size_t max_blocks_per_chunk = 0;
+    size_t largest_required_pool_block = 0;
+
+    // Implementation limits
+    static constexpr size_t __impl_max_blocks_per_chunk = 32;
+    static constexpr size_t __impl_smallest_block = 8;
+    static constexpr size_t __impl_largest_block = 4096;
+};
+
+inline _LIBCPP_INLINE_VISIBILITY
+size_t __adjust_max_blocks_per_chunk(size_t __mbpc) _NOEXCEPT
+{
+    if (__mbpc == 0 || __mbpc > pool_options::__impl_max_blocks_per_chunk) {
+        return pool_options::__impl_max_blocks_per_chunk;
+    } else {
+        return __mbpc;
+    }
+}
+
+inline _LIBCPP_INLINE_VISIBILITY
+size_t __adjust_largest_required_pool_block(size_t __lpb) _NOEXCEPT
+{
+    if (__lpb == 0 || __lpb > pool_options::__impl_largest_block) {
+        return pool_options::__impl_largest_block;
+    }
+    else if (__lpb < pool_options::__impl_smallest_block) {
+        return pool_options::__impl_smallest_block;
+    }
+    else {
+        return __lpb;
+    }
+}
+
+inline _LIBCPP_INLINE_VISIBILITY
+pool_options __adjust_pool_options(pool_options __opts) _NOEXCEPT
+{
+    __opts.max_blocks_per_chunk =
+        __adjust_max_blocks_per_chunk(__opts.max_blocks_per_chunk);
+
+    __opts.largest_required_pool_block =
+        __adjust_largest_required_pool_block(__opts.largest_required_pool_block);
+
+    return __opts;
+}
+
+struct __double_linked_chunk_node
+{
+    __double_linked_chunk_node * __next_;
+    __double_linked_chunk_node ** __prev_next_addr_;
+    size_t __size_;
+    max_align_t __memory_;
+
+    static void __push(
+        __double_linked_chunk_node ** __head_ptr
+      , __double_linked_chunk_node * __n);
+
+    static void __remove(
+        __double_linked_chunk_node **
+      , __double_linked_chunk_node * __n);
+};
+
+struct __single_linked_chunk_node
+{
+    __single_linked_chunk_node * __next_;
+    size_t __size_;
+    max_align_t __memory_;
+
+    static void __push(
+        __single_linked_chunk_node ** __head_ptr
+      , __single_linked_chunk_node * __n);
+
+    static void __remove(
+        __single_linked_chunk_node ** __head_ptr
+      , __single_linked_chunk_node * __n);
+};
+
+class _LIBCPP_TYPE_VIS_ONLY monotonic_buffer_resource
+  : public memory_resource
+{
+  static const size_t __min_buf_size = 512;
+
+  static size_t __adjust_buf_size(size_t __init_size) _NOEXCEPT
+  {
+      return __init_size < __min_buf_size
+          ? __min_buf_size : __round_up_pow_2(__init_size);
+  }
+
+public:
+  explicit monotonic_buffer_resource(memory_resource * __res)
+      : __buf_(nullptr)
+      , __left_(0)
+      , __next_buf_size_(__min_buf_size)
+      , __res_(__res)
+  {}
+
+  monotonic_buffer_resource(size_t __init_size, memory_resource * __res)
+      : __buf_(nullptr)
+      , __left_(0)
+      , __next_buf_size_(__adjust_buf_size(__init_size))
+      , __res_(__res)
+  {}
+
+  monotonic_buffer_resource(void * __buf, size_t __buf_size
+                          , memory_resource * __res)
+    : __buf_(__buf)
+    , __left_(__buf_size)
+    , __next_buf_size_(__min_buf_size)
+    , __res_(__res)
+  {}
+
+  monotonic_buffer_resource()
+    : monotonic_buffer_resource(get_default_resource())
+  {}
+
+  explicit monotonic_buffer_resource(size_t __init_size)
+    : monotonic_buffer_resource(__init_size, get_default_resource())
+  {}
+
+  monotonic_buffer_resource(void * __buf, size_t __buf_size)
+    : monotonic_buffer_resource(__buf, __buf_size, get_default_resource())
+  {}
+
+  monotonic_buffer_resource(monotonic_buffer_resource const &) = delete;
+
+  virtual ~monotonic_buffer_resource();
+
+  monotonic_buffer_resource & operator=(
+      monotonic_buffer_resource const &) = delete;
+
+  _LIBCPP_INLINE_VISIBILITY
+  void release()
+  { __alloc_.__release(__res_); }
+
+  _LIBCPP_INLINE_VISIBILITY
+  memory_resource * upstream_resource() const _NOEXCEPT
+  { return __res_; }
+
+protected:
+  virtual void * do_allocate(size_t __bytes, size_t __align);
+  virtual void do_deallocate(void *, size_t, size_t);
+  virtual bool do_is_equal(memory_resource const & __other) const _NOEXCEPT;
+
+private:
+  void * __take_from_buf(size_t __s, size_t __a) _NOEXCEPT;
+  void __alloc_from_upstream(size_t __s, size_t __a);
+  void __increment_buf_size(size_t __s) _NOEXCEPT;
+
+private:
+  void * __buf_;
+  size_t __left_;
+  size_t __next_buf_size_;
+  memory_resource * __res_;
+  __single_linked_chunk_allocator __alloc_;
+};
+
+class _LIBCPP_TYPE_VIS_ONLY monotonic_buffer_resource : public memory_resource {
+public:
+  explicit monotonic_buffer_resource(memory_resource *__up)
+    : __upstream_(__up)
+  {
+    _LIBCPP_ASSERT(__up, "upstream reasource cannot be null");
+  }
+  monotonic_buffer_resource(size_t __init_size, memory_resource *__up)
+      : __upstream_(__up),  __next_size_(__round_up_pow_2(__init_size))
+  {
+    _LIBCPP_ASSERT(__up, "upstream resource cannot be null");
+    _LIBCPP_ASSERT(__init_size != 0, "the initial buffer size cannot be zero");
+  }
+  monotonic_buffer_resource(void *__buff, size_t __buff_size, memory_resource *__up)
+      : __upstream_(__up), __buff_(__buff), __buff_size_(__buff_size),
+        __next_size_(__next_pow2(__round_up_pow_2(__buff_size)))
+  {
+    _LIBCPP_ASSERT(__up != nullptr, "upstream resource cannot be null");
+    _LIBCPP_ASSERT(__buff != nullptr, "buffer cannot be null");
+    _LIBCPP_ASSERT(__buff_size >= 1, "buffer size cannot be zero");
+  }
+
+  monotonic_buffer_resource() : monotonic_buffer_resource(get_default_resource()) {}
+  explicit monotonic_buffer_resource(size_t __init_size)
+    : monotonic_buffer_resource(__init_size, get_default_resource()) {}
+  monotonic_buffer_resource(void* __buff, size_t __buff_size)
+      : monotonic_buffer_resource(__buff, __buff_size,
+                                  get_default_resource()) { }
+
+  monotonic_buffer_resource(const monotonic_buffer_resource&) = delete;
+
+  virtual ~monotonic_buffer_resource();
+
+  monotonic_buffer_resource operator=(
+      const monotonic_buffer_resource&) = delete;
+
+  void release();
+  memory_resource* upstream_resource() const { }
+
+protected:
+  virtual void* do_allocate(size_t bytes, size_t alignment);
+  virtual void do_deallocate(void* p, size_t bytes,
+                             size_t alignment);
+
+  virtual bool do_is_equal(const memory_resource& other) const noexcept;
+private:
+  static constexpr size_t __default_next_size = 4;
+  memory_resource *__upstream_;
+  void *__buff_ = nullptr;
+  size_t __buff_size_ = 0;
+  size_t __next_size_ = __default_next_size;
+};
 
 _LIBCPP_END_NAMESPACE_LFTS_PMR
 
