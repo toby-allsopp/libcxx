@@ -11,10 +11,11 @@
 
 // <experimental/memory_resource>
 
-// monotonic_buffer_resource(monotonic_buffer_resource*);
+// explicit monotonic_buffer_resource(monotonic_buffer_resource*);
 // monotonic_buffer_resource(size_t initial_size, monotonic_buffer_resource*);
 
 #include <experimental/memory_resource>
+#include <type_traits>
 #include <cassert>
 
 #include "test_memory_resource.hpp"
@@ -26,6 +27,14 @@ int main() {
   Res R1, R2;
   AllocController &P1 = R1.getController();
   AllocController &P2 = R2.getController();
+  {
+    static_assert(!std::is_convertible<
+        ex::memory_resource*,
+        ex::monotonic_buffer_resource>::value, "");
+    static_assert(std::is_constructible<ex::monotonic_buffer_resource,
+        ex::monotonic_buffer_resource*>::value, "");
+
+  }
   {
     ex::monotonic_buffer_resource res(&R1);
     ex::monotonic_buffer_resource res2(&R2);

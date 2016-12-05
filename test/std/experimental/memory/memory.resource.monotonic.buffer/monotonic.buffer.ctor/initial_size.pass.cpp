@@ -11,9 +11,10 @@
 
 // <experimental/memory_resource>
 
-// monotonic_buffer_resource(size_t initial_size);
+// explicit monotonic_buffer_resource(size_t initial_size);
 
 #include <experimental/memory_resource>
+#include <type_traits>
 #include <cassert>
 
 #include "test_memory_resource.hpp"
@@ -23,6 +24,10 @@ namespace ex = std::experimental::pmr;
 
 int main() {
   using Res = TestResource;
+  {
+    static_assert(!std::is_convertible<size_t, ex::monotonic_buffer_resource>::value, "");
+    static_assert(std::is_constructible<ex::monotonic_buffer_resource, size_t>::value, "");
+  }
   {
     Res R1;
     auto &C = R1.getController();
