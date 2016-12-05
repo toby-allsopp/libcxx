@@ -495,7 +495,6 @@ struct __single_linked_chunk_node {
   void __remove(__single_linked_chunk_node **__head_ptr,
                 __single_linked_chunk_node *__n)
   {
-    assert(__head_ptr && *__head_ptr && __n);
     auto **__prev = __head_ptr;
     auto *__idx = *__head_ptr;
     while (__idx != __n) {
@@ -510,13 +509,12 @@ struct __single_linked_chunk_node {
 template <class _ChunkNode>
 inline _LIBCPP_INLINE_VISIBILITY
 _ChunkNode *__memory_to_chunk(void *__p) _NOEXCEPT {
-  assert(__p);
   return static_cast<_ChunkNode *>(static_cast<void *>(
       static_cast<char *>(__p) - offsetof(_ChunkNode, __memory_)));
 }
 
 template <class _ChunkNode>
-class __basic_chunk_allocator {
+class _LIBCPP_TYPE_VIS_ONLY __basic_chunk_allocator {
   static_assert(is_standard_layout<_ChunkNode>::value,
                 "_ChunkNode must be standard layout");
   static_assert(is_trivially_destructible<_ChunkNode>::value,
@@ -531,11 +529,8 @@ public:
 
   _LIBCPP_INLINE_VISIBILITY
   void *__allocate(memory_resource *__res, size_t __s) {
-    //assert(false);
-    if (__s == 0) {
-      assert(false);
+    if (__s == 0) // FIXME is this legal?
       return nullptr;
-    }
     const size_t __alloc_size =
         __max_aligned_allocation_size(sizeof(_ChunkNode) + __s);
     return __insert_new_chunk(__res->allocate(__alloc_size, alignof(max_align_t)),
@@ -562,7 +557,6 @@ public:
 
 private:
   void *__insert_new_chunk(void *__p, size_t __s) _NOEXCEPT {
-    //assert(false);
     _ChunkNode *__n = ::new (__p) _ChunkNode();
     __n->__size_ = __s;
     _ChunkNode::__push(&__head_, __n);
@@ -611,6 +605,7 @@ public:
 
   monotonic_buffer_resource(monotonic_buffer_resource const &) = delete;
 
+  _LIBCPP_FUNC_VIS
   virtual ~monotonic_buffer_resource();
 
   monotonic_buffer_resource &

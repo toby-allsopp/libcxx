@@ -483,7 +483,8 @@ struct BufferProvider {
             assert(false);
 #endif
         }
-
+        next = static_cast<char*>(next) + s;
+        space -= s;
         return ret;
     }
 

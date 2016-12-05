@@ -116,8 +116,8 @@ size_t __is_power2(size_t __bc)
 inline _LIBCPP_INLINE_VISIBILITY
 size_t __next_pow2(size_t __n)
 {
-    return __n < 2 ? __n + 1
-        : size_t(1) << (std::numeric_limits<size_t>::digits - __clz(__n-1));
+    return (__n < 2) ? __n + 1
+        : (size_t(1) << (std::numeric_limits<size_t>::digits - __clz(__n-1)));
 }
 
 inline _LIBCPP_INLINE_VISIBILITY
