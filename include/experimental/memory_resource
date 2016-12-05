@@ -516,6 +516,7 @@ class _LIBCPP_TYPE_VIS_ONLY __basic_chunk_allocator {
         static_cast<char *>(__p) - offsetof(_ChunkNode, __memory_)));
   }
 public:
+  _LIBCPP_INLINE_VISIBILITY
   __basic_chunk_allocator() : __head_(nullptr) {}
   __basic_chunk_allocator(__basic_chunk_allocator const &) = delete;
   __basic_chunk_allocator &operator=(__basic_chunk_allocator const &) = delete;
@@ -549,6 +550,7 @@ public:
   }
 
 private:
+  _LIBCPP_INLINE_VISIBILITY
   void *__insert_new_chunk(void *__p, size_t __s) _NOEXCEPT {
     _ChunkNode *__n = ::new (__p) _ChunkNode;
     __n->__size_ = __s;
@@ -639,6 +641,7 @@ private:
     return __p;
   }
 
+  _LIBCPP_INLINE_VISIBILITY
   void *__alloc_from_upstream(size_t __s, size_t __a) {
     size_t __alloc_size = std::max<size_t>(
         __aligned_allocation_size(__s, __a),
@@ -649,6 +652,7 @@ private:
     return __take_from_buf(__s, __a);
   }
 
+  _LIBCPP_INLINE_VISIBILITY
   void __increment_buf_size(size_t __s) _NOEXCEPT {
     size_t const __possible_next =
         _VSTD::max(__round_up_pow_2(__s), __next_buf_size_ << 1);
