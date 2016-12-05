@@ -45,7 +45,6 @@ int main() {
     assert(P1.last_alloc_size >= 42);
     const size_t default_alloc_size = P1.last_alloc_size;
     assert(P1.alive == 1);
-    res.deallocate(mem1, 1, 1);
 
     const size_t init_size = default_alloc_size + 42;
     ex::monotonic_buffer_resource res2(init_size, &R2);
@@ -53,6 +52,5 @@ int main() {
     void* mem2 = res2.allocate(1, 1);
     assert(P2.last_alloc_size >= init_size);
     assert(P2.alive == 1);
-    res2.deallocate(mem2, 1, 1);
   }
 }
