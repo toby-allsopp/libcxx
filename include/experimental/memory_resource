@@ -519,9 +519,8 @@ public:
   void *__allocate(memory_resource *__res, size_t __s) {
     if (__s == 0)
       __s = 1;
-    const size_t __alloc_size =
-        __aligned_allocation_size(sizeof(_ChunkNode) + __s);
-    return __insert_new_chunk(__res->allocate(__alloc_size, __max_align()),
+    const size_t __alloc_size = sizeof(_ChunkNode) + __s;
+    return __insert_new_chunk(__res->allocate(__alloc_size),
                               __alloc_size);
   }
 
@@ -531,7 +530,7 @@ public:
       return;
     _ChunkNode *const __n = __memory_to_chunk(__p);
     _ChunkNode::__remove(&__head_, __n);
-    __res->deallocate(__n, __n->__size_, __max_align());
+    __res->deallocate(__n, __n->__size_);
   }
 
   _LIBCPP_INLINE_VISIBILITY
@@ -539,7 +538,7 @@ public:
     while (__head_) {
       auto *__p = __head_;
       __head_ = __head_->__next_;
-      __res->deallocate(__p, __p->__size_, __max_align());
+      __res->deallocate(__p, __p->__size_);
     }
   }
 
