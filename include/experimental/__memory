@@ -13,6 +13,7 @@
 
 #include <experimental/__config>
 #include <experimental/utility> // for erased_type
+#include <algorithm>
 #include <__functional_base>
 #include <type_traits>
 
@@ -85,7 +86,7 @@ void __lfts_user_alloc_construct(
        );
 }
 
-nline _LIBCPP_INLINE_VISIBILITY
+inline _LIBCPP_INLINE_VISIBILITY
 unsigned __msb_only(unsigned __x) _NOEXCEPT
 {
     _LIBCPP_ASSERT(__x, "__x cannot be zero");

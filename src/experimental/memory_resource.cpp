@@ -140,4 +140,8 @@ memory_resource * set_default_resource(memory_resource * __new_res) _NOEXCEPT
     return __default_memory_resource(true, __new_res);
 }
 
+monotonic_buffer_resource::~monotonic_buffer_resource() {
+  __alloc_.__release(__res_);
+}
+
 _LIBCPP_END_NAMESPACE_LFTS_PMR
