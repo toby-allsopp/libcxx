@@ -449,30 +449,6 @@ inline _LIBCPP_INLINE_VISIBILITY pool_options
   return __opts;
 }
 
-struct __double_linked_chunk_node {
-  __double_linked_chunk_node *__next_;
-  __double_linked_chunk_node **__prev_next_addr_;
-  size_t __size_;
-  alignas(std::max_align_t) char __memory_[0];
-
-  static inline _LIBCPP_INLINE_VISIBILITY
-  void __push(__double_linked_chunk_node **__head_ptr,
-                     __double_linked_chunk_node *__n) {
-    __n->__next_ = *__head_ptr;
-    __n->__prev_next_addr_ = __head_ptr;
-    if (*__head_ptr)
-      (*__head_ptr)->__prev_next_addr_ = &__n->__next_;
-    *__head_ptr = __n;
-  }
-
-  static inline _LIBCPP_INLINE_VISIBILITY
-  void __remove(__double_linked_chunk_node **,
-                __double_linked_chunk_node *__n) {
-    *(__n->__prev_next_addr_) = __n->__next_;
-    if (__n->__next_)
-      __n->__next_->__prev_next_addr_ = __n->__prev_next_addr_;
-  }
-};
 
 struct __single_linked_chunk_node {
   __single_linked_chunk_node *__next_;
@@ -501,6 +477,32 @@ struct __single_linked_chunk_node {
   }
 };
 
+
+struct __double_linked_chunk_node {
+  __double_linked_chunk_node *__next_;
+  __double_linked_chunk_node **__prev_next_addr_;
+  size_t __size_;
+  alignas(std::max_align_t) char __memory_[0];
+
+  static inline _LIBCPP_INLINE_VISIBILITY
+  void __push(__double_linked_chunk_node **__head_ptr,
+                     __double_linked_chunk_node *__n) {
+    __n->__next_ = *__head_ptr;
+    __n->__prev_next_addr_ = __head_ptr;
+    if (*__head_ptr)
+      (*__head_ptr)->__prev_next_addr_ = &__n->__next_;
+    *__head_ptr = __n;
+  }
+
+  static inline _LIBCPP_INLINE_VISIBILITY
+  void __remove(__double_linked_chunk_node **,
+                __double_linked_chunk_node *__n) {
+    *(__n->__prev_next_addr_) = __n->__next_;
+    if (__n->__next_)
+      __n->__next_->__prev_next_addr_ = __n->__prev_next_addr_;
+  }
+};
+
 template <class _ChunkNode>
 class _LIBCPP_TYPE_VIS_ONLY __basic_chunk_allocator {
   static_assert(is_standard_layout<_ChunkNode>::value,
@@ -510,15 +512,12 @@ class _LIBCPP_TYPE_VIS_ONLY __basic_chunk_allocator {
 
   static inline _LIBCPP_INLINE_VISIBILITY
   _ChunkNode *__memory_to_chunk(void *__p) _NOEXCEPT {
-    static_assert(is_standard_layout<_ChunkNode>::value, "");
     return static_cast<_ChunkNode *>(static_cast<void *>(
         static_cast<char *>(__p) - offsetof(_ChunkNode, __memory_)));
   }
 public:
   __basic_chunk_allocator() : __head_(nullptr) {}
-
   __basic_chunk_allocator(__basic_chunk_allocator const &) = delete;
-
   __basic_chunk_allocator &operator=(__basic_chunk_allocator const &) = delete;
 
   _LIBCPP_INLINE_VISIBILITY
@@ -600,7 +599,7 @@ public:
   monotonic_buffer_resource(monotonic_buffer_resource const &) = delete;
 
   _LIBCPP_FUNC_VIS
-  virtual ~monotonic_buffer_resource();
+  virtual ~monotonic_buffer_resource(); // KEY FUNCTION
 
   monotonic_buffer_resource &
       operator=(monotonic_buffer_resource const &) = delete;
@@ -647,9 +646,7 @@ private:
     __increment_buf_size(__alloc_size);
     __buf_ = __alloc_.__allocate(__res_, __alloc_size);
     __left_ = __alloc_size;
-    void *__p = __take_from_buf(__s, __a);
-    assert(__p && "should not be null");
-    return __p;
+    return __take_from_buf(__s, __a);
   }
 
   void __increment_buf_size(size_t __s) _NOEXCEPT {
