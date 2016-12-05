@@ -184,6 +184,10 @@ public:
         return disable_checking || n != last_new_size;
     }
 
+    bool checkLastNewSizeGreaterEq(int n) const {
+        return disable_checking || last_new_size >= n;
+    }
+
     bool checkOutstandingArrayNewEq(int n) const
     {
         return disable_checking || n == outstanding_array_new;
