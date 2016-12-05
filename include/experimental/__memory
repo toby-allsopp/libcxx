@@ -127,7 +127,7 @@ size_t __round_up_pow_2(size_t __s) _NOEXCEPT
 }
 
 inline _LIBCPP_INLINE_VISIBILITY
-constexpr size_t __max_alignment() _NOEXCEPT
+constexpr size_t __max_align() _NOEXCEPT
 {
     return alignment_of<max_align_t>::value;
 }
@@ -136,44 +136,18 @@ constexpr size_t __max_alignment() _NOEXCEPT
 inline _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR
 size_t __fundamental_alignment(size_t __s) _NOEXCEPT
 {
-    return (__s | __max_alignment())
-        & ~((__s | __max_alignment()) - 1);
+    return (__s | __max_align())
+        & ~((__s | __max_align()) - 1);
 }
 
 // Round __s up to next multiple of __a.
 inline _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR
-size_t __aligned_allocation_size(size_t __s, size_t __a) _NOEXCEPT
+size_t __aligned_allocation_size(size_t __s, size_t __a = alignof(max_align_t)) _NOEXCEPT
 {
     _LIBCPP_ASSERT(__s + __a > __s, "aligned allocation size overflows");
     return (__s + __a - 1) & ~(__a - 1);
 }
 
-inline _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR
-size_t __max_aligned_allocation_size(size_t __s) _NOEXCEPT
-{
-    return __aligned_allocation_size(__s, __max_alignment());
-}
-
-inline _LIBCPP_INLINE_VISIBILITY
-size_t __alignment_offset(void * __p, size_t __a) _NOEXCEPT
-{
-    static_assert(sizeof(size_t) == sizeof(void*), "must be same");
-    return (__a - reinterpret_cast<size_t>(__p)) & (__a - 1);
-}
-
-inline _LIBCPP_INLINE_VISIBILITY
-void * __align_pointer(void * __p, size_t __a) _NOEXCEPT
-{
-    return static_cast<void*>(
-        static_cast<char*>(__p) + __alignment_offset(__p, __a)
-      );
-}
-
-inline _LIBCPP_INLINE_VISIBILITY
-bool __is_max_aligned(void * __p) _NOEXCEPT
-{
-    return reinterpret_cast<size_t>(__p) % __max_alignment() == 0;
-}
 
 _LIBCPP_END_NAMESPACE_LFTS
 
