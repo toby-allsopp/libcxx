@@ -23,7 +23,7 @@ namespace ex = std::experimental::pmr;
 
 int main() {
   using Res = TestResource;
-  auto in_range = [](void *p, char *b, char* e) {
+  auto in_range = [](void *p, char *b, char *e) {
     uintptr_t pint = reinterpret_cast<uintptr_t>(p);
     uintptr_t bint = reinterpret_cast<uintptr_t>(b);
     uintptr_t eint = reinterpret_cast<uintptr_t>(e);
@@ -52,7 +52,7 @@ int main() {
     assert(globalMemCounter.checkOutstandingNewEq(0));
     ex::monotonic_buffer_resource res(Buff, Size);
     assert(res.upstream_resource() == ex::new_delete_resource());
-    void* mem1 = res.allocate(Size - 4, 1);
+    void *mem1 = res.allocate(Size - 4, 1);
     assert(in_range(mem1, Buff, End));
     mem1 = res.allocate(4, 1);
     assert(in_range(mem1, Buff, End));
@@ -67,11 +67,11 @@ int main() {
     char *End = Buff + Size;
     Res R;
     ex::set_default_resource(&R);
-    auto& P = R.getController();
+    auto &P = R.getController();
     ex::monotonic_buffer_resource res(Buff, Size);
     assert(res.upstream_resource() == &R);
     assert(P.alive == 0);
-    void* mem1 = res.allocate(Size + 1, 8);
+    void *mem1 = res.allocate(Size + 1, 8);
     assert(!in_range(mem1, Buff, End));
     assert(P.alive == 1);
     assert(P.last_alloc_size >= Size + 1);

@@ -35,9 +35,9 @@ void test_contiguous_allocation() {
     void *last_ptr = res.allocate(1, 1);
     int last_size = 1;
     int rem_size = initial_size - 1;
-    for (int i=0; rem_size - i >= 0; ++i) {
+    for (int i = 0; rem_size - i >= 0; ++i) {
       void *new_ptr = res.allocate(i, 1);
-      assert(new_ptr == (static_cast<char*>(last_ptr) + last_size));
+      assert(new_ptr == (static_cast<char *>(last_ptr) + last_size));
       last_ptr = new_ptr;
       last_size = i;
       rem_size -= i;
@@ -47,12 +47,11 @@ void test_contiguous_allocation() {
     assert(P.alive == 1);
     void *new_ptr = res.allocate(65, 1);
     assert(P.alive >= 2);
-    assert(new_ptr != (static_cast<char*>(last_ptr) + 1));
+    assert(new_ptr != (static_cast<char *>(last_ptr) + 1));
   }
   assert(P.alive == 0);
   P.reset();
 }
-
 
 void test_correct_alignment() {
   using AllocT = MinAlignedAllocator<char>;
@@ -62,11 +61,12 @@ void test_correct_alignment() {
     AllocController P;
     Res R((AllocT(P)));
     ex::monotonic_buffer_resource res(&R);
-    for (int i=0; i < 3; ++i) {
-      for (size_t size=0; size < 1024; ++size) {
+    for (int i = 0; i < 3; ++i) {
+      for (size_t size = 0; size < 1024; ++size) {
         void *ptr = res.allocate(size);
         assert(ptr);
-        assert((reinterpret_cast<uintptr_t>(ptr) % alignof(std::max_align_t)) == 0);
+        assert((reinterpret_cast<uintptr_t>(ptr) % alignof(std::max_align_t)) ==
+               0);
       }
     }
   }
@@ -74,8 +74,8 @@ void test_correct_alignment() {
     AllocController P;
     Res R((AllocT(P)));
     ex::monotonic_buffer_resource res(&R);
-    for (int i=0; i < 3; ++i) {
-      for (size_t align=1; align <= alignof(std::max_align_t); align *= 2) {
+    for (int i = 0; i < 3; ++i) {
+      for (size_t align = 1; align <= alignof(std::max_align_t); align *= 2) {
         void *ptr = res.allocate(1, align);
         assert(ptr);
         assert(reinterpret_cast<uintptr_t>(ptr) % align == 0);
@@ -83,7 +83,6 @@ void test_correct_alignment() {
     }
   }
 }
-
 
 void test_alloc_zero_size() {
   using AllocT = MinAlignedAllocator<char>;

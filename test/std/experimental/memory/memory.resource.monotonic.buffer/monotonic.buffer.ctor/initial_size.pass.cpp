@@ -25,8 +25,11 @@ namespace ex = std::experimental::pmr;
 int main() {
   using Res = TestResource;
   {
-    static_assert(!std::is_convertible<size_t, ex::monotonic_buffer_resource>::value, "");
-    static_assert(std::is_constructible<ex::monotonic_buffer_resource, size_t>::value, "");
+    static_assert(
+        !std::is_convertible<size_t, ex::monotonic_buffer_resource>::value, "");
+    static_assert(
+        std::is_constructible<ex::monotonic_buffer_resource, size_t>::value,
+        "");
   }
   {
     Res R1;
@@ -40,7 +43,6 @@ int main() {
     assert(globalMemCounter.checkOutstandingNewEq(1));
     assert(globalMemCounter.checkLastNewSizeGreaterEq(42));
     const size_t default_init_size = globalMemCounter.last_new_size;
-
 
     const size_t custom_init_size = default_init_size + 42;
     ex::set_default_resource(&R1);

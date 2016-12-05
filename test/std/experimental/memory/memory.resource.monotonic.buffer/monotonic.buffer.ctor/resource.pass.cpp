@@ -28,12 +28,12 @@ int main() {
   AllocController &P1 = R1.getController();
   AllocController &P2 = R2.getController();
   {
-    static_assert(!std::is_convertible<
-        ex::memory_resource*,
-        ex::monotonic_buffer_resource>::value, "");
+    static_assert(!std::is_convertible<ex::memory_resource *,
+                                       ex::monotonic_buffer_resource>::value,
+                  "");
     static_assert(std::is_constructible<ex::monotonic_buffer_resource,
-        ex::monotonic_buffer_resource*>::value, "");
-
+                                        ex::monotonic_buffer_resource *>::value,
+                  "");
   }
   {
     ex::monotonic_buffer_resource res(&R1);
@@ -50,7 +50,7 @@ int main() {
 
     assert(P1.alive == 0);
     assert(P2.alive == 0);
-    void* mem1 = res.allocate(1, 1);
+    void *mem1 = res.allocate(1, 1);
     assert(P1.last_alloc_size >= 42);
     const size_t default_alloc_size = P1.last_alloc_size;
     assert(P1.alive == 1);
@@ -58,7 +58,7 @@ int main() {
     const size_t init_size = default_alloc_size + 42;
     ex::monotonic_buffer_resource res2(init_size, &R2);
     assert(res2.upstream_resource() == &R2);
-    void* mem2 = res2.allocate(1, 1);
+    void *mem2 = res2.allocate(1, 1);
     assert(P2.last_alloc_size >= init_size);
     assert(P2.alive == 1);
   }
