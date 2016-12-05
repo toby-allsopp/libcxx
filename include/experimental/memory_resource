@@ -594,7 +594,7 @@ public:
   monotonic_buffer_resource(monotonic_buffer_resource const &) = delete;
 
   _LIBCPP_FUNC_VIS
-  virtual ~monotonic_buffer_resource(); // KEY FUNCTION
+  virtual ~monotonic_buffer_resource() override; // KEY FUNCTION
 
   monotonic_buffer_resource &
       operator=(monotonic_buffer_resource const &) = delete;
