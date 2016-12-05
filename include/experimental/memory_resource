@@ -523,8 +523,8 @@ public:
 
   _LIBCPP_INLINE_VISIBILITY
   void *__allocate(memory_resource *__res, size_t __s) {
-    if (__s == 0) // FIXME is this legal?
-      return nullptr;
+    if (__s == 0)
+      __s = 1;
     const size_t __alloc_size =
         __aligned_allocation_size(sizeof(_ChunkNode) + __s);
     return __insert_new_chunk(__res->allocate(__alloc_size, __max_align()),
