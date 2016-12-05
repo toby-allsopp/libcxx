@@ -103,42 +103,42 @@ public:
         { do_deallocate(__p, __bytes, __align); }
 
     _LIBCPP_INLINE_VISIBILITY
-    bool is_equal(memory_resource const & __other) const _NOEXCEPT
+    bool is_equal(memory_resource const & __other) const noexcept
         { return do_is_equal(__other); }
 
 // 8.5.3, memory.resource.priv
 protected:
     virtual void* do_allocate(size_t, size_t) = 0;
     virtual void do_deallocate(void*, size_t, size_t) = 0;
-    virtual bool do_is_equal(memory_resource const &) const _NOEXCEPT = 0;
+    virtual bool do_is_equal(memory_resource const &) const noexcept = 0;
 };
 
 // 8.5.4, memory.resource.eq
 inline _LIBCPP_INLINE_VISIBILITY
 bool operator==(memory_resource const & __lhs,
-                memory_resource const & __rhs) _NOEXCEPT
+                memory_resource const & __rhs) noexcept
 {
     return &__lhs == &__rhs || __lhs.is_equal(__rhs);
 }
 
 inline _LIBCPP_INLINE_VISIBILITY
 bool operator!=(memory_resource const & __lhs,
-                memory_resource const & __rhs) _NOEXCEPT
+                memory_resource const & __rhs) noexcept
 {
     return !(__lhs == __rhs);
 }
 
 _LIBCPP_FUNC_VIS
-memory_resource * new_delete_resource() _NOEXCEPT;
+memory_resource * new_delete_resource() noexcept;
 
 _LIBCPP_FUNC_VIS
-memory_resource * null_memory_resource() _NOEXCEPT;
+memory_resource * null_memory_resource() noexcept;
 
 _LIBCPP_FUNC_VIS
-memory_resource * get_default_resource() _NOEXCEPT;
+memory_resource * get_default_resource() noexcept;
 
 _LIBCPP_FUNC_VIS
-memory_resource * set_default_resource(memory_resource * __new_res) _NOEXCEPT;
+memory_resource * set_default_resource(memory_resource * __new_res) noexcept;
 
 // 8.6, memory.polymorphic.allocator.class
 
@@ -151,12 +151,12 @@ public:
 
     // 8.6.2, memory.polymorphic.allocator.ctor
     _LIBCPP_INLINE_VISIBILITY
-    polymorphic_allocator() _NOEXCEPT
+    polymorphic_allocator() noexcept
       : __res_(_VSTD_LFTS_PMR::get_default_resource())
     {}
 
     _LIBCPP_INLINE_VISIBILITY
-    polymorphic_allocator(memory_resource * __r) _NOEXCEPT
+    polymorphic_allocator(memory_resource * __r) noexcept
       : __res_(__r)
     {}
 
@@ -164,7 +164,7 @@ public:
 
     template <class _Tp>
     _LIBCPP_INLINE_VISIBILITY
-    polymorphic_allocator(polymorphic_allocator<_Tp> const & __other) _NOEXCEPT
+    polymorphic_allocator(polymorphic_allocator<_Tp> const & __other) noexcept
       : __res_(__other.resource())
     {}
 
@@ -185,7 +185,7 @@ public:
     }
 
     _LIBCPP_INLINE_VISIBILITY
-    void deallocate(_ValueType * __p, size_t __n) _NOEXCEPT {
+    void deallocate(_ValueType * __p, size_t __n) noexcept {
         _LIBCPP_ASSERT(__n <= max_size(),
                        "deallocate called for size which exceeds max_size()");
         __res_->deallocate(__p, __n * sizeof(_ValueType), alignof(_ValueType));
@@ -255,20 +255,20 @@ public:
 
     template <class _Tp>
     _LIBCPP_INLINE_VISIBILITY
-    void destroy(_Tp * __p) _NOEXCEPT
+    void destroy(_Tp * __p) noexcept
         { __p->~_Tp(); }
 
     _LIBCPP_INLINE_VISIBILITY
-    size_t max_size() const _NOEXCEPT
+    size_t max_size() const noexcept
         { return numeric_limits<size_t>::max() / sizeof(value_type); }
 
     _LIBCPP_INLINE_VISIBILITY
     polymorphic_allocator
-    select_on_container_copy_construction() const _NOEXCEPT
+    select_on_container_copy_construction() const noexcept
         { return polymorphic_allocator(); }
 
     _LIBCPP_INLINE_VISIBILITY
-    memory_resource * resource() const _NOEXCEPT
+    memory_resource * resource() const noexcept
         { return __res_; }
 
 private:
@@ -310,7 +310,7 @@ private:
 template <class _Tp, class _Up>
 inline _LIBCPP_INLINE_VISIBILITY
 bool operator==(polymorphic_allocator<_Tp> const & __lhs,
-                polymorphic_allocator<_Up> const & __rhs) _NOEXCEPT
+                polymorphic_allocator<_Up> const & __rhs) noexcept
 {
     return *__lhs.resource() == *__rhs.resource();
 }
@@ -318,7 +318,7 @@ bool operator==(polymorphic_allocator<_Tp> const & __lhs,
 template <class _Tp, class _Up>
 inline _LIBCPP_INLINE_VISIBILITY
 bool operator!=(polymorphic_allocator<_Tp> const & __lhs,
-                polymorphic_allocator<_Up> const & __rhs) _NOEXCEPT
+                polymorphic_allocator<_Up> const & __rhs) noexcept
 {
     return !(__lhs == __rhs);
 }
@@ -390,7 +390,7 @@ protected:
         __alloc_.deallocate((_ValueType*)__p, __s);
     }
 
-    virtual bool do_is_equal(memory_resource const & __other) const _NOEXCEPT {
+    virtual bool do_is_equal(memory_resource const & __other) const noexcept {
         __resource_adaptor_imp const * __p
           = dynamic_cast<__resource_adaptor_imp const *>(&__other);
         return __p  ? __alloc_ == __p->__alloc_ : false;
@@ -398,7 +398,7 @@ protected:
 
 private:
     _LIBCPP_INLINE_VISIBILITY
-    size_t __max_size() const _NOEXCEPT {
+    size_t __max_size() const noexcept {
         return numeric_limits<size_t>::max() - __max_align();
     }
 };
@@ -418,8 +418,8 @@ struct _LIBCPP_TYPE_VIS_ONLY pool_options {
   static constexpr size_t __impl_largest_block = 4096;
 };
 
-inline _LIBCPP_INLINE_VISIBILITY size_t
-    __adjust_max_blocks_per_chunk(size_t __mbpc) _NOEXCEPT {
+inline _LIBCPP_INLINE_VISIBILITY
+size_t __adjust_max_blocks_per_chunk(size_t __mbpc) noexcept {
   if (__mbpc == 0 || __mbpc > pool_options::__impl_max_blocks_per_chunk) {
     return pool_options::__impl_max_blocks_per_chunk;
   } else {
@@ -427,8 +427,8 @@ inline _LIBCPP_INLINE_VISIBILITY size_t
   }
 }
 
-inline _LIBCPP_INLINE_VISIBILITY size_t
-    __adjust_largest_required_pool_block(size_t __lpb) _NOEXCEPT {
+inline _LIBCPP_INLINE_VISIBILITY
+size_t __adjust_largest_required_pool_block(size_t __lpb) noexcept {
   if (__lpb == 0 || __lpb > pool_options::__impl_largest_block) {
     return pool_options::__impl_largest_block;
   } else if (__lpb < pool_options::__impl_smallest_block) {
@@ -438,8 +438,8 @@ inline _LIBCPP_INLINE_VISIBILITY size_t
   }
 }
 
-inline _LIBCPP_INLINE_VISIBILITY pool_options
-    __adjust_pool_options(pool_options __opts) _NOEXCEPT {
+inline _LIBCPP_INLINE_VISIBILITY
+pool_options __adjust_pool_options(pool_options __opts) noexcept {
   __opts.max_blocks_per_chunk =
       __adjust_max_blocks_per_chunk(__opts.max_blocks_per_chunk);
 
@@ -449,11 +449,10 @@ inline _LIBCPP_INLINE_VISIBILITY pool_options
   return __opts;
 }
 
-
 struct __single_linked_chunk_node {
   __single_linked_chunk_node *__next_;
   size_t __size_;
-  alignas(std::max_align_t) char __memory_[0];
+  alignas(max_align_t) char __memory_[];
 
   static inline _LIBCPP_INLINE_VISIBILITY
   void __push(__single_linked_chunk_node **__head_ptr,
@@ -477,16 +476,15 @@ struct __single_linked_chunk_node {
   }
 };
 
-
 struct __double_linked_chunk_node {
   __double_linked_chunk_node *__next_;
   __double_linked_chunk_node **__prev_next_addr_;
   size_t __size_;
-  alignas(std::max_align_t) char __memory_[0];
+  alignas(max_align_t) char __memory_[];
 
   static inline _LIBCPP_INLINE_VISIBILITY
   void __push(__double_linked_chunk_node **__head_ptr,
-                     __double_linked_chunk_node *__n) {
+              __double_linked_chunk_node *__n) {
     __n->__next_ = *__head_ptr;
     __n->__prev_next_addr_ = __head_ptr;
     if (*__head_ptr)
@@ -507,14 +505,10 @@ template <class _ChunkNode>
 class _LIBCPP_TYPE_VIS_ONLY __basic_chunk_allocator {
   static_assert(is_standard_layout<_ChunkNode>::value,
                 "_ChunkNode must be standard layout");
+  static_assert(is_trivially_default_constructible<_ChunkNode>::value,
+                "_ChunkNode must be trivially constructible");
   static_assert(is_trivially_destructible<_ChunkNode>::value,
                 "_ChunkNode must be trivially destructible");
-
-  static inline _LIBCPP_INLINE_VISIBILITY
-  _ChunkNode *__memory_to_chunk(void *__p) _NOEXCEPT {
-    return static_cast<_ChunkNode *>(static_cast<void *>(
-        static_cast<char *>(__p) - offsetof(_ChunkNode, __memory_)));
-  }
 public:
   _LIBCPP_INLINE_VISIBILITY
   __basic_chunk_allocator() : __head_(nullptr) {}
@@ -532,7 +526,7 @@ public:
   }
 
   _LIBCPP_INLINE_VISIBILITY
-  void __deallocate(memory_resource *__res, void *__p) _NOEXCEPT {
+  void __deallocate(memory_resource *__res, void *__p) noexcept {
     if (!__p)
       return;
     _ChunkNode *const __n = __memory_to_chunk(__p);
@@ -541,7 +535,7 @@ public:
   }
 
   _LIBCPP_INLINE_VISIBILITY
-  void __release(memory_resource *__res) _NOEXCEPT {
+  void __release(memory_resource *__res) noexcept {
     while (__head_) {
       auto *__p = __head_;
       __head_ = __head_->__next_;
@@ -551,21 +545,25 @@ public:
 
 private:
   _LIBCPP_INLINE_VISIBILITY
-  void *__insert_new_chunk(void *__p, size_t __s) _NOEXCEPT {
+  void *__insert_new_chunk(void *__p, size_t __s) noexcept {
     _ChunkNode *__n = ::new (__p) _ChunkNode;
     __n->__size_ = __s;
     _ChunkNode::__push(&__head_, __n);
     return static_cast<void *>(&__n->__memory_);
   }
 
-private:
+  static inline _LIBCPP_INLINE_VISIBILITY
+  _ChunkNode *__memory_to_chunk(void *__p) noexcept {
+    return static_cast<_ChunkNode *>(static_cast<void *>(
+        static_cast<char *>(__p) - offsetof(_ChunkNode, __memory_)));
+  }
+
   _ChunkNode *__head_;
 };
 
 typedef __basic_chunk_allocator<__double_linked_chunk_node> __chunk_allocator;
 typedef __basic_chunk_allocator<__single_linked_chunk_node>
     __single_linked_chunk_allocator;
-
 
 class _LIBCPP_TYPE_VIS_ONLY monotonic_buffer_resource : public memory_resource {
   static constexpr size_t __min_buf_size = 512;
@@ -609,25 +607,25 @@ public:
   }
 
   _LIBCPP_INLINE_VISIBILITY
-  memory_resource *upstream_resource() const _NOEXCEPT { return __res_; }
+  memory_resource *upstream_resource() const noexcept { return __res_; }
 
 protected:
-  virtual void *do_allocate(size_t __bytes, size_t __align) {
+  virtual void *do_allocate(size_t __bytes, size_t __align) override {
     if (void *__p = __take_from_buf(__bytes, __align))
       return __p;
     return __alloc_from_upstream(__bytes, __align);
   }
 
-  virtual void do_deallocate(void *, size_t, size_t) { }
+  virtual void do_deallocate(void *, size_t, size_t) override { }
 
-  virtual bool do_is_equal(memory_resource const &__other) const _NOEXCEPT {
+  virtual bool do_is_equal(memory_resource const &__other) const noexcept override {
     return this ==
         dynamic_cast<monotonic_buffer_resource const *>(&__other);
   }
 
 private:
   _LIBCPP_INLINE_VISIBILITY
-  void *__take_from_buf(size_t __s, size_t __a) _NOEXCEPT {
+  void *__take_from_buf(size_t __s, size_t __a) noexcept {
     void* __p = nullptr;
     if (__buf_ && (__p = _VSTD::align(__a, __s, __buf_, __left_))) {
         __buf_ = static_cast<void*>(static_cast<char*>(__p) + __s);
@@ -648,13 +646,15 @@ private:
   }
 
   _LIBCPP_INLINE_VISIBILITY
-  void __increment_buf_size(size_t __s) _NOEXCEPT {
+  void __increment_buf_size(size_t __s) noexcept {
+    // FIXME this may overflow
     size_t const __possible_next =
         _VSTD::max(__round_up_pow_2(__s), __next_buf_size_ << 1);
     __next_buf_size_ = _VSTD::max(__possible_next, __next_buf_size_);
   }
 
 private:
+  // FIXME: Is there a better data layout?
   void *__buf_;
   size_t __left_;
   size_t __next_buf_size_;
