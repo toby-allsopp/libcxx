@@ -458,6 +458,7 @@ struct __double_linked_chunk_node {
   size_t __size_;
   max_align_t __memory_;
 
+
   static inline _LIBCPP_INLINE_VISIBILITY
   void __push(__double_linked_chunk_node **__head_ptr,
                      __double_linked_chunk_node *__n) {
@@ -470,7 +471,7 @@ struct __double_linked_chunk_node {
 
   static inline _LIBCPP_INLINE_VISIBILITY
   void __remove(__double_linked_chunk_node **,
-                       __double_linked_chunk_node *__n) {
+                __double_linked_chunk_node *__n) {
     *(__n->__prev_next_addr_) = __n->__next_;
     if (__n->__next_)
       __n->__next_->__prev_next_addr_ = __n->__prev_next_addr_;
@@ -480,7 +481,8 @@ struct __double_linked_chunk_node {
 struct __single_linked_chunk_node {
   __single_linked_chunk_node *__next_;
   size_t __size_;
-  max_align_t __memory_;
+  alignas(std::max_align_t) char __memory_[0];
+
 
   static inline _LIBCPP_INLINE_VISIBILITY
   void __push(__single_linked_chunk_node **__head_ptr,
@@ -493,16 +495,25 @@ struct __single_linked_chunk_node {
   void __remove(__single_linked_chunk_node **__head_ptr,
                 __single_linked_chunk_node *__n)
   {
-    auto *__h = *__head_ptr;
-    auto **__prev_next_addr = __head_ptr;
-    while (__h && __h != __n) {
-      __prev_next_addr = & __h->__next_;
-      __h = __h->__next_;
+    assert(__head_ptr && *__head_ptr && __n);
+    auto **__prev = __head_ptr;
+    auto *__idx = *__head_ptr;
+    while (__idx != __n) {
+      __prev = &__idx->__next_;
+      __idx = *__prev;
     }
-    if (__h)
-      *__prev_next_addr = __h->__next_;
+    *__prev = __n->__next_;
+    __n->__next_ = nullptr;
   }
 };
+
+template <class _ChunkNode>
+inline _LIBCPP_INLINE_VISIBILITY
+_ChunkNode *__memory_to_chunk(void *__p) _NOEXCEPT {
+  assert(__p);
+  return static_cast<_ChunkNode *>(static_cast<void *>(
+      static_cast<char *>(__p) - offsetof(_ChunkNode, __memory_)));
+}
 
 template <class _ChunkNode>
 class __basic_chunk_allocator {
@@ -511,14 +522,8 @@ class __basic_chunk_allocator {
   static_assert(is_trivially_destructible<_ChunkNode>::value,
                 "_ChunkNode must be trivially destructible");
 
-  _LIBCPP_INLINE_VISIBILITY
-  static _ChunkNode *__memory_to_chunk(void *__p) _NOEXCEPT {
-    return static_cast<_ChunkNode *>(static_cast<void *>(
-        static_cast<char *>(__p) - offsetof(_ChunkNode, __memory_)));
-  }
-
 public:
-  explicit __basic_chunk_allocator() : __head_(nullptr) {}
+  __basic_chunk_allocator() : __head_(nullptr) {}
 
   __basic_chunk_allocator(__basic_chunk_allocator const &) = delete;
 
@@ -526,36 +531,39 @@ public:
 
   _LIBCPP_INLINE_VISIBILITY
   void *__allocate(memory_resource *__res, size_t __s) {
-    if (!__s) {
+    //assert(false);
+    if (__s == 0) {
+      assert(false);
       return nullptr;
     }
     const size_t __alloc_size =
         __max_aligned_allocation_size(sizeof(_ChunkNode) + __s);
-    return __insert_new_chunk(__res->allocate(__alloc_size), __alloc_size);
+    return __insert_new_chunk(__res->allocate(__alloc_size, alignof(max_align_t)),
+                              __alloc_size);
   }
 
   _LIBCPP_INLINE_VISIBILITY
   void __deallocate(memory_resource *__res, void *__p) _NOEXCEPT {
-    if (!__p) {
+    if (!__p)
       return;
-    }
-    _ChunkNode *const __n = __memory_to_chunk(__p);
+    _ChunkNode *const __n = __memory_to_chunk<_ChunkNode>(__p);
     _ChunkNode::__remove(&__head_, __n);
-    __res->deallocate(__n, __n->__size_);
+    __res->deallocate(__n, __n->__size_, alignof(max_align_t));
   }
 
   _LIBCPP_INLINE_VISIBILITY
   void __release(memory_resource *__res) _NOEXCEPT {
     while (__head_) {
-      _ChunkNode *const __block = __head_;
-      __head_ = __block->__next_;
-      __res->deallocate(__block, __block->__size_);
+      auto *__p = __head_;
+      __head_ = __head_->__next_;
+      __res->deallocate(__p, __p->__size_, alignof(max_align_t));
     }
   }
 
 private:
   void *__insert_new_chunk(void *__p, size_t __s) _NOEXCEPT {
-    _ChunkNode *const __n = static_cast<_ChunkNode *>(__p);
+    //assert(false);
+    _ChunkNode *__n = ::new (__p) _ChunkNode();
     __n->__size_ = __s;
     _ChunkNode::__push(&__head_, __n);
     return static_cast<void *>(&__n->__memory_);
@@ -571,7 +579,7 @@ typedef __basic_chunk_allocator<__single_linked_chunk_node>
 
 
 class _LIBCPP_TYPE_VIS_ONLY monotonic_buffer_resource : public memory_resource {
-  static const size_t __min_buf_size = 512;
+  static constexpr size_t __min_buf_size = 512;
 
   static size_t __adjust_buf_size(size_t __init_size) _NOEXCEPT {
     return __init_size < __min_buf_size ? __min_buf_size
@@ -581,7 +589,7 @@ class _LIBCPP_TYPE_VIS_ONLY monotonic_buffer_resource : public memory_resource {
 public:
   explicit monotonic_buffer_resource(memory_resource *__res)
       : __buf_(nullptr), __left_(0), __next_buf_size_(__min_buf_size),
-        __res_(__res) {}
+        __res_(__res) { }
 
   monotonic_buffer_resource(size_t __init_size, memory_resource *__res)
       : __buf_(nullptr), __left_(0),
@@ -609,7 +617,11 @@ public:
       operator=(monotonic_buffer_resource const &) = delete;
 
   _LIBCPP_INLINE_VISIBILITY
-  void release() { __alloc_.__release(__res_); }
+  void release() {
+    __alloc_.__release(__res_);
+    __buf_ = nullptr;
+    __left_ = 0;
+  }
 
   _LIBCPP_INLINE_VISIBILITY
   memory_resource *upstream_resource() const _NOEXCEPT { return __res_; }
