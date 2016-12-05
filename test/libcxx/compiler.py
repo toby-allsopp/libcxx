@@ -215,11 +215,11 @@ class CXXCompiler(object):
         else:
             return False
 
-    def addWarningFlagIfSupported(self, flag):
+    def hasWarningFlag(self, flag):
         """
-        addWarningFlagIfSupported - Add a warning flag if the compiler
-        supports it. Unlike addCompileFlagIfSupported, this function detects
-        when "-Wno-<warning>" flags are unsupported. If flag is a
+        hasWarningFlag - Test if the compiler supports a given warning flag.
+        Unlike addCompileFlagIfSupported, this function detects when
+        "-Wno-<warning>" flags are unsupported. If flag is a
         "-Wno-<warning>" GCC will not emit an unknown option diagnostic unless
         another error is triggered during compilation.
         """
@@ -240,5 +240,10 @@ class CXXCompiler(object):
         assert rc != 0
         if flag in err:
             return False
-        self.warning_flags += [flag]
         return True
+
+    def addWarningFlagIfSupported(self, flag):
+        if self.hasWarningFlag(flag):
+            self.warning_flags += [flag]
+            return True
+        return False
