@@ -389,6 +389,7 @@ module std [system] {
   }
   module strstream {
     header "strstream"
+    export *
   }
   module system_error {
     header "system_error"
