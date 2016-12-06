@@ -43,7 +43,7 @@ module std [system] {
     // <stdbool.h> provided by compiler.
     module stddef_h {
       // <stddef.h>'s __need_* macros require textual inclusion.
-      textual header "stddef.h"
+      header "stddef.h"
     }
     module stdint_h {
       header "stdint.h"
