@@ -2092,22 +2092,28 @@ struct __compressed_pair_elem {
   typedef typename remove_reference<_Tp>::type& reference;
   typedef const typename remove_reference<_Tp>::type& const_reference;
 
+
+#ifndef _LIBCPP_CXX03_LANG
   __compressed_pair_elem() = default;
 
   template <class _Up, class = typename enable_if<
     !is_same<__compressed_pair_elem, _Up>::value
   >::type>
-  explicit __compressed_pair_elem(_Up&& __u)
+  _LIBCPP_CONSTEXPR explicit __compressed_pair_elem(_Up&& __u)
       : __value_(_VSTD::forward<_Up>(__u)) {};
 
 
-    template <class... _Args, size_t... _Indexes>
-    _LIBCPP_INLINE_VISIBILITY
-    constexpr __compressed_pair_elem(piecewise_construct_t __pc,
+  template <class... _Args, size_t... _Indexes>
+    _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX14
+   __compressed_pair_elem(piecewise_construct_t __pc,
                                      tuple<_Args...> __args,
                                         __tuple_indices<_Indexes...>)
             : __value_(_VSTD::forward<_Args>(_VSTD::get<_Indexes>(__args))...)
             {}
+#else
+  __compressed_pair_elem() : __value_() {}
+  __compressed_pair_elem(_ParamT __p) : __value_(std::forward<_ParamT>(__p)) {}
+#endif
 
   reference __get() { return __value_; }
   const_reference __get() const { return __value_;  }
@@ -2122,24 +2128,29 @@ struct __compressed_pair_elem<_Tp, _Idx, true> : private _Tp {
   typedef _Tp _ParamT;
   typedef typename remove_reference<_Tp>::type& reference;
   typedef const typename remove_reference<_Tp>::type& const_reference;
+  typedef _Tp __value_;
 
+#ifndef _LIBCPP_CXX03_LANG
   __compressed_pair_elem() = default;
-
 
   template <class _Up, class = typename enable_if<
     !is_same<__compressed_pair_elem, _Up>::value
   >::type>
-  explicit __compressed_pair_elem(_Up&& __u)
-      : _Tp(_VSTD::forward<_Up>(__u)) {};
+  _LIBCPP_CONSTEXPR explicit __compressed_pair_elem(_Up&& __u)
+      : __value_(_VSTD::forward<_Up>(__u)) {};
 
 
   template <class... _Args, size_t... _Indexes>
-    _LIBCPP_INLINE_VISIBILITY
-    constexpr __compressed_pair_elem(piecewise_construct_t __pc,
+    _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX14
+   __compressed_pair_elem(piecewise_construct_t __pc,
                                      tuple<_Args...> __args,
                                         __tuple_indices<_Indexes...>)
-            : _Tp(_VSTD::forward<_Args>(_VSTD::get<_Indexes>(__args))...)
+            : __value_(_VSTD::forward<_Args>(_VSTD::get<_Indexes>(__args))...)
             {}
+#else
+  __compressed_pair_elem() : __value_() {}
+  __compressed_pair_elem(_ParamT __p) : __value_(std::forward<_ParamT>(__p)) {}
+#endif
 
   reference __get() { return *this; }
   const_reference __get() const { return *this;  }
@@ -2199,7 +2210,7 @@ public:
     _LIBCPP_INLINE_VISIBILITY
     __compressed_pair(_T1 __t1, _T2 __t2)
         : _Base1(_VSTD::forward<_T1>(__t1)),
-          _Base2(_VSTD::forward<_T2>(__t2))
+          _Base2(_VSTD::forward<_T2>(__t2)) {}
 #endif
 
    _LIBCPP_INLINE_VISIBILITY typename _Base1::reference first() _NOEXCEPT
