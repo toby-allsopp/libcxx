@@ -2315,11 +2315,11 @@ public:
 
     _LIBCPP_INLINE_VISIBILITY __compressed_pair() {}
     _LIBCPP_INLINE_VISIBILITY explicit __compressed_pair(_T1_param __t1)
-        : base(_VSTD::forward<_T1_param>(__t1)) {}
+        : _BaseT(_VSTD::forward<_T1_param>(__t1)) {}
     _LIBCPP_INLINE_VISIBILITY explicit __compressed_pair(_T2_param __t2)
-        : base(_VSTD::forward<_T2_param>(__t2)) {}
+        : _BaseT(_VSTD::forward<_T2_param>(__t2)) {}
     _LIBCPP_INLINE_VISIBILITY __compressed_pair(_T1_param __t1, _T2_param __t2)
-        : base(_VSTD::forward<_T1_param>(__t1), _VSTD::forward<_T2_param>(__t2)) {}
+        : _BaseT(_VSTD::forward<_T1_param>(__t1), _VSTD::forward<_T2_param>(__t2)) {}
 
 #ifndef _LIBCPP_HAS_NO_VARIADICS
 
