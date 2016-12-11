@@ -1583,8 +1583,8 @@ class _LIBCPP_TYPE_VIS_ONLY function<_Rp(_ArgTypes...)>
     typename aligned_storage<3*sizeof(void*)>::type __buf_;
     __base* __f_;
 
-    _LIBCPP_NO_CFI static __base *__as_base(void *p) {
-      return reinterpret_cast<__base*>(p);
+    _LIBCPP_NO_CFI static __base *__as_base(void *__p) {
+      return reinterpret_cast<__base*>(__p);
     }
 
     template <class _Fp, bool = !is_same<_Fp, function>::value &&
@@ -2066,7 +2066,7 @@ __mu(_Ti& __ti, tuple<_Uj...>& __uj)
     return  __mu_expand(__ti, __uj, __indices());
 }
 
-template <bool IsPh, class _Ti, class _Uj>
+template <bool _IsPh, class _Ti, class _Uj>
 struct __mu_return2 {};
 
 template <class _Ti, class _Uj>
@@ -2102,7 +2102,7 @@ __mu(_Ti& __ti, _Uj&)
     return __ti;
 }
 
-template <class _Ti, bool IsReferenceWrapper, bool IsBindEx, bool IsPh,
+template <class _Ti, bool _IsReferenceWrapper, bool _IsBindEx, bool _IsPh,
           class _TupleUj>
 struct ____mu_return;
 
@@ -2266,9 +2266,9 @@ template<class _Rp, class _Fp, class ..._BoundArgs>
 class __bind_r
     : public __bind<_Fp, _BoundArgs...>
 {
-    typedef __bind<_Fp, _BoundArgs...> base;
-    typedef typename base::_Fd _Fd;
-    typedef typename base::_Td _Td;
+    typedef __bind<_Fp, _BoundArgs...> _BaseT;
+    typedef typename _BaseT::_Fd _Fd;
+    typedef typename _BaseT::_Td _Td;
 public:
     typedef _Rp result_type;
 
@@ -2282,7 +2282,7 @@ public:
                                >::type>
       _LIBCPP_INLINE_VISIBILITY
       explicit __bind_r(_Gp&& __f, _BA&& ...__bound_args)
-        : base(_VSTD::forward<_Gp>(__f),
+        : _BaseT(_VSTD::forward<_Gp>(__f),
                _VSTD::forward<_BA>(__bound_args)...) {}
 
     template <class ..._Args>
@@ -2296,7 +2296,7 @@ public:
         operator()(_Args&& ...__args)
         {
             typedef __invoke_void_return_wrapper<_Rp> _Invoker;
-            return _Invoker::__call(static_cast<base&>(*this), _VSTD::forward<_Args>(__args)...);
+            return _Invoker::__call(static_cast<_BaseT&>(*this), _VSTD::forward<_Args>(__args)...);
         }
 
     template <class ..._Args>
@@ -2310,7 +2310,7 @@ public:
         operator()(_Args&& ...__args) const
         {
             typedef __invoke_void_return_wrapper<_Rp> _Invoker;
-            return _Invoker::__call(static_cast<base const&>(*this), _VSTD::forward<_Args>(__args)...);
+            return _Invoker::__call(static_cast<_BaseT const&>(*this), _VSTD::forward<_Args>(__args)...);
         }
 };
 

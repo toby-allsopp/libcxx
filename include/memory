@@ -1527,7 +1527,7 @@ struct _LIBCPP_TYPE_VIS_ONLY allocator_traits
         {return __a.allocate(__n);}
     _LIBCPP_INLINE_VISIBILITY
     static pointer allocate(allocator_type& __a, size_type __n, const_void_pointer __hint)
-        {return allocate(__a, __n, __hint,
+        {return __allocate(__a, __n, __hint,
             __has_allocate_hint<allocator_type, size_type, const_void_pointer>());}
 
     _LIBCPP_INLINE_VISIBILITY
@@ -1581,7 +1581,7 @@ struct _LIBCPP_TYPE_VIS_ONLY allocator_traits
     _LIBCPP_INLINE_VISIBILITY
     static allocator_type
         select_on_container_copy_construction(const allocator_type& __a)
-            {return select_on_container_copy_construction(
+            {return __select_on_container_copy_construction(
                 __has_select_on_container_copy_construction<const allocator_type>(),
                 __a);}
 
@@ -1680,11 +1680,11 @@ struct _LIBCPP_TYPE_VIS_ONLY allocator_traits
 private:
 
     _LIBCPP_INLINE_VISIBILITY
-    static pointer allocate(allocator_type& __a, size_type __n,
+    static pointer __allocate(allocator_type& __a, size_type __n,
         const_void_pointer __hint, true_type)
         {return __a.allocate(__n, __hint);}
     _LIBCPP_INLINE_VISIBILITY
-    static pointer allocate(allocator_type& __a, size_type __n,
+    static pointer __allocate(allocator_type& __a, size_type __n,
         const_void_pointer, false_type)
         {return __a.allocate(__n);}
 
@@ -1721,11 +1721,11 @@ private:
 
     _LIBCPP_INLINE_VISIBILITY
     static allocator_type
-        select_on_container_copy_construction(true_type, const allocator_type& __a)
+        __select_on_container_copy_construction(true_type, const allocator_type& __a)
             {return __a.select_on_container_copy_construction();}
     _LIBCPP_INLINE_VISIBILITY
     static allocator_type
-        select_on_container_copy_construction(false_type, const allocator_type& __a)
+        __select_on_container_copy_construction(false_type, const allocator_type& __a)
             {return __a;}
 };
 
@@ -2063,14 +2063,14 @@ template <class _T1, class _T2, bool = is_same<typename remove_cv<_T1>::type,
          >
 struct __libcpp_compressed_pair_switch;
 
-template <class _T1, class _T2, bool IsSame>
-struct __libcpp_compressed_pair_switch<_T1, _T2, IsSame, false, false> {enum {value = 0};};
+template <class _T1, class _T2, bool _IsSame>
+struct __libcpp_compressed_pair_switch<_T1, _T2, _IsSame, false, false> {enum {value = 0};};
 
-template <class _T1, class _T2, bool IsSame>
-struct __libcpp_compressed_pair_switch<_T1, _T2, IsSame, true, false>  {enum {value = 1};};
+template <class _T1, class _T2, bool _IsSame>
+struct __libcpp_compressed_pair_switch<_T1, _T2, _IsSame, true, false>  {enum {value = 1};};
 
-template <class _T1, class _T2, bool IsSame>
-struct __libcpp_compressed_pair_switch<_T1, _T2, IsSame, false, true>  {enum {value = 2};};
+template <class _T1, class _T2, bool _IsSame>
+struct __libcpp_compressed_pair_switch<_T1, _T2, _IsSame, false, true>  {enum {value = 2};};
 
 template <class _T1, class _T2>
 struct __libcpp_compressed_pair_switch<_T1, _T2, false, true, true>    {enum {value = 3};};
@@ -2302,16 +2302,16 @@ template <class _T1, class _T2>
 class __compressed_pair
     : private __libcpp_compressed_pair_imp<_T1, _T2>
 {
-    typedef __libcpp_compressed_pair_imp<_T1, _T2> base;
+    typedef __libcpp_compressed_pair_imp<_T1, _T2> _BaseT;
 public:
-    typedef typename base::_T1_param _T1_param;
-    typedef typename base::_T2_param _T2_param;
+    typedef typename _BaseT::_T1_param _T1_param;
+    typedef typename _BaseT::_T2_param _T2_param;
 
-    typedef typename base::_T1_reference _T1_reference;
-    typedef typename base::_T2_reference _T2_reference;
+    typedef typename _BaseT::_T1_reference _T1_reference;
+    typedef typename _BaseT::_T2_reference _T2_reference;
 
-    typedef typename base::_T1_const_reference _T1_const_reference;
-    typedef typename base::_T2_const_reference _T2_const_reference;
+    typedef typename _BaseT::_T1_const_reference _T1_const_reference;
+    typedef typename _BaseT::_T2_const_reference _T2_const_reference;
 
     _LIBCPP_INLINE_VISIBILITY __compressed_pair() {}
     _LIBCPP_INLINE_VISIBILITY explicit __compressed_pair(_T1_param __t1)
@@ -2327,23 +2327,23 @@ public:
         _LIBCPP_INLINE_VISIBILITY
         __compressed_pair(piecewise_construct_t __pc, tuple<_Args1...> __first_args,
                                                       tuple<_Args2...> __second_args)
-            : base(__pc, _VSTD::move(__first_args), _VSTD::move(__second_args),
+            : _BaseT(__pc, _VSTD::move(__first_args), _VSTD::move(__second_args),
                    typename __make_tuple_indices<sizeof...(_Args1)>::type(),
                    typename __make_tuple_indices<sizeof...(_Args2) >::type())
             {}
 
 #endif  // _LIBCPP_HAS_NO_VARIADICS
 
-    _LIBCPP_INLINE_VISIBILITY _T1_reference       first() _NOEXCEPT       {return base::first();}
-    _LIBCPP_INLINE_VISIBILITY _T1_const_reference first() const _NOEXCEPT {return base::first();}
+    _LIBCPP_INLINE_VISIBILITY _T1_reference       first() _NOEXCEPT       {return _BaseT::first();}
+    _LIBCPP_INLINE_VISIBILITY _T1_const_reference first() const _NOEXCEPT {return _BaseT::first();}
 
-    _LIBCPP_INLINE_VISIBILITY _T2_reference       second() _NOEXCEPT       {return base::second();}
-    _LIBCPP_INLINE_VISIBILITY _T2_const_reference second() const _NOEXCEPT {return base::second();}
+    _LIBCPP_INLINE_VISIBILITY _T2_reference       second() _NOEXCEPT       {return _BaseT::second();}
+    _LIBCPP_INLINE_VISIBILITY _T2_const_reference second() const _NOEXCEPT {return _BaseT::second();}
 
     _LIBCPP_INLINE_VISIBILITY void swap(__compressed_pair& __x)
         _NOEXCEPT_(__is_nothrow_swappable<_T1>::value &&
                    __is_nothrow_swappable<_T2>::value)
-        {base::swap(__x);}
+        {_BaseT::swap(__x);}
 };
 
 template <class _T1, class _T2>
@@ -3389,28 +3389,28 @@ struct _LIBCPP_TYPE_VIS_ONLY hash<unique_ptr<_Tp, _Dp> >
 struct __destruct_n
 {
 private:
-    size_t size;
+    size_t __size_;
 
     template <class _Tp>
     _LIBCPP_INLINE_VISIBILITY void __process(_Tp* __p, false_type) _NOEXCEPT
-        {for (size_t __i = 0; __i < size; ++__i, ++__p) __p->~_Tp();}
+        {for (size_t __i = 0; __i < __size_; ++__i, ++__p) __p->~_Tp();}
 
     template <class _Tp>
     _LIBCPP_INLINE_VISIBILITY void __process(_Tp*, true_type) _NOEXCEPT
         {}
 
     _LIBCPP_INLINE_VISIBILITY void __incr(false_type) _NOEXCEPT
-        {++size;}
+        {++__size_;}
     _LIBCPP_INLINE_VISIBILITY void __incr(true_type) _NOEXCEPT
         {}
 
     _LIBCPP_INLINE_VISIBILITY void __set(size_t __s, false_type) _NOEXCEPT
-        {size = __s;}
+        {__size_ = __s;}
     _LIBCPP_INLINE_VISIBILITY void __set(size_t, true_type) _NOEXCEPT
         {}
 public:
     _LIBCPP_INLINE_VISIBILITY explicit __destruct_n(size_t __s) _NOEXCEPT
-        : size(__s) {}
+        : __size_(__s) {}
 
     template <class _Tp>
     _LIBCPP_INLINE_VISIBILITY void __incr(_Tp*) _NOEXCEPT

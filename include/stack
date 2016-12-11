@@ -214,15 +214,15 @@ public:
         swap(c, __s.c);
     }
 
-    template <class T1, class _C1>
+    template <class _T1, class _C1>
     friend
     bool
-    operator==(const stack<T1, _C1>& __x, const stack<T1, _C1>& __y);
+    operator==(const stack<_T1, _C1>& __x, const stack<_T1, _C1>& __y);
 
-    template <class T1, class _C1>
+    template <class _T1, class _C1>
     friend
     bool
-    operator< (const stack<T1, _C1>& __x, const stack<T1, _C1>& __y);
+    operator< (const stack<_T1, _C1>& __x, const stack<_T1, _C1>& __y);
 };
 
 template <class _Tp, class _Container>

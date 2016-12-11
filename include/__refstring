@@ -30,14 +30,14 @@ struct _Rep_base {
     count_t     count;
 };
 
-inline _Rep_base* rep_from_data(const char *data_) noexcept {
-    char *data = const_cast<char *>(data_);
-    return reinterpret_cast<_Rep_base *>(data - sizeof(_Rep_base));
+inline _Rep_base* rep_from_data(const char *__data_) noexcept {
+    char *__data = const_cast<char *>(__data_);
+    return reinterpret_cast<_Rep_base *>(__data - sizeof(_Rep_base));
 }
 
-inline char * data_from_rep(_Rep_base *rep) noexcept {
-    char *data = reinterpret_cast<char *>(rep);
-    return data + sizeof(*rep);
+inline char * data_from_rep(_Rep_base *__rep) noexcept {
+    char *__data = reinterpret_cast<char *>(__rep);
+    return __data + sizeof(*__rep);
 }
 
 #if defined(__APPLE__)
@@ -67,37 +67,37 @@ get_gcc_empty_string_storage() _NOEXCEPT
 using namespace __refstring_imp;
 
 inline
-__libcpp_refstring::__libcpp_refstring(const char* msg) {
-    std::size_t len = strlen(msg);
-    _Rep_base* rep = static_cast<_Rep_base *>(::operator new(sizeof(*rep) + len + 1));
-    rep->len = len;
-    rep->cap = len;
-    rep->count = 0;
-    char *data = data_from_rep(rep);
-    std::memcpy(data, msg, len + 1);
-    __imp_ = data;
+__libcpp_refstring::__libcpp_refstring(const char* __msg) {
+    std::size_t __len = strlen(__msg);
+    _Rep_base* __rep = static_cast<_Rep_base *>(::operator new(sizeof(*__rep) + __len + 1));
+    __rep->len = __len;
+    __rep->cap = __len;
+    __rep->count = 0;
+    char *__data = data_from_rep(__rep);
+    std::memcpy(__data, __msg, __len + 1);
+    __imp_ = __data;
 }
 
 inline
-__libcpp_refstring::__libcpp_refstring(const __libcpp_refstring &s) _NOEXCEPT
-    : __imp_(s.__imp_)
+__libcpp_refstring::__libcpp_refstring(const __libcpp_refstring &__s) _NOEXCEPT
+    : __imp_(__s.__imp_)
 {
     if (__uses_refcount())
         __sync_add_and_fetch(&rep_from_data(__imp_)->count, 1);
 }
 
 inline
-__libcpp_refstring& __libcpp_refstring::operator=(__libcpp_refstring const& s) _NOEXCEPT {
-    bool adjust_old_count = __uses_refcount();
-    struct _Rep_base *old_rep = rep_from_data(__imp_);
-    __imp_ = s.__imp_;
+__libcpp_refstring& __libcpp_refstring::operator=(__libcpp_refstring const& __s) _NOEXCEPT {
+    bool __adjust_old_count = __uses_refcount();
+    struct _Rep_base *__old_rep = rep_from_data(__imp_);
+    __imp_ = __s.__imp_;
     if (__uses_refcount())
         __sync_add_and_fetch(&rep_from_data(__imp_)->count, 1);
-    if (adjust_old_count)
+    if (__adjust_old_count)
     {
-        if (__sync_add_and_fetch(&old_rep->count, count_t(-1)) < 0)
+        if (__sync_add_and_fetch(&__old_rep->count, count_t(-1)) < 0)
         {
-            ::operator delete(old_rep);
+            ::operator delete(__old_rep);
         }
     }
     return *this;
@@ -106,9 +106,9 @@ __libcpp_refstring& __libcpp_refstring::operator=(__libcpp_refstring const& s) _
 inline
 __libcpp_refstring::~__libcpp_refstring() {
     if (__uses_refcount()) {
-        _Rep_base* rep = rep_from_data(__imp_);
-        if (__sync_add_and_fetch(&rep->count, count_t(-1)) < 0) {
-            ::operator delete(rep);
+        _Rep_base* __rep = rep_from_data(__imp_);
+        if (__sync_add_and_fetch(&__rep->count, count_t(-1)) < 0) {
+            ::operator delete(__rep);
         }
     }
 }
