@@ -68,17 +68,7 @@ int main() {
   }
   count = 0;
   {
-    // FIXME: Libc++ incorrectly rejects this code.
-#ifndef _LIBCPP_VERSION
     std::tuple<Implicit> foo = ExplicitDerived<int>{42};
-    static_assert(std::is_convertible<
-        ExplicitDerived<int>, std::tuple<Implicit>>::value,
-        "correct STLs accept this");
-#else
-    static_assert(!std::is_convertible<
-        ExplicitDerived<int>, std::tuple<Implicit>>::value,
-        "libc++ incorrectly rejects this");
-#endif
     assert(count == 0);
     std::tuple<Implicit> bar(ExplicitDerived<int>{42});
     assert(count == 1);
