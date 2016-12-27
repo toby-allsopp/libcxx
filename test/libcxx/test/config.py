@@ -696,7 +696,7 @@ class Configuration(object):
                 self.config.available_features.add('ubsan')
 
             # Setup the sanitizer compile flags
-            self.cxx.flags += ['-gline-tables-only', '-fno-omit-frame-pointer']
+            self.cxx.flags += ['-g', '-fno-omit-frame-pointer']
             if san == 'Address' or san == 'Address;Undefined' or san == 'Undefined;Address':
                 self.cxx.flags += ['-fsanitize=address']
                 if llvm_symbolizer is not None:
@@ -721,7 +721,7 @@ class Configuration(object):
                 self.cxx.compile_flags += ['-O1']
             elif san == 'Undefined':
                 add_ubsan()
-                self.cxx.compile_flags += ['-O3', '-ffunction-sections', '-fdata-sections']
+                self.cxx.compile_flags += ['-O2']
             elif san == 'Thread':
                 self.cxx.flags += ['-fsanitize=thread']
                 self.config.available_features.add('tsan')
