@@ -177,4 +177,21 @@ struct is_same<T, T> { enum {value = 1}; };
 #endif
 #endif
 
+#if defined(__GNUC__)
+template <class Tp>
+inline void DoNotOptimize(Tp const& value) {
+  asm volatile("" : : "g"(value) : "memory");
+}
+// Force the compiler to flush pending writes to global memory. Acts as an
+// effective read/write barrier
+inline void ClobberMemory() {
+  asm volatile("" : : : "memory");
+}
+#else
+// FIXME: implement these
+template <class Tp> inline void DoNotOptimize(Tp const& value) {}
+inline void ClobberMemory() {}
+// FIXME Add ClobberMemory() for non-gnu compilers
+#endif
+
 #endif // SUPPORT_TEST_MACROS_HPP

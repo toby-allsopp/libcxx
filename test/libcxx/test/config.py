@@ -662,7 +662,7 @@ class Configuration(object):
             # expect the test suite to be clean.
             self.cxx.addWarningFlagIfSupported('-Wsign-compare')
             self.cxx.addWarningFlagIfSupported('-Wunused-variable')
-            self.cxx.addWarningFlagIfSupported('-Wunused-parameter')
+            self.cxx.addWarningFlagIfSupported('-Wno-unused-parameter')
             self.cxx.addWarningFlagIfSupported('-Wunreachable-code')
             # FIXME: Enable the two warnings below.
             self.cxx.addWarningFlagIfSupported('-Wno-conversion')
@@ -721,7 +721,7 @@ class Configuration(object):
                 self.cxx.compile_flags += ['-O1']
             elif san == 'Undefined':
                 add_ubsan()
-                self.cxx.compile_flags += ['-O2']
+                self.cxx.compile_flags += ['-O3', '-ffunction-sections', '-fdata-sections']
             elif san == 'Thread':
                 self.cxx.flags += ['-fsanitize=thread']
                 self.config.available_features.add('tsan')
