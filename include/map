@@ -446,6 +446,7 @@ swap(multimap<Key, T, Compare, Allocator>& x,
 #include <functional>
 #include <initializer_list>
 #include <type_traits>
+#include <cassert>
 
 #if !defined(_LIBCPP_HAS_NO_PRAGMA_SYSTEM_HEADER)
 #pragma GCC system_header
@@ -533,7 +534,7 @@ public:
         using _VSTD::swap;
         swap(comp, __y.comp);
     }
-    
+
 #if _LIBCPP_STD_VER > 11
     template <typename _K2>
     _LIBCPP_INLINE_VISIBILITY
@@ -730,7 +731,7 @@ public:
     friend _LIBCPP_INLINE_VISIBILITY
     bool operator==(const __map_iterator& __x, const __map_iterator& __y)
         {return __x.__i_ == __y.__i_;}
-    friend 
+    friend
     _LIBCPP_INLINE_VISIBILITY
     bool operator!=(const __map_iterator& __x, const __map_iterator& __y)
         {return __x.__i_ != __y.__i_;}
@@ -895,7 +896,7 @@ public:
 
 #if _LIBCPP_STD_VER > 11
     template <class _InputIterator>
-    _LIBCPP_INLINE_VISIBILITY 
+    _LIBCPP_INLINE_VISIBILITY
     map(_InputIterator __f, _InputIterator __l, const allocator_type& __a)
         : map(__f, __l, key_compare(), __a) {}
 #endif
@@ -961,7 +962,7 @@ public:
         }
 
 #if _LIBCPP_STD_VER > 11
-    _LIBCPP_INLINE_VISIBILITY 
+    _LIBCPP_INLINE_VISIBILITY
     map(initializer_list<value_type> __il, const allocator_type& __a)
         : map(__il, key_compare(), __a) {}
 #endif
@@ -1026,7 +1027,7 @@ public:
     size_type max_size() const _NOEXCEPT {return __tree_.max_size();}
 
     mapped_type& operator[](const key_type& __k);
-#ifndef _LIBCPP_CXX03_LANG
+#ifndef _LIBCPP_HAS_NO_RVALUE_REFERENCES
     mapped_type& operator[](key_type&& __k);
 #endif
 
@@ -1103,45 +1104,62 @@ public:
 #endif  // _LIBCPP_HAS_NO_GENERALIZED_INITIALIZERS
 
 #if _LIBCPP_STD_VER > 14
-
+#ifndef _LIBCPP_HAS_NO_RVALUE_REFERENCES
+#ifndef _LIBCPP_HAS_NO_VARIADICS
     template <class... _Args>
         _LIBCPP_INLINE_VISIBILITY
         pair<iterator, bool> try_emplace(const key_type& __k, _Args&&... __args)
     {
-        return __tree_.__emplace_unique_key_args(__k,
-            _VSTD::piecewise_construct,
-            _VSTD::forward_as_tuple(__k),
-            _VSTD::forward_as_tuple(_VSTD::forward<_Args>(__args)...));
+        iterator __p = lower_bound(__k);
+        if ( __p != end() && !key_comp()(__k, __p->first))
+            return _VSTD::make_pair(__p, false);
+        else
+            return _VSTD::make_pair(
+                      emplace_hint(__p,
+                        _VSTD::piecewise_construct, _VSTD::forward_as_tuple(__k),
+                        _VSTD::forward_as_tuple(_VSTD::forward<_Args>(__args)...)),
+                      true);
     }
 
     template <class... _Args>
         _LIBCPP_INLINE_VISIBILITY
         pair<iterator, bool> try_emplace(key_type&& __k, _Args&&... __args)
     {
-        return __tree_.__emplace_unique_key_args(__k,
-            _VSTD::piecewise_construct,
-            _VSTD::forward_as_tuple(_VSTD::move(__k)),
-            _VSTD::forward_as_tuple(_VSTD::forward<_Args>(__args)...));
+        iterator __p = lower_bound(__k);
+        if ( __p != end() && !key_comp()(__k, __p->first))
+            return _VSTD::make_pair(__p, false);
+        else
+            return _VSTD::make_pair(
+                      emplace_hint(__p,
+                        _VSTD::piecewise_construct, _VSTD::forward_as_tuple(_VSTD::move(__k)),
+                        _VSTD::forward_as_tuple(_VSTD::forward<_Args>(__args)...)),
+                      true);
     }
 
     template <class... _Args>
         _LIBCPP_INLINE_VISIBILITY
         iterator try_emplace(const_iterator __h, const key_type& __k, _Args&&... __args)
     {
-        return __tree_.__emplace_hint_unique_key_args(__h.__i_, __k,
-            _VSTD::piecewise_construct,
-            _VSTD::forward_as_tuple(__k),
-            _VSTD::forward_as_tuple(_VSTD::forward<_Args>(__args)...));
+        iterator __p = lower_bound(__k);
+        if ( __p != end() && !key_comp()(__k, __p->first))
+            return __p;
+        else
+            return emplace_hint(__p,
+                      _VSTD::piecewise_construct, _VSTD::forward_as_tuple(__k),
+                      _VSTD::forward_as_tuple(_VSTD::forward<_Args>(__args)...));
     }
 
     template <class... _Args>
         _LIBCPP_INLINE_VISIBILITY
         iterator try_emplace(const_iterator __h, key_type&& __k, _Args&&... __args)
     {
-        return __tree_.__emplace_hint_unique_key_args(__h.__i_, __k,
-            _VSTD::piecewise_construct,
-            _VSTD::forward_as_tuple(_VSTD::move(__k)),
-            _VSTD::forward_as_tuple(_VSTD::forward<_Args>(__args)...));
+        iterator __p = lower_bound(__k);
+        if ( __p != end() && !key_comp()(__k, __p->first))
+            return __p;
+        else
+            return emplace_hint(__p,
+                      _VSTD::piecewise_construct, _VSTD::forward_as_tuple(_VSTD::move(__k)),
+                      _VSTD::forward_as_tuple(_VSTD::forward<_Args>(__args)...));
     }
 
     template <class _Vp>
@@ -1195,7 +1213,8 @@ public:
         }
         return emplace_hint(__h, _VSTD::move(__k), _VSTD::forward<_Vp>(__v));
      }
-
+#endif
+#endif
 #endif
 
     _LIBCPP_INLINE_VISIBILITY
@@ -1297,20 +1316,24 @@ private:
     typedef typename __base::__node_allocator          __node_allocator;
     typedef typename __base::__node_pointer            __node_pointer;
     typedef typename __base::__node_base_pointer       __node_base_pointer;
+    typedef typename __base::__parent_pointer          __parent_pointer;
+
 
     typedef __map_node_destructor<__node_allocator> _Dp;
     typedef unique_ptr<__node, _Dp> __node_holder;
 
-#ifdef _LIBCPP_CXX03_LANG
-    __node_holder __construct_node_with_key(const key_type& __k);
+#ifndef _LIBCPP_CXX03_LANG
+    __node_holder __construct_node_with_key(key_type&& __k);
 #endif
 
+    __node_holder __construct_node_with_key(const key_type& __k);
+
     __node_base_pointer const&
-    __find_equal_key(__node_base_pointer& __parent, const key_type& __k) const;
+    __find_equal_key(__parent_pointer& __parent, const key_type& __k) const;
 
     _LIBCPP_INLINE_VISIBILITY
     __node_base_pointer&
-    __find_equal_key(__node_base_pointer& __parent, const key_type& __k) {
+    __find_equal_key(__parent_pointer& __parent, const key_type& __k) {
         map const* __const_this = this;
         return const_cast<__node_base_pointer&>(
             __const_this->__find_equal_key(__parent, __k));
@@ -1324,43 +1347,48 @@ private:
 // If __k exists, set parent to node of __k and return reference to node of __k
 template <class _Key, class _Tp, class _Compare, class _Allocator>
 typename map<_Key, _Tp, _Compare, _Allocator>::__node_base_pointer const&
-map<_Key, _Tp, _Compare, _Allocator>::__find_equal_key(__node_base_pointer& __parent,
+map<_Key, _Tp, _Compare, _Allocator>::__find_equal_key(__parent_pointer& __parent,
                                                        const key_type& __k) const
 {
     __node_pointer __nd = __tree_.__root();
+    __node_base_pointer* __ref = &__tree_.__end_node()->__left_;
+    assert(*__ref == __nd);
     if (__nd != nullptr)
     {
         while (true)
         {
             if (__tree_.value_comp().key_comp()(__k, __nd->__value_.__cc.first))
             {
-                if (__nd->__left_ != nullptr)
-                    __nd = static_cast<__node_pointer>(__nd->__left_);
-                else
-                {
-                    __parent = static_cast<__node_base_pointer>(__nd);
+                if (__nd->__left_ != nullptr) {
+                    __ref = &__nd->__left_;
+                    __nd = static_cast<__node_pointer>(*__ref);
+                } else {
+                    __parent = static_cast<__parent_pointer>(__nd);
                     return __parent->__left_;
                 }
             }
             else if (__tree_.value_comp().key_comp()(__nd->__value_.__cc.first, __k))
             {
-                if (__nd->__right_ != nullptr)
-                    __nd = static_cast<__node_pointer>(__nd->__right_);
-                else
-                {
-                    __parent = static_cast<__node_base_pointer>(__nd);
-                    return __parent->__right_;
+                if (__nd->__right_ != nullptr) {
+                    __ref = &__nd->__right_;
+                    __nd = static_cast<__node_pointer>(*__ref);
+                } else {
+                    __parent = static_cast<__parent_pointer>(__nd);
+                    return static_cast<__node_base_pointer>(__parent)->__right_;
                 }
             }
             else
             {
-                __parent = static_cast<__node_base_pointer>(__nd);
-                return __parent;
+                assert(__nd == *__ref);
+                assert(*__ref);
+                __parent = static_cast<__parent_pointer>(*__ref);
+                return *__ref;
             }
         }
     }
-    __parent = static_cast<__node_base_pointer>(__tree_.__end_node());
-    return __parent->__left_;
+    __parent = __tree_.__end_node();
+    assert(__tree_.__end_node()->__left_ == nullptr);
+    return __tree_.__end_node()->__left_;
 }
 
 #ifndef _LIBCPP_CXX03_LANG
@@ -1378,10 +1406,21 @@ map<_Key, _Tp, _Compare, _Allocator>::map(map&& __m, const allocator_type& __a)
     }
 }
 
+
+template <class _Key, class _Tp, class _Compare, class _Allocator>
+typename map<_Key, _Tp, _Compare, _Allocator>::__node_holder
+map<_Key, _Tp, _Compare, _Allocator>::__construct_node_with_key(key_type&& __k)
+{
+    __node_allocator& __na = __tree_.__node_alloc();
+    __node_holder __h(__node_traits::allocate(__na, 1), _Dp(__na));
+    __node_traits::construct(__na, _VSTD::addressof(__h->__value_.__cc.first), _VSTD::move(__k));
+    __h.get_deleter().__first_constructed = true;
+    __node_traits::construct(__na, _VSTD::addressof(__h->__value_.__cc.second));
+    __h.get_deleter().__second_constructed = true;
+    return __h;
+}
+
 #endif  // !_LIBCPP_CXX03_LANG
-
-
-#ifdef _LIBCPP_CXX03_LANG
 
 template <class _Key, class _Tp, class _Compare, class _Allocator>
 typename map<_Key, _Tp, _Compare, _Allocator>::__node_holder
@@ -1400,7 +1439,7 @@ template <class _Key, class _Tp, class _Compare, class _Allocator>
 _Tp&
 map<_Key, _Tp, _Compare, _Allocator>::operator[](const key_type& __k)
 {
-    __node_base_pointer __parent;
+    __parent_pointer __parent;
     __node_base_pointer& __child = __find_equal_key(__parent, __k);
     __node_pointer __r = static_cast<__node_pointer>(__child);
     if (__child == nullptr)
@@ -1412,35 +1451,31 @@ map<_Key, _Tp, _Compare, _Allocator>::operator[](const key_type& __k)
     return __r->__value_.__cc.second;
 }
 
-#else
-
-template <class _Key, class _Tp, class _Compare, class _Allocator>
-_Tp&
-map<_Key, _Tp, _Compare, _Allocator>::operator[](const key_type& __k)
-{
-    return __tree_.__emplace_unique_key_args(__k,
-        _VSTD::piecewise_construct,
-        _VSTD::forward_as_tuple(__k),
-        _VSTD::forward_as_tuple()).first->__cc.second;
-}
+#ifndef _LIBCPP_HAS_NO_RVALUE_REFERENCES
 
 template <class _Key, class _Tp, class _Compare, class _Allocator>
 _Tp&
 map<_Key, _Tp, _Compare, _Allocator>::operator[](key_type&& __k)
 {
-    return __tree_.__emplace_unique_key_args(__k,
-        _VSTD::piecewise_construct,
-        _VSTD::forward_as_tuple(_VSTD::move(__k)),
-        _VSTD::forward_as_tuple()).first->__cc.second;
+    __parent_pointer __parent;
+    __node_base_pointer& __child = __find_equal_key(__parent, __k);
+    __node_pointer __r = static_cast<__node_pointer>(__child);
+    if (__child == nullptr)
+    {
+        __node_holder __h = __construct_node_with_key(_VSTD::move(__k));
+        __tree_.__insert_node_at(__parent, __child, static_cast<__node_base_pointer>(__h.get()));
+        __r = __h.release();
+    }
+    return __r->__value_.__cc.second;
 }
 
-#endif  // !_LIBCPP_CXX03_LANG
+#endif  // _LIBCPP_HAS_NO_RVALUE_REFERENCES
 
 template <class _Key, class _Tp, class _Compare, class _Allocator>
 _Tp&
 map<_Key, _Tp, _Compare, _Allocator>::at(const key_type& __k)
 {
-    __node_base_pointer __parent;
+    __parent_pointer __parent;
     __node_base_pointer& __child = __find_equal_key(__parent, __k);
 #ifndef _LIBCPP_NO_EXCEPTIONS
     if (__child == nullptr)
@@ -1453,7 +1488,7 @@ template <class _Key, class _Tp, class _Compare, class _Allocator>
 const _Tp&
 map<_Key, _Tp, _Compare, _Allocator>::at(const key_type& __k) const
 {
-    __node_base_pointer __parent;
+    __parent_pointer __parent;
     __node_base_pointer __child = __find_equal_key(__parent, __k);
 #ifndef _LIBCPP_NO_EXCEPTIONS
     if (__child == nullptr)
@@ -1621,7 +1656,7 @@ public:
 
 #if _LIBCPP_STD_VER > 11
     template <class _InputIterator>
-    _LIBCPP_INLINE_VISIBILITY 
+    _LIBCPP_INLINE_VISIBILITY
     multimap(_InputIterator __f, _InputIterator __l, const allocator_type& __a)
         : multimap(__f, __l, key_compare(), __a) {}
 #endif
@@ -1688,7 +1723,7 @@ public:
         }
 
 #if _LIBCPP_STD_VER > 11
-    _LIBCPP_INLINE_VISIBILITY 
+    _LIBCPP_INLINE_VISIBILITY
     multimap(initializer_list<value_type> __il, const allocator_type& __a)
         : multimap(__il, key_compare(), __a) {}
 #endif
