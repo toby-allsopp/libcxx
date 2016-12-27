@@ -662,7 +662,7 @@ class Configuration(object):
             # expect the test suite to be clean.
             self.cxx.addWarningFlagIfSupported('-Wsign-compare')
             self.cxx.addWarningFlagIfSupported('-Wunused-variable')
-            self.cxx.addWarningFlagIfSupported('-Wno-unused-parameter')
+            self.cxx.addWarningFlagIfSupported('-Wunused-parameter')
             self.cxx.addWarningFlagIfSupported('-Wunreachable-code')
             # FIXME: Enable the two warnings below.
             self.cxx.addWarningFlagIfSupported('-Wno-conversion')
@@ -696,7 +696,7 @@ class Configuration(object):
                 self.config.available_features.add('ubsan')
 
             # Setup the sanitizer compile flags
-            self.cxx.flags += ['-g', '-fno-omit-frame-pointer']
+            self.cxx.flags += ['-gline-tables-only', '-fno-omit-frame-pointer']
             if san == 'Address' or san == 'Address;Undefined' or san == 'Undefined;Address':
                 self.cxx.flags += ['-fsanitize=address']
                 if llvm_symbolizer is not None:
