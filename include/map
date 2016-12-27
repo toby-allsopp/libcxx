@@ -1305,66 +1305,8 @@ private:
 #ifdef _LIBCPP_CXX03_LANG
     __node_holder __construct_node_with_key(const key_type& __k);
 #endif
-
-    __node_base_pointer const&
-    __find_equal_key(__parent_pointer& __parent, const key_type& __k) const;
-
-    _LIBCPP_INLINE_VISIBILITY
-    __node_base_pointer&
-    __find_equal_key(__parent_pointer& __parent, const key_type& __k) {
-        map const* __const_this = this;
-        return const_cast<__node_base_pointer&>(
-            __const_this->__find_equal_key(__parent, __k));
-    }
 };
 
-
-// Find __k
-// Set __parent to parent of null leaf and
-//    return reference to null leaf iv __k does not exist.
-// If __k exists, set parent to node of __k and return reference to node of __k
-template <class _Key, class _Tp, class _Compare, class _Allocator>
-typename map<_Key, _Tp, _Compare, _Allocator>::__node_base_pointer const&
-map<_Key, _Tp, _Compare, _Allocator>::__find_equal_key(__parent_pointer& __parent,
-                                                       const key_type& __k) const
-{
-    __parent_pointer __last_parent = __tree_.__end_node();
-    __node_base_pointer* __nd_ref = __tree_.__root_ptr();
-    if (*__nd_ref != nullptr)
-    {
-        while (true)
-        {
-            __node_pointer __nd = static_cast<__node_pointer>(*__nd_ref);
-            if (__tree_.value_comp().key_comp()(__k, __nd->__value_.__cc.first))
-            {
-                if (__nd->__left_ != nullptr) {
-                    __last_parent = static_cast<__parent_pointer>(__nd);
-                    __nd_ref = _VSTD::addressof(__nd->__left_);
-                } else {
-                    __parent = static_cast<__parent_pointer>(__nd);
-                    return __nd->__left_;
-                }
-            }
-            else if (__tree_.value_comp().key_comp()(__nd->__value_.__cc.first, __k))
-            {
-                if (__nd->__right_ != nullptr) {
-                    __last_parent = static_cast<__parent_pointer>(__nd);
-                    __nd_ref = _VSTD::addressof(__nd->__right_);
-                } else {
-                    __parent = static_cast<__parent_pointer>(__nd);
-                    return __nd->__right_;
-                }
-            }
-            else
-            {
-                __parent = __last_parent;
-                return *__nd_ref;
-            }
-        }
-    }
-    __parent = static_cast<__parent_pointer>(__tree_.__end_node());
-    return __parent->__left_;
-}
 
 #ifndef _LIBCPP_CXX03_LANG
 
@@ -1403,8 +1345,8 @@ template <class _Key, class _Tp, class _Compare, class _Allocator>
 _Tp&
 map<_Key, _Tp, _Compare, _Allocator>::operator[](const key_type& __k)
 {
-    __node_base_pointer __parent;
-    __node_base_pointer& __child = __find_equal_key(__parent, __k);
+    __parent_pointer __parent;
+    __node_base_pointer& __child = __tree_.__find_equal(__parent, __k);
     __node_pointer __r = static_cast<__node_pointer>(__child);
     if (__child == nullptr)
     {
@@ -1444,7 +1386,7 @@ _Tp&
 map<_Key, _Tp, _Compare, _Allocator>::at(const key_type& __k)
 {
     __parent_pointer __parent;
-    __node_base_pointer& __child = __find_equal_key(__parent, __k);
+    __node_base_pointer& __child = __tree_.__find_equal(__parent, __k);
 #ifndef _LIBCPP_NO_EXCEPTIONS
     if (__child == nullptr)
         throw out_of_range("map::at:  key not found");
@@ -1457,7 +1399,7 @@ const _Tp&
 map<_Key, _Tp, _Compare, _Allocator>::at(const key_type& __k) const
 {
     __parent_pointer __parent;
-    __node_base_pointer __child = __find_equal_key(__parent, __k);
+    __node_base_pointer __child = __tree_.__find_equal(__parent, __k);
 #ifndef _LIBCPP_NO_EXCEPTIONS
     if (__child == nullptr)
         throw out_of_range("map::at:  key not found");

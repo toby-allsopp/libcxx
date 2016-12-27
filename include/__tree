@@ -1399,12 +1399,13 @@ private:
                     __parent_pointer& __parent, const key_type& __v);
     template <class _Key>
     __node_base_pointer&
-        __find_equal(__parent_pointer& __parent, const _Key& __v);
+        __find_equal(__parent_pointer& __parent, const _Key& __v) const;
     template <class _Key>
     __node_base_pointer&
         __find_equal(const_iterator __hint, __parent_pointer& __parent,
                      __node_base_pointer& __dummy,
                      const _Key& __v);
+
 
 #ifndef _LIBCPP_CXX03_LANG
     template <class ..._Args>
@@ -1958,7 +1959,7 @@ template <class _Tp, class _Compare, class _Allocator>
 template <class _Key>
 typename __tree<_Tp, _Compare, _Allocator>::__node_base_pointer&
 __tree<_Tp, _Compare, _Allocator>::__find_equal(__parent_pointer& __parent,
-                                                const _Key& __v)
+                                                const _Key& __v) const
 {
     __node_pointer __nd = __root();
     __node_base_pointer* __nd_ptr = __root_ptr();
