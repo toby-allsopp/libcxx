@@ -157,6 +157,10 @@ if (LIBCXX_OSX_REEXPORT_SYSTEM_ABI_LIBRARY)
   endif()
 endif()
 
+if (WIN32 AND NOT MINGW)
+  add_link_flags(/link /nodefaultlib)
+endif()
+
 split_list(LIBCXX_COMPILE_FLAGS)
 split_list(LIBCXX_LINK_FLAGS)
 
