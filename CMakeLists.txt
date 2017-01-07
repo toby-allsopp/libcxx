@@ -477,7 +477,7 @@ define_if(LIBCXX_ENABLE_ASSERTIONS -UNDEBUG)
 define_if_not(LIBCXX_ENABLE_ASSERTIONS -DNDEBUG)
 if (LIBCXX_ENABLE_ASSERTIONS)
   # MSVC doesn't like _DEBUG on release builds. See PR 4379.
-  define_if_not(MSVC -D_DEBUG)
+  define_if_not(WIN32 -D_DEBUG)
 endif()
 
 # Modules flags ===============================================================
