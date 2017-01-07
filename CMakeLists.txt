@@ -376,7 +376,7 @@ if (NOT LIBCXX_STANDALONE_BUILD)
 endif()
 remove_flags(-stdlib=libc++ -stdlib=libstdc++)
 
-remove_flags(/D_DEBUG /MTd /MT)
+remove_flags("/D_DEBUG" "/MTd" "/MDd" "/MT" "/Md")
 
 # FIXME(EricWF): See the FIXME on LIBCXX_ENABLE_PEDANTIC.
 # Remove the -pedantic flag and -Wno-pedantic and -pedantic-errors
