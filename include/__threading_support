@@ -33,8 +33,6 @@
 
 #include <chrono>
 
-#include <__undef_min_max>
-#include <__undef___deallocate>
 #endif
 
 #if defined(_LIBCPP_HAS_THREAD_LIBRARY_EXTERNAL) || \
