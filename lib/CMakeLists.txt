@@ -159,6 +159,9 @@ endif()
 
 if (WIN32 AND NOT MINGW)
   add_link_flags(/nodefaultlib)
+  add_library_flags(vcruntime)
+  add_library_flags(ucrt)
+  add_library_flags(msvcrt)
 endif()
 
 split_list(LIBCXX_COMPILE_FLAGS)
