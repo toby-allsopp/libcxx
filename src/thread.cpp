@@ -132,8 +132,10 @@ sleep_for(const chrono::nanoseconds& ns)
             ts.tv_nsec = giga::num - 1;
         }
 
+#ifndef _LIBCPP_WIN32API
         while (nanosleep(&ts, &ts) == -1 && errno == EINTR)
             ;
+#endif
     }
 }
 
