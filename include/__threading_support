@@ -30,11 +30,7 @@
 #include <process.h>
 #include <fibersapi.h>
 
-#include <__undef_min_max>
-#include <__undef___deallocate>
-
 #include <chrono>
-
 #endif
 
 #if defined(_LIBCPP_HAS_THREAD_LIBRARY_EXTERNAL) || \
@@ -182,8 +178,8 @@ void __libcpp_thread_yield();
 
 // Thread local storage
 _LIBCPP_THREAD_ABI_VISIBILITY
-int __libcpp_tls_create(__libcpp_tls_key *__key,
-                        void (_LIBCPP_TLS_DESTRUCTOR_CC *__at_exit)(void *));
+int __libcpp_tls_create(__libcpp_tls_key* __key,
+                        void(_LIBCPP_TLS_DESTRUCTOR_CC* __at_exit)(void*));
 
 _LIBCPP_THREAD_ABI_VISIBILITY
 void *__libcpp_tls_get(__libcpp_tls_key __key);
