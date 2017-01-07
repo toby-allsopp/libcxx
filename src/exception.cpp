@@ -50,9 +50,9 @@ unexpected_handler
 set_unexpected(unexpected_handler func) _NOEXCEPT
 {
 #if defined(_LIBCPP_ABI_MICROSOFT)
-    return ::set_unexpected(func);
+  return ::set_unexpected(func);
 #else
-    return __sync_lock_test_and_set(&__unexpected_handler, func);
+  return __sync_lock_test_and_set(&__unexpected_handler, func);
 #endif
 }
 
@@ -62,7 +62,7 @@ get_unexpected() _NOEXCEPT
 #if defined(_LIBCPP_ABI_MICROSOFT)
   return ::_get_unexpected();
 #else
-    return __sync_fetch_and_add(&__unexpected_handler, (unexpected_handler)0);
+  return __sync_fetch_and_add(&__unexpected_handler, (unexpected_handler)0);
 #endif
 }
 
@@ -70,9 +70,9 @@ _LIBCPP_NORETURN
 void
 unexpected()
 {
-  (*get_unexpected())();
-  // unexpected handler should not return
-  terminate();
+    (*get_unexpected())();
+    // unexpected handler should not return
+    terminate();
 }
 
 terminate_handler
@@ -91,7 +91,7 @@ get_terminate() _NOEXCEPT
 #if defined(_LIBCPP_ABI_MICROSOFT)
   return ::_get_terminate();
 #else
-    return __sync_fetch_and_add(&__terminate_handler, (terminate_handler)0);
+  return __sync_fetch_and_add(&__terminate_handler, (terminate_handler)0);
 #endif
 }
 
