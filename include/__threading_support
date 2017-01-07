@@ -362,63 +362,54 @@ int __libcpp_tls_set(__libcpp_tls_key __key, void *__p)
 #elif defined(_LIBCPP_HAS_THREAD_API_WIN32)
 
 // Mutex
-_LIBCPP_ALWAYS_INLINE
 int __libcpp_recursive_mutex_init(__libcpp_recursive_mutex_t *__m)
 {
   InitializeCriticalSection(__m);
   return 0;
 }
 
-_LIBCPP_ALWAYS_INLINE
 int __libcpp_recursive_mutex_lock(__libcpp_recursive_mutex_t *__m)
 {
   EnterCriticalSection(__m);
   return 0;
 }
 
-_LIBCPP_ALWAYS_INLINE
 int __libcpp_recursive_mutex_trylock(__libcpp_recursive_mutex_t *__m)
 {
   TryEnterCriticalSection(__m);
   return 0;
 }
 
-_LIBCPP_ALWAYS_INLINE
 int __libcpp_recursive_mutex_unlock(__libcpp_recursive_mutex_t *__m)
 {
   LeaveCriticalSection(__m);
   return 0;
 }
 
-_LIBCPP_ALWAYS_INLINE
 int __libcpp_recursive_mutex_destroy(__libcpp_recursive_mutex_t *__m)
 {
   static_cast<void>(__m);
   return 0;
 }
 
-_LIBCPP_ALWAYS_INLINE
 int __libcpp_mutex_lock(__libcpp_mutex_t *__m)
 {
   AcquireSRWLockExclusive(__m);
   return 0;
 }
 
-_LIBCPP_ALWAYS_INLINE
 int __libcpp_mutex_trylock(__libcpp_mutex_t *__m)
 {
   TryAcquireSRWLockExclusive(__m);
   return 0;
 }
 
-_LIBCPP_ALWAYS_INLINE
 int __libcpp_mutex_unlock(__libcpp_mutex_t *__m)
 {
   ReleaseSRWLockExclusive(__m);
   return 0;
 }
 
-_LIBCPP_ALWAYS_INLINE
 int __libcpp_mutex_destroy(__libcpp_mutex_t *__m)
 {
   static_cast<void>(__m);
@@ -426,28 +417,24 @@ int __libcpp_mutex_destroy(__libcpp_mutex_t *__m)
 }
 
 // Condition Variable
-_LIBCPP_ALWAYS_INLINE
 int __libcpp_condvar_signal(__libcpp_condvar_t *__cv)
 {
   WakeConditionVariable(__cv);
   return 0;
 }
 
-_LIBCPP_ALWAYS_INLINE
 int __libcpp_condvar_broadcast(__libcpp_condvar_t *__cv)
 {
   WakeAllConditionVariable(__cv);
   return 0;
 }
 
-_LIBCPP_ALWAYS_INLINE
 int __libcpp_condvar_wait(__libcpp_condvar_t *__cv, __libcpp_mutex_t *__m)
 {
   SleepConditionVariableSRW(__cv, __m, INFINITE, 0);
   return 0;
 }
 
-_LIBCPP_ALWAYS_INLINE
 int __libcpp_condvar_timedwait(__libcpp_condvar_t *__cv, __libcpp_mutex_t *__m,
                                timespec *__ts)
 {
@@ -466,7 +453,6 @@ int __libcpp_condvar_timedwait(__libcpp_condvar_t *__cv, __libcpp_mutex_t *__m,
   return 0;
 }
 
-_LIBCPP_ALWAYS_INLINE
 int __libcpp_condvar_destroy(__libcpp_condvar_t *__cv)
 {
   static_cast<void>(__cv);
@@ -496,14 +482,12 @@ int __libcpp_execute_once(__libcpp_exec_once_flag *__flag,
 }
 
 // Thread ID
-_LIBCPP_ALWAYS_INLINE
 bool __libcpp_thread_id_equal(__libcpp_thread_id __lhs,
                               __libcpp_thread_id __rhs)
 {
   return __lhs == __rhs;
 }
 
-_LIBCPP_ALWAYS_INLINE
 bool __libcpp_thread_id_less(__libcpp_thread_id __lhs, __libcpp_thread_id __rhs)
 {
   return __lhs < __rhs;
@@ -525,7 +509,6 @@ __libcpp_beginthreadex_thunk(void *__data)
   return reinterpret_cast<unsigned int>(data.__func(data.__arg));
 }
 
-_LIBCPP_ALWAYS_INLINE
 int __libcpp_thread_create(__libcpp_thread_t *__t, void *(*__func)(void *),
                            void *__arg)
 {
@@ -541,19 +524,16 @@ int __libcpp_thread_create(__libcpp_thread_t *__t, void *(*__func)(void *),
   return GetLastError();
 }
 
-_LIBCPP_ALWAYS_INLINE
 __libcpp_thread_id __libcpp_thread_get_current_id()
 {
   return GetCurrentThreadId();
 }
 
-_LIBCPP_ALWAYS_INLINE
 __libcpp_thread_id __libcpp_thread_get_id(const __libcpp_thread_t *__t)
 {
   return GetThreadId(*__t);
 }
 
-_LIBCPP_ALWAYS_INLINE
 int __libcpp_thread_join(__libcpp_thread_t *__t)
 {
   if (WaitForSingleObjectEx(*__t, INFINITE, FALSE) == WAIT_FAILED)
@@ -563,7 +543,6 @@ int __libcpp_thread_join(__libcpp_thread_t *__t)
   return 0;
 }
 
-_LIBCPP_ALWAYS_INLINE
 int __libcpp_thread_detach(__libcpp_thread_t *__t)
 {
   if (!CloseHandle(*__t))
@@ -571,14 +550,12 @@ int __libcpp_thread_detach(__libcpp_thread_t *__t)
   return 0;
 }
 
-_LIBCPP_ALWAYS_INLINE
 void __libcpp_thread_yield()
 {
   SwitchToThread();
 }
 
 // Thread Local Storage
-_LIBCPP_ALWAYS_INLINE
 int __libcpp_tls_create(__libcpp_tls_key* __key,
                         void(_LIBCPP_TLS_DESTRUCTOR_CC* __at_exit)(void*))
 {
@@ -588,13 +565,11 @@ int __libcpp_tls_create(__libcpp_tls_key* __key,
   return 0;
 }
 
-_LIBCPP_ALWAYS_INLINE
 void *__libcpp_tls_get(__libcpp_tls_key __key)
 {
   return FlsGetValue(__key);
 }
 
-_LIBCPP_ALWAYS_INLINE
 int __libcpp_tls_set(__libcpp_tls_key __key, void *__p)
 {
   if (!FlsSetValue(__key, __p))
