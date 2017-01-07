@@ -136,6 +136,7 @@ class LibcxxTestFormat(object):
 
         # Dispatch the test based on its suffix.
         if is_sh_test:
+            return lit.Test.UNSUPPORTED, 'ShTest is currently not supported on Windows'
             if not isinstance(self.executor, LocalExecutor):
                 # We can't run ShTest tests with a executor yet.
                 # For now, bail on trying to run them
