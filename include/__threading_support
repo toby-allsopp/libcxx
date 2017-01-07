@@ -146,7 +146,7 @@ int __libcpp_condvar_destroy(__libcpp_condvar_t* __cv);
 // Execute once
 _LIBCPP_THREAD_ABI_VISIBILITY
 int __libcpp_execute_once(__libcpp_exec_once_flag *flag,
-                          void (*init_routine)(void));
+                          void (_LIBCPP_TLS_DESTRUCTOR_CC *init_routine)(void));
 
 // Thread id
 #if defined(__APPLE__) && !defined(__arm__)
