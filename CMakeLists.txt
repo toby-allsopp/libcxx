@@ -51,6 +51,7 @@ endif()
 include(CMakeDependentOption)
 
 # Basic options ---------------------------------------------------------------
+option(LIBCXX_ENABLE_ASSERTIONS "Enable assertions independent of build mode." ON)
 option(LIBCXX_ENABLE_SHARED "Build libc++ as a shared library." ON)
 option(LIBCXX_ENABLE_STATIC "Build libc++ as a static library." ON)
 option(LIBCXX_ENABLE_EXPERIMENTAL_LIBRARY "Build libc++experimental.a" ON)
@@ -384,7 +385,7 @@ remove_flags(-stdlib=libc++ -stdlib=libstdc++)
 # FIXME: Remove all debug flags and flags that change which Windows
 # default libraries are linked. Currently we only support linking the
 # non-debug DLLs
-remove_flags("/_DEBUG" "/MTd" "/MDd" "/MT" "/Md" "/RTC1")
+remove_flags("/D_DEBUG" "/MTd" "/MDd" "/MT" "/Md" "/RTC1")
 
 # FIXME(EricWF): See the FIXME on LIBCXX_ENABLE_PEDANTIC.
 # Remove the -pedantic flag and -Wno-pedantic and -pedantic-errors
@@ -481,7 +482,12 @@ if (LIBCXX_HAS_EXTERNAL_THREAD_API AND LIBCXX_ENABLE_SHARED)
 endif()
 
 # Assertion flags =============================================================
-
+define_if(LIBCXX_ENABLE_ASSERTIONS -UNDEBUG)
+define_if_not(LIBCXX_ENABLE_ASSERTIONS -DNDEBUG)
+if (LIBCXX_ENABLE_ASSERTIONS AND NOT LIBCXX_TARGETING_WINDOWS)
+  # MSVC doesn't like _DEBUG on release builds. See PR 4379.
+  define_if_not(MSVC -D_DEBUG)
+endif()
 
 # Modules flags ===============================================================
 # FIXME The libc++ sources are fundamentally non-modular. They need special
