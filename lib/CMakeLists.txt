@@ -163,6 +163,7 @@ if (WIN32 AND NOT MINGW)
   add_library_flags(vcruntime)
   add_library_flags(ucrt)
   add_library_flags(msvcrt)
+  add_library_flags(ios_stdio_wide_specifiers)
 endif()
 
 split_list(LIBCXX_COMPILE_FLAGS)
