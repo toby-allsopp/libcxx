@@ -15,13 +15,7 @@
 
 #include "typeinfo"
 
-#if defined(_LIBCPP_BUILDING_HAS_NO_ABI_LIBRARY)
-std::type_info::~type_info()
-{
-}
-#endif
-
-#if !defined(LIBCXXRT) && !defined(_LIBCPPABI_VERSION)
+#if !defined(LIBCXXRT) && !defined(_LIBCPPABI_VERSION) && !defined(_LIBCPP_ABI_MICROSOFT)
 
 std::bad_cast::bad_cast() _NOEXCEPT
 {
@@ -75,4 +69,4 @@ std::bad_typeid::what() const _NOEXCEPT
 #endif
 
 #endif  // !__GLIBCXX__
-#endif  // !LIBCXXRT && !_LIBCPPABI_VERSION
+#endif  // !LIBCXXRT && !_LIBCPPABI_VERSION && !_LIBCPP_ABI_MICROSOFT

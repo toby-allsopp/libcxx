@@ -57,6 +57,9 @@ check_cxx_compiler_flag(/EHa-                   LIBCXX_HAS_NO_EHA_FLAG)
 check_cxx_compiler_flag(/GR-                    LIBCXX_HAS_NO_GR_FLAG)
 
 
+check_cxx_compiler_flag(/MD LIBCXX_HAS_MD_FLAG)
+check_cxx_compiler_flag("/link /nodefaultlib" LIBCXX_HAS_MSVC_NO_DEFAULT_LIB_FLAG)
+
 # Check libraries
 if(WIN32 AND NOT MINGW)
   # TODO(compnerd) do we want to support an emulation layer that allows for the

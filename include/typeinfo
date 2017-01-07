@@ -69,12 +69,15 @@ public:
 #pragma GCC system_header
 #endif
 
-#if defined(_LIBCPP_NONUNIQUE_RTTI_BIT)
+#if defined(_LIBCPP_ABI_MICROSOFT)
+#include <vcruntime_typeinfo.h>
+#elif defined(_LIBCPP_NONUNIQUE_RTTI_BIT)
 #define _LIBCPP_HAS_NONUNIQUE_TYPEINFO
 #else
 #define _LIBCPP_HAS_UNIQUE_TYPEINFO
 #endif
 
+#ifndef _LIBCPP_ABI_MICROSOFT
 namespace std  // purposefully not using versioning namespace
 {
 
@@ -187,6 +190,8 @@ public:
 };
 
 }  // std
+
+#endif // !_LIBCPP_ABI_MICROSOFT
 
 _LIBCPP_BEGIN_NAMESPACE_STD
 _LIBCPP_NORETURN inline _LIBCPP_ALWAYS_INLINE
