@@ -129,7 +129,7 @@ int uncaught_exceptions() _NOEXCEPT
 }
 
 
-#ifndef _LIBCPPABI_VERSION
+#if !defined(_LIBCPPABI_VERSION) && !defined(_LIBCPP_ABI_MICROSOFT)
 
 exception::~exception() _NOEXCEPT
 {
@@ -140,9 +140,9 @@ const char* exception::what() const _NOEXCEPT
   return "std::exception";
 }
 
-#endif  // _LIBCPPABI_VERSION
+#endif  // _LIBCPPABI_VERSION && !_LIBCPP_ABI_MICROSOFT
 #endif //LIBCXXRT
-#if !defined(_LIBCPPABI_VERSION) && !defined(__GLIBCXX__)
+#if !defined(_LIBCPPABI_VERSION) && !defined(__GLIBCXX__) && !defined(_LIBCPP_ABI_MICROSOFT)
 
 bad_exception::~bad_exception() _NOEXCEPT
 {

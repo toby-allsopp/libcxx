@@ -33,7 +33,7 @@
     #endif  // _LIBCPPABI_VERSION
 #endif
 
-#ifndef __GLIBCXX__
+#if !defined(__GLIBCXX__) && !defined(_LIBCPP_ABI_MICROSOFT)
 
 // Implement all new and delete operators as weak definitions
 // in this shared library, so that they can be overridden by programs
@@ -271,12 +271,12 @@ operator delete[] (void* ptr, size_t, std::align_val_t alignment) _NOEXCEPT
     ::operator delete[](ptr, alignment);
 }
 
-#endif // !__GLIBCXX__
+#endif // !__GLIBCXX__ && !_LIBCPP_ABI_MICROSOFT
 
 namespace std
 {
 
-#ifndef __GLIBCXX__
+#if !defined(__GLIBCXX__) && !defined(_LIBCPP_ABI_MICROSOFT)
 const nothrow_t nothrow = {};
 #endif
 
@@ -298,7 +298,7 @@ get_new_handler() _NOEXCEPT
 
 #endif // !__GLIBCXX__
 
-#ifndef LIBCXXRT
+#if !defined(LIBCXXRT) && !defined(_LIBCPP_ABI_MICROSOFT)
 
 bad_alloc::bad_alloc() _NOEXCEPT
 {
@@ -336,7 +336,7 @@ bad_array_new_length::what() const _NOEXCEPT
 
 #endif // !__GLIBCXX__
 
-#endif //LIBCXXRT
+#endif // !LIBCXXRT && !_LIBCPP_ABI_MICROSOFT
 
 bad_array_length::bad_array_length() _NOEXCEPT
 {
