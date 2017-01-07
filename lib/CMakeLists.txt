@@ -107,12 +107,11 @@ add_link_flags_if_supported(-nodefaultlibs)
 if (LIBCXX_TARGETING_WINDOWS)
   add_compile_flags(/Zl)
   add_link_flags(/nodefaultlib)
-  add_library_flags(vcruntime)
-  add_library_flags(ucrt)
-  add_library_flags(msvcrt)
+  add_library_flags(ucrt) # Universal C runtime
+  add_library_flags(vcruntime) # C++ runtime
+  add_library_flags(msvcrt) # C runtime startup files
   add_library_flags(iso_stdio_wide_specifiers)
 endif()
-
 
 if (LIBCXX_OSX_REEXPORT_SYSTEM_ABI_LIBRARY)
   if (NOT DEFINED LIBCXX_LIBCPPABI_VERSION)
