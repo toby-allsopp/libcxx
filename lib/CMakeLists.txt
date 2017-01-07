@@ -104,6 +104,16 @@ if (NOT WIN32)
 endif()
 add_link_flags_if_supported(-nodefaultlibs)
 
+if (LIBCXX_TARGETING_WINDOWS)
+  add_compile_flags(/Zl)
+  add_link_flags(/nodefaultlib)
+  add_library_flags(vcruntime)
+  add_library_flags(ucrt)
+  add_library_flags(msvcrt)
+  add_library_flags(iso_stdio_wide_specifiers)
+endif()
+
+
 if (LIBCXX_OSX_REEXPORT_SYSTEM_ABI_LIBRARY)
   if (NOT DEFINED LIBCXX_LIBCPPABI_VERSION)
     set(LIBCXX_LIBCPPABI_VERSION "2") # Default value
@@ -155,15 +165,6 @@ if (LIBCXX_OSX_REEXPORT_SYSTEM_ABI_LIBRARY)
       "-Wl,-force_symbols_not_weak_list,${CMAKE_CURRENT_SOURCE_DIR}/notweak.exp"
       "-Wl,-force_symbols_weak_list,${CMAKE_CURRENT_SOURCE_DIR}/weak.exp")
   endif()
-endif()
-
-if (WIN32 AND NOT MINGW)
-  add_compile_flags(/Zl)
-  add_link_flags(/nodefaultlib)
-  add_library_flags(vcruntime)
-  add_library_flags(ucrt)
-  add_library_flags(msvcrt)
-  add_library_flags(iso_stdio_wide_specifiers)
 endif()
 
 split_list(LIBCXX_COMPILE_FLAGS)

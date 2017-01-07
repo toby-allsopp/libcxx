@@ -39,6 +39,9 @@ MACRO_ENSURE_OUT_OF_SOURCE_BUILD(
  build directory and run 'cmake /path/to/${PROJECT_NAME} [options]' there."
  )
 
+if (WIN32 AND NOT MINGW)
+  set(LIBCXX_TARGETING_WINDOWS ON)
+endif()
 #===============================================================================
 # Setup CMake Options
 #===============================================================================
