@@ -12,6 +12,10 @@
 #include "exception"
 #include "new"
 
+#if defined(_LIBCPP_MSVCRT)
+#include "eh.h" // for uncaugh
+#endif
+
 #if defined(__APPLE__) && !defined(LIBCXXRT) && \
     !defined(_LIBCPP_BUILDING_HAS_NO_ABI_LIBRARY)
   #include <cxxabi.h>
@@ -115,15 +119,13 @@ int uncaught_exceptions() _NOEXCEPT
 # else
     return __cxa_uncaught_exception() ? 1 : 0;
 # endif
-#else  // __APPLE__
-#   if defined(_MSC_VER) && ! defined(__clang__)
-        _LIBCPP_WARNING("uncaught_exceptions not yet implemented")
-#   else
-#       warning uncaught_exception not yet implemented
-#   endif
+#elif defined(_LIBCPP_MSVCRT)
+    return __uncaught_exceptions();
+#else
+#warning uncaught_exception not yet implemented
     fprintf(stderr, "uncaught_exceptions not yet implemented\n");
     ::abort();
-#endif  // __APPLE__
+#endif
 }
 
 
