@@ -705,7 +705,7 @@ __make_swap_visitor()
 
 template <class... _Variants>
 constexpr bool
-__any_empty(_Variants&... __v)
+__any_empty(_Variants&...)
 {
   return false;
 }
@@ -744,7 +744,7 @@ struct __variant_alloc_tag
 //---------------------------- __variant_element -----------------------------//
 
 template <size_t _Idx, class _Tp>
-struct _LIBCPP_TYPE_VIS_ONLY __variant_element
+struct _LIBCPP_TEMPLATE_VIS __variant_element
 {
   using element_type = _Tp;
 
@@ -793,14 +793,14 @@ struct _LIBCPP_TYPE_VIS_ONLY __variant_element
 //---------------------------- __variant_union -------------------------------//
 
 template <bool _IsTriviallyDestructible, size_t _Idx, class... _Types>
-union _LIBCPP_TYPE_VIS_ONLY __variant_union
+union _LIBCPP_TEMPLATE_VIS __variant_union
 {
   static_assert(sizeof...(_Types) == 0, "Incorrect specialization used");
   inline _LIBCPP_INLINE_VISIBILITY void __destroy(size_t) {}
 };
 
 template <size_t _Idx, class _T0, class... _TRest>
-union _LIBCPP_TYPE_VIS_ONLY __variant_union<true, _Idx, _T0, _TRest...>
+union _LIBCPP_TEMPLATE_VIS __variant_union<true, _Idx, _T0, _TRest...>
 {
   using _TailT = __variant_union<true, _Idx + 1, _TRest...>;
   static constexpr size_t __index = _Idx;
@@ -843,13 +843,13 @@ public:
 };
 
 template <size_t _Idx, class _T0, class... _TRest>
-union _LIBCPP_TYPE_VIS_ONLY __variant_union<false, _Idx, _T0, _TRest...>
+union _LIBCPP_TEMPLATE_VIS __variant_union<false, _Idx, _T0, _TRest...>
 {
   using _TailT = __variant_union<false, _Idx + 1, _TRest...>;
   static constexpr size_t __index = _Idx;
 
   inline _LIBCPP_INLINE_VISIBILITY constexpr __variant_union(
-    __variant_end_tag __t)
+    __variant_end_tag)
     : __dummy_()
   {
   }
@@ -1040,10 +1040,10 @@ struct __variant_base_imp<true, _Types...>
 };
 
 template <bool _HasTDtor, bool _HasTCopy, class... _Types>
-struct _LIBCPP_TYPE_VIS_ONLY __variant_base;
+struct _LIBCPP_TEMPLATE_VIS __variant_base;
 
 template <class... _Types>
-struct _LIBCPP_TYPE_VIS_ONLY __variant_base<true, true, _Types...>
+struct _LIBCPP_TEMPLATE_VIS __variant_base<true, true, _Types...>
   : public __variant_base_imp<true, _Types...>
 {
 private:
@@ -1140,7 +1140,7 @@ public:
 //-------------------------------- variant -----------------------------------//
 
 template <class... _Types>
-class _LIBCPP_TYPE_VIS_ONLY variant
+class _LIBCPP_TEMPLATE_VIS variant
   : public __variant_detail::__variant_sfinae_base_t<_Types...>
 {
 
@@ -1557,7 +1557,7 @@ auto swap(variant<_Types...>& __lhs, variant<_Types...>& __rhs)
 
 //------------------------------- monostate ----------------------------------//
 
-struct _LIBCPP_TYPE_VIS_ONLY monostate
+struct _LIBCPP_TYPE_VIS monostate
 {
 };
 
@@ -1598,13 +1598,13 @@ inline _LIBCPP_INLINE_VISIBILITY constexpr bool operator!=(monostate,
 }
 
 template <>
-struct _LIBCPP_TYPE_VIS_ONLY hash<variant<>> {
+struct _LIBCPP_TEMPLATE_VIS hash<variant<>> {
   hash() = delete;
   hash(hash const&) = delete;
 };
 
 template <class ..._Types>
-struct _LIBCPP_TYPE_VIS_ONLY hash<variant<_Types...>>
+struct _LIBCPP_TEMPLATE_VIS hash<variant<_Types...>>
 {
   inline _LIBCPP_INLINE_VISIBILITY
   constexpr size_t operator()(variant<_Types...> const& __v) const noexcept {
@@ -1618,7 +1618,7 @@ struct _LIBCPP_TYPE_VIS_ONLY hash<variant<_Types...>>
 };
 
 template <>
-struct _LIBCPP_TYPE_VIS_ONLY hash<monostate> {
+struct _LIBCPP_TEMPLATE_VIS hash<monostate> {
   inline _LIBCPP_INLINE_VISIBILITY
   constexpr size_t operator()(monostate const&) const noexcept {
       return 0;
