@@ -23,6 +23,7 @@
 
 #include "test_convertible.hpp"
 #include "test_macros.h"
+#include "variant_test_helpers.hpp"
 
 void test_ctor_sfinae() {
   {
@@ -107,7 +108,57 @@ void test_ctor_basic() {
   }
 }
 
+struct MultiArgs {
+  MultiArgs() = default;
+  template <class First, class ...Rest>
+  MultiArgs(First&&, Rest&&...) {}
+};
+
+void test_ctor_references() {
+#ifndef TEST_VARIANT_HAS_NO_REFERENCES
+  using V = std::variant<int&, int const&, MultiArgs&&, MultiArgs>;
+  {
+    static_assert(std::is_constructible_v<V, std::in_place_type_t<int&>, int&>, "");
+    static_assert(std::is_constructible_v<V, std::in_place_type_t<const int&>, int&>, "");
+  }
+  int x = 42;
+  const int y = 101;
+  MultiArgs m;
+  {
+    V v(std::in_place_type<int&>, x);
+    assert(&std::get<0>(v) == &x);
+  }
+  {
+    V v(std::in_place_type<int const&>, y);
+    assert(&std::get<1>(v) == &y);
+  }
+  {
+    V v(std::in_place_type<int const&>, x);
+    assert(&std::get<1>(v) == &x);
+  }
+  {
+    V v(std::in_place_type<MultiArgs&&>, std::move(m));
+    assert(&std::get<2>(v) == &m);
+  }
+  {
+    // FIXME disallow this.
+    static_assert(std::is_constructible_v<V, std::in_place_type_t<MultiArgs&&>, int&>, "");
+  }
+  {
+    static_assert(!std::is_constructible_v<V, std::in_place_type_t<int&>, int&, int&>, "");
+    static_assert(!std::is_constructible_v<V, std::in_place_type_t<const int&>, int&, int&>, "");
+    static_assert(!std::is_constructible_v<V, std::in_place_type_t<MultiArgs&&>, int&, int&>, "");
+    static_assert(std::is_constructible_v<V, std::in_place_type_t<MultiArgs>, int&, int&>, "");
+  }
+  {
+    static_assert(!std::is_constructible_v<V, std::in_place_type_t<int&>, int&&>, "");
+  }
+#endif
+}
+
+
 int main() {
   test_ctor_basic();
   test_ctor_sfinae();
+  test_ctor_references();
 }

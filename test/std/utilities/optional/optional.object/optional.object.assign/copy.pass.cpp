@@ -99,4 +99,28 @@ int main()
         }
     }
 #endif
+#ifndef TEST_OPTIONAL_HAS_NO_REFERENCES
+    {
+        using T = TestTypes::NoCtors;
+        static_assert(std::is_trivially_copy_assignable<std::optional<T&>>::value, "");
+        static_assert(std::is_trivially_copy_assignable<std::optional<T const&>>::value, "");
+        static_assert(std::is_trivially_copy_assignable<std::optional<T&&>>::value, "");
+    }
+    {
+      int x = 42;
+      int y = 101;
+      std::optional<const int&> o1(x);
+      const std::optional<const int&> o2(y);
+      o1 = o2;
+      assert(&(*o1) == &y);
+    }
+  {
+      int x = 42;
+      int y = 101;
+      std::optional<int &&> o1(std::move(x));
+      const std::optional<int &&> o2(std::move(y));
+      o1 = o2;
+      assert(&(*o1) == &y);
+    }
+#endif
 }

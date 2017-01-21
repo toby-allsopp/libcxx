@@ -177,6 +177,30 @@ constexpr bool test_constexpr_assign_extension_imp(
         std::get<NewIdx>(v) == std::get<NewIdx>(cp);
 }
 
+
+#ifdef _LIBCPP_VERSION
+constexpr bool test_constexpr_assign_extension_reference()
+{
+  using V = std::variant<long&, int&&, int const&>;
+  int x = 42;
+  int const cx = 101;
+  int const cx2 = -99;
+  long y = -1;
+  V v(cx);
+  V v2(cx2);
+  v = std::move(v2);
+  bool result = &std::get<2>(v) == &cx2;
+  V v3(std::move(x));
+  v = std::move(v3);
+  result &= &std::get<1>(v) == &x;
+  V v4(y);
+  v = std::move(v4);
+  result &=  v.index() == 0 &&
+        &std::get<0>(v) == &y;
+  return result;
+}
+#endif
+
 void test_constexpr_move_assignment_extension() {
 #ifdef _LIBCPP_VERSION
   using V = std::variant<long, void*, int>;
@@ -186,6 +210,7 @@ void test_constexpr_move_assignment_extension() {
   static_assert(test_constexpr_assign_extension_imp<0>(V(nullptr), 101l), "");
   static_assert(test_constexpr_assign_extension_imp<1>(V(42l), nullptr), "");
   static_assert(test_constexpr_assign_extension_imp<2>(V(42l), 101), "");
+  static_assert(test_constexpr_assign_extension_reference(), "");
 #endif
 }
 

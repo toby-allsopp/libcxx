@@ -25,6 +25,7 @@
 
 #include "test_convertible.hpp"
 #include "test_macros.h"
+#include "variant_test_helpers.hpp"
 
 struct InitList {
   std::size_t size;
@@ -97,7 +98,25 @@ void test_ctor_basic() {
   }
 }
 
+void test_ctor_references() {
+#ifndef TEST_VARIANT_HAS_NO_REFERENCES
+  using V = std::variant<InitList const&, InitListArg&&>;
+  using Input = std::initializer_list<int>;
+  {
+    // FIXME: Get this passing
+    // static_assert(!std::is_constructible_v<V, std::in_place_index_t<0>, Input>, "");
+
+    static_assert(!std::is_constructible_v<V, std::in_place_index_t<0>, Input, int&&>, "");
+  }
+  {
+    static_assert(!std::is_constructible_v<V, std::in_place_index_t<1>, Input>, "");
+    static_assert(!std::is_constructible_v<V, std::in_place_index_t<1>, Input, int>, "");
+  }
+#endif
+}
+
 int main() {
   test_ctor_basic();
   test_ctor_sfinae();
+  test_ctor_references();
 }

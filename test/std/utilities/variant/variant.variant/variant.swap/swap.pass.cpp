@@ -577,6 +577,42 @@ void test_swap_noexcept() {
   }
 }
 
+void test_swap_references() {
+#ifndef TEST_VARIANT_HAS_NO_REFERENCES
+  using V = std::variant<int&, int const&, int&&>;
+  {
+    static_assert(std::is_swappable_v<V>, "");
+    static_assert(std::is_nothrow_swappable_v<V>, "");
+    LIBCPP_STATIC_ASSERT(has_swap_member<V>(), "");
+  }
+  int x1 = 42;
+  int const& cx1 = x1;
+  int x2 = 101;
+  int const& cx2 = x2;
+  {
+    V v1(x1);
+    V v2(x2);
+    v1.swap(v2);
+    assert(&std::get<0>(v1) == &x2);
+    assert(&std::get<0>(v2) == &x1);
+  }
+  {
+    V v1(cx1);
+    V v2(cx2);
+    v1.swap(v2);
+    assert(&std::get<1>(v1) == &x2);
+    assert(&std::get<1>(v2) == &x1);
+  }
+  {
+    V v1(x1);
+    V v2(cx2);
+    v1.swap(v2);
+    assert(&std::get<1>(v1) == &cx2);
+    assert(&std::get<0>(v2) == &x1);
+  }
+#endif
+}
+
 #ifdef _LIBCPP_VERSION
 // This is why variant should SFINAE member swap. :-)
 template class std::variant<int, NotSwappable>;
@@ -588,4 +624,5 @@ int main() {
   test_swap_different_alternatives();
   test_swap_sfinae();
   test_swap_noexcept();
+  test_swap_references();
 }

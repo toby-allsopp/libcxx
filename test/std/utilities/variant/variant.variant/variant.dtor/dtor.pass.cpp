@@ -21,6 +21,7 @@
 #include <variant>
 
 #include "test_macros.h"
+#include "variant_test_helpers.hpp"
 
 struct NonTDtor {
   static int count;
@@ -72,4 +73,24 @@ int main() {
     assert(NonTDtor::count == 0);
     assert(NonTDtor1::count == 1);
   }
+  assert(NonTDtor1::count == 1);
+  assert(NonTDtor::count == 0);
+  NonTDtor::count = 0;
+#ifndef TEST_VARIANT_HAS_NO_REFERENCES
+  {
+    using V = std::variant<NonTDtor&, NonTDtor&&, NonTDtor const&>;
+    static_assert(std::is_trivially_destructible_v<V>, "");
+    NonTDtor elem;
+    auto const& celem = elem;
+    assert(NonTDtor::count == 0);
+    { V v(elem); }
+    assert(NonTDtor::count == 0);
+    { V v(celem); }
+    assert(NonTDtor::count == 0);
+    { V v(std::move(elem)); }
+    assert(NonTDtor::count == 0);
+  }
+  assert(NonTDtor::count == 1);
+  NonTDtor::count = 0;
+#endif
 }

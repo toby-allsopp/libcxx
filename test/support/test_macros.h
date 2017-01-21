@@ -182,6 +182,12 @@ struct is_same<T, T> { enum {value = 1}; };
 #endif
 #endif
 
+// FIXME: Currently the variant<T&> tests are disabled using this macro.
+#ifndef _LIBCPP_ENABLE_VARIANT_AND_OPTIONAL_REFERENCE_EXTENSION
+# define TEST_VARIANT_HAS_NO_REFERENCES
+# define TEST_OPTIONAL_HAS_NO_REFERENCES
+#endif
+
 #if defined(__GNUC__)
 #pragma GCC diagnostic pop
 #endif

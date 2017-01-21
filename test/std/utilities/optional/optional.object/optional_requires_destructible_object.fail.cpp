@@ -14,6 +14,8 @@
 
 #include <optional>
 
+#include "test_macros.h"
+
 using std::optional;
 
 struct X
@@ -25,11 +27,19 @@ private:
 int main()
 {
     using std::optional;
+#ifdef TEST_OPTIONAL_HAS_NO_REFERENCES
     {
         // expected-error@optional:* 2 {{static_assert failed "instantiation of optional with a reference type is ill-formed}}
         optional<int&> opt1;
         optional<int&&> opt2;
     }
+#else
+    {
+          int x = 42;
+          optional<int&> opt1(x);
+          optional<int&&> opt2(std::move(x));
+    }
+#endif
     {
         // expected-error@optional:* {{static_assert failed "instantiation of optional with a non-destructible type is ill-formed"}}
         optional<X> opt3;
@@ -45,6 +55,4 @@ int main()
         // expected-error@optional:* 1+ {{cannot form a reference to 'void'}}
         optional<const void> opt4;
     }
-    // FIXME these are garbage diagnostics that Clang should not produce
-    // expected-error@optional:* 0+ {{is not a base class}}
 }

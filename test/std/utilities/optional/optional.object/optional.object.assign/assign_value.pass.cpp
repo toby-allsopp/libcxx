@@ -239,6 +239,71 @@ void test_throws()
 #endif
 }
 
+void test_references() {
+#ifndef TEST_OPTIONAL_HAS_NO_REFERENCES
+  using T = TestTypes::TestType;
+  T::reset();
+  T x1{3};
+  const T cx1{3};
+  T x2{101};
+  const T cx2{101};
+  const int NumAlive = 4;
+  T::reset_constructors();
+  { // to empty
+    optional<T&> opt;
+    opt = x1;
+    assert(T::alive == NumAlive);
+    assert(T::constructed == 0);
+    assert(T::value_constructed == 0);
+    assert(T::assigned == 0);
+    assert(T::destroyed == 0);
+    assert(static_cast<bool>(opt) == true);
+    assert(&(*opt) == &x1);
+  }
+  assert(T::alive == NumAlive);
+  assert(T::destroyed == 0);
+  { // to existing
+    optional<T const&> opt(x1);
+    opt = x2;
+    assert(T::alive == NumAlive);
+    assert(T::constructed == 0);
+    assert(T::assigned == 0);
+    assert(T::value_assigned == 0);
+    assert(T::destroyed == 0);
+    assert(static_cast<bool>(opt) == true);
+    assert(&(*opt) == &x2);
+  }
+  assert(T::alive == NumAlive);
+  assert(T::destroyed == 0);
+  { // test default argument
+    optional<T&&> opt;
+    opt = std::move(x1);
+    assert(T::alive == NumAlive);
+    assert(T::constructed == 0);
+    assert(T::value_constructed == 0);
+    assert(T::move_constructed == 0);
+    assert(T::assigned == 0);
+    assert(T::destroyed == 0);
+    assert(static_cast<bool>(opt) == true);
+    assert(&(*opt) == &x1);
+  }
+  { // test default argument
+    optional<T&&> opt(std::move(x2));
+    opt = std::move(x1);
+    assert(T::alive == NumAlive);
+    assert(T::constructed == 0);
+    assert(T::value_constructed == 0);
+    assert(T::move_constructed == 0);
+    assert(T::assigned == 0);
+    assert(T::destroyed == 0);
+    assert(static_cast<bool>(opt) == true);
+    assert(&(*opt) == &x1);
+  }
+  assert(T::alive == NumAlive);
+  assert(T::destroyed == 0);
+#endif
+}
+
 enum MyEnum { Zero, One, Two, Three, FortyTwo = 42 };
 
 using Fn = void(*)();
@@ -270,4 +335,5 @@ int main()
         assert(**opt == 3);
     }
     test_throws();
+    test_references();
 }

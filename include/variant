@@ -327,9 +327,11 @@ enum class _Trait { _TriviallyAvailable, _Available, _Unavailable };
 
 template <typename _Tp,
           template <typename> class _IsTriviallyAvailable,
-          template <typename> class _IsAvailable>
+          template <typename> class _IsAvailable,
+          template <typename> class _IsReferenceAvailable>
 constexpr _Trait __trait =
-    _IsTriviallyAvailable<_Tp>::value
+    (_IsTriviallyAvailable<_Tp>::value ||
+    _IsReferenceAvailable<_Tp>::value)
         ? _Trait::_TriviallyAvailable
         : _IsAvailable<_Tp>::value ? _Trait::_Available : _Trait::_Unavailable;
 
@@ -349,24 +351,28 @@ struct __traits {
   static constexpr _Trait __copy_constructible_trait =
       __common_trait({__trait<_Types,
                               is_trivially_copy_constructible,
-                              is_copy_constructible>...});
+                              is_copy_constructible,
+                              is_reference>...});
 
   static constexpr _Trait __move_constructible_trait =
       __common_trait({__trait<_Types,
                               is_trivially_move_constructible,
-                              is_move_constructible>...});
+                              is_move_constructible,
+                              is_reference>...});
 
   static constexpr _Trait __copy_assignable_trait = __common_trait(
       {__copy_constructible_trait,
        __move_constructible_trait,
-       __trait<_Types, is_trivially_copy_assignable, is_copy_assignable>...});
+       __trait<_Types, is_trivially_copy_assignable, is_copy_assignable,
+               is_reference>...});
 
   static constexpr _Trait __move_assignable_trait = __common_trait(
       {__move_constructible_trait,
-       __trait<_Types, is_trivially_move_assignable, is_move_assignable>...});
+       __trait<_Types, is_trivially_move_assignable, is_move_assignable,
+           is_reference>...});
 
   static constexpr _Trait __destructible_trait = __common_trait(
-      {__trait<_Types, is_trivially_destructible, is_destructible>...});
+      {__trait<_Types, is_trivially_destructible, is_destructible, is_reference>...});
 };
 
 namespace __access {
@@ -549,10 +555,10 @@ struct __variant {
   template <class _Visitor, class... _Vs>
   inline _LIBCPP_INLINE_VISIBILITY
   static constexpr decltype(auto)
-  __visit_value_at(size_t __index, _Visitor&& __visitor, _Vs&&... __vs) {
+  __visit_compare_at(size_t __index, _Visitor&& __visitor, _Vs&&... __vs) {
     return __visit_alt_at(
         __index,
-        __make_value_visitor(_VSTD::forward<_Visitor>(__visitor)),
+        __make_compare_visitor(_VSTD::forward<_Visitor>(__visitor)),
         _VSTD::forward<_Vs>(__vs)...);
   }
 
@@ -579,9 +585,23 @@ private:
     constexpr decltype(auto) operator()(_Alts&&... __alts) const {
       __std_visit_exhaustive_visitor_check<
           _Visitor,
-          decltype(_VSTD::forward<_Alts>(__alts).__value)...>();
+          decltype(_VSTD::forward<_Alts>(__alts).__get())...>();
       return __invoke_constexpr(_VSTD::forward<_Visitor>(__visitor),
-                                _VSTD::forward<_Alts>(__alts).__value...);
+                                _VSTD::forward<_Alts>(__alts).__get()...);
+    }
+    _Visitor&& __visitor;
+  };
+
+  template <class _Visitor>
+  struct __compare_visitor {
+    template <class... _Alts>
+    inline _LIBCPP_INLINE_VISIBILITY
+    constexpr decltype(auto) operator()(_Alts&&... __alts) const {
+      __std_visit_exhaustive_visitor_check<
+          _Visitor,
+          decltype(_VSTD::forward<_Alts>(__alts).__get_state())...>();
+      return __invoke_constexpr(_VSTD::forward<_Visitor>(__visitor),
+                                _VSTD::forward<_Alts>(__alts).__get_state()...);
     }
     _Visitor&& __visitor;
   };
@@ -591,6 +611,12 @@ private:
   static constexpr auto __make_value_visitor(_Visitor&& __visitor) {
     return __value_visitor<_Visitor>{_VSTD::forward<_Visitor>(__visitor)};
   }
+
+  template <class _Visitor>
+  inline _LIBCPP_INLINE_VISIBILITY
+  static constexpr auto __make_compare_visitor(_Visitor&& __visitor) {
+    return __compare_visitor<_Visitor>{_VSTD::forward<_Visitor>(__visitor)};
+  }
 };
 
 } // namespace __visitation
@@ -598,13 +624,85 @@ private:
 template <size_t _Index, class _Tp>
 struct _LIBCPP_TEMPLATE_VIS __alt {
   using __value_type = _Tp;
+  using __state_type = _Tp;
 
   template <class... _Args>
   inline _LIBCPP_INLINE_VISIBILITY
   explicit constexpr __alt(in_place_t, _Args&&... __args)
       : __value(_VSTD::forward<_Args>(__args)...) {}
 
+  constexpr __value_type& __get() & { return __value; }
+  constexpr const __value_type& __get() const & { return __value; }
+  constexpr __value_type&& __get() && { return _VSTD::move(__value); }
+  constexpr const __value_type&& __get() const && { return _VSTD::move(__value); }
+
+  constexpr const __value_type& __get_state() const { return __value; }
+
+  template <class _Arg>
+  constexpr void __assign(_Arg&& __arg) {
+    __value = _VSTD::forward<_Arg>(__arg);
+  }
+
   __value_type __value;
+};
+
+
+template <size_t _Index, class _Tp>
+struct _LIBCPP_TEMPLATE_VIS __alt<_Index, _Tp&> {
+  using __value_type = _Tp&;
+  using __state_type = _Tp*;
+
+  template <class _Arg>
+  inline _LIBCPP_INLINE_VISIBILITY
+  explicit constexpr __alt(in_place_t, _Arg&& __arg)
+      : __value(_VSTD::addressof(__arg)) {
+    static_assert(is_convertible<_Arg&&, __value_type>::value, "");
+  }
+
+  constexpr __value_type __get() & { return *__value; }
+  constexpr __value_type __get() const & { return *__value; }
+  constexpr __value_type __get() && { return *__value; }
+  constexpr __value_type __get() const && { return *__value; }
+
+  constexpr _Tp* __get_state() const { return __value; }
+
+  template <class _Arg>
+  constexpr void __assign(_Arg&& __arg) {
+    static_assert(is_convertible<_Arg&&, __value_type>::value, "");
+    __value = _VSTD::addressof(__arg);
+  }
+
+  _Tp* __value;
+};
+
+
+template <size_t _Index, class _Tp>
+struct _LIBCPP_TEMPLATE_VIS __alt<_Index, _Tp&&> {
+  using __value_type = _Tp&&;
+  using __unref_type = _Tp;
+  using __state_type = _Tp*;
+
+  template <class _Arg>
+  inline _LIBCPP_INLINE_VISIBILITY
+  explicit constexpr __alt(in_place_t, _Arg&& __arg)
+      : __value(_VSTD::addressof(__arg)) {
+    static_assert(is_convertible<_Arg&&, __value_type>::value, "");
+  }
+
+  constexpr _Tp& __get() & { return *__value; }
+  constexpr _Tp& __get() const & { return *__value; }
+  constexpr _Tp&& __get() && { return _VSTD::move(*__value); }
+  constexpr _Tp&& __get() const && { return _VSTD::move(*__value); }
+
+  constexpr _Tp* __get_state() const { return __value; }
+
+  template <class _Arg>
+  constexpr void __assign(_Arg&& __arg) {
+    static_assert(is_convertible<_Arg&&, __value_type>::value, "");
+    __value = _VSTD::addressof(__arg);
+  }
+
+  _Tp* __value;
 };
 
 template <_Trait _DestructibleTrait, size_t _Index, class... _Types>
@@ -780,7 +878,7 @@ protected:
           [](auto& __lhs_alt, auto&& __rhs_alt) {
             __construct_alt(
                 __lhs_alt,
-                _VSTD::forward<decltype(__rhs_alt)>(__rhs_alt).__value);
+                _VSTD::forward<decltype(__rhs_alt)>(__rhs_alt).__get());
           },
           __lhs, _VSTD::forward<_Rhs>(__rhs));
       __lhs.__index = __rhs.index();
@@ -891,7 +989,7 @@ protected:
                     _Arg&& __arg,
                     bool_constant<_CopyAssign> __tag) {
     if (this->index() == _Ip) {
-      __a.__value = _VSTD::forward<_Arg>(__arg);
+       __a.__assign(_VSTD::forward<_Arg>(__arg));
     } else {
       struct {
         void operator()(true_type) const {
@@ -920,7 +1018,7 @@ protected:
           [this](auto& __this_alt, auto&& __that_alt) {
             this->__assign_alt(
                 __this_alt,
-                _VSTD::forward<decltype(__that_alt)>(__that_alt).__value,
+                _VSTD::forward<decltype(__that_alt)>(__that_alt).__get(),
                 is_lvalue_reference<_That>{});
           },
           *this, _VSTD::forward<_That>(__that));
@@ -1067,6 +1165,8 @@ public:
 private:
   inline _LIBCPP_INLINE_VISIBILITY
   bool __move_nothrow() const {
+    // Note: is_nothrow_move_constructible correctly returns true for
+    // reference types.
     constexpr bool __results[] = {is_nothrow_move_constructible_v<_Types>...};
     return this->valueless_by_exception() || __results[this->index()];
   }
@@ -1092,22 +1192,32 @@ using __best_match_t = typename result_of_t<__overload<_Types...>(_Tp&&)>::type;
 template <class... _Types>
 class _LIBCPP_TEMPLATE_VIS variant
     : private __sfinae_ctor_base<
-          __all<is_copy_constructible_v<_Types>...>::value,
-          __all<is_move_constructible_v<_Types>...>::value>,
+          __all<(is_copy_constructible_v<_Types> || is_reference_v<_Types>)...>::value,
+          __all<(is_move_constructible_v<_Types> || is_reference_v<_Types>)...>::value>,
       private __sfinae_assign_base<
-          __all<(is_copy_constructible_v<_Types> &&
+          __all<((is_copy_constructible_v<_Types> &&
                  is_move_constructible_v<_Types> &&
-                 is_copy_assignable_v<_Types>)...>::value,
-          __all<(is_move_constructible_v<_Types> &&
-                 is_move_assignable_v<_Types>)...>::value> {
+                 is_copy_assignable_v<_Types>)
+              || is_reference_v<_Types>)...>::value,
+          __all<((is_move_constructible_v<_Types> &&
+                  is_move_assignable_v<_Types>)
+              || is_reference_v<_Types>)...>::value> {
   static_assert(0 < sizeof...(_Types),
                 "variant must consist of at least one alternative.");
 
   static_assert(__all<!is_array_v<_Types>...>::value,
                 "variant can not have an array type as an alternative.");
-
+#ifndef _LIBCPP_ENABLE_VARIANT_AND_OPTIONAL_REFERENCE_EXTENSION
   static_assert(__all<!is_reference_v<_Types>...>::value,
                 "variant can not have a reference type as an alternative.");
+#elif 0 // FIXME enable this
+  static constexpr bool __trigger_diagnostics()
+    _LIBCPP_DIAGNOSE_WARNING(__all<is_reference_v<_Types>...>::value,
+        "variant with reference alternatives are a libc++ extension") {
+    return true;
+  }
+  static_assert(__trigger_diagnostics(), "");
+#endif
 
   static_assert(__all<!is_void_v<_Types>...>::value,
                 "variant can not have a void type as an alternative.");
@@ -1141,35 +1251,34 @@ public:
   template <size_t _Ip, class... _Args,
             enable_if_t<(_Ip < sizeof...(_Types)), int> = 0,
             class _Tp = variant_alternative_t<_Ip, variant<_Types...>>,
-            enable_if_t<is_constructible_v<_Tp, _Args...>, int> = 0>
+            enable_if_t<(is_constructible_v<_Tp, _Args...>
+              && (!is_reference_v<_Tp> || sizeof...(_Args) == 1)), int> = 0>
   inline _LIBCPP_INLINE_VISIBILITY
   explicit constexpr variant(
       in_place_index_t<_Ip>,
       _Args&&... __args) noexcept(is_nothrow_constructible_v<_Tp, _Args...>)
       : __impl(in_place_index<_Ip>, _VSTD::forward<_Args>(__args)...) {}
 
-  template <
-      size_t _Ip,
-      class _Up,
-      class... _Args,
+  template < size_t _Ip, class _Up, class... _Args,
       enable_if_t<(_Ip < sizeof...(_Types)), int> = 0,
       class _Tp = variant_alternative_t<_Ip, variant<_Types...>>,
-      enable_if_t<is_constructible_v<_Tp, initializer_list<_Up>&, _Args...>,
-                  int> = 0>
+      enable_if_t<
+        (is_constructible_v<_Tp, initializer_list<_Up>&, _Args...>
+            && !is_reference_v<_Tp>), int> = 0>
   inline _LIBCPP_INLINE_VISIBILITY
-  explicit constexpr variant(
-      in_place_index_t<_Ip>,
-      initializer_list<_Up> __il,
-      _Args&&... __args) noexcept(
-      is_nothrow_constructible_v<_Tp, initializer_list<_Up>&, _Args...>)
-      : __impl(in_place_index<_Ip>, __il, _VSTD::forward<_Args>(__args)...) {}
+  explicit constexpr variant(in_place_index_t<_Ip>, initializer_list<_Up> __il,
+                              _Args&&... __args)
+      noexcept(is_nothrow_constructible_v<_Tp, initializer_list<_Up>&, _Args...>)
+      : __impl(in_place_index<_Ip>, __il, _VSTD::forward<_Args>(__args)...)
+  {}
 
   template <
       class _Tp,
       class... _Args,
       size_t _Ip =
           __find_detail::__find_unambiguous_index_sfinae<_Tp, _Types...>::value,
-      enable_if_t<is_constructible_v<_Tp, _Args...>, int> = 0>
+      enable_if_t<(is_constructible_v<_Tp, _Args...> &&
+                  (!is_reference_v<_Tp> || sizeof...(_Args) == 1)), int> = 0>
   inline _LIBCPP_INLINE_VISIBILITY
   explicit constexpr variant(in_place_type_t<_Tp>, _Args&&... __args) noexcept(
       is_nothrow_constructible_v<_Tp, _Args...>)
@@ -1181,8 +1290,8 @@ public:
       class... _Args,
       size_t _Ip =
           __find_detail::__find_unambiguous_index_sfinae<_Tp, _Types...>::value,
-      enable_if_t<is_constructible_v<_Tp, initializer_list<_Up>&, _Args...>,
-                  int> = 0>
+      enable_if_t<(is_constructible_v<_Tp, initializer_list<_Up>&, _Args...>
+                   && !is_reference_v<_Tp>), int> = 0>
   inline _LIBCPP_INLINE_VISIBILITY
   explicit constexpr variant(
       in_place_type_t<_Tp>,
@@ -1271,14 +1380,16 @@ public:
   template <
       bool _Dummy = true,
       enable_if_t<
-          __all<(
+          __all<((
               __dependent_type<is_move_constructible<_Types>, _Dummy>::value &&
-              __dependent_type<is_swappable<_Types>, _Dummy>::value)...>::value,
+              __dependent_type<is_swappable<_Types>, _Dummy>::value) ||
+              is_reference_v<_Types>)...>::value,
           int> = 0>
   inline _LIBCPP_INLINE_VISIBILITY
   void swap(variant& __that) noexcept(
-      __all<(is_nothrow_move_constructible_v<_Types> &&
-             is_nothrow_swappable_v<_Types>)...>::value) {
+      __all<((is_nothrow_move_constructible_v<_Types> &&
+             is_nothrow_swappable_v<_Types>)
+          || is_reference_v<_Types>)...>::value) {
     __impl.__swap(__that.__impl);
   }
 
@@ -1308,7 +1419,7 @@ static constexpr auto&& __generic_get(_Vp&& __v) {
   if (!__holds_alternative<_Ip>(__v)) {
     __throw_bad_variant_access();
   }
-  return __variant::__get_alt<_Ip>(_VSTD::forward<_Vp>(__v)).__value;
+  return __variant::__get_alt<_Ip>(_VSTD::forward<_Vp>(__v)).__get();
 }
 
 template <size_t _Ip, class... _Types>
@@ -1382,7 +1493,7 @@ inline _LIBCPP_INLINE_VISIBILITY
 constexpr auto* __generic_get_if(_Vp* __v) noexcept {
   using __variant_detail::__access::__variant;
   return __v && __holds_alternative<_Ip>(*__v)
-             ? _VSTD::addressof(__variant::__get_alt<_Ip>(*__v).__value)
+             ? _VSTD::addressof(__variant::__get_alt<_Ip>(*__v).__get())
              : nullptr;
 }
 
@@ -1427,7 +1538,7 @@ constexpr bool operator==(const variant<_Types...>& __lhs,
   using __variant_detail::__visitation::__variant;
   if (__lhs.index() != __rhs.index()) return false;
   if (__lhs.valueless_by_exception()) return true;
-  return __variant::__visit_value_at(__lhs.index(), equal_to<>{}, __lhs, __rhs);
+  return __variant::__visit_compare_at(__lhs.index(), equal_to<>{}, __lhs, __rhs);
 }
 
 template <class... _Types>
@@ -1437,7 +1548,7 @@ constexpr bool operator!=(const variant<_Types...>& __lhs,
   using __variant_detail::__visitation::__variant;
   if (__lhs.index() != __rhs.index()) return true;
   if (__lhs.valueless_by_exception()) return false;
-  return __variant::__visit_value_at(
+  return __variant::__visit_compare_at(
       __lhs.index(), not_equal_to<>{}, __lhs, __rhs);
 }
 
@@ -1450,7 +1561,7 @@ constexpr bool operator<(const variant<_Types...>& __lhs,
   if (__lhs.valueless_by_exception()) return true;
   if (__lhs.index() < __rhs.index()) return true;
   if (__lhs.index() > __rhs.index()) return false;
-  return __variant::__visit_value_at(__lhs.index(), less<>{}, __lhs, __rhs);
+  return __variant::__visit_compare_at(__lhs.index(), less<>{}, __lhs, __rhs);
 }
 
 template <class... _Types>
@@ -1462,7 +1573,7 @@ constexpr bool operator>(const variant<_Types...>& __lhs,
   if (__rhs.valueless_by_exception()) return true;
   if (__lhs.index() > __rhs.index()) return true;
   if (__lhs.index() < __rhs.index()) return false;
-  return __variant::__visit_value_at(__lhs.index(), greater<>{}, __lhs, __rhs);
+  return __variant::__visit_compare_at(__lhs.index(), greater<>{}, __lhs, __rhs);
 }
 
 template <class... _Types>
@@ -1474,7 +1585,7 @@ constexpr bool operator<=(const variant<_Types...>& __lhs,
   if (__rhs.valueless_by_exception()) return false;
   if (__lhs.index() < __rhs.index()) return true;
   if (__lhs.index() > __rhs.index()) return false;
-  return __variant::__visit_value_at(
+  return __variant::__visit_compare_at(
       __lhs.index(), less_equal<>{}, __lhs, __rhs);
 }
 
@@ -1487,7 +1598,7 @@ constexpr bool operator>=(const variant<_Types...>& __lhs,
   if (__lhs.valueless_by_exception()) return false;
   if (__lhs.index() > __rhs.index()) return true;
   if (__lhs.index() < __rhs.index()) return false;
-  return __variant::__visit_value_at(
+  return __variant::__visit_compare_at(
       __lhs.index(), greater_equal<>{}, __lhs, __rhs);
 }
 
@@ -1533,9 +1644,25 @@ auto swap(variant<_Types...>& __lhs,
   __lhs.swap(__rhs);
 }
 
+template <class _Tp>
+struct __get_state_type {
+  using type = remove_const_t<_Tp>;
+};
+
+template <class _Tp>
+struct __get_state_type<_Tp&> {
+  using type = add_pointer_t<remove_const_t<_Tp>>;
+};
+
+template <class _Tp>
+struct __get_state_type<_Tp&&> {
+  using type = add_pointer_t<remove_const_t<_Tp>>;
+};
+
 template <class... _Types>
 struct _LIBCPP_TEMPLATE_VIS hash<
-    __enable_hash_helper<variant<_Types...>, remove_const_t<_Types>...>> {
+    __enable_hash_helper<variant<_Types...>,
+        typename __get_state_type<_Types>::type...>> {
   using argument_type = variant<_Types...>;
   using result_type = size_t;
 
@@ -1548,9 +1675,9 @@ struct _LIBCPP_TEMPLATE_VIS hash<
                : __variant::__visit_alt(
                      [](const auto& __alt) {
                        using __alt_type = decay_t<decltype(__alt)>;
-                       using __value_type = remove_const_t<
-                         typename __alt_type::__value_type>;
-                       return hash<__value_type>{}(__alt.__value);
+
+                       using __value_type = remove_const_t<typename __alt_type::__state_type>;
+                       return hash<__value_type>{}(__alt.__get_state());
                      },
                      __v);
     return __hash_combine(__res, hash<size_t>{}(__v.index()));

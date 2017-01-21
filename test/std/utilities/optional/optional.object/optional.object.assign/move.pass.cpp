@@ -171,4 +171,28 @@ int main()
         };
         static_assert(std::is_nothrow_move_assignable<optional<NoThrowMove>>::value, "");
     }
+#ifndef TEST_OPTIONAL_HAS_NO_REFERENCES
+    {
+        using T = TestTypes::NoCtors;
+        static_assert(std::is_trivially_move_assignable<std::optional<T&>>::value, "");
+        static_assert(std::is_trivially_move_assignable<std::optional<T const&>>::value, "");
+        static_assert(std::is_trivially_move_assignable<std::optional<T&&>>::value, "");
+    }
+    {
+      int x = 42;
+      int y = 101;
+      std::optional<const int&> o1(x);
+      std::optional<const int&> o2(y);
+      o1 = std::move(o2);
+      assert(&(*o1) == &y);
+    }
+  {
+      int x = 42;
+      int y = 101;
+      std::optional<int &&> o1(std::move(x));
+      std::optional<int &&> o2(std::move(y));
+      o1 = std::move(o2);
+      assert(&(*o1) == &y);
+    }
+#endif
 }

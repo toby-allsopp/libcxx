@@ -24,6 +24,7 @@
 
 #include "test_convertible.hpp"
 #include "test_macros.h"
+#include "variant_test_helpers.hpp"
 
 void test_ctor_sfinae() {
   {
@@ -97,7 +98,56 @@ void test_ctor_basic() {
   }
 }
 
+struct MultiArgs {
+  MultiArgs() = default;
+  template <class First, class ...Rest>
+  MultiArgs(First&&, Rest&&...) {}
+};
+
+void test_ctor_references() {
+#ifndef TEST_VARIANT_HAS_NO_REFERENCES
+  using V = std::variant<int&, int const&, MultiArgs&&, MultiArgs>;
+  {
+    static_assert(std::is_constructible_v<V, std::in_place_index_t<0>, int&>, "");
+    static_assert(std::is_constructible_v<V, std::in_place_index_t<1>, int&>, "");
+  }
+  int x = 42;
+  const int y = 101;
+  MultiArgs m;
+  {
+    V v(std::in_place_index<0>, x);
+    assert(&std::get<0>(v) == &x);
+  }
+  {
+    V v(std::in_place_index<1>, y);
+    assert(&std::get<1>(v) == &y);
+  }
+  {
+    V v(std::in_place_index<1>, x);
+    assert(&std::get<1>(v) == &x);
+  }
+  {
+    V v(std::in_place_index<2>, std::move(m));
+    assert(&std::get<2>(v) == &m);
+  }
+  {
+    // FIXME disallow this.
+    static_assert(std::is_constructible_v<V, std::in_place_index_t<2>, int&>, "");
+  }
+  {
+    static_assert(!std::is_constructible_v<V, std::in_place_index_t<0>, int&, int&>, "");
+    static_assert(!std::is_constructible_v<V, std::in_place_index_t<1>, int&, int&>, "");
+    static_assert(!std::is_constructible_v<V, std::in_place_index_t<2>, int&, int&>, "");
+    static_assert(std::is_constructible_v<V, std::in_place_index_t<3>, int&, int&>, "");
+  }
+  {
+    static_assert(!std::is_constructible_v<V, std::in_place_index_t<0>, int&&>, "");
+  }
+#endif
+}
+
 int main() {
   test_ctor_basic();
   test_ctor_sfinae();
+  test_ctor_references();
 }

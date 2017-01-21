@@ -146,9 +146,63 @@ void test_hash_variant_enabled() {
   }
 }
 
+void test_hash_references() {
+#ifndef TEST_VARIANT_HAS_NO_REFERENCES
+  using V = std::variant<int&, int const&, int&&>;
+  using H = std::hash<V>;
+  H h;
+  int x1 = 0;
+  int const& cx1 = x1;
+  int x2 = 0;
+  int const& cx2 = x2;
+  {
+    x1 = 0;
+    x2 = 0;
+    V v1(x1);
+    V v2(x2);
+    assert(h(v1) != h(v2));
+    assert(v1 != v2);
+    ++x2;
+    assert(h(v1) != h(v2));
+    assert(v1 != v2);
+  }
+  {
+    x1 = 0;
+    x2 = 0;
+    V v1(x1);
+    V v2(x2);
+    assert(h(v1) != h(v2));
+    assert(v1 != v2);
+    v1 = v2;
+    assert(h(v1) == h(v2));
+    assert(v1 == v2);
+  }
+  {
+    x1 = 0;
+    x2 = 1;
+    V v1(cx1);
+    V v2(cx2);
+    assert(h(v1) != h(v2));
+    assert(v1 != v2);
+  }
+  {
+    x1 = 0;
+    x2 = 0;
+    V v1(std::move(x1));
+    V v2(std::move(x2));
+    assert(h(v1) != h(v2));
+    assert(v1 != v2);
+    v1 = v2;
+    assert(h(v1) == h(v2));
+    assert(v1 == v2);
+  }
+#endif
+}
+
 int main() {
   test_hash_variant();
   test_hash_variant_duplicate_elements();
   test_hash_monostate();
   test_hash_variant_enabled();
+  test_hash_references();
 }

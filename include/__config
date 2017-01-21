@@ -1048,6 +1048,9 @@ _LIBCPP_FUNC_VIS extern "C" void __sanitizer_annotate_contiguous_container(
 # define _LIBCPP_DECLSPEC_EMPTY_BASES
 #endif
 
+// FIXME: remove this before committing
+#define _LIBCPP_ENABLE_VARIANT_AND_OPTIONAL_REFERENCE_EXTENSION
+
 #endif // __cplusplus
 
 #endif // _LIBCPP_CONFIG

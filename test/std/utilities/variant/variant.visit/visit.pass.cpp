@@ -183,7 +183,7 @@ void test_argument_forwarding() {
     V v2(str);
     const V &cv2 = v2;
     V v3(std::move(l));
-    const V &cv3 = v3;
+    //const V &cv3 = v3;
     std::visit(obj, v1, v2, v3);
     assert((Fn::check_call<int &, S, long &>(Val)));
     std::visit(obj, cv1, cv2, std::move(v3));
