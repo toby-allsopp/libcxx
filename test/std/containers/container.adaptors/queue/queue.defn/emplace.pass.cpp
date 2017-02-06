@@ -25,7 +25,7 @@
 int main()
 {
     typedef Emplaceable T;
-    std::queue<Emplaceable> q;
+    std::queue<T> q;
 #if TEST_STD_VER > 14
     T& r1 = q.emplace(1, 2.5);
     assert(&r1 == &q.back());

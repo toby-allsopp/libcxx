@@ -182,6 +182,8 @@ struct is_same<T, T> { enum {value = 1}; };
 #endif
 #endif
 
+#define TEST_UNUSED_TYPEDEF(T) static_assert(sizeof(T) == sizeof(T), "")
+
 #if defined(__GNUC__)
 #pragma GCC diagnostic pop
 #endif

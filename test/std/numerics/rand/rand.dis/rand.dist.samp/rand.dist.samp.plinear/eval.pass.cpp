@@ -26,6 +26,8 @@
 #include <cassert>
 #include <limits>
 
+#include "test_macros.h"
+
 template <class T>
 inline
 T
@@ -45,6 +47,7 @@ test1()
 {
     typedef std::piecewise_linear_distribution<> D;
     typedef D::param_type P;
+    TEST_UNUSED_TYPEDEF(P);
     typedef std::mt19937_64 G;
     G g;
     double b[] = {10, 14, 16, 17};
@@ -97,7 +100,6 @@ void
 test2()
 {
     typedef std::piecewise_linear_distribution<> D;
-    typedef D::param_type P;
     typedef std::mt19937_64 G;
     G g;
     double b[] = {10, 14, 16, 17};
@@ -150,7 +152,6 @@ void
 test3()
 {
     typedef std::piecewise_linear_distribution<> D;
-    typedef D::param_type P;
     typedef std::mt19937_64 G;
     G g;
     double b[] = {10, 14, 16, 17};
@@ -203,7 +204,6 @@ void
 test4()
 {
     typedef std::piecewise_linear_distribution<> D;
-    typedef D::param_type P;
     typedef std::mt19937_64 G;
     G g;
     double b[] = {10, 14, 16};
@@ -257,7 +257,6 @@ void
 test5()
 {
     typedef std::piecewise_linear_distribution<> D;
-    typedef D::param_type P;
     typedef std::mt19937_64 G;
     G g;
     double b[] = {10, 14};
@@ -312,7 +311,6 @@ void
 test6()
 {
     typedef std::piecewise_linear_distribution<> D;
-    typedef D::param_type P;
     typedef std::mt19937_64 G;
     G g;
     double b[] = {10, 14, 16, 17};

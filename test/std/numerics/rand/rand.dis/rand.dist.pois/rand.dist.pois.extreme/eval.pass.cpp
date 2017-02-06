@@ -21,6 +21,8 @@
 #include <vector>
 #include <numeric>
 
+#include "test_macros.h"
+
 template <class T>
 inline
 T
@@ -34,6 +36,7 @@ test1()
 {
     typedef std::extreme_value_distribution<> D;
     typedef D::param_type P;
+    TEST_UNUSED_TYPEDEF(P);
     typedef std::mt19937 G;
     G g;
     D d(0.5, 2);
@@ -75,7 +78,6 @@ void
 test2()
 {
     typedef std::extreme_value_distribution<> D;
-    typedef D::param_type P;
     typedef std::mt19937 G;
     G g;
     D d(1, 2);
@@ -117,7 +119,6 @@ void
 test3()
 {
     typedef std::extreme_value_distribution<> D;
-    typedef D::param_type P;
     typedef std::mt19937 G;
     G g;
     D d(1.5, 3);
@@ -159,7 +160,6 @@ void
 test4()
 {
     typedef std::extreme_value_distribution<> D;
-    typedef D::param_type P;
     typedef std::mt19937 G;
     G g;
     D d(3, 4);

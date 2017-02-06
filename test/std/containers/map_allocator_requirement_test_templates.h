@@ -33,10 +33,7 @@ template <class Container>
 void testMapInsert()
 {
   typedef typename Container::value_type ValueTp;
-  typedef typename Container::key_type Key;
-  typedef typename Container::mapped_type Mapped;
-  typedef Container C;
-  typedef std::pair<typename C::iterator, bool> R;
+
   ConstructController* cc = getConstructController();
   cc->reset();
   {
@@ -297,8 +294,6 @@ void testMapEmplace()
   typedef typename Container::key_type Key;
   typedef typename Container::mapped_type Mapped;
   typedef typename std::pair<Key, Mapped> NonConstKeyPair;
-  typedef Container C;
-  typedef std::pair<typename C::iterator, bool> R;
   ConstructController* cc = getConstructController();
   cc->reset();
   {
@@ -630,7 +625,6 @@ template <class Container>
 void testMultimapInsert()
 {
   typedef typename Container::value_type ValueTp;
-  typedef Container C;
   ConstructController* cc = getConstructController();
   cc->reset();
   {
@@ -704,7 +698,6 @@ template <class Container>
 void testMultimapInsertHint()
 {
   typedef typename Container::value_type ValueTp;
-  typedef Container C;
   ConstructController* cc = getConstructController();
   cc->reset();
   {
