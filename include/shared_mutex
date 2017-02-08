@@ -159,12 +159,12 @@ struct _LIBCPP_TYPE_VIS __shared_mutex_base
 
     // Exclusive ownership
     void lock(); // blocking
-    bool try_lock();
+    _LIBCPP_NO_DISCARD_INTERNAL bool try_lock();
     void unlock();
 
     // Shared ownership
     void lock_shared(); // blocking
-    bool try_lock_shared();
+    _LIBCPP_NO_DISCARD_INTERNAL bool try_lock_shared();
     void unlock_shared();
 
 //     typedef implementation-defined native_handle_type; // See 30.2.3
@@ -185,12 +185,14 @@ public:
 
     // Exclusive ownership
     _LIBCPP_INLINE_VISIBILITY void lock()     { return __base.lock(); }
-    _LIBCPP_INLINE_VISIBILITY bool try_lock() { return __base.try_lock(); }
+    _LIBCPP_NO_DISCARD_TRY_LOCK _LIBCPP_INLINE_VISIBILITY
+    bool try_lock() { return __base.try_lock(); }
     _LIBCPP_INLINE_VISIBILITY void unlock()   { return __base.unlock(); }
 
     // Shared ownership
     _LIBCPP_INLINE_VISIBILITY void lock_shared()     { return __base.lock_shared(); }
-    _LIBCPP_INLINE_VISIBILITY bool try_lock_shared() { return __base.try_lock_shared(); }
+    _LIBCPP_NO_DISCARD_TRY_LOCK _LIBCPP_INLINE_VISIBILITY
+    bool try_lock_shared() { return __base.try_lock_shared(); }
     _LIBCPP_INLINE_VISIBILITY void unlock_shared()   { return __base.unlock_shared(); }
 
 //     typedef __shared_mutex_base::native_handle_type native_handle_type;
@@ -211,31 +213,31 @@ public:
 
     // Exclusive ownership
     void lock();
-    bool try_lock();
+    _LIBCPP_NO_DISCARD_TRY_LOCK bool try_lock();
     template <class _Rep, class _Period>
-        _LIBCPP_INLINE_VISIBILITY
+        _LIBCPP_NO_DISCARD_TRY_LOCK _LIBCPP_INLINE_VISIBILITY
         bool
         try_lock_for(const chrono::duration<_Rep, _Period>& __rel_time)
         {
             return try_lock_until(chrono::steady_clock::now() + __rel_time);
         }
     template <class _Clock, class _Duration>
-        bool
+        _LIBCPP_NO_DISCARD_TRY_LOCK bool
         try_lock_until(const chrono::time_point<_Clock, _Duration>& __abs_time);
     void unlock();
 
     // Shared ownership
     void lock_shared();
-    bool try_lock_shared();
+    _LIBCPP_NO_DISCARD_TRY_LOCK bool try_lock_shared();
     template <class _Rep, class _Period>
-        _LIBCPP_INLINE_VISIBILITY
+        _LIBCPP_NO_DISCARD_TRY_LOCK _LIBCPP_INLINE_VISIBILITY
         bool
         try_lock_shared_for(const chrono::duration<_Rep, _Period>& __rel_time)
         {
             return try_lock_shared_until(chrono::steady_clock::now() + __rel_time);
         }
     template <class _Clock, class _Duration>
-        bool
+        _LIBCPP_NO_DISCARD_TRY_LOCK bool
         try_lock_shared_until(const chrono::time_point<_Clock, _Duration>& __abs_time);
     void unlock_shared();
 };
@@ -391,10 +393,12 @@ public:
     }
 
     void lock();
-    bool try_lock();
+    _LIBCPP_NO_DISCARD_TRY_LOCK bool try_lock();
     template <class Rep, class Period>
+        _LIBCPP_NO_DISCARD_TRY_LOCK
         bool try_lock_for(const chrono::duration<Rep, Period>& rel_time);
     template <class Clock, class Duration>
+        _LIBCPP_NO_DISCARD_TRY_LOCK
         bool try_lock_until(const chrono::time_point<Clock, Duration>& abs_time);
     void unlock();
 

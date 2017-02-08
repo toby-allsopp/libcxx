@@ -730,10 +730,11 @@ public:
     const_iterator cbefore_begin() const _NOEXCEPT
         {return const_iterator(base::__before_begin());}
 
-    _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_NO_DISCARD_CONTAINER_OBSERVERS _LIBCPP_INLINE_VISIBILITY
     bool empty() const _NOEXCEPT
         {return base::__before_begin()->__next_ == nullptr;}
-    _LIBCPP_INLINE_VISIBILITY
+
+    _LIBCPP_NO_DISCARD_CONTAINER_OBSERVERS _LIBCPP_INLINE_VISIBILITY
     size_type max_size() const _NOEXCEPT {
         return std::min<size_type>(
             __node_traits::max_size(base::__alloc()),

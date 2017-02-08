@@ -3015,7 +3015,7 @@ basic_regex<_CharT, _Traits>::__parse(_ForwardIterator __first,
     {
         unique_ptr<__node> __h(new __end_state<_CharT>);
         __start_.reset(new __empty_state<_CharT>(__h.get()));
-        __h.release();
+        (void)__h.release();
         __end_ = __start_.get();
     }
     switch (__flags_ & 0x1F0)
@@ -4609,7 +4609,7 @@ basic_regex<_CharT, _Traits>::__push_loop(size_t __min, size_t __max,
                 __s->first(), __e1.get(), __mexp_begin, __mexp_end, __greedy,
                 __min, __max));
     __s->first() = nullptr;
-    __e1.release();
+    (void)__e1.release();
     __end_->first() = new __repeat_one_loop<_CharT>(__e2.get());
     __end_ = __e2->second();
     __s->first() = __e2.release();

@@ -3879,7 +3879,7 @@ __insertion_sort_move(_BirdirectionalIterator __first1, _BirdirectionalIterator 
                 __d.__incr((value_type*)0);
             }
         }
-        __h.release();
+        (void)__h.release();
     }
 }
 
@@ -4609,14 +4609,14 @@ __merge_move_construct(_InputIterator1 __first1, _InputIterator1 __last1,
         {
             for (; __first2 != __last2; ++__first2, ++__result, __d.__incr((value_type*)0))
                 ::new (__result) value_type(_VSTD::move(*__first2));
-            __h.release();
+            (void)__h.release();
             return;
         }
         if (__first2 == __last2)
         {
             for (; __first1 != __last1; ++__first1, ++__result, __d.__incr((value_type*)0))
                 ::new (__result) value_type(_VSTD::move(*__first1));
-            __h.release();
+            (void)__h.release();
             return;
         }
         if (__comp(*__first2, *__first1))
@@ -4700,7 +4700,7 @@ __stable_sort_move(_RandomAccessIterator __first1, _RandomAccessIterator __last1
             ++__first2;
             ::new(__first2) value_type(_VSTD::move(*__last1));
         }
-        __h2.release();
+        (void)__h2.release();
         return;
     }
     if (__len <= 8)

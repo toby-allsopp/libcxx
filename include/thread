@@ -361,7 +361,7 @@ thread::thread(_Fp&& __f, _Args&&... __args)
                     __decay_copy(_VSTD::forward<_Args>(__args))...));
     int __ec = __libcpp_thread_create(&__t_, &__thread_proxy<_Gp>, __p.get());
     if (__ec == 0)
-        __p.release();
+        (void)__p.release();
     else
         __throw_system_error(__ec, "thread constructor failed");
 }
@@ -396,7 +396,7 @@ thread::thread(_Fp __f)
     _PairPtr __pp(new _InvokePair(__f));
     int __ec = __libcpp_thread_create(&__t_, &__thread_proxy_cxx03<_InvokePair>, __pp.get());
     if (__ec == 0)
-        __pp.release();
+        (void)__pp.release();
     else
         __throw_system_error(__ec, "thread constructor failed");
 }

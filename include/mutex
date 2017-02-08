@@ -218,7 +218,7 @@ private:
 
 public:
     void lock();
-    bool try_lock() _NOEXCEPT;
+    _LIBCPP_NO_DISCARD_TRY_LOCK bool try_lock() _NOEXCEPT;
     void unlock()  _NOEXCEPT;
 
     typedef __libcpp_recursive_mutex_t* native_handle_type;
@@ -242,12 +242,13 @@ private:
 
 public:
     void lock();
-    bool try_lock() _NOEXCEPT;
+    _LIBCPP_NO_DISCARD_TRY_LOCK bool try_lock() _NOEXCEPT;
     template <class _Rep, class _Period>
-        _LIBCPP_INLINE_VISIBILITY
+        _LIBCPP_NO_DISCARD_TRY_LOCK _LIBCPP_INLINE_VISIBILITY
         bool try_lock_for(const chrono::duration<_Rep, _Period>& __d)
             {return try_lock_until(chrono::steady_clock::now() + __d);}
     template <class _Clock, class _Duration>
+        _LIBCPP_NO_DISCARD_TRY_LOCK
         bool try_lock_until(const chrono::time_point<_Clock, _Duration>& __t);
     void unlock() _NOEXCEPT;
 };
@@ -285,12 +286,13 @@ private:
 
 public:
     void lock();
-    bool try_lock() _NOEXCEPT;
+    _LIBCPP_NO_DISCARD_TRY_LOCK bool try_lock() _NOEXCEPT;
     template <class _Rep, class _Period>
-        _LIBCPP_INLINE_VISIBILITY
+        _LIBCPP_NO_DISCARD_TRY_LOCK _LIBCPP_INLINE_VISIBILITY
         bool try_lock_for(const chrono::duration<_Rep, _Period>& __d)
             {return try_lock_until(chrono::steady_clock::now() + __d);}
     template <class _Clock, class _Duration>
+        _LIBCPP_NO_DISCARD_TRY_LOCK
         bool try_lock_until(const chrono::time_point<_Clock, _Duration>& __t);
     void unlock() _NOEXCEPT;
 };

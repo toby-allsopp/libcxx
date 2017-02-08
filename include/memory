@@ -649,6 +649,12 @@ void* align(size_t alignment, size_t size, void*& ptr, size_t& space);
 #pragma GCC system_header
 #endif
 
+#ifndef _LIBCPP_DISABLE_NO_DISCARD_SMART_PTR_OBSERVERS
+# define _LIBCPP_NO_DISCARD_SMART_PTR_OBSERVERS _LIBCPP_NO_DISCARD
+#else
+# define _LIBCPP_NO_DISCARD_SMART_PTR_OBSERVERS
+#endif
+
 _LIBCPP_BEGIN_NAMESPACE_STD
 
 template <class _ValueType>
@@ -2581,18 +2587,24 @@ public:
         return *this;
     }
 
-    _LIBCPP_INLINE_VISIBILITY typename add_lvalue_reference<_Tp>::type operator*() const
+    _LIBCPP_NO_DISCARD_SMART_PTR_OBSERVERS _LIBCPP_INLINE_VISIBILITY
+    typename add_lvalue_reference<_Tp>::type operator*() const
         {return *__ptr_.first();}
-    _LIBCPP_INLINE_VISIBILITY pointer operator->() const _NOEXCEPT {return __ptr_.first();}
-    _LIBCPP_INLINE_VISIBILITY pointer get() const _NOEXCEPT {return __ptr_.first();}
-    _LIBCPP_INLINE_VISIBILITY       _Dp_reference get_deleter() _NOEXCEPT
+    _LIBCPP_NO_DISCARD_SMART_PTR_OBSERVERS _LIBCPP_INLINE_VISIBILITY
+    pointer operator->() const _NOEXCEPT {return __ptr_.first();}
+    _LIBCPP_NO_DISCARD_SMART_PTR_OBSERVERS _LIBCPP_INLINE_VISIBILITY
+    pointer get() const _NOEXCEPT {return __ptr_.first();}
+    _LIBCPP_INLINE_VISIBILITY _Dp_reference get_deleter() _NOEXCEPT
         {return __ptr_.second();}
     _LIBCPP_INLINE_VISIBILITY _Dp_const_reference get_deleter() const _NOEXCEPT
         {return __ptr_.second();}
-    _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_NO_DISCARD_SMART_PTR_OBSERVERS _LIBCPP_INLINE_VISIBILITY
         _LIBCPP_EXPLICIT operator bool() const _NOEXCEPT
         {return __ptr_.first() != nullptr;}
 
+#ifndef _LIBCPP_DISABLE_NO_DISCARD_UNIQUE_PTR_RELEASE
+    _LIBCPP_NO_DISCARD
+#endif
     _LIBCPP_INLINE_VISIBILITY pointer release() _NOEXCEPT
     {
         pointer __t = __ptr_.first();
@@ -2773,17 +2785,22 @@ public:
         return *this;
     }
 
-    _LIBCPP_INLINE_VISIBILITY typename add_lvalue_reference<_Tp>::type operator[](size_t __i) const
+    _LIBCPP_NO_DISCARD_SMART_PTR_OBSERVERS _LIBCPP_INLINE_VISIBILITY
+    typename add_lvalue_reference<_Tp>::type operator[](size_t __i) const
         {return __ptr_.first()[__i];}
-    _LIBCPP_INLINE_VISIBILITY pointer get() const _NOEXCEPT {return __ptr_.first();}
+    _LIBCPP_NO_DISCARD_SMART_PTR_OBSERVERS _LIBCPP_INLINE_VISIBILITY
+    pointer get() const _NOEXCEPT {return __ptr_.first();}
     _LIBCPP_INLINE_VISIBILITY       _Dp_reference get_deleter() _NOEXCEPT
         {return __ptr_.second();}
     _LIBCPP_INLINE_VISIBILITY _Dp_const_reference get_deleter() const _NOEXCEPT
         {return __ptr_.second();}
-    _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_NO_DISCARD_SMART_PTR_OBSERVERS _LIBCPP_INLINE_VISIBILITY
         _LIBCPP_EXPLICIT operator bool() const _NOEXCEPT
         {return __ptr_.first() != nullptr;}
 
+#ifndef _LIBCPP_DISABLE_NO_DISCARD_UNIQUE_PTR_RELEASE
+    _LIBCPP_NO_DISCARD
+#endif
     _LIBCPP_INLINE_VISIBILITY pointer release() _NOEXCEPT
     {
         pointer __t = __ptr_.first();
@@ -3578,7 +3595,7 @@ private:
     virtual void __on_zero_shared() _NOEXCEPT;
     virtual void __on_zero_shared_weak() _NOEXCEPT;
 public:
-    _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_NO_DISCARD_INTERNAL _LIBCPP_INLINE_VISIBILITY
     _Tp* get() _NOEXCEPT {return &__data_.second();}
 };
 
@@ -3792,18 +3809,18 @@ public:
         _LIBCPP_INLINE_VISIBILITY
         reset(_Yp* __p, _Dp __d, _Alloc __a);
 
-    _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_NO_DISCARD_SMART_PTR_OBSERVERS _LIBCPP_INLINE_VISIBILITY
     element_type* get() const _NOEXCEPT {return __ptr_;}
-    _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_NO_DISCARD_SMART_PTR_OBSERVERS _LIBCPP_INLINE_VISIBILITY
     typename add_lvalue_reference<element_type>::type operator*() const _NOEXCEPT
         {return *__ptr_;}
-    _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_NO_DISCARD_SMART_PTR_OBSERVERS _LIBCPP_INLINE_VISIBILITY
     element_type* operator->() const _NOEXCEPT {return __ptr_;}
-    _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_NO_DISCARD_SMART_PTR_OBSERVERS _LIBCPP_INLINE_VISIBILITY
     long use_count() const _NOEXCEPT {return __cntrl_ ? __cntrl_->use_count() : 0;}
-    _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_NO_DISCARD_SMART_PTR_OBSERVERS _LIBCPP_INLINE_VISIBILITY
     bool unique() const _NOEXCEPT {return use_count() == 1;}
-    _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_NO_DISCARD_SMART_PTR_OBSERVERS _LIBCPP_INLINE_VISIBILITY
     _LIBCPP_EXPLICIT operator bool() const _NOEXCEPT {return get() != 0;}
     template <class _Up>
         _LIBCPP_INLINE_VISIBILITY
@@ -3918,7 +3935,7 @@ shared_ptr<_Tp>::shared_ptr(_Yp* __p,
     unique_ptr<_Yp> __hold(__p);
     typedef __shared_ptr_pointer<_Yp*, default_delete<_Yp>, allocator<_Yp> > _CntrlBlk;
     __cntrl_ = new _CntrlBlk(__p, default_delete<_Yp>(), allocator<_Yp>());
-    __hold.release();
+    (void)__hold.release();
     __enable_weak_this(__p, __p);
 }
 
@@ -4127,7 +4144,7 @@ shared_ptr<_Tp>::shared_ptr(unique_ptr<_Yp, _Dp> __r,
         __cntrl_ = new _CntrlBlk(__r.get(), __r.get_deleter(), allocator<_Yp>());
         __enable_weak_this(__r.get(), __r.get());
     }
-    __r.release();
+    (void)__r.release();
 }
 
 template<class _Tp>
@@ -4898,10 +4915,10 @@ public:
     _LIBCPP_INLINE_VISIBILITY
     void reset() _NOEXCEPT;
 
-    _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_NO_DISCARD_SMART_PTR_OBSERVERS _LIBCPP_INLINE_VISIBILITY
     long use_count() const _NOEXCEPT
         {return __cntrl_ ? __cntrl_->use_count() : 0;}
-    _LIBCPP_INLINE_VISIBILITY
+    _LIBCPP_NO_DISCARD_SMART_PTR_OBSERVERS _LIBCPP_INLINE_VISIBILITY
     bool expired() const _NOEXCEPT
         {return __cntrl_ == 0 || __cntrl_->use_count() == 0;}
     shared_ptr<_Tp> lock() const _NOEXCEPT;

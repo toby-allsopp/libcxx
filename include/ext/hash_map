@@ -693,7 +693,7 @@ hash_map<_Key, _Tp, _Hash, _Pred, _Alloc>::operator[](const key_type& __k)
         return __i->second;
     __node_holder __h = __construct_node(__k);
     pair<iterator, bool> __r = __table_.__node_insert_unique(__h.get());
-    __h.release();
+    (void)__h.release();
     return __r.first->second;
 }
 

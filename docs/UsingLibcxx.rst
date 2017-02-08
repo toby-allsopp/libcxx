@@ -140,6 +140,31 @@ thread safety annotations.
   ``std::mutex`` and ``std::lock_guard``. By default these annotations are
   disabled and must be manually enabled by the user.
 
+**_LIBCPP_NO_DISCARD**
+  This macro is used to annotate various libc++ functions as having a
+  non-discardable return value. This macro is enabled by default.
+
+  **Overriding**: To fully disable libc++'s no-discard attribute users can
+  define `_LIBCPP_DISABLE_NO_DISCARD` before including any headers. It's also
+  possible to disable groups of no-discard checks by defining one of the
+  macros below:
+
+    * **_LIBCPP_DISABLE_NO_DISCARD_CONTAINER_OBSERVERS**: Disables
+      no-discard on non-modifying container operations such as the ``size()``,
+      ``empty()``, and ``capacity()`` methods of ``std::vector`` or
+      ``std::string``.
+
+    * **_LIBCPP_DISABLE_NO_DISCARD_SMART_PTR_OBSERVERS**: Disables no-discard
+      on non-modifying smart pointer operations such as ``get()`` or
+      ``operator*()``.
+
+    * **_LIBCPP_DISABLE_NO_DISCARD_TRY_LOCK**: Disables no-discard on the
+      ``try_lock()``, ``try_lock_for()``, and ``try_lock_until()``
+      members of lockable types.
+
+    * **_LIBCPP_DISABLE_NO_DISCARD_UNIQUE_PTR_RELEASE**: Disables no-discard on
+      ``std::unique_ptr<T>::release()``.
+
 **_LIBCPP_DISABLE_VISIBILITY_ANNOTATIONS**:
   This macro is used to disable all visibility annotations inside libc++.
   Defining this macro and then building libc++ with hidden visibility gives a
@@ -179,4 +204,3 @@ thread safety annotations.
 
     * Giving `set`, `map`, `multiset`, `multimap` a comparator which is not
       const callable.
-

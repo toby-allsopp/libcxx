@@ -32,6 +32,12 @@ _LIBCPP_BEGIN_NAMESPACE_STD
 #  endif
 #endif  // _LIBCPP_THREAD_SAFETY_ANNOTATION
 
+#ifndef _LIBCPP_DISABLE_NO_DISCARD_TRY_LOCK
+# define _LIBCPP_NO_DISCARD_TRY_LOCK _LIBCPP_NO_DISCARD
+#else
+# define _LIBCPP_NO_DISCARD_TRY_LOCK
+#endif
+
 class _LIBCPP_TYPE_VIS _LIBCPP_THREAD_SAFETY_ANNOTATION(capability("mutex")) mutex
 {
 #ifndef _LIBCPP_HAS_NO_CONSTEXPR
@@ -55,6 +61,7 @@ private:
 
 public:
     void lock() _LIBCPP_THREAD_SAFETY_ANNOTATION(acquire_capability());
+    _LIBCPP_NO_DISCARD_TRY_LOCK
     bool try_lock() _NOEXCEPT _LIBCPP_THREAD_SAFETY_ANNOTATION(try_acquire_capability(true));
     void unlock() _NOEXCEPT _LIBCPP_THREAD_SAFETY_ANNOTATION(release_capability());
 
@@ -182,11 +189,13 @@ public:
 #endif  // _LIBCPP_HAS_NO_RVALUE_REFERENCES
 
     void lock();
-    bool try_lock();
+    _LIBCPP_NO_DISCARD_TRY_LOCK bool try_lock();
 
     template <class _Rep, class _Period>
+        _LIBCPP_NO_DISCARD_TRY_LOCK
         bool try_lock_for(const chrono::duration<_Rep, _Period>& __d);
     template <class _Clock, class _Duration>
+        _LIBCPP_NO_DISCARD_TRY_LOCK
         bool try_lock_until(const chrono::time_point<_Clock, _Duration>& __t);
 
     void unlock();

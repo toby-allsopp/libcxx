@@ -1023,6 +1023,24 @@ _LIBCPP_FUNC_VIS extern "C" void __sanitizer_annotate_contiguous_container(
 #define _LIBCPP_SAFE_STATIC
 #endif
 
+#if __has_attribute(__warn_unused_result__) || _GNUC_VER > 408
+# define _LIBCPP_NO_DISCARD_INTERNAL __attribute__((__warn_unused_result__))
+#else
+# define _LIBCPP_NO_DISCARD_INTERNAL
+#endif
+
+#ifndef _LIBCPP_DISABLE_NO_DISCARD
+# define _LIBCPP_NO_DISCARD _LIBCPP_NO_DISCARD_INTERNAL
+#else
+# define _LIBCPP_NO_DISCARD
+#endif
+
+#if !defined(_LIBCPP_DISABLE_NO_DISCARD_CONTAINER_OBSERVERS)
+# define _LIBCPP_NO_DISCARD_CONTAINER_OBSERVERS _LIBCPP_NO_DISCARD
+#else
+# define _LIBCPP_NO_DISCARD_CONTAINER_OBSERVERS
+#endif
+
 #if !__has_builtin(__builtin_addressof) && _GNUC_VER < 700
 #define _LIBCPP_HAS_NO_BUILTIN_ADDRESSOF
 #endif

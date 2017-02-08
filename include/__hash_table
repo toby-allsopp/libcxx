@@ -1645,7 +1645,7 @@ __hash_table<_Tp, _Hash, _Equal, _Alloc>::__move_assign(
         {
             __node_holder __h = __construct_node(_NodeTypes::__move(__u.remove(__i++)->__value_));
             __node_insert_multi(__h.get());
-            __h.release();
+            (void)__h.release();
         }
     }
 }
@@ -2059,7 +2059,7 @@ __hash_table<_Tp, _Hash, _Equal, _Alloc>::__emplace_unique_impl(_Args&&... __arg
     __node_holder __h = __construct_node(_VSTD::forward<_Args>(__args)...);
     pair<iterator, bool> __r = __node_insert_unique(__h.get());
     if (__r.second)
-        __h.release();
+        (void)__h.release();
     return __r;
 }
 
@@ -2070,7 +2070,7 @@ __hash_table<_Tp, _Hash, _Equal, _Alloc>::__emplace_multi(_Args&&... __args)
 {
     __node_holder __h = __construct_node(_VSTD::forward<_Args>(__args)...);
     iterator __r = __node_insert_multi(__h.get());
-    __h.release();
+    (void)__h.release();
     return __r;
 }
 
@@ -2087,7 +2087,7 @@ __hash_table<_Tp, _Hash, _Equal, _Alloc>::__emplace_hint_multi(
 #endif
     __node_holder __h = __construct_node(_VSTD::forward<_Args>(__args)...);
     iterator __r = __node_insert_multi(__p, __h.get());
-    __h.release();
+    (void)__h.release();
     return __r;
 }
 
@@ -2099,7 +2099,7 @@ __hash_table<_Tp, _Hash, _Equal, _Alloc>::__insert_multi(const __container_value
 {
     __node_holder __h = __construct_node(__x);
     iterator __r = __node_insert_multi(__h.get());
-    __h.release();
+    (void)__h.release();
     return __r;
 }
 
@@ -2115,7 +2115,7 @@ __hash_table<_Tp, _Hash, _Equal, _Alloc>::__insert_multi(const_iterator __p,
 #endif
     __node_holder __h = __construct_node(__x);
     iterator __r = __node_insert_multi(__p, __h.get());
-    __h.release();
+    (void)__h.release();
     return __r;
 }
 
