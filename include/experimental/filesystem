@@ -217,6 +217,7 @@
 */
 
 #include <experimental/__config>
+#include <experimental/optional>
 #include <cstddef>
 #include <chrono>
 #include <iterator>
@@ -1765,10 +1766,28 @@ path temp_directory_path(error_code& __ec) {
     return __temp_directory_path(&__ec);
 }
 
+struct __entry_cache {
+  file_status __status_;
+  uintmax_t __file_size_ = static_cast<uintmax_t>(-1);
+  uintmax_t __hard_link_count_ = static_cast<uintmax_t>(-1);
+  file_time_type __last_write_time_ = file_time_type::min();
+
+  __entry_cache(const __entry_cache&) = default;
+  __entry_cache(__entry_cache&&) = default;
+  __entry_cache& operator=(__entry_cache const&) = default;
+  __entry_cache& operator=(__entry_cache &&) = default;
+
+private:
+  __entry_cache() = default;
+
+public:
+  static __entry_cache __create(path const&, error_code *__ec = nullptr);
+};
 
 class directory_entry
 {
     typedef _VSTD_FS::path _Path;
+    using _OptionalCacheT = _VSTD_LFTS::optional<__entry_cache>;
 
 public:
     // constructors and destructors
@@ -1777,7 +1796,13 @@ public:
     directory_entry(directory_entry&&) _NOEXCEPT = default;
 
     _LIBCPP_INLINE_VISIBILITY
-    explicit directory_entry(_Path const& __p) : __p_(__p) {}
+    explicit directory_entry(_Path const& __p) : __p_(__p) {
+      refresh();
+    }
+
+    directory_entry(const _Path& __p, error_code &__ec) : __p_(__p) {
+      refresh(__ec);
+    }
 
     ~directory_entry() {}
 
@@ -1787,11 +1812,29 @@ public:
     _LIBCPP_INLINE_VISIBILITY
     void assign(_Path const& __p) {
         __p_ = __p;
+        refresh();
+    }
+
+    _LIBCPP_INLINE_VISIBILITY
+    void assign(_Path const& __p, error_code &__ec) {
+      __p_ = __p;
+      refresh(__ec);
     }
 
     _LIBCPP_INLINE_VISIBILITY
     void replace_filename(_Path const& __p) {
         __p_ = __p_.parent_path() / __p;
+        refresh();
+    }
+
+    _LIBCPP_INLINE_VISIBILITY
+    void refresh() {
+      __cache_ = __entry_cache::__create(__p_);
+    }
+
+    _LIBCPP_INLINE_VISIBILITY
+    void refresh(error_code &__ec) {
+      __cache_ = __entry_cache::__create(__p_, &__ec);
     }
 
     _LIBCPP_INLINE_VISIBILITY
@@ -1805,13 +1848,137 @@ public:
     }
 
     _LIBCPP_INLINE_VISIBILITY
+    bool exists() const {
+      return __has_cached() ? _VSTD_FS::exists(__cache_->__status_)
+                            : _VSTD_FS::exists(__p_);
+    }
+
+    bool exists(error_code& __ec) const noexcept {
+      return __has_cached() ? _VSTD_FS::exists(__cache_->__status_)
+                            : _VSTD_FS::exists(__p_, __ec);
+    }
+
+    _LIBCPP_INLINE_VISIBILITY
+    bool is_block_file() const {
+      return __has_cached() ? _VSTD_FS::is_block_file(__cache_->__status_)
+                            : _VSTD_FS::is_block_file(__p_);
+    }
+
+    _LIBCPP_INLINE_VISIBILITY
+    bool is_block_file(error_code& __ec) const noexcept {
+      return __has_cached() ? _VSTD_FS::is_block_file(__cache_->__status_)
+                            : _VSTD_FS::is_block_file(__p_, __ec);
+    }
+
+    _LIBCPP_INLINE_VISIBILITY
+    bool is_character_file() const {
+      return __has_cached() ? _VSTD_FS::is_character_file(__cache_->__status_)
+                            : _VSTD_FS::is_character_file(__p_);
+    }
+
+    _LIBCPP_INLINE_VISIBILITY
+    bool is_character_file(error_code& __ec) const noexcept {
+      return __has_cached() ? _VSTD_FS::is_character_file(__cache_->__status_)
+                            : _VSTD_FS::is_character_file(__p_, __ec);
+    }
+
+    _LIBCPP_INLINE_VISIBILITY
+    bool is_directory() const {
+      return __has_cached() ? _VSTD_FS::is_directory(__cache_->__status_)
+                            : _VSTD_FS::is_directory(__p_);
+    }
+
+    _LIBCPP_INLINE_VISIBILITY
+    bool is_directory(error_code& __ec) const noexcept {
+      return __has_cached() ? _VSTD_FS::is_directory(__cache_->__status_)
+                            : _VSTD_FS::is_directory(__p_, __ec);
+    }
+    _LIBCPP_INLINE_VISIBILITY
+    bool is_fifo() const {
+      return __has_cached() ? _VSTD_FS::is_fifo(__cache_->__status_)
+                            : _VSTD_FS::is_fifo(__p_);
+    }
+
+    _LIBCPP_INLINE_VISIBILITY
+    bool is_fifo(error_code& __ec) const noexcept {
+      return __has_cached() ? _VSTD_FS::is_fifo(__cache_->__status_)
+                            : _VSTD_FS::is_fifo(__p_, __ec);
+    }
+    _LIBCPP_INLINE_VISIBILITY
+    bool is_other() const {
+      return __has_cached() ? _VSTD_FS::is_other(__cache_->__status_)
+                            : _VSTD_FS::is_other(__p_);
+    }
+
+    _LIBCPP_INLINE_VISIBILITY
+    bool is_other(error_code& __ec) const noexcept {
+      return __has_cached() ? _VSTD_FS::is_other(__cache_->__status_)
+                            : _VSTD_FS::is_other(__p_, __ec);
+    }
+    _LIBCPP_INLINE_VISIBILITY
+    bool is_regular_file() const {
+      return __has_cached() ? _VSTD_FS::is_regular_file(__cache_->__status_)
+                            : _VSTD_FS::is_regular_file(__p_);
+    }
+
+    _LIBCPP_INLINE_VISIBILITY
+    bool is_regular_file(error_code& __ec) const noexcept {
+      return __has_cached() ? _VSTD_FS::is_regular_file(__cache_->__status_)
+                            : _VSTD_FS::is_regular_file(__p_, __ec);
+    }
+    _LIBCPP_INLINE_VISIBILITY
+    bool is_socket() const {
+      return __has_cached() ? _VSTD_FS::is_socket(__cache_->__status_)
+                            : _VSTD_FS::is_socket(__p_);
+    }
+
+    _LIBCPP_INLINE_VISIBILITY
+    bool is_socket(error_code& __ec) const noexcept {
+      return __has_cached() ? _VSTD_FS::is_socket(__cache_->__status_)
+                            : _VSTD_FS::is_socket(__p_, __ec);
+    }
+
+    _LIBCPP_INLINE_VISIBILITY
+    bool is_symlink() const;
+    _LIBCPP_INLINE_VISIBILITY
+    bool is_symlink(error_code& __ec) const noexcept;
+    _LIBCPP_INLINE_VISIBILITY
+    uintmax_t file_size() const {
+      return __has_cached() ? __cache_->__file_size_ : _VSTD_FS::file_size(__p_);
+    }
+    _LIBCPP_INLINE_VISIBILITY
+    uintmax_t file_size(error_code& __ec) const noexcept {
+      return __has_cached() ? __cache_->__file_size_ : _VSTD_FS::file_size(__p_, __ec);
+    }
+    _LIBCPP_INLINE_VISIBILITY
+    uintmax_t hard_link_count() const {
+      return __has_cached() ? __cache_->__hard_link_count_ : _VSTD_FS::hard_link_count(__p_);
+    }
+    _LIBCPP_INLINE_VISIBILITY
+    uintmax_t hard_link_count(error_code& __ec) const noexcept {
+      return __has_cached() ? __cache_->__hard_link_count_ : _VSTD_FS::hard_link_count(__p_, __ec);
+    }
+    _LIBCPP_INLINE_VISIBILITY
+    file_time_type last_write_time() const {
+      return __has_cached() ? __cache_->__last_write_time_
+                            : _VSTD_FS::last_write_time(__p_);
+    }
+    _LIBCPP_INLINE_VISIBILITY
+    file_time_type last_write_time(error_code& __ec) const noexcept {
+      return __has_cached() ? __cache_->__last_write_time_
+                            : _VSTD_FS::last_write_time(__p_, __ec);
+    }
+
+    _LIBCPP_INLINE_VISIBILITY
     file_status status() const {
-        return _VSTD_FS::status(__p_);
+        return __has_cached() ? __cache_->__status_
+                              : _VSTD_FS::status(__p_);
     }
 
     _LIBCPP_INLINE_VISIBILITY
     file_status status(error_code& __ec) const _NOEXCEPT {
-        return _VSTD_FS::status(__p_, __ec);
+        return __has_cached() ? __cache_->__status_
+                              : _VSTD_FS::status(__p_, __ec);
     }
 
     _LIBCPP_INLINE_VISIBILITY
@@ -1853,8 +2020,15 @@ public:
     bool operator>=(directory_entry const& __rhs) const _NOEXCEPT {
         return __p_ >= __rhs.__p_;
     }
+
+private:
+    _LIBCPP_INLINE_VISIBILITY
+    bool __has_cached() const noexcept { return bool(__cache_); }
+
+
 private:
     _Path __p_;
+    _OptionalCacheT __cache_;
 };
 
 

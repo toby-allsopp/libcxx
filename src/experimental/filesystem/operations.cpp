@@ -441,7 +441,6 @@ bool __equivalent(const path& p1, const path& p2, std::error_code *ec)
     return (st1.st_dev == st2.st_dev && st1.st_ino == st2.st_ino);
 }
 
-
 std::uintmax_t __file_size(const path& p, std::error_code *ec)
 {
     std::error_code m_ec;
@@ -935,6 +934,32 @@ path absolute(const path& p, const path& base) {
       // else p is absolute,  return outside of block
     }
     return p;
+}
+
+__entry_cache __entry_cache::__create(path const& p, error_code *ec) {
+  __entry_cache cache;
+  struct ::stat path_stat;
+  std::error_code m_ec;
+  if (::stat(p.c_str(), &path_stat) == -1)
+      m_ec = detail::capture_errno();
+  cache.__status_ = detail::create_file_status(m_ec, p, path_stat, ec);
+
+  auto& st = cache.__status_;
+
+  if (is_regular_file(st))
+    cache.__file_size_ =  static_cast<uintmax_t>(path_stat.st_size);
+
+  if (!m_ec) {
+    cache.__hard_link_count_ = static_cast<uintmax_t>(path_stat.st_nlink);
+    auto ts = detail::extract_mtime(path_stat);
+    if (!detail::is_representable(ts))
+        set_or_throw(error_code(EOVERFLOW, generic_category()), ec,
+                     "last_write_time", p);
+    else
+      cache.__last_write_time_ = detail::convert_timespec(ts);
+  }
+
+  return cache;
 }
 
 _LIBCPP_END_NAMESPACE_EXPERIMENTAL_FILESYSTEM
