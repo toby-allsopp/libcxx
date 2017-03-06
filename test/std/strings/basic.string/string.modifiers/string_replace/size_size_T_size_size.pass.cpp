@@ -7,11 +7,10 @@
 //
 //===----------------------------------------------------------------------===//
 
-// XFAIL: libcpp-no-exceptions
 // <string>
 
 // template <class T>
-//    basic_string& replace(size_type pos1, size_type n1, const T& t, 
+//    basic_string& replace(size_type pos1, size_type n1, const T& t,
 //                          size_type pos2, size_type n=npos);
 //
 //  Mostly we're testing string_view here
@@ -30,24 +29,39 @@ test(S s, typename S::size_type pos1, typename S::size_type n1,
      SV sv, typename S::size_type pos2, typename S::size_type n2,
      S expected)
 {
+    typedef typename S::size_type SizeT;
     static_assert((!std::is_same<S, SV>::value), "");
-    typename S::size_type old_size = s.size();
+
+    // String and string_view may not always share the same size type,
+    // but both types should have the same size (ex. int vs long)
+    static_assert(sizeof(SizeT) == sizeof(typename SV::size_type), "");
+
+    const SizeT old_size = s.size();
     S s0 = s;
-    try
+    if (pos1 <= old_size && pos2 <= sv.size())
     {
         s.replace(pos1, n1, sv, pos2, n2);
         LIBCPP_ASSERT(s.__invariants());
-        assert(pos1 <= old_size && pos2 <= sv.size());
         assert(s == expected);
-        typename S::size_type xlen = std::min(n1, old_size - pos1);
-        typename S::size_type rlen = std::min(n2, sv.size() - pos2);
+        SizeT xlen = std::min<SizeT>(n1, old_size - pos1);
+        SizeT rlen = std::min<SizeT>(n2, sv.size() - pos2);
         assert(s.size() == old_size - xlen + rlen);
     }
-    catch (std::out_of_range&)
+#ifndef TEST_HAS_NO_EXCEPTIONS
+    else
     {
-        assert(pos1 > old_size || pos2 > sv.size());
-        assert(s == s0);
+        try
+        {
+            s.replace(pos1, n1, sv, pos2, n2);
+            assert(false);
+        }
+        catch (std::out_of_range&)
+        {
+            assert(pos1 > old_size || pos2 > sv.size());
+            assert(s == s0);
+        }
     }
+#endif
 }
 
 template <class S, class SV>
@@ -56,24 +70,34 @@ test_npos(S s, typename S::size_type pos1, typename S::size_type n1,
           SV sv, typename S::size_type pos2,
           S expected)
 {
+    typedef typename S::size_type SizeT;
     static_assert((!std::is_same<S, SV>::value), "");
-    typename S::size_type old_size = s.size();
+    const SizeT old_size = s.size();
     S s0 = s;
-    try
+    if (pos1 <= old_size && pos2 <= sv.size())
     {
         s.replace(pos1, n1, sv, pos2);
         LIBCPP_ASSERT(s.__invariants());
-        assert(pos1 <= old_size && pos2 <= sv.size());
         assert(s == expected);
-        typename S::size_type xlen = std::min(n1, old_size - pos1);
-        typename S::size_type rlen = std::min(S::npos, sv.size() - pos2);
+        SizeT xlen = std::min<SizeT>(n1, old_size - pos1);
+        SizeT rlen = std::min<SizeT>(S::npos, sv.size() - pos2);
         assert(s.size() == old_size - xlen + rlen);
     }
-    catch (std::out_of_range&)
+#ifndef TEST_HAS_NO_EXCEPTIONS
+    else
     {
-        assert(pos1 > old_size || pos2 > sv.size());
-        assert(s == s0);
+        try
+        {
+            s.replace(pos1, n1, sv, pos2);
+            assert(false);
+        }
+        catch (std::out_of_range&)
+        {
+            assert(pos1 > old_size || pos2 > sv.size());
+            assert(s == s0);
+        }
     }
+#endif
 }
 
 
