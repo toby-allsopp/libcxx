@@ -139,6 +139,7 @@ class Configuration(object):
         self.configure_sanitizer()
         self.configure_coverage()
         self.configure_modules()
+        self.configure_coroutines()
         self.configure_substitutions()
         self.configure_features()
 
@@ -387,9 +388,6 @@ class Configuration(object):
 
         if self.get_lit_bool('has_libatomic', False):
             self.config.available_features.add('libatomic')
-
-        if self.cxx.hasCompileFlag('-fcoroutines-ts'):
-            self.config.available_features.add('fcoroutines-ts')
 
         macros = self.cxx.dumpMacros()
         if '__cpp_if_constexpr' not in macros:
@@ -875,6 +873,10 @@ class Configuration(object):
         if self.generate_coverage:
             self.cxx.flags += ['-g', '--coverage']
             self.cxx.compile_flags += ['-O0']
+
+    def configure_coroutines(self):
+        if self.cxx.hasCompileFlag('-fcoroutines-ts'):
+            self.config.available_features.add('fcoroutines-ts')
 
     def configure_modules(self):
         modules_flags = ['-fmodules']
