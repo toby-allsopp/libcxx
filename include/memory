@@ -2752,7 +2752,7 @@ private:
     >::type;
 
 
-    template <class _Pp, bool _AllowNullptr = false,
+    template <class _Pp,
               class _ElemType = typename conditional<
                   is_pointer<_Pp>::value,
                   remove_pointer<_Pp>,
@@ -2761,7 +2761,7 @@ private:
     >
     using _EnableIfPointerConvertible = typename enable_if<
         is_same<_Pp, pointer>::value ||
-            (is_same<_Pp, nullptr_t>::value && _AllowNullptr) ||
+        is_same<_Pp, nullptr_t>::value ||
             (is_same<pointer, element_type*>::value &&
             is_pointer<_Pp>::value &&
             is_convertible<_ElemType(*)[], element_type(*)[]>::value)
@@ -2791,7 +2791,7 @@ public:
 
     template <class _Pp, bool _Dummy = true,
         class = _EnableIfDeleterConstructible<_LValRefType<_Dummy>>,
-        class = _EnableIfPointerConvertible<_Pp, /*AllowNullptr*/true>
+        class = _EnableIfPointerConvertible<_Pp>
     >
     _LIBCPP_INLINE_VISIBILITY
     unique_ptr(_Pp __p, _LValRefType<_Dummy> __d) noexcept
@@ -2800,7 +2800,7 @@ public:
 
     template <class _Pp, bool _Dummy = true,
         class = _EnableIfDeleterConstructible<_GoodRValRefType<_Dummy>>,
-        class = _EnableIfPointerConvertible<_Pp, /*AllowNullptr*/true>
+        class = _EnableIfPointerConvertible<_Pp>
     >
     _LIBCPP_INLINE_VISIBILITY
     unique_ptr(_Pp __p, _GoodRValRefType<_Dummy> __d) noexcept
@@ -2812,7 +2812,7 @@ public:
 
     template <class _Pp, bool _Dummy = true,
         class = _EnableIfDeleterConstructible<_BadRValRefType<_Dummy>>,
-        class = _EnableIfPointerConvertible<_Pp, /*AllowNullptr*/true>
+        class = _EnableIfPointerConvertible<_Pp>
       >
     _LIBCPP_INLINE_VISIBILITY
     unique_ptr(_Pp __p, _BadRValRefType<_Dummy> __d) = delete;
