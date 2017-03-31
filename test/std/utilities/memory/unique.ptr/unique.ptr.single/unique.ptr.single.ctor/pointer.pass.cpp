@@ -12,7 +12,7 @@
 // unique_ptr
 
 //=============================================================================
-// TESTING std::unique_ptr::unique_ptr()
+// TESTING std::unique_ptr::unique_ptr(pointer)
 //
 // Concerns:
 //   1 The pointer constructor works for any default constructible deleter types.

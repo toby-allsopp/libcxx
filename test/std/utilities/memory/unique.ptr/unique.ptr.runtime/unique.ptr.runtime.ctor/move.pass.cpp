@@ -37,51 +37,42 @@
 //    from a temporary. 'source' should return the unique_ptr by value and
 //    'sink' should accept the unique_ptr by value. (C-1,2,4)
 
-struct A
-{
-    static int count;
-    A() {++count;}
-    A(const A&) {++count;}
-    virtual ~A() {--count;}
+struct A {
+  static int count;
+  A() { ++count; }
+  A(const A&) { ++count; }
+  virtual ~A() { --count; }
 };
 
 int A::count = 0;
 
 template <class Expect>
-void sinkFunction(Expect)
-{
-}
+void sinkFunction(Expect) {}
 
 typedef std::unique_ptr<A[]> APtrSource1;
-typedef std::unique_ptr<A[], Deleter<A[]> > APtrSource2;
-typedef std::unique_ptr<A[], NCDeleter<A[]>& > APtrSource3;
+typedef std::unique_ptr<A[], Deleter<A[]>> APtrSource2;
+typedef std::unique_ptr<A[], NCDeleter<A[]>&> APtrSource3;
 
-APtrSource1 source1() {
-    return APtrSource1 (new A[3]);
-}
+APtrSource1 source1() { return APtrSource1(new A[3]); }
 
-void sink1(APtrSource1 p) {
-    assert(p.get() != nullptr);
-}
+void sink1(APtrSource1 p) { assert(p.get() != nullptr); }
 
-APtrSource2 source2() {
-    return APtrSource2(new A[3], Deleter<A[]>(5));
-}
+APtrSource2 source2() { return APtrSource2(new A[3], Deleter<A[]>(5)); }
 
 void sink2(APtrSource2 p) {
-    assert(p.get() != nullptr);
-    assert(p.get_deleter().state() == 5);
+  assert(p.get() != nullptr);
+  assert(p.get_deleter().state() == 5);
 }
 
 APtrSource3 source3() {
-    static NCDeleter<A[]> d(5);
-    return APtrSource3(new A[3], d);
+  static NCDeleter<A[]> d(5);
+  return APtrSource3(new A[3], d);
 }
 
 void sink3(APtrSource3 p) {
-    assert(p.get() != nullptr);
-    assert(p.get_deleter().state() == 5);
-    assert(&p.get_deleter() == &source3().get_deleter());
+  assert(p.get() != nullptr);
+  assert(p.get_deleter().state() == 5);
+  assert(&p.get_deleter() == &source3().get_deleter());
 }
 
 void test_sfinae() {
@@ -92,58 +83,57 @@ void test_sfinae() {
   }
 }
 
-int main()
-{
-    {
-        typedef std::unique_ptr<A[]> APtr;
-        APtr s(new A[3]);
-        A* p = s.get();
-        APtr s2 = std::move(s);
-        assert(s2.get() == p);
-        assert(s.get() == 0);
-        assert(A::count == 3);
-    }
-    assert(A::count == 0);
-    {
-        typedef Deleter<A[]> MoveDel;
-        typedef std::unique_ptr<A[], MoveDel> APtr;
-        MoveDel d(5);
-        APtr s(new A[3], std::move(d));
-        assert(d.state() == 0);
-        assert(s.get_deleter().state() == 5);
-        A* p = s.get();
-        APtr s2 = std::move(s);
-        assert(s2.get() == p);
-        assert(s.get() == 0);
-        assert(A::count == 3);
-        assert(s2.get_deleter().state() == 5);
-        assert(s.get_deleter().state() == 0);
-    }
-    assert(A::count == 0);
-    {
-        typedef NCDeleter<A[]> NonCopyDel;
-        typedef std::unique_ptr<A[], NonCopyDel&> APtr;
+int main() {
+  {
+    typedef std::unique_ptr<A[]> APtr;
+    APtr s(new A[3]);
+    A* p = s.get();
+    APtr s2 = std::move(s);
+    assert(s2.get() == p);
+    assert(s.get() == 0);
+    assert(A::count == 3);
+  }
+  assert(A::count == 0);
+  {
+    typedef Deleter<A[]> MoveDel;
+    typedef std::unique_ptr<A[], MoveDel> APtr;
+    MoveDel d(5);
+    APtr s(new A[3], std::move(d));
+    assert(d.state() == 0);
+    assert(s.get_deleter().state() == 5);
+    A* p = s.get();
+    APtr s2 = std::move(s);
+    assert(s2.get() == p);
+    assert(s.get() == 0);
+    assert(A::count == 3);
+    assert(s2.get_deleter().state() == 5);
+    assert(s.get_deleter().state() == 0);
+  }
+  assert(A::count == 0);
+  {
+    typedef NCDeleter<A[]> NonCopyDel;
+    typedef std::unique_ptr<A[], NonCopyDel&> APtr;
 
-        NonCopyDel d;
-        APtr s(new A[3], d);
-        A* p = s.get();
-        APtr s2 = std::move(s);
-        assert(s2.get() == p);
-        assert(s.get() == 0);
-        assert(A::count == 3);
-        d.set_state(6);
-        assert(s2.get_deleter().state() == d.state());
-        assert(s.get_deleter().state() ==  d.state());
-    }
+    NonCopyDel d;
+    APtr s(new A[3], d);
+    A* p = s.get();
+    APtr s2 = std::move(s);
+    assert(s2.get() == p);
+    assert(s.get() == 0);
+    assert(A::count == 3);
+    d.set_state(6);
+    assert(s2.get_deleter().state() == d.state());
+    assert(s.get_deleter().state() == d.state());
+  }
+  assert(A::count == 0);
+  {
+    sink1(source1());
     assert(A::count == 0);
-    {
-       sink1(source1());
-       assert(A::count == 0);
-       sink2(source2());
-       assert(A::count == 0);
-       sink3(source3());
-       assert(A::count == 0);
-    }
+    sink2(source2());
     assert(A::count == 0);
-    test_sfinae();
+    sink3(source3());
+    assert(A::count == 0);
+  }
+  assert(A::count == 0);
+  test_sfinae();
 }
