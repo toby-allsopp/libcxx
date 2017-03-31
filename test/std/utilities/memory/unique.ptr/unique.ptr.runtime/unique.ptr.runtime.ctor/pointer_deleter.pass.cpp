@@ -171,7 +171,7 @@ void test_noexcept() {
 
 int main() {
   {
-    std::unique_ptr<A[], Deleter<A[]>> s1(nullptr, Deleter<A[]>());
+    std::unique_ptr<A[], Deleter<A[]> > s1(nullptr, Deleter<A[]>());
     assert(s1.get() == nullptr);
 
     NCDeleter<A[]> d2(5);
@@ -188,7 +188,7 @@ int main() {
   { // MoveConstructible deleter (C-1)
     A* p = new A[3];
     assert(A::count == 3);
-    std::unique_ptr<A[], Deleter<A[]>> s(p, Deleter<A[]>(5));
+    std::unique_ptr<A[], Deleter<A[]> > s(p, Deleter<A[]>(5));
     assert(s.get() == p);
     assert(s.get_deleter().state() == 5);
   }
@@ -197,7 +197,7 @@ int main() {
     A* p = new A[3];
     assert(A::count == 3);
     CopyDeleter<A[]> d(5);
-    std::unique_ptr<A[], CopyDeleter<A[]>> s(p, d);
+    std::unique_ptr<A[], CopyDeleter<A[]> > s(p, d);
     assert(s.get() == p);
     assert(s.get_deleter().state() == 5);
     d.set_state(6);

@@ -50,7 +50,7 @@ template <class Expect>
 void sinkFunction(Expect) {}
 
 typedef std::unique_ptr<A[]> APtrSource1;
-typedef std::unique_ptr<A[], Deleter<A[]>> APtrSource2;
+typedef std::unique_ptr<A[], Deleter<A[]> > APtrSource2;
 typedef std::unique_ptr<A[], NCDeleter<A[]>&> APtrSource3;
 
 APtrSource1 source1() { return APtrSource1(new A[3]); }

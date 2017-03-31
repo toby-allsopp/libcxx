@@ -71,7 +71,7 @@ int main()
 #if TEST_STD_VER >= 11
   {
       using U1 = std::unique_ptr<int[]>;
-      using U2 = std::unique_ptr<int[], Deleter<int[]>>;
+      using U2 = std::unique_ptr<int[], Deleter<int[]> >;
       static_assert(std::is_nothrow_default_constructible<U1>::value, "");
       static_assert(std::is_nothrow_default_constructible<U2>::value, "");
   }
@@ -81,7 +81,7 @@ int main()
     assert(p.get() == 0);
     }
     {
-    std::unique_ptr<int[], Deleter<int[]>> p;
+    std::unique_ptr<int[], Deleter<int[]> > p;
     assert(p.get() == 0);
     assert(p.get_deleter().state() == 0);
     }

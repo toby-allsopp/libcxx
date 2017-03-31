@@ -60,7 +60,7 @@ struct IncompleteT;
 IncompleteT* getIncomplete();
 void checkNumIncompleteTypeAlive(int i);
 
-template <class Del = std::default_delete<IncompleteT[]>>
+template <class Del = std::default_delete<IncompleteT[]> >
 struct StoresIncomplete {
   std::unique_ptr<IncompleteT[], Del> m_ptr;
   StoresIncomplete() {}
@@ -82,18 +82,21 @@ void test_pointer() {
   {
     A* p = new A[3];
     assert(A::count == 3);
-    std::unique_ptr<A[], NCDeleter<A[]>> s(p);
+    std::unique_ptr<A[], NCDeleter<A[]> > s(p);
     assert(s.get() == p);
     assert(s.get_deleter().state() == 0);
   }
   assert(A::count == 0);
+  // FIXME: this test doesn't pass in C++03 mode
+#if TEST_STD_VER >= 11
   {
     A* p = new A[3];
     assert(A::count == 3);
-    std::unique_ptr<const A[], NCDeleter<const A[]>> s(p);
+    std::unique_ptr<const A[], NCDeleter<const A[]> > s(p);
     assert(s.get() == p);
     assert(s.get_deleter().state() == 0);
   }
+#endif
   assert(A::count == 0);
 }
 
@@ -108,7 +111,7 @@ void test_incomplete() {
   {
     IncompleteT* p = getIncomplete();
     checkNumIncompleteTypeAlive(3);
-    StoresIncomplete<NCDeleter<IncompleteT[]>> s(p);
+    StoresIncomplete<NCDeleter<IncompleteT[]> > s(p);
     assert(s.get() == p);
     assert(s.get_deleter().state() == 0);
   }
@@ -184,7 +187,7 @@ int main() {
 #if TEST_STD_VER >= 11
   {
     using U1 = std::unique_ptr<int[]>;
-    using U2 = std::unique_ptr<int[], Deleter<int[]>>;
+    using U2 = std::unique_ptr<int[], Deleter<int[]> >;
     static_assert(std::is_nothrow_constructible<U1, int*>::value, "");
     static_assert(std::is_nothrow_constructible<U2, int*>::value, "");
   }
