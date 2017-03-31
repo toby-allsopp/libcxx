@@ -84,6 +84,14 @@ void sink3(APtrSource3 p) {
     assert(&p.get_deleter() == &source3().get_deleter());
 }
 
+void test_sfinae() {
+  typedef std::unique_ptr<int> U;
+  { // Ensure unique_ptr is non-copyable
+    static_assert((!std::is_constructible<U, U const&>::value), "");
+    static_assert((!std::is_constructible<U, U&>::value), "");
+  }
+}
+
 int main()
 {
     {
@@ -137,4 +145,5 @@ int main()
        assert(A::count == 0);
     }
     assert(A::count == 0);
+    test_sfinae();
 }

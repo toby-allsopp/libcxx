@@ -44,9 +44,30 @@ struct B
 
 int B::count = 0;
 
+struct C {};
+
+struct Deleter {
+  void operator()(void*) {}
+};
+
+void test_sfinae() {
+  {
+    // the auto_ptr constructor should be disable with a non-default deleter.
+    using AP = std::auto_ptr<int>;
+    using U = std::unique_ptr<int, Deleter>;
+    static_assert(!std::is_constructible<U, AP&&>::value, "");
+  }
+  {
+    // the auto_ptr constructor should be disabled when the pointer types are incompatible.
+    using AP = std::auto_ptr<A>;
+    using U = std::unique_ptr<C>;
+    static_assert(!std::is_constructible<U, AP&&>::value, "");
+  }
+}
+
 int main()
 {
-    {
+  {
     B* p = new B;
     std::auto_ptr<B> ap(p);
     std::unique_ptr<A> up(std::move(ap));
@@ -54,10 +75,10 @@ int main()
     assert(ap.get() == 0);
     assert(A::count == 1);
     assert(B::count == 1);
-    }
-    assert(A::count == 0);
-    assert(B::count == 0);
-    {
+  }
+  assert(A::count == 0);
+  assert(B::count == 0);
+  {
     B* p = new B;
     std::auto_ptr<B> ap(p);
     std::unique_ptr<A> up;
@@ -66,9 +87,9 @@ int main()
     assert(ap.get() == 0);
     assert(A::count == 1);
     assert(B::count == 1);
-    }
-    assert(A::count == 0);
-    assert(B::count == 0);
+  }
+  assert(A::count == 0);
+  assert(B::count == 0);
 #if TEST_STD_VER >= 11
     {
         static_assert(std::is_nothrow_constructible<
@@ -77,4 +98,5 @@ int main()
         >::value, "");
     }
 #endif
+  test_sfinae();
 }

@@ -15,9 +15,7 @@
 // Test unique_ptr converting move ctor
 
 // NOTE: unique_ptr does not provide converting constructors in c++03
-// XFAIL: c++98, c++03
-
-
+// UNSUPPORTED: c++98, c++03
 
 #include <memory>
 #include <type_traits>
@@ -81,6 +79,81 @@ void checkCtor(LHS& lhs, RHS& rhs, A* RHSVal) {
 void checkNoneAlive() {
     assert(A::count == 0);
     assert(B::count == 0);
+}
+
+template <class T>
+struct NCConvertingDeleter {
+  NCConvertingDeleter() = default;
+  NCConvertingDeleter(NCConvertingDeleter const&) = delete;
+  NCConvertingDeleter(NCConvertingDeleter&&) = default;
+
+  template <class U>
+  NCConvertingDeleter(NCConvertingDeleter<U>&&) {}
+
+  void operator()(T*) const {}
+};
+
+template <class T>
+struct NCConvertingDeleter<T[]> {
+  NCConvertingDeleter() = default;
+  NCConvertingDeleter(NCConvertingDeleter const&) = delete;
+  NCConvertingDeleter(NCConvertingDeleter&&) = default;
+
+  template <class U>
+  NCConvertingDeleter(NCConvertingDeleter<U>&&) {}
+
+  void operator()(T*) const {}
+};
+
+struct NCGenericDeleter {
+  NCGenericDeleter() = default;
+  NCGenericDeleter(NCGenericDeleter const&) = delete;
+  NCGenericDeleter(NCGenericDeleter &&) = default;
+
+  void operator()(void*) const {}
+};
+
+void test_sfinae() {
+  using DA = NCConvertingDeleter<A>; // non-copyable deleters
+  using DB = NCConvertingDeleter<B>;
+  using UA = std::unique_ptr<A>;
+  using UB = std::unique_ptr<B>;
+  using UAD = std::unique_ptr<A, DA>;
+  using UBD = std::unique_ptr<B, DB>;
+  { // cannot move from an lvalue
+    static_assert(std::is_constructible<UA, UB&&>::value, "");
+    static_assert(!std::is_constructible<UA, UB&>::value, "");
+    static_assert(!std::is_constructible<UA, const UB&>::value, "");
+  }
+  { // cannot move if the deleter-types cannot convert
+    static_assert(std::is_constructible<UAD, UBD&&>::value, "");
+    static_assert(!std::is_constructible<UAD, UB&&>::value, "");
+    static_assert(!std::is_constructible<UA, UBD&&>::value, "");
+  }
+  { // cannot move-convert with reference deleters of different types
+    using UA1 = std::unique_ptr<A, DA&>;
+    using UB1 = std::unique_ptr<B, DB&>;
+    static_assert(!std::is_constructible<UA1, UB1&&>::value, "");
+  }
+  { // cannot move-convert with reference deleters of different types
+    using UA1 = std::unique_ptr<A, const DA&>;
+    using UB1 = std::unique_ptr<B, const DB&>;
+    static_assert(!std::is_constructible<UA1, UB1&&>::value, "");
+  }
+  { // cannot move-convert from unique_ptr<Array[]>
+    using UA1 = std::unique_ptr<A>;
+    using UA2 = std::unique_ptr<A[]>;
+    using UB1 = std::unique_ptr<B[]>;
+    static_assert(!std::is_constructible<UA1, UA2&&>::value, "");
+    static_assert(!std::is_constructible<UA1, UB1&&>::value, "");
+  }
+  { // cannot move-convert from unique_ptr<Array[]>
+    using UA1 = std::unique_ptr<A, NCGenericDeleter>;
+    using UA2 = std::unique_ptr<A[], NCGenericDeleter>;
+    using UB1 = std::unique_ptr<B[], NCGenericDeleter>;
+    static_assert(!std::is_constructible<UA1, UA2&&>::value, "");
+    static_assert(!std::is_constructible<UA1, UB1&&>::value, "");
+  }
 }
 
 int main()
@@ -168,4 +241,5 @@ int main()
         }
         checkNoneAlive();
     }
+    test_sfinae();
 }
