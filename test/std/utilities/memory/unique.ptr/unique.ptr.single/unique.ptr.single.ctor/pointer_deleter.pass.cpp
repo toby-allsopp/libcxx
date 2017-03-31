@@ -27,6 +27,7 @@
 #include <memory>
 #include <cassert>
 
+#include "test_macros.h"
 #include "deleter_types.h"
 
 struct A
@@ -55,6 +56,102 @@ bool my_free_called = false;
 
 void my_free(void*) {
     my_free_called = true;
+}
+
+#if TEST_STD_VER >= 11
+  struct DeleterBase { void operator()(void*) const {} };
+  struct CopyOnlyDeleter : DeleterBase {
+    CopyOnlyDeleter() = default;
+    CopyOnlyDeleter(CopyOnlyDeleter const&) = default;
+    CopyOnlyDeleter(CopyOnlyDeleter &&) = delete;
+  };
+  struct MoveOnlyDeleter : DeleterBase {
+    MoveOnlyDeleter() = default;
+    MoveOnlyDeleter(MoveOnlyDeleter &&) = default;
+  };
+  struct NoCopyMoveDeleter : DeleterBase {
+    NoCopyMoveDeleter() = default;
+    NoCopyMoveDeleter(NoCopyMoveDeleter const&) = delete;
+  };
+#endif
+
+void test_sfinae() {
+#if TEST_STD_VER >= 11
+  {
+    using D = CopyOnlyDeleter;
+    using U = std::unique_ptr<int, D>;
+    static_assert(std::is_constructible<U, int*, D const&>::value, "");
+    static_assert(std::is_constructible<U, int*, D &>::value, "");
+    static_assert(std::is_constructible<U, int*, D&&>::value, "");
+    // FIXME: __libcpp_compressed_pair attempts to perform a move even though
+    // it should only copy.
+    //D d;
+    //U u(nullptr, std::move(d));
+  }
+  {
+    using D = MoveOnlyDeleter;
+    using U = std::unique_ptr<int, D>;
+    static_assert(!std::is_constructible<U, int*, D const&>::value, "");
+    static_assert(!std::is_constructible<U, int*, D &>::value, "");
+    static_assert(std::is_constructible<U, int*, D&&>::value, "");
+    D d;
+    U u(nullptr, std::move(d));
+  }
+  {
+    using D = NoCopyMoveDeleter;
+    using U = std::unique_ptr<int, D>;
+    static_assert(!std::is_constructible<U, int*, D const&>::value, "");
+    static_assert(!std::is_constructible<U, int*, D &>::value, "");
+    static_assert(!std::is_constructible<U, int*, D&&>::value, "");
+  }
+  {
+    using D = NoCopyMoveDeleter;
+    using U = std::unique_ptr<int, D&>;
+    static_assert(!std::is_constructible<U, int*, D const&>::value, "");
+    static_assert(std::is_constructible<U, int*, D &>::value, "");
+    static_assert(!std::is_constructible<U, int*, D&&>::value, "");
+    static_assert(!std::is_constructible<U, int*, const D&&>::value, "");
+  }
+  {
+    using D = NoCopyMoveDeleter;
+    using U = std::unique_ptr<int, const D&>;
+    static_assert(std::is_constructible<U, int*, D const&>::value, "");
+    static_assert(std::is_constructible<U, int*, D &>::value, "");
+    static_assert(!std::is_constructible<U, int*, D&&>::value, "");
+    static_assert(!std::is_constructible<U, int*, const D&&>::value, "");
+  }
+#endif
+}
+
+
+void test_noexcept() {
+#if TEST_STD_VER >= 11
+  {
+    using D = CopyOnlyDeleter;
+    using U = std::unique_ptr<int, D>;
+    static_assert(std::is_nothrow_constructible<U, int*, D const&>::value, "");
+    static_assert(std::is_nothrow_constructible<U, int*, D &>::value, "");
+    static_assert(std::is_nothrow_constructible<U, int*, D&&>::value, "");
+  }
+  {
+    using D = MoveOnlyDeleter;
+    using U = std::unique_ptr<int, D>;
+    static_assert(std::is_nothrow_constructible<U, int*, D&&>::value, "");
+    D d;
+    U u(nullptr, std::move(d));
+  }
+  {
+    using D = NoCopyMoveDeleter;
+    using U = std::unique_ptr<int, D&>;
+    static_assert(std::is_nothrow_constructible<U, int*, D &>::value, "");
+  }
+  {
+    using D = NoCopyMoveDeleter;
+    using U = std::unique_ptr<int, const D&>;
+    static_assert(std::is_nothrow_constructible<U, int*, D const&>::value, "");
+    static_assert(std::is_nothrow_constructible<U, int*, D &>::value, "");
+  }
+#endif
 }
 
 int main()
@@ -120,4 +217,6 @@ int main()
         }
         assert(my_free_called);
     }
+    test_sfinae();
+    test_noexcept();
 }

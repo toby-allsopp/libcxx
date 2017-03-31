@@ -32,6 +32,7 @@
 #include <memory>
 #include <cassert>
 
+#include "test_macros.h"
 #include "deleter_types.h"
 
 // unique_ptr(pointer) ctor should only require default Deleter ctor
@@ -155,9 +156,46 @@ void checkNumIncompleteTypeAlive(int i) {
 template <class Del>
 StoresIncomplete<Del>::~StoresIncomplete() { }
 
+#if TEST_STD_VER >= 11
+struct NonDefaultDeleter {
+  NonDefaultDeleter() = delete;
+  void operator()(void*) const {}
+};
+#endif
+
+void test_sfinae() {
+#if TEST_STD_VER >= 11
+  { // the constructor does not participate in overload resultion when
+    // the deleter is a pointer type
+    using U = std::unique_ptr<int, void(*)(void*)>;
+    static_assert(!std::is_constructible<U, int*>::value, "");
+  }
+  { // the constructor does not participate in overload resolution when
+    // the deleter is not default constructible
+    using Del = CDeleter<int>;
+    using U1 = std::unique_ptr<int, NonDefaultDeleter>;
+    using U2 = std::unique_ptr<int, Del&>;
+    using U3 = std::unique_ptr<int, Del const&>;
+    static_assert(!std::is_constructible<U1, int*>::value, "");
+    static_assert(!std::is_constructible<U2, int*>::value, "");
+    static_assert(!std::is_constructible<U3, int*>::value, "");
+
+  }
+#endif
+}
+
 int main()
 {
     test_pointer();
     test_derived();
     test_incomplete();
+    test_sfinae();
+#if TEST_STD_VER >= 11
+  {
+    using U1 = std::unique_ptr<int>;
+    using U2 = std::unique_ptr<int, Deleter<int>>;
+    static_assert(std::is_nothrow_constructible<U1, int*>::value, "");
+    static_assert(std::is_nothrow_constructible<U2, int*>::value, "");
+  }
+#endif
 }
