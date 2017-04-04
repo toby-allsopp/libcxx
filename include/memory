@@ -2075,7 +2075,7 @@ struct __compressed_pair_elem {
 
   template <class... _Args, size_t... _Indexes>
     _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX14
-   __compressed_pair_elem(piecewise_construct_t __pc,
+   __compressed_pair_elem(piecewise_construct_t,
                                      tuple<_Args...> __args,
                                         __tuple_indices<_Indexes...>)
             : __value_(_VSTD::forward<_Args>(_VSTD::get<_Indexes>(__args))...)
@@ -2112,7 +2112,7 @@ struct __compressed_pair_elem<_Tp, _Idx, true> : private _Tp {
 
   template <class... _Args, size_t... _Indexes>
     _LIBCPP_INLINE_VISIBILITY _LIBCPP_CONSTEXPR_AFTER_CXX14
-   __compressed_pair_elem(piecewise_construct_t __pc,
+   __compressed_pair_elem(piecewise_construct_t,
                                      tuple<_Args...> __args,
                                         __tuple_indices<_Indexes...>)
             : __value_(_VSTD::forward<_Args>(_VSTD::get<_Indexes>(__args))...)
@@ -2150,7 +2150,7 @@ public:
 
   template <class _Tp>
   _LIBCPP_INLINE_VISIBILITY
-  constexpr __compressed_pair(__second_tag __tag, _Tp&& __t)
+  constexpr __compressed_pair(__second_tag, _Tp&& __t)
       : _Base1(), _Base2(std::forward<_Tp>(__t)) {}
 
   template <class _U1, class _U2>
