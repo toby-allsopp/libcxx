@@ -26,7 +26,6 @@ void
 test(unsigned n, charT c)
 {
     typedef std::basic_string<charT, std::char_traits<charT>, test_allocator<charT> > S;
-    typedef typename S::traits_type T;
     typedef typename S::allocator_type A;
     S s2(n, c);
     LIBCPP_ASSERT(s2.__invariants());
@@ -42,7 +41,6 @@ void
 test(unsigned n, charT c, const A& a)
 {
     typedef std::basic_string<charT, std::char_traits<charT>, A> S;
-    typedef typename S::traits_type T;
     S s2(n, c, a);
     LIBCPP_ASSERT(s2.__invariants());
     assert(s2.size() == n);
@@ -58,7 +56,6 @@ test(Tp n, Tp c)
 {
     typedef char charT;
     typedef std::basic_string<charT, std::char_traits<charT>, test_allocator<charT> > S;
-    typedef typename S::traits_type T;
     typedef typename S::allocator_type A;
     S s2(n, c);
     LIBCPP_ASSERT(s2.__invariants());
@@ -75,7 +72,6 @@ test(Tp n, Tp c, const A& a)
 {
     typedef char charT;
     typedef std::basic_string<charT, std::char_traits<charT>, A> S;
-    typedef typename S::traits_type T;
     S s2(n, c, a);
     LIBCPP_ASSERT(s2.__invariants());
     assert(s2.size() == static_cast<std::size_t>(n));
@@ -89,7 +85,6 @@ int main()
 {
     {
     typedef test_allocator<char> A;
-    typedef std::basic_string<char, std::char_traits<char>, A> S;
 
     test(0, 'a');
     test(0, 'a', A(2));
@@ -103,13 +98,12 @@ int main()
     test(100, 'a');
     test(100, 'a', A(2));
 
-    test(100, 65);
-    test(100, 65, A(3));
+    test(static_cast<char>(100), static_cast<char>(65));
+    test(static_cast<char>(100), static_cast<char>(65), A(3));
     }
 #if TEST_STD_VER >= 11
     {
     typedef min_allocator<char> A;
-    typedef std::basic_string<char, std::char_traits<char>, A> S;
 
     test(0, 'a');
     test(0, 'a', A());
@@ -123,8 +117,8 @@ int main()
     test(100, 'a');
     test(100, 'a', A());
 
-    test(100, 65);
-    test(100, 65, A());
+    test(static_cast<char>(100), static_cast<char>(65));
+    test(static_cast<char>(100), static_cast<char>(65), A());
     }
 #endif
 }

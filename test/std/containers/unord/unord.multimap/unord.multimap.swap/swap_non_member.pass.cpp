@@ -33,9 +33,8 @@ int main()
         typedef test_compare<std::equal_to<int> > Compare;
         typedef test_allocator<std::pair<const int, std::string> > Alloc;
         typedef std::unordered_multimap<int, std::string, Hash, Compare, Alloc> C;
-        typedef std::pair<int, std::string> P;
-        C c1(0, Hash(1), Compare(1), Alloc(1));
-        C c2(0, Hash(2), Compare(2), Alloc(2));
+        C c1(0, Hash(1), Compare(1), Alloc(1, 1));
+        C c2(0, Hash(2), Compare(2), Alloc(1, 2));
         c2.max_load_factor(2);
         swap(c1, c2);
 
@@ -43,7 +42,7 @@ int main()
         assert(c1.size() == 0);
         assert(c1.hash_function() == Hash(2));
         assert(c1.key_eq() == Compare(2));
-        assert(c1.get_allocator() == Alloc(1));
+        assert(c1.get_allocator().get_id() == 1);
         assert(static_cast<std::size_t>(std::distance(c1.begin(), c1.end())) == c1.size());
         assert(static_cast<std::size_t>(std::distance(c1.cbegin(), c1.cend())) == c1.size());
         assert(c1.max_load_factor() == 2);
@@ -52,7 +51,7 @@ int main()
         assert(c2.size() == 0);
         assert(c2.hash_function() == Hash(1));
         assert(c2.key_eq() == Compare(1));
-        assert(c2.get_allocator() == Alloc(2));
+        assert(c2.get_allocator().get_id() == 2);
         assert(static_cast<std::size_t>(std::distance(c2.begin(), c2.end())) == c2.size());
         assert(static_cast<std::size_t>(std::distance(c2.cbegin(), c2.cend())) == c2.size());
         assert(c2.max_load_factor() == 1);
@@ -74,8 +73,8 @@ int main()
             P(70, "seventy"),
             P(80, "eighty"),
         };
-        C c1(0, Hash(1), Compare(1), Alloc(1));
-        C c2(std::begin(a2), std::end(a2), 0, Hash(2), Compare(2), Alloc(2));
+        C c1(0, Hash(1), Compare(1), Alloc(1, 1));
+        C c2(std::begin(a2), std::end(a2), 0, Hash(2), Compare(2), Alloc(1, 2));
         c2.max_load_factor(2);
         swap(c1, c2);
 
@@ -91,7 +90,7 @@ int main()
         assert(c1.find(80)->second == "eighty");
         assert(c1.hash_function() == Hash(2));
         assert(c1.key_eq() == Compare(2));
-        assert(c1.get_allocator() == Alloc(1));
+        assert(c1.get_allocator().get_id() == 1);
         assert(static_cast<std::size_t>(std::distance(c1.begin(), c1.end())) == c1.size());
         assert(static_cast<std::size_t>(std::distance(c1.cbegin(), c1.cend())) == c1.size());
         assert(c1.max_load_factor() == 2);
@@ -100,7 +99,7 @@ int main()
         assert(c2.size() == 0);
         assert(c2.hash_function() == Hash(1));
         assert(c2.key_eq() == Compare(1));
-        assert(c2.get_allocator() == Alloc(2));
+        assert(c2.get_allocator().get_id() == 2);
         assert(static_cast<std::size_t>(std::distance(c2.begin(), c2.end())) == c2.size());
         assert(static_cast<std::size_t>(std::distance(c2.cbegin(), c2.cend())) == c2.size());
         assert(c2.max_load_factor() == 1);
@@ -120,8 +119,8 @@ int main()
             P(1, "four"),
             P(2, "four"),
         };
-        C c1(std::begin(a1), std::end(a1), 0, Hash(1), Compare(1), Alloc(1));
-        C c2(0, Hash(2), Compare(2), Alloc(2));
+        C c1(std::begin(a1), std::end(a1), 0, Hash(1), Compare(1), Alloc(1, 1));
+        C c2(0, Hash(2), Compare(2), Alloc(1, 2));
         c2.max_load_factor(2);
         swap(c1, c2);
 
@@ -129,7 +128,7 @@ int main()
         assert(c1.size() == 0);
         assert(c1.hash_function() == Hash(2));
         assert(c1.key_eq() == Compare(2));
-        assert(c1.get_allocator() == Alloc(1));
+        assert(c1.get_allocator().get_id() == 1);
         assert(static_cast<std::size_t>(std::distance(c1.begin(), c1.end())) == c1.size());
         assert(static_cast<std::size_t>(std::distance(c1.cbegin(), c1.cend())) == c1.size());
         assert(c1.max_load_factor() == 2);
@@ -144,7 +143,7 @@ int main()
         assert(c2.find(4)->second == "four");
         assert(c2.hash_function() == Hash(1));
         assert(c2.key_eq() == Compare(1));
-        assert(c2.get_allocator() == Alloc(2));
+        assert(c2.get_allocator().get_id() == 2);
         assert(static_cast<std::size_t>(std::distance(c2.begin(), c2.end())) == c2.size());
         assert(static_cast<std::size_t>(std::distance(c2.cbegin(), c2.cend())) == c2.size());
         assert(c2.max_load_factor() == 1);
@@ -175,8 +174,8 @@ int main()
             P(70, "seventy"),
             P(80, "eighty"),
         };
-        C c1(std::begin(a1), std::end(a1), 0, Hash(1), Compare(1), Alloc(1));
-        C c2(std::begin(a2), std::end(a2), 0, Hash(2), Compare(2), Alloc(2));
+        C c1(std::begin(a1), std::end(a1), 0, Hash(1), Compare(1), Alloc(1, 1));
+        C c2(std::begin(a2), std::end(a2), 0, Hash(2), Compare(2), Alloc(1, 2));
         c2.max_load_factor(2);
         swap(c1, c2);
 
@@ -192,7 +191,7 @@ int main()
         assert(c1.find(80)->second == "eighty");
         assert(c1.hash_function() == Hash(2));
         assert(c1.key_eq() == Compare(2));
-        assert(c1.get_allocator() == Alloc(1));
+        assert(c1.get_allocator().get_id() == 1);
         assert(static_cast<std::size_t>(std::distance(c1.begin(), c1.end())) == c1.size());
         assert(static_cast<std::size_t>(std::distance(c1.cbegin(), c1.cend())) == c1.size());
         assert(c1.max_load_factor() == 2);
@@ -207,7 +206,7 @@ int main()
         assert(c2.find(4)->second == "four");
         assert(c2.hash_function() == Hash(1));
         assert(c2.key_eq() == Compare(1));
-        assert(c2.get_allocator() == Alloc(2));
+        assert(c2.get_allocator().get_id() == 2);
         assert(static_cast<std::size_t>(std::distance(c2.begin(), c2.end())) == c2.size());
         assert(static_cast<std::size_t>(std::distance(c2.cbegin(), c2.cend())) == c2.size());
         assert(c2.max_load_factor() == 1);
@@ -218,7 +217,6 @@ int main()
         typedef test_compare<std::equal_to<int> > Compare;
         typedef other_allocator<std::pair<const int, std::string> > Alloc;
         typedef std::unordered_multimap<int, std::string, Hash, Compare, Alloc> C;
-        typedef std::pair<int, std::string> P;
         C c1(0, Hash(1), Compare(1), Alloc(1));
         C c2(0, Hash(2), Compare(2), Alloc(2));
         c2.max_load_factor(2);
@@ -403,7 +401,6 @@ int main()
         typedef test_compare<std::equal_to<int> > Compare;
         typedef min_allocator<std::pair<const int, std::string> > Alloc;
         typedef std::unordered_multimap<int, std::string, Hash, Compare, Alloc> C;
-        typedef std::pair<int, std::string> P;
         C c1(0, Hash(1), Compare(1), Alloc());
         C c2(0, Hash(2), Compare(2), Alloc());
         c2.max_load_factor(2);

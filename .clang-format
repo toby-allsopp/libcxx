@@ -4,4 +4,9 @@ BasedOnStyle: LLVM
 Language: Cpp
 
 AlwaysBreakTemplateDeclarations: true
+PointerAlignment: Left
+
+# Disable formatting options which may break tests.
+SortIncludes: false
+ReflowComments: false
 ---
